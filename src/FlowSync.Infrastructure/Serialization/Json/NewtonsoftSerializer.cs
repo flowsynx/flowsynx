@@ -14,6 +14,8 @@ public class NewtonsoftSerializer : ISerializer
         _logger = logger;
     }
 
+    public string ContentMineType => "application/json";
+
     public string Serialize(object? input)
     {
         try

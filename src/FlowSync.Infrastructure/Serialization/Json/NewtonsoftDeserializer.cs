@@ -14,6 +14,8 @@ public class NewtonsoftDeserializer : IDeserializer
         _logger = logger;
     }
 
+    public string ContentMineType => "application/json";
+
     public T? Deserialize<T>(string? input)
     {
         try
