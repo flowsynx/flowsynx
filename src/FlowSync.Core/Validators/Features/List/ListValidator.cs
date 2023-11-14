@@ -1,5 +1,5 @@
-﻿using FlowSync.Abstractions.Entities;
-using FlowSync.Core.Enums;
+﻿using FlowSync.Abstractions;
+using FlowSync.Abstractions.Entities;
 using FlowSync.Core.Features.List;
 using FlowSync.Core.Utilities;
 using FluentValidation;
