@@ -71,7 +71,7 @@ internal class SizeParser : ISizeParser
         if (charLocation < 0 || charLocation < size.Length - 1)
         {
             _logger.LogWarning($"The value from ({size}) could not be extracted!");
-            return 0;
+            throw new SizeParserException($"The value from ({size}) could not be extracted!");
         }
 
         var extractedValue = size.Substring(position, charLocation - position);
