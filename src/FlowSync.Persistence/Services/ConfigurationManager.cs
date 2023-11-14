@@ -5,7 +5,6 @@ using FlowSync.Core.Serialization;
 using FlowSync.Core.Services;
 using FlowSync.Persistence.Json.IO;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace FlowSync.Persistence.Json.Services;
 
