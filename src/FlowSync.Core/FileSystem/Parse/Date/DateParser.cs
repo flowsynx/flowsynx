@@ -117,7 +117,7 @@ internal class DateParser : IDateParser
         if (charLocation < 0)
         {
             _logger.LogWarning($"The value from ({dateTime}) could not be extracted!");
-            return 0.0;
+            throw new DateParserException($"The value from ({dateTime}) could not be extracted!");
         }
 
         var extractedValue = dateTime.Substring(position, charLocation - position);
