@@ -1,27 +1,29 @@
 ﻿using FlowSync.Core.Configuration;
 using FlowSync.Core.Enums;
+using FlowSync.Core.Exceptions;
 using FlowSync.Core.Serialization;
 using FlowSync.Core.Services;
 using FlowSync.Persistence.Json.IO;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FlowSync.Persistence.Json.Services;
 
 public class ConfigurationManager : IConfigurationManager
 {
     private readonly ILogger<ConfigurationManager> _logger;
-    private readonly ILocation _location;
+    private readonly ConfigurationPath _options;
     private readonly IFileReader _fileReader;
     private readonly IFileWriter _fileWriter;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
 
-    public ConfigurationManager(ILogger<ConfigurationManager> logger, ILocation location, 
+    public ConfigurationManager(ILogger<ConfigurationManager> logger, ConfigurationPath options, 
         IFileReader fileReader, IFileWriter fileWriter, ISerializer serializer, 
         IDeserializer deserializer)
     {
         _logger = logger;
-        _location = location;
+        _options = options;
         _fileReader = fileReader;
         _fileWriter = fileWriter;
         _serializer = serializer;
@@ -30,7 +32,7 @@ public class ConfigurationManager : IConfigurationManager
 
     public ConfigurationStatus AddSetting(ConfigurationItem configuration)
     {
-        var contents = _fileReader.Read(_location.ConfigurationFile);
+        var contents = _fileReader.Read(_options.Path);
         var data = _deserializer.Deserialize<Configuration>(contents);
 
         var convertedData = data?.Configurations;
@@ -50,13 +52,13 @@ public class ConfigurationManager : IConfigurationManager
         };
 
         var dataToWrite = _serializer.Serialize(newSetting);
-        _fileWriter.Write(_location.ConfigurationFile, dataToWrite);
+        _fileWriter.Write(_options.Path, dataToWrite);
         return ConfigurationStatus.Added;
     }
 
     public bool DeleteSetting(string name)
     {
-        var contents = _fileReader.Read(_location.ConfigurationFile);
+        var contents = _fileReader.Read(_options.Path);
         var data = _deserializer.Deserialize<Configuration>(contents);
 
         if (data is null)
@@ -82,13 +84,13 @@ public class ConfigurationManager : IConfigurationManager
         };
 
         var dataToWrite = _serializer.Serialize(newSetting);
-        var result = _fileWriter.Write(_location.ConfigurationFile, dataToWrite);
+        var result = _fileWriter.Write(_options.Path, dataToWrite);
         return result;
     }
 
     public ConfigurationItem GetSetting(string name)
     {
-        var contents = _fileReader.Read(_location.ConfigurationFile);
+        var contents = _fileReader.Read(_options.Path);
         var data = _deserializer.Deserialize<Configuration>(contents);
 
         var result = data?.Configurations.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.CurrentCultureIgnoreCase));
@@ -101,14 +103,14 @@ public class ConfigurationManager : IConfigurationManager
     public IEnumerable<ConfigurationItem> GetSettings()
     {
         var result = new List<ConfigurationItem>();
-        var contents = _fileReader.Read(_location.ConfigurationFile);
+        var contents = _fileReader.Read(_options.Path);
         var deserializeResult = _deserializer.Deserialize<Configuration>(contents);
         return deserializeResult == null ? result : deserializeResult.Configurations;
     }
 
     public bool IsExist(string name)
     {
-        var contents = _fileReader.Read(_location.ConfigurationFile);
+        var contents = _fileReader.Read(_options.Path);
         var data = _deserializer.Deserialize<Configuration>(contents);
 
         var result = data?.Configurations.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.CurrentCultureIgnoreCase));
