@@ -1,7 +1,8 @@
-﻿using FlowSync.Abstractions.Entities;
+﻿using FlowSync.Abstractions;
+using FlowSync.Abstractions.Entities;
 using MediatR;
 using FlowSync.Core.Wrapper;
-using FlowSync.Core.Enums;
+using FlowSync.Core.Utilities;
 
 namespace FlowSync.Core.Features.List;
 
