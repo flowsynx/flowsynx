@@ -1,33 +1,29 @@
-﻿using Asp.Versioning;
-using Asp.Versioning.Builder;
+﻿using FlowSync.Abstractions;
 using FlowSync.Core.Extensions;
 using FlowSync.Core.Features.List;
-using FlowSync.Validator;
+using FlowSync.Core.Utilities;
 using FluentValidation;
 using MediatR;
-using Microsoft.AspNetCore.Mvc;
 
 namespace FlowSync.Endpoints.List;
 
 public static class Endpoint
 {
-    public static IVersionedEndpointRouteBuilder MapList(this IVersionedEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapList(this IEndpointRouteBuilder endpoints)
     {
-        app.MapPost("v{version:apiVersion}/list", async ([FromBody] ListRequest request, 
-            [FromServices] IMediator mediator, 
-            IValidator<ListRequest> validator, 
-            CancellationToken cancellationToken) =>
+        endpoints.MapPost("/list", async (ListRequest request, 
+            IMediator mediator, 
+            IValidator<ListRequest> validator,
+        CancellationToken cancellationToken) =>
         {
             try
             {
                 var validationResult = await validator.ValidateAsync(request, cancellationToken);
-
                 if (!validationResult.IsValid)
-                {
                     return Results.ValidationProblem(validationResult.ToDictionary());
-                }
-
+                
                 var result = await mediator.List(request, cancellationToken);
+                var outputType = EnumUtils.GetEnumValueOrDefault<OutputType>(request.Output) ?? OutputType.Json;
                 return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
             }
             catch (Exception ex)
@@ -35,6 +31,6 @@ public static class Endpoint
                 return Results.BadRequest(ex.Message);
             }
         }).WithName("GetList");
-        return app;
+        return endpoints;
     }
 }
