@@ -8,11 +8,13 @@ namespace FlowSync.Middleware;
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionMiddleware> _logger;
     private readonly ISerializer _serializer;
 
-    public ExceptionMiddleware(RequestDelegate next, ISerializer serializer)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, ISerializer serializer)
     {
         this._next = next;
+        _logger = logger;
         _serializer = serializer;
     }
 
@@ -35,7 +37,7 @@ public class ExceptionMiddleware
     private Task HandleExceptionAsync(HttpContext context, BadHttpRequestException exception)
     {
         string? result = null;
-        context.Response.ContentType = "application/json";
+        context.Response.ContentType = _serializer.ContentMineType;
         if (exception is BadHttpRequestException)
         {
             result = new ErrorDetails(_serializer, exception.Message, (int)exception.StatusCode).ToString();
@@ -46,11 +48,13 @@ public class ExceptionMiddleware
             result = new ErrorDetails(_serializer, "Runtime Error", (int)HttpStatusCode.BadRequest).ToString();
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
         }
+        _logger.LogError(exception.Message);
         return context.Response.WriteAsync(result);
     }
 
     private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
+        _logger.LogError(exception.Message);
         var result = new ErrorDetails(_serializer, exception.Message, (int)HttpStatusCode.InternalServerError).ToString();
         context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
         return context.Response.WriteAsync(result);
