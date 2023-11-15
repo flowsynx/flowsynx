@@ -1,48 +1,39 @@
-using Asp.Versioning;
-using FlowSync.Core.Extensions;
-using FlowSync.Endpoints.List;
+using System.CommandLine;
+using System.CommandLine.IO;
 using FlowSync.Extensions;
+using FlowSync.Enums;
+using FlowSync.Commands;
 using FlowSync.Infrastructure.Extensions;
-using FlowSync.Persistence.Json.Extensions;
-using FluentValidation;
-using IValidator = FlowSync.Core.Services.IValidator;
+using FlowSync.Models;
+using FlowSync.Services;
+using FlowSync.ApplicationBuilders;
 
-const string swaggerRoutePrefix = "api-docs";
+IServiceCollection serviceCollection = new ServiceCollection()
+    .AddLoggingService(true, AppLogLevel.All)
+    .AddFlowSyncInfrastructure()
+    .AddTransient<RootCommand, Root>()
+    .AddTransient<IOptionsVerifier, OptionsVerifier>()
+    .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
+    .AddTransient<ICliApplicationBuilder, CliApplicationBuilder>();
 
-var builder = WebApplication.CreateBuilder(args);
+IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 
-var version1 = new ApiVersion(1, 0);
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddLocation();
-builder.Services.AddFlowSyncApplication();
-builder.Services.AddFlowSyncInfrastructure();
-builder.Services.AddFlowSyncJsonPersistence();
-builder.Services.AddAndConfigApiVersioning(version1);
-builder.Services.AddValidatorsFromAssemblyContaining<IValidator>();
-
-if (builder.Environment.IsDevelopment())
+try
 {
-    builder.Services.AddAndConfigSwagger();
+    var cli = serviceProvider.GetService<ICliApplicationBuilder>();
+
+    if (cli == null)
+        throw new Exception("Something wrong happen during execute the application");
+
+    return await cli.RunAsync(args);
 }
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
+catch (Exception ex)
 {
-    app.UseSwagger(options => { options.RouteTemplate = $"{swaggerRoutePrefix}/{{documentName}}/docs.json"; });
-    app.UseSwaggerUI(options =>
-    {
-        options.RoutePrefix = swaggerRoutePrefix;
-        foreach (var description in app.DescribeApiVersions())
-            options.SwaggerEndpoint($"/{swaggerRoutePrefix}/{description.GroupName}/docs.json", description.GroupName.ToUpperInvariant());
-    });
+    var logger = serviceProvider.GetService<ILogger<Program>>();
+    if (logger != null)
+        logger.LogError(ex.Message);
+    else
+        Console.Error.WriteLine(ex.Message);
+
+    return ExitCode.Error;
 }
-
-app.ConfigureCustomException();
-app.UseHttpsRedirection();
-
-var routing = app.NewVersionedApi("FlowSync").HasApiVersion(version1);
-routing.MapList();
-
-app.Run();
