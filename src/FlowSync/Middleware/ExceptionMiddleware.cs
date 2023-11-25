@@ -1,8 +1,7 @@
-﻿using System.Net;
-using EnsureThat;
-using FlowSync.Core.Common.Models;
-using FlowSync.Core.Exceptions;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Net;
 using FlowSync.Core.Serialization;
+using FlowSync.Models;
 
 namespace FlowSync.Middleware;
 
@@ -15,40 +14,49 @@ public class ExceptionMiddleware
     public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, ISerializer serializer)
     {
         this._next = next;
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(serializer, nameof(serializer));
         _logger = logger;
         _serializer = serializer;
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task Invoke(HttpContext context /* other dependencies */)
     {
         try
         {
             await _next(context);
         }
-        catch (Exception error)
+        catch (BadHttpRequestException ex)
         {
-            var response = context.Response;
-            response.ContentType = _serializer.ContentMineType;
-            var responseModel = new Result<string>() { Succeeded = false, Messages = new List<string>() { error.Message } };
-
-            switch (error)
-            {
-                case ApiBaseException e:
-                    response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    break;
-                case InputValidationException e:
-                    response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    responseModel.Messages = e.Errors;
-                    break;
-                default:
-                    response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                    break;
-            }
-
-            var result = _serializer.Serialize(responseModel);
-            await response.WriteAsync(result);
+            await HandleExceptionAsync(context, ex);
         }
+        catch (Exception exceptionObj)
+        {
+            await HandleExceptionAsync(context, exceptionObj);
+        }
+    }
+
+    private Task HandleExceptionAsync(HttpContext context, BadHttpRequestException exception)
+    {
+        string? result = null;
+        context.Response.ContentType = _serializer.ContentMineType;
+        if (exception is BadHttpRequestException)
+        {
+            result = new ErrorDetails(_serializer, exception.Message, (int)exception.StatusCode).ToString();
+            context.Response.StatusCode = (int)exception.StatusCode;
+        }
+        else
+        {
+            result = new ErrorDetails(_serializer, "Runtime Error", (int)HttpStatusCode.BadRequest).ToString();
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        }
+        _logger.LogError(exception.Message);
+        return context.Response.WriteAsync(result);
+    }
+
+    private Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        _logger.LogError(exception.Message);
+        var result = new ErrorDetails(_serializer, exception.Message, (int)HttpStatusCode.InternalServerError).ToString();
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        return context.Response.WriteAsync(result);
     }
 }

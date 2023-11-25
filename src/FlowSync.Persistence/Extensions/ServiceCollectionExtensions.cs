@@ -1,5 +1,5 @@
 ﻿using FlowSync.Core.Configuration;
-using FlowSync.Core.Plugins;
+using FlowSync.Core.Services;
 using FlowSync.Persistence.Json.IO;
 using FlowSync.Persistence.Json.Services;
 using Microsoft.Extensions.DependencyInjection;

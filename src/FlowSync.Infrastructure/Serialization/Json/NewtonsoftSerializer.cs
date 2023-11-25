@@ -1,5 +1,4 @@
 ﻿using System.Runtime.Serialization;
-using EnsureThat;
 using FlowSync.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -12,7 +11,6 @@ public class NewtonsoftSerializer : ISerializer
 
     public NewtonsoftSerializer(ILogger<NewtonsoftSerializer> logger)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
     }
 

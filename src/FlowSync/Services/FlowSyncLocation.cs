@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSync.Core.Common.Services;
+﻿using FlowSync.Core.Services;
 
 namespace FlowSync.Services;
 
@@ -10,7 +9,6 @@ public class FlowSyncLocation : ILocation
 
     public FlowSyncLocation(ILogger<FlowSyncLocation> logger)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
 
         if (_rootLocation == null)

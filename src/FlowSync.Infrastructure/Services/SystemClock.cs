@@ -1,4 +1,4 @@
-﻿using FlowSync.Core.Common.Services;
+﻿using FlowSync.Core.Services;
 
 namespace FlowSync.Infrastructure.Services;
 

@@ -80,9 +80,13 @@ internal static class PredicateBuilder
 
         protected override Expression VisitParameter(ParameterExpression p)
         {
-            if (map.TryGetValue(p, out var replacement))
+            ParameterExpression replacement;
+
+            if (map.TryGetValue(p, out replacement))
+            {
                 p = replacement;
-            
+            }
+
             return base.VisitParameter(p);
         }
     }

@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSync.Commands;
+﻿using FlowSync.Commands;
 using FlowSync.Core.Exceptions;
 using FlowSync.Core.Serialization;
 
@@ -12,13 +11,11 @@ public class OptionsVerifier: IOptionsVerifier
 
     public OptionsVerifier(ILogger<OptionsVerifier> logger, ISerializer serializer)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(serializer, nameof(serializer));
         _logger = logger;
         _serializer = serializer;
     }
 
-    public void Verify(ref RootCommandOptions options)
+    public void Verify(ref CommandOptions options)
     {
         options.Config = CheckConfigurationPath(options.Config);
     }
@@ -48,7 +45,7 @@ public class OptionsVerifier: IOptionsVerifier
     {
         var fullPath = Path.GetDirectoryName(System.AppContext.BaseDirectory);
         if (string.IsNullOrEmpty(fullPath))
-            throw new ApiBaseException($"Error in reading executable application path.");
+            throw new ApiException($"Error in reading executable application path.");
 
         return fullPath;
     }

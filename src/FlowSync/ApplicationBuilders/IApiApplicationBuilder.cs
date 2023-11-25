@@ -4,5 +4,5 @@ namespace FlowSync.ApplicationBuilders;
 
 public interface IApiApplicationBuilder
 {
-    Task RunAsync(RootCommandOptions rootCommandOptions);
+    Task RunAsync(CommandOptions commandOptions);
 }

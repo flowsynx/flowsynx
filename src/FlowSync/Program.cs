@@ -2,11 +2,11 @@ using System.CommandLine;
 using System.CommandLine.IO;
 using FlowSync.Extensions;
 using FlowSync.Enums;
+using FlowSync.Commands;
 using FlowSync.Infrastructure.Extensions;
 using FlowSync.Models;
 using FlowSync.Services;
 using FlowSync.ApplicationBuilders;
-using FlowSync.Commands;
 
 IServiceCollection serviceCollection = new ServiceCollection()
     .AddLoggingService(true, AppLogLevel.All)

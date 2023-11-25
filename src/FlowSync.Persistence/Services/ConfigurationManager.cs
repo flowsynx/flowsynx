@@ -1,6 +1,8 @@
-﻿using EnsureThat;
-using FlowSync.Core.Configuration;
+﻿using FlowSync.Core.Configuration;
+using FlowSync.Core.Enums;
+using FlowSync.Core.Exceptions;
 using FlowSync.Core.Serialization;
+using FlowSync.Core.Services;
 using FlowSync.Persistence.Json.IO;
 using Microsoft.Extensions.Logging;
 
@@ -19,12 +21,6 @@ public class ConfigurationManager : IConfigurationManager
         IFileReader fileReader, IFileWriter fileWriter, ISerializer serializer, 
         IDeserializer deserializer)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(options, nameof(options));
-        EnsureArg.IsNotNull(fileReader, nameof(fileReader));
-        EnsureArg.IsNotNull(fileWriter, nameof(fileWriter));
-        EnsureArg.IsNotNull(serializer, nameof(serializer));
-        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _options = options;
         _fileReader = fileReader;

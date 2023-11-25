@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace FlowSync.Persistence.Json.IO;
 
@@ -9,7 +8,6 @@ public class FileReader : IFileReader
 
     public FileReader(ILogger<FileReader> logger)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
     }
 

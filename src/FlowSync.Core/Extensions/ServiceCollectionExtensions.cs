@@ -1,14 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using FlowSync.Core.Services;
 using FlowSync.Core.FileSystem;
 using FlowSync.Core.FileSystem.Filter;
-using System.Reflection;
-using FluentValidation;
-using FlowSync.Core.Common.Behaviors;
-using MediatR;
-using FlowSync.Core.FileSystem.Parers.Date;
-using FlowSync.Core.FileSystem.Parers.RemotePath;
-using FlowSync.Core.FileSystem.Parers.Size;
-using FlowSync.Core.FileSystem.Parers.Sort;
+using FlowSync.Core.FileSystem.Parse.Date;
+using FlowSync.Core.FileSystem.Parse.RemotePath;
+using FlowSync.Core.FileSystem.Parse.Size;
+using FlowSync.Core.FileSystem.Parse.Sort;
 
 namespace FlowSync.Core.Extensions;
 
@@ -16,21 +13,13 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddFlowSyncApplication(this IServiceCollection services)
     {
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
-
-        services.AddMediatR(config => {
-            config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-            config.AddBehavior(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehaviour<,>));
-            config.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
-        });
-
+        services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(IFeature).Assembly));
         services.AddScoped<IRemotePathParser, RemotePathParser>();
         services.AddScoped<IDateParser, DateParser>();
         services.AddScoped<ISizeParser, SizeParser>();
         services.AddScoped<ISortParser, SortParser>();
-        services.AddScoped<IFileSystemFilter, FileSystemFilter>();
+        services.AddScoped<IFilter, Filter>();
         services.AddScoped<IFileSystemService, FileSystemService>();
-
         return services;
     }
 }

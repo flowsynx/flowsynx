@@ -1,9 +1,9 @@
-﻿using EnsureThat;
-using FlowSync.Abstractions;
+﻿using FlowSync.Abstractions;
 using FlowSync.Abstractions.Entities;
 using FlowSync.Core.Exceptions;
-using FlowSync.Core.FileSystem.Parers.RemotePath;
-using FlowSync.Core.Plugins;
+using FlowSync.Core.FileSystem.Parse.RemotePath;
+using FlowSync.Core.Services;
+using FlowSync.Core.Wrapper;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSync.Core.FileSystem;
@@ -16,59 +16,36 @@ internal class FileSystemService : IFileSystemService
 
     public FileSystemService(ILogger<FileSystemService> logger, IPluginsManager pluginsManager, IRemotePathParser remotePathParser)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
-        EnsureArg.IsNotNull(remotePathParser, nameof(remotePathParser));
         _logger = logger;
         _pluginsManager = pluginsManager;
         _remotePathParser = remotePathParser;
     }
 
-    public async Task<Usage> About(string path, CancellationToken cancellationToken = default)
+    public async Task<IResult<IEnumerable<Entity>>> List(string path, FilterOptions filters, CancellationToken cancellationToken)
     {
         try
         {
             var pathParser = _remotePathParser.Parse(path);
             var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
             var loadedFileSystem = plugin.NewInstance(pathParser.Specifications);
-            return await loadedFileSystem.About(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"FileSystem getting about information. Message: {ex.Message}");
-            throw new FileSystemException(ex.Message);
-        }
-    }
 
-    public async Task<IEnumerable<FileSystemEntity>> List(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default)
-    {
-        try
+            var result = await loadedFileSystem.ListAsync(pathParser.Path, filters, cancellationToken);
+            return await Result<IEnumerable<Entity>>.SuccessAsync(result);
+        }
+        catch (DeserializerException ex)
         {
-            var pathParser = _remotePathParser.Parse(path);
-            var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
-            var loadedFileSystem = plugin.NewInstance(pathParser.Specifications);
-            return await loadedFileSystem.ListAsync(pathParser.Path, fileSystemFilters, cancellationToken);
+            _logger.LogError(ex.Message);
+            return await Result<ICollection<Entity>>.FailAsync(new List<string> { ex.Message });
+        }
+        catch (PluginLoadingException ex)
+        {
+            _logger.LogError(ex.Message);
+            return await Result<ICollection<Entity>>.FailAsync(new List<string> { ex.Message });
         }
         catch (Exception ex)
         {
-            _logger.LogError($"FileSystem getting entities list. Message: {ex.Message}");
-            throw new FileSystemException(ex.Message);
-        }
-    }
-
-    public async Task<FileStream> ReadAsync(string path, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var pathParser = _remotePathParser.Parse(path);
-            var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
-            var loadedFileSystem = plugin.NewInstance(pathParser.Specifications);
-            return await loadedFileSystem.ReadAsync(pathParser.Path, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError($"FileSystem read path. Message: {ex.Message}");
-            throw new FileSystemException(ex.Message);
+            _logger.LogError(ex.Message);
+            return await Result<ICollection<Entity>>.FailAsync(ex.Message);
         }
     }
 }

@@ -1,12 +1,10 @@
 ﻿using FlowSync.Abstractions;
 using FlowSync.Abstractions.Entities;
-using FlowSync.Core.Common.Models;
+using FlowSync.Core.Wrapper;
 
 namespace FlowSync.Core.FileSystem;
 
 internal interface IFileSystemService
 {
-    Task<Usage> About(string path, CancellationToken cancellationToken = default);
-    Task<IEnumerable<FileSystemEntity>> List(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default);
-    Task<FileStream> ReadAsync(string path, CancellationToken cancellationToken = default);
+    Task<IResult<IEnumerable<Entity>>> List(string path, FilterOptions filters, CancellationToken cancellationToken);
 }

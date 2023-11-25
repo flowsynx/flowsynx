@@ -4,5 +4,5 @@ namespace FlowSync.Services;
 
 public interface IOptionsVerifier
 {
-    void Verify(ref RootCommandOptions options);
+    void Verify(ref CommandOptions options);
 }

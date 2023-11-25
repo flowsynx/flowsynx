@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSync.Core.Configuration;
+﻿using FlowSync.Core.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSync.HealthCheck;
@@ -11,8 +10,6 @@ public class ConfigurationManagerHealthCheck : IHealthCheck
 
     public ConfigurationManagerHealthCheck(ILogger<ConfigurationManagerHealthCheck> logger, IConfigurationManager configurationManager)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(configurationManager, nameof(configurationManager));
         _logger = logger;
         _configurationManager = configurationManager;
     }

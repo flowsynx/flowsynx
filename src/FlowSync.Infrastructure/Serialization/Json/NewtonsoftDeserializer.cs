@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSync.Core.Exceptions;
+﻿using FlowSync.Core.Exceptions;
 using FlowSync.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -12,7 +11,6 @@ public class NewtonsoftDeserializer : IDeserializer
 
     public NewtonsoftDeserializer(ILogger<NewtonsoftDeserializer> logger)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
     }
 

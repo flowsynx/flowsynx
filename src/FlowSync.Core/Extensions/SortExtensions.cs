@@ -1,5 +1,7 @@
-﻿using FlowSync.Core.FileSystem.Parers.Sort;
+﻿using FlowSync.Abstractions.Entities;
+using FlowSync.Core.FileSystem.Parse.Sort;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace FlowSync.Core.Extensions;
 
