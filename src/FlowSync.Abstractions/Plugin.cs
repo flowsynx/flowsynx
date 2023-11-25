@@ -11,14 +11,14 @@ public abstract class Plugin
         _specifications = specifications;
     }
 
-    public virtual Guid Id { get; } = Guid.NewGuid();
+    public abstract Guid Id { get; }
     public abstract string Name { get; }
     public abstract string? Description { get; }
-    public abstract IEnumerable<string>? SupportedVersions { get; }
-    public abstract Task<IEnumerable<Entity>> ListAsync(string path, FilterOptions filters, CancellationToken cancellationToken = default);
-    public abstract Task<IEnumerable<bool>> ExistsAsync(IEnumerable<string> paths, CancellationToken cancellationToken = default);
-    public abstract Task WriteAsync(string path, Stream dataStream, bool append = false, CancellationToken cancellationToken = default);
-    public abstract Task<Stream> ReadAsync(string path, CancellationToken cancellationToken = default);
+    public abstract Task<Usage> About(CancellationToken cancellationToken = default);
+    public abstract Task<IEnumerable<FileSystemEntity>> ListAsync(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default);
+    public abstract Task WriteAsync(string path, FileStream dataStream, bool append = false, CancellationToken cancellationToken = default);
+    public abstract Task<FileStream> ReadAsync(string path, CancellationToken cancellationToken = default);
+    public abstract Task DeleteFileAsync(string path, CancellationToken cancellationToken = default);
     public abstract Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default);
-    public abstract Task DeleteAsync(IEnumerable<string> path, CancellationToken cancellationToken = default);
+    public abstract Task DeleteDirectoryAsync(string path, CancellationToken cancellationToken = default);
 }
