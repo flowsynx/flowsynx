@@ -1,9 +1,9 @@
-﻿using FlowSync.Core.Services;
-using FlowSync.Services;
+﻿using FlowSync.Services;
 using FlowSync.Enums;
 using Serilog;
 using Serilog.Events;
 using FlowSync.HealthCheck;
+using FlowSync.Core.Common.Services;
 
 namespace FlowSync.Extensions;
 
@@ -12,6 +12,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddLocation(this IServiceCollection services)
     {
         services.AddTransient<ILocation, FlowSyncLocation>();
+        return services;
+    }
+
+    public static IServiceCollection AddVersion(this IServiceCollection services)
+    {
+        services.AddTransient<IVersion, FlowSyncVersion>();
         return services;
     }
 
