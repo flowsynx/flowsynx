@@ -2,24 +2,27 @@
 
 namespace FlowSync.Abstractions.Entities;
 
-public sealed class Entity : IEquatable<Entity>, IComparable<Entity>, ICloneable
+public sealed class FileSystemEntity : IEquatable<FileSystemEntity>, IComparable<FileSystemEntity>, ICloneable
 {
+    public string Id => GetEntityId();
     public EntityItemKind Kind { get; }
-    public bool IsDirectory => Kind == EntityItemKind.Directory;
-    public bool IsFile => Kind == EntityItemKind.File;
-    public string DirectoryPath { get; private set; }
-    public string Name { get; private set; }
+    private bool IsDirectory => Kind == EntityItemKind.Directory;
+    private bool IsFile => Kind == EntityItemKind.File;
+    public string DirectoryPath { get; private set; } = null!;
+    public string Name { get; private set; } = null!;
     public long? Size { get; set; }
-    public string Md5 { get; set; }
+    public string? MimeType => GetMimeType();
+    public string? HashCode { get; set; }
     public DateTimeOffset? CreatedTime { get; set; }
-    public DateTimeOffset? LastModificationTime { get; set; }
+    public DateTimeOffset? ModifiedTime { get; set; }
+
     public string FullPath => PathHelper.Combine(DirectoryPath, Name);
 
     public Dictionary<string, object> Properties { get; private set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-    public bool TryGetProperty<TValue>(string name, out TValue value, TValue defaultValue = default)
+    public bool TryGetProperty<TValue>(string name, out TValue value, TValue defaultValue)
     {
-        if (string.IsNullOrEmpty(name) || !Properties.TryGetValue(name, out object objValue))
+        if (string.IsNullOrEmpty(name) || !Properties.TryGetValue(name, out var objValue))
         {
             value = defaultValue;
             return false;
@@ -42,25 +45,22 @@ public sealed class Entity : IEquatable<Entity>, IComparable<Entity>, ICloneable
             var key = (string)keyValues[i];
             var value = keyValues[i + 1];
 
-            if (key != null && value != null)
-            {
-                if (value is string s && string.IsNullOrEmpty(s))
-                    continue;
+            if (value is string s && string.IsNullOrEmpty(s))
+                continue;
 
-                Properties[key] = value;
-            }
+            Properties[key] = value;
         }
     }
 
     public Dictionary<string, string> Metadata { get; private set; } = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    public Entity(string fullPath, EntityItemKind kind)
+    public FileSystemEntity(string fullPath, EntityItemKind kind)
     {
         SetFullPath(fullPath);
         Kind = kind;
     }
     
-    public Entity(string folderPath, string name, EntityItemKind kind)
+    public FileSystemEntity(string folderPath, string name, EntityItemKind kind)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Name = PathHelper.NormalizePart(Name);
@@ -75,20 +75,27 @@ public sealed class Entity : IEquatable<Entity>, IComparable<Entity>, ICloneable
         var k = Kind ==  EntityItemKind.File ? "file" : "directory";
         return $"{k}: {Name}@{DirectoryPath}";
     }
-    
+
+    public string GetEntityId()
+    {
+        return HashHelper.CreateMd5($"{this}");
+    }
+
+    public string GetMimeType() => MimeTypeHelper.GetMimeType(GetExtension());
+
     public override int GetHashCode()
     {
         return FullPath.GetHashCode() * Kind.GetHashCode();
     }
     
-    public static implicit operator Entity(string fullPath)
+    public static implicit operator FileSystemEntity(string fullPath)
     {
-        return new Entity(fullPath, EntityItemKind.File);
+        return new FileSystemEntity(fullPath, EntityItemKind.File);
     }
 
-    public static implicit operator string(Entity entity)
+    public static implicit operator string(FileSystemEntity fileSystemEntity)
     {
-        return entity.FullPath;
+        return fileSystemEntity.FullPath;
     }
     
     public void PrependPath(string path)
@@ -128,18 +135,18 @@ public sealed class Entity : IEquatable<Entity>, IComparable<Entity>, ICloneable
 
     public object Clone()
     {
-        var clone = (Entity)MemberwiseClone();
+        var clone = (FileSystemEntity)MemberwiseClone();
         clone.Metadata = new Dictionary<string, string>(Metadata, StringComparer.OrdinalIgnoreCase);
         clone.Properties = new Dictionary<string, object>(Properties, StringComparer.OrdinalIgnoreCase);
         return clone;
     }
 
-    public int CompareTo(Entity? other)
+    public int CompareTo(FileSystemEntity? other)
     {
         return string.Compare(FullPath, other?.FullPath, StringComparison.Ordinal);
     }
 
-    public bool Equals(Entity? other)
+    public bool Equals(FileSystemEntity? other)
     {
         if (ReferenceEquals(other, null))
             return false;
@@ -154,15 +161,15 @@ public sealed class Entity : IEquatable<Entity>, IComparable<Entity>, ICloneable
         if (ReferenceEquals(other, this))
             return true;
 
-        return other is Entity path && Equals(path);
+        return other is FileSystemEntity path && Equals(path);
     }
 
-    public static bool operator ==(Entity pathA, Entity pathB)
+    public static bool operator ==(FileSystemEntity pathA, FileSystemEntity pathB)
     {
         return pathA.Equals(pathB);
     }
 
-    public static bool operator !=(Entity pathA, Entity pathB)
+    public static bool operator !=(FileSystemEntity pathA, FileSystemEntity pathB)
     {
         return !(pathA == pathB);
     }
