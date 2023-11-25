@@ -1,38 +1,37 @@
 ﻿namespace FlowSync.Abstractions.Helpers;
 
-internal class PathHelper
+internal static class PathHelper
 {
     public const char PathSeparator = '/';
     public static readonly string PathSeparatorString = new string(PathSeparator, 1);
     public static readonly string RootDirectoryPath = "/";
     public static readonly string LevelUpDirectoryName = "..";
 
-    public static string Combine(IEnumerable<string> parts)
+    public static string Combine(params string[] parts)
     {
-        if (!parts.Any()) return Normalize(null);
-        return Normalize(string.Join(PathSeparatorString, parts.Where(p => !string.IsNullOrEmpty(p)).Select(NormalizePart)));
+        return Combine(parts.AsEnumerable());
     }
 
-    public static string? GetParent(string path)
+    public static string Combine(IEnumerable<string> parts)
     {
-        if (string.IsNullOrEmpty(path)) return null;
+        var enumerable = parts.ToList();
+        if (!enumerable.Any()) return Normalize(string.Empty);
+        return Normalize(string.Join(PathSeparatorString, enumerable.Where(p => !string.IsNullOrEmpty(p)).Select(NormalizePart)));
+    }
+
+    public static string GetParent(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return string.Empty;
 
         path = Normalize(path);
 
         var parts = Split(path);
-        if (parts.Length == 0) return null;
+        if (parts.Length == 0) return string.Empty;
 
-        return parts.Length > 1
-           ? Combine(parts.Take(parts.Length - 1))
-           : PathSeparatorString;
+        return parts.Length > 1 ? Combine(parts.Take(parts.Length - 1)) : PathSeparatorString;
     }
 
-    public static string Combine(params string[] parts)
-    {
-        return Combine((IEnumerable<string>)parts);
-    }
-
-    public static string Normalize(string? path, bool removeTrailingSlash = false)
+    public static string Normalize(string path, bool removeTrailingSlash = false)
     {
         if (IsRootPath(path)) return RootDirectoryPath;
 
@@ -52,7 +51,6 @@ internal class PathHelper
             {
                 r.Add(part);
             }
-
         }
         path = string.Join(PathSeparatorString, r);
 
@@ -67,14 +65,12 @@ internal class PathHelper
         return part.Trim(PathSeparator);
     }
 
-    public static string[]? Split(string? path)
+    public static string[] Split(string path)
     {
-        return string.IsNullOrEmpty(path)
-            ? null
-            : path.Split(new[] { PathSeparator }, StringSplitOptions.RemoveEmptyEntries).Select(NormalizePart).ToArray();
+        return path.Split(new[] { PathSeparator }, StringSplitOptions.RemoveEmptyEntries).Select(NormalizePart).ToArray();
     }
 
-    public static bool IsRootPath(string? path)
+    public static bool IsRootPath(string path)
     {
         return string.IsNullOrEmpty(path) || path == RootDirectoryPath;
     }
