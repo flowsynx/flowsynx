@@ -24,7 +24,7 @@ public class FileSystemFilterOptions
     public bool CaseSensitive { get; set; } = false;
     public bool Recurse { get; set; } = false;
     public int MaxResults { get; set; } = 10;
-
+    
     public FileSystemFilterOptions Clone()
     {
         return (FileSystemFilterOptions)MemberwiseClone();
