@@ -1,8 +1,7 @@
 ﻿namespace FlowSync.Core.Exceptions;
 
-public class RemotePathParserException : Exception
+public class RemotePathParserException : FlowSyncBaseException
 {
-    public RemotePathParserException() { }
     public RemotePathParserException(string message) : base(message) { }
     public RemotePathParserException(string message, Exception inner) : base(message, inner) { }
 }
