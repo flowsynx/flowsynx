@@ -1,4 +1,5 @@
-﻿using FlowSync.Core.Services;
+﻿using EnsureThat;
+using FlowSync.Core.Plugins;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSync.HealthCheck;
@@ -10,6 +11,8 @@ public class PluginsManagerHealthCheck : IHealthCheck
 
     public PluginsManagerHealthCheck(ILogger<PluginsManagerHealthCheck> logger, IPluginsManager pluginsManager)
     {
+        EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
         _logger = logger;
         _pluginsManager = pluginsManager;
     }

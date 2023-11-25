@@ -1,5 +1,5 @@
-﻿using FlowSync.Core.Serialization;
-using FlowSync.Core.Services;
+﻿using FlowSync.Core.Common.Services;
+using FlowSync.Core.Serialization;
 using FlowSync.Infrastructure.Serialization.Json;
 using FlowSync.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ISerializer, NewtonsoftSerializer>();
         services.AddTransient<IDeserializer, NewtonsoftDeserializer>();
         services.AddTransient<ISystemClock, SystemClock>();
-
+        services.AddTransient<IOperatingSystemInfo, OperatingSystemInfo>();
         return services;
     }
 }

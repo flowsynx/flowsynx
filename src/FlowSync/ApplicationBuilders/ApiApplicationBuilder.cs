@@ -1,30 +1,29 @@
 ﻿using FlowSync.Commands;
 using FlowSync.Core.Extensions;
-using FlowSync.Endpoints.List;
 using FlowSync.Extensions;
 using FlowSync.Infrastructure.Extensions;
 using FlowSync.Persistence.Json.Extensions;
-using FluentValidation;
-using IValidator = FlowSync.Core.Services.IValidator;
 
 namespace FlowSync.ApplicationBuilders;
 
 public class ApiApplicationBuilder : IApiApplicationBuilder
 {
-    public async Task RunAsync(CommandOptions commandOptions)
+    public async Task RunAsync(RootCommandOptions rootCommandOptions)
     {
         var builder = WebApplication.CreateBuilder();
 
-        builder.WebHost.ConfigHttpServer(commandOptions.Port);
+        builder.WebHost.ConfigHttpServer(rootCommandOptions.Port);
 
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddLoggingService(commandOptions.EnableLog, commandOptions.AppLogLevel);
+        builder.Services.AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.AppLogLevel);
         builder.Services.AddLocation();
+        builder.Services.AddVersion();
         builder.Services.AddFlowSyncApplication();
         builder.Services.AddFlowSyncInfrastructure();
-        builder.Services.AddFlowSyncPersistence(commandOptions.Config);
-        builder.Services.AddValidatorsFromAssemblyContaining<IValidator>();
-        builder.Services.AddHealthChecker();
+        builder.Services.AddFlowSyncPersistence(rootCommandOptions.Config);
+
+        if (rootCommandOptions.EnableHealthCheck)
+            builder.Services.AddHealthChecker();
 
         var app = builder.Build();
 
@@ -33,12 +32,20 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
             app.UseDeveloperExceptionPage();
         }
 
-        app.UseRouting();
-        app.UseHealthCheck();
+        app.UseCustomHeaders();
+
+        app.UseExceptionHandler(exceptionHandlerApp
+            => exceptionHandlerApp.Run(async context
+                => await Results.Problem().ExecuteAsync(context)));
 
         app.UseCustomException();
-        app.UseCustomHeaders();
-        app.MapList();
+
+        app.UseRouting();
+
+        if (rootCommandOptions.EnableHealthCheck)
+            app.UseHealthCheck();
+
+        app.MapEndpoints();
 
         await app.RunAsync();
     }

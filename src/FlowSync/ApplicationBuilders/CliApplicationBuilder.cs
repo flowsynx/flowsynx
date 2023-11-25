@@ -1,4 +1,5 @@
-﻿using FlowSync.Models;
+﻿using EnsureThat;
+using FlowSync.Models;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
@@ -12,6 +13,8 @@ public class CliApplicationBuilder : ICliApplicationBuilder
 
     public CliApplicationBuilder(ILogger<CliApplicationBuilder> logger, RootCommand rootCommand)
     {
+        EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(rootCommand, nameof(rootCommand));
         _logger = logger;
         _rootCommand = rootCommand;
     }
@@ -20,7 +23,17 @@ public class CliApplicationBuilder : ICliApplicationBuilder
     {
         try
         {
-            var commandLineBuilder = new CommandLineBuilder(_rootCommand).UseDefaults();
+            var commandLineBuilder = new CommandLineBuilder(_rootCommand)
+                .UseHelp()
+                .UseEnvironmentVariableDirective()
+                .UseParseDirective()
+                .UseSuggestDirective()
+                .RegisterWithDotnetSuggest()
+                .UseTypoCorrections()
+                .UseParseErrorReporting()
+                .UseExceptionHandler()
+                .CancelOnProcessTermination();
+
             return await commandLineBuilder.Build().InvokeAsync(args);
         }
         catch (Exception ex)
