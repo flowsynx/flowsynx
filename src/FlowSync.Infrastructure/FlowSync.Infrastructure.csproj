@@ -11,6 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\plugins\AzureBlob\FlowSync.Storage.AzureBlob\FlowSync.Storage.AzureBlob.csproj" />
+    <ProjectReference Include="..\..\plugins\Local\FlowSync.Storage.Local\FlowSync.Storage.Local.csproj" />
     <ProjectReference Include="..\FlowSync.Core\FlowSync.Core.csproj" />
   </ItemGroup>
 

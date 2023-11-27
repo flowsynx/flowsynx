@@ -1,24 +1,33 @@
-﻿using FlowSync.Abstractions;
-using FlowSync.Abstractions.Entities;
+﻿using FlowSync.Abstractions.Entities;
+using FlowSync.Abstractions.Models;
 using FlowSync.Storage.Local.Extensions;
-using System.IO;
+using FlowSync.Abstractions;
+using FlowSync.Abstractions.Filter;
+using Microsoft.Extensions.Logging;
+using EnsureThat;
 
 namespace FlowSync.Storage.Local;
 
-public class LocalFileSystem : Plugin
+public class LocalFileSystem : IFileSystemPlugin
 {
-    private readonly IDictionary<string, object>? _specifications;
+    private readonly ILogger<LocalFileSystem> _logger;
+    private readonly IFileSystemFilter _fileSystemFilter;
+    private IDictionary<string, object>? _specifications;
 
-    public LocalFileSystem(IDictionary<string, object>? specifications) : base(specifications)
+    public LocalFileSystem(ILogger<LocalFileSystem> logger, IFileSystemFilter fileSystemFilter)
     {
-        _specifications = specifications;
+        EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(fileSystemFilter, nameof(fileSystemFilter));
+        _logger = logger;
+        _fileSystemFilter = fileSystemFilter;
     }
 
-    public override Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
-    public override string Name => "Local";
-    public override string? Description => null;
-    
-    public override Task<Usage> About(CancellationToken cancellationToken = default)
+    public Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
+    public string Namespace => "FlowSync.FileSystem/Local";
+    public string? Description => null;
+    public void SetSpecifications(IDictionary<string, object>? specifications) => _specifications = specifications;
+
+    public Task<Usage> About(CancellationToken cancellationToken = default)
     {
         long totalSpace = 0, freeSpace = 0;
         try
@@ -31,8 +40,9 @@ public class LocalFileSystem : Plugin
                 freeSpace += d.TotalFreeSpace;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(ex.Message);
             totalSpace = 0;
             freeSpace = 0;
         }
@@ -40,17 +50,23 @@ public class LocalFileSystem : Plugin
         return Task.FromResult(new Usage { Total = totalSpace, Free = freeSpace});
     }
 
-    public override Task<IEnumerable<FileSystemEntity>> ListAsync(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<FileSystemEntity>> ListAsync(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default)
     {
         try
         {
             if (string.IsNullOrEmpty(path))
+            {
+                _logger.LogError("The specified path should not be empty!");
                 throw new ArgumentNullException(nameof(path), "The specified path should not be empty!");
+            }
 
             path = GetPhysicalPath(path);
 
             if (!Directory.Exists(path))
+            {
+                _logger.LogError($"The specified path '{path}' is not exist.");
                 throw new ArgumentException($"The specified path '{path}' is not exist.", nameof(path));
+            }
 
             var result = new List<FileSystemEntity>();
             var searchOption = fileSystemFilters.Recurse ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
@@ -61,19 +77,24 @@ public class LocalFileSystem : Plugin
 
             if (fileSystemFilters.Kind is FilterItemKind.Directory or FilterItemKind.FileAndDirectory)
                 result.AddRange(directoryInfo.EnumerateDirectories("*", searchOption).Select(GetVirtualDirectoryPath));
-
-            return Task.FromResult(result.AsEnumerable());
+            
+            var filteredResult = _fileSystemFilter.FilterEntitiesList(result, fileSystemFilters);
+            return Task.FromResult(filteredResult);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            throw new Exception(e.Message);
+            _logger.LogError(ex.Message);
+            throw new Exception(ex.Message);
         }
     }
 
-    public override Task WriteAsync(string path, FileStream dataStream, bool append = false, CancellationToken cancellationToken = default)
+    public Task WriteAsync(string path, FileStream dataStream, bool append = false, CancellationToken cancellationToken = default)
     {
         if (dataStream.Length == 0)
+        {
+            _logger.LogError($"The stream data should not be null.");
             throw new ArgumentException($"The stream data should not be null.", nameof(dataStream));
+        }
 
         path = GetPhysicalPath(path);
         using var fileStream = File.Create(path);
@@ -81,39 +102,58 @@ public class LocalFileSystem : Plugin
         return Task.CompletedTask;
     }
 
-    public override Task<FileStream> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public Task<FileStream> ReadAsync(string path, CancellationToken cancellationToken = default)
     {
         path = GetPhysicalPath(path);
 
-        if (!File.Exists(path))
-            throw new ArgumentException($"The specified path '{path}' is not a file.", nameof(path));
-        
-        return Task.FromResult(File.OpenRead(path));
+        if (File.Exists(path)) return Task.FromResult(File.OpenRead(path));
+
+        _logger.LogError($"The specified path '{path}' is not a file.");
+        throw new ArgumentException($"The specified path '{path}' is not a file.", nameof(path));
     }
 
-    public override Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default)
+    {
+        var files = await ListAsync(path, fileSystemFilters, cancellationToken);
+        var fileSystemEntities = files.ToList();
+        if (!fileSystemEntities.Any())
+            throw new Exception($"There are no files found to delete!");
+
+        foreach (var file in fileSystemEntities)
+        {
+            await DeleteFileAsync(file.FullPath, cancellationToken);
+        }
+    }
+
+    public Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
         path = GetPhysicalPath(path);
 
         if (!File.Exists(path))
+        {
+            _logger.LogError($"The specified path '{path}' is not a file.");
             throw new ArgumentException($"The specified path '{path}' is not a file.", nameof(path));
+        }
 
         File.Delete(path);
         return Task.CompletedTask;
     }
 
-    public override Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    public Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         path = GetPhysicalPath(path);
 
         if (Directory.Exists(path))
+        {
+            _logger.LogError("The specified path is already exist.");
             throw new ArgumentException("The specified path is already exist.", nameof(path));
+        }
 
         System.IO.Directory.CreateDirectory(path);
         return Task.CompletedTask;
     }
 
-    public override Task DeleteDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    public Task DeleteDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

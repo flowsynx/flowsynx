@@ -1,23 +1,21 @@
 ﻿using MediatR;
-using FlowSync.Abstractions;
 using Microsoft.Extensions.Logging;
 using FlowSync.Abstractions.Entities;
 using FlowSync.Core.FileSystem;
-using FlowSync.Core.FileSystem.Filter;
 using FlowSync.Abstractions.Helpers;
 using FlowSync.Core.Common.Models;
 using FlowSync.Core.Common.Utilities;
 using EnsureThat;
 using FlowSync.Abstractions.Models;
 
-namespace FlowSync.Core.Features.Size.Query;
+namespace FlowSync.Core.Features.Delete.Command;
 
-internal class SizeHandler : IRequestHandler<SizeRequest, Result<SizeResponse>>
+internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<DeleteResponse>>
 {
-    private readonly ILogger<SizeHandler> _logger;
+    private readonly ILogger<DeleteHandler> _logger;
     private readonly IFileSystemService _fileSystem;
 
-    public SizeHandler(ILogger<SizeHandler> logger, IFileSystemService fileSystem)
+    public DeleteHandler(ILogger<DeleteHandler> logger, IFileSystemService fileSystem)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(fileSystem, nameof(fileSystem));
@@ -25,7 +23,7 @@ internal class SizeHandler : IRequestHandler<SizeRequest, Result<SizeResponse>>
         _fileSystem = fileSystem;
     }
 
-    public async Task<Result<SizeResponse>> Handle(SizeRequest request, CancellationToken cancellationToken)
+    public async Task<Result<DeleteResponse>> Handle(DeleteRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -44,18 +42,12 @@ internal class SizeHandler : IRequestHandler<SizeRequest, Result<SizeResponse>>
                 MaxResults = request.MaxResults ?? 10
             };
 
-            var entities = await _fileSystem.List(request.Path, filters, cancellationToken);
-
-            var response = new SizeResponse()
-            {
-                Size = ByteSizeHelper.FormatByteSize(entities.Sum(x => x.Size), request.FormatSize),
-            };
-
-            return await Result<SizeResponse>.SuccessAsync(response);
+            await _fileSystem.Delete(request.Path, filters, cancellationToken);
+            return await Result<DeleteResponse>.SuccessAsync("The files deleted successfully.");
         }
         catch (Exception ex)
         {
-            return await Result<SizeResponse>.FailAsync(new List<string> { ex.Message });
+            return await Result<DeleteResponse>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

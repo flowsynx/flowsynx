@@ -19,6 +19,5 @@
   <ItemGroup>
     <ProjectReference Include="..\FlowSync.Core\FlowSync.Core.csproj" />
     <ProjectReference Include="..\FlowSync.Infrastructure\FlowSync.Infrastructure.csproj" />
-    <ProjectReference Include="..\FlowSync.Persistence\FlowSync.Persistence.Json.csproj" />
   </ItemGroup>
 </Project>

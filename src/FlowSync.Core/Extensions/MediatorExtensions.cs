@@ -7,6 +7,7 @@ using FlowSync.Core.Features.Config.Query.Details;
 using FlowSync.Core.Features.Plugins.Query;
 using FlowSync.Core.Features.Config.Query.List;
 using FlowSync.Core.Common.Models;
+using FlowSync.Core.Features.Delete.Command;
 using FlowSync.Core.Features.Read.Query;
 
 namespace FlowSync.Core.Extensions;
@@ -25,6 +26,11 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<SizeResponse>> Size(this IMediator mediator, SizeRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<DeleteResponse>> Delete(this IMediator mediator, DeleteRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

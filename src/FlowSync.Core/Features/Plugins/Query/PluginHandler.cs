@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using FlowSync.Core.Common.Models;
 using FlowSync.Core.Plugins;
 using EnsureThat;
-using FlowSync.Core.FileSystem.Filter;
 
 namespace FlowSync.Core.Features.Plugins.Query;
 
@@ -28,7 +27,9 @@ internal class PluginHandler : IRequestHandler<PluginRequest, Result<IEnumerable
 
             var response = result.Select(x => new PluginResponse
             {
-                Name = x.Name,
+                Id = x.Id,
+                Namespace = x.Namespace,
+                Description = x.Description
             });
 
             return await Result<IEnumerable<PluginResponse>>.SuccessAsync(response);

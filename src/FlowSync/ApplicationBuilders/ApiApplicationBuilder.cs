@@ -2,7 +2,6 @@
 using FlowSync.Core.Extensions;
 using FlowSync.Extensions;
 using FlowSync.Infrastructure.Extensions;
-using FlowSync.Persistence.Json.Extensions;
 
 namespace FlowSync.ApplicationBuilders;
 
@@ -20,8 +19,9 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
         builder.Services.AddVersion();
         builder.Services.AddFlowSyncApplication();
         builder.Services.AddFlowSyncInfrastructure();
-        builder.Services.AddFlowSyncPersistence(rootCommandOptions.Config);
-
+        builder.Services.AddFlowSyncPluginsManager();
+        builder.Services.AddFlowSyncConfigurationManager(rootCommandOptions.Config);
+        
         if (rootCommandOptions.EnableHealthCheck)
             builder.Services.AddHealthChecker();
 

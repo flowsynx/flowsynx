@@ -33,7 +33,7 @@ internal class RemotePathParser : IRemotePathParser
                 return new RemotePathResult
                 {
                     FileSystemName = "Local",
-                    FileSystemType = "LocalFileSystem",
+                    FileSystemType = "FlowSync.FileSystem/Local",
                     Specifications = null,
                     Path = path
                 };

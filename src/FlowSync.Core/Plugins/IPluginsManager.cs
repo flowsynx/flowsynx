@@ -1,8 +1,10 @@
-﻿namespace FlowSync.Core.Plugins;
+﻿using FlowSync.Abstractions;
+
+namespace FlowSync.Core.Plugins;
 
 public interface IPluginsManager
 {
-    PluginItem GetPlugin(string name);
-    IEnumerable<PluginItem> Plugins();
-    bool IsExist(string name);
+    IFileSystemPlugin GetPlugin(string type);
+    IEnumerable<IFileSystemPlugin> Plugins();
+    bool IsExist(string type);
 }

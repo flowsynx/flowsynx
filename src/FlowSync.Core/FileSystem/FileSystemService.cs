@@ -1,6 +1,6 @@
 ﻿using EnsureThat;
-using FlowSync.Abstractions;
 using FlowSync.Abstractions.Entities;
+using FlowSync.Abstractions.Models;
 using FlowSync.Core.Exceptions;
 using FlowSync.Core.FileSystem.Parers.RemotePath;
 using FlowSync.Core.Plugins;
@@ -30,8 +30,8 @@ internal class FileSystemService : IFileSystemService
         {
             var pathParser = _remotePathParser.Parse(path);
             var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
-            var loadedFileSystem = plugin.NewInstance(pathParser.Specifications);
-            return await loadedFileSystem.About(cancellationToken);
+            plugin.SetSpecifications(pathParser.Specifications);
+            return await plugin.About(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -46,8 +46,24 @@ internal class FileSystemService : IFileSystemService
         {
             var pathParser = _remotePathParser.Parse(path);
             var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
-            var loadedFileSystem = plugin.NewInstance(pathParser.Specifications);
-            return await loadedFileSystem.ListAsync(pathParser.Path, fileSystemFilters, cancellationToken);
+            plugin.SetSpecifications(pathParser.Specifications);
+            return await plugin.ListAsync(pathParser.Path, fileSystemFilters, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"FileSystem getting entities list. Message: {ex.Message}");
+            throw new FileSystemException(ex.Message);
+        }
+    }
+
+    public async Task Delete(string path, FileSystemFilterOptions fileSystemFilters, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var pathParser = _remotePathParser.Parse(path);
+            var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
+            plugin.SetSpecifications(pathParser.Specifications);
+            await plugin.DeleteAsync(pathParser.Path, fileSystemFilters, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -62,8 +78,8 @@ internal class FileSystemService : IFileSystemService
         {
             var pathParser = _remotePathParser.Parse(path);
             var plugin = _pluginsManager.GetPlugin(pathParser.FileSystemType);
-            var loadedFileSystem = plugin.NewInstance(pathParser.Specifications);
-            return await loadedFileSystem.ReadAsync(pathParser.Path, cancellationToken);
+            plugin.SetSpecifications(pathParser.Specifications);
+            return await plugin.ReadAsync(pathParser.Path, cancellationToken);
         }
         catch (Exception ex)
         {

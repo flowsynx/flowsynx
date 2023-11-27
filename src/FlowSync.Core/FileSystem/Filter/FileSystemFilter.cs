@@ -1,11 +1,14 @@
 ﻿using FlowSync.Abstractions.Entities;
-using FlowSync.Abstractions;
 using FlowSync.Core.Extensions;
 using System.Text.RegularExpressions;
+using FlowSync.Abstractions.Filter;
 using Microsoft.Extensions.Logging;
-using FlowSync.Core.FileSystem.Parers.Date;
-using FlowSync.Core.FileSystem.Parers.Size;
-using FlowSync.Core.FileSystem.Parers.Sort;
+using FlowSync.Abstractions.Models;
+using FlowSync.Abstractions.Parers.Date;
+using FlowSync.Abstractions.Parers.Size;
+using FlowSync.Abstractions.Parers.Sort;
+using EnsureThat;
+using FlowSync.Abstractions;
 
 namespace FlowSync.Core.FileSystem.Filter;
 
@@ -15,17 +18,20 @@ internal class FileSystemFilter: IFileSystemFilter
     private readonly IDateParser _dateParser;
     private readonly ISizeParser _sizeParser;
     private readonly ISortParser _sortParser;
-    private readonly string[] _properties = new string[] { "Id", "Kind", "Name", "Size", "MimeType", "ModifiedTime" };
 
     public FileSystemFilter(ILogger<FileSystemFilter> logger, IDateParser dateParser, ISizeParser sizeParser, ISortParser sortParser)
     {
+        EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(dateParser, nameof(dateParser));
+        EnsureArg.IsNotNull(sizeParser, nameof(sizeParser));
+        EnsureArg.IsNotNull(sortParser, nameof(sortParser));
         _logger = logger;
         _dateParser = dateParser;
         _sizeParser = sizeParser;
         _sortParser = sortParser;
     }
 
-    public IEnumerable<FileSystemEntity> FilterList(IEnumerable<FileSystemEntity> entities, FileSystemFilterOptions fileSystemFilterOptions)
+    public IEnumerable<FileSystemEntity> FilterEntitiesList(IEnumerable<FileSystemEntity> entities, FileSystemFilterOptions fileSystemFilterOptions)
     {
         var predicate = PredicateBuilder.True<FileSystemEntity>();
 
@@ -64,7 +70,7 @@ internal class FileSystemFilter: IFileSystemFilter
 
         if (!string.IsNullOrEmpty(fileSystemFilterOptions.Sorting))
         {
-            var parsedSort = _sortParser.Parse(fileSystemFilterOptions.Sorting, _properties);
+            var parsedSort = _sortParser.Parse(fileSystemFilterOptions.Sorting, ObjectPropertiesList<FileSystemEntity>());
             result = result.Sorting(parsedSort);
         }
 
@@ -72,5 +78,22 @@ internal class FileSystemFilter: IFileSystemFilter
             result = result.Take(fileSystemFilterOptions.MaxResults);
 
         return result;
+    }
+
+    protected IEnumerable<string> ObjectPropertiesList<T>()
+    {
+        try
+        {
+            var properties = typeof(T).GetProperties().Where(prop => Attribute.IsDefined(prop, typeof(FilterMemberAttribute))).ToList();
+            if (!properties.Any())
+                properties = typeof(T).GetProperties().ToList();
+
+            return properties.Select(x => x.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return new List<string>();
+        }
     }
 }

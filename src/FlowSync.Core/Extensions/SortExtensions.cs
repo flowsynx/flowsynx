@@ -1,5 +1,6 @@
 ﻿using FlowSync.Core.FileSystem.Parers.Sort;
 using System.Linq.Expressions;
+using FlowSync.Abstractions.Parers.Sort;
 
 namespace FlowSync.Core.Extensions;
 

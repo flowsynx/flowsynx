@@ -8,6 +8,7 @@ using FlowSync.Abstractions.Helpers;
 using FlowSync.Core.Common.Models;
 using FlowSync.Core.Common.Utilities;
 using EnsureThat;
+using FlowSync.Abstractions.Models;
 using FlowSync.Core.Configuration;
 
 namespace FlowSync.Core.Features.List.Query;
@@ -16,16 +17,13 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
 {
     private readonly ILogger<ListHandler> _logger;
     private readonly IFileSystemService _fileSystem;
-    private readonly IFileSystemFilter _fileSystemFilter;
 
-    public ListHandler(ILogger<ListHandler> logger, IFileSystemService fileSystem, IFileSystemFilter fileSystemFilter)
+    public ListHandler(ILogger<ListHandler> logger, IFileSystemService fileSystem)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(fileSystem, nameof(fileSystem));
-        EnsureArg.IsNotNull(fileSystemFilter, nameof(fileSystemFilter));
         _logger = logger;
         _fileSystem = fileSystem;
-        _fileSystemFilter = fileSystemFilter;
     }
 
     public async Task<Result<IEnumerable<ListResponse>>> Handle(ListRequest request, CancellationToken cancellationToken)
@@ -48,9 +46,7 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
             };
 
             var entities = await _fileSystem.List(request.Path, filters, cancellationToken);
-            var filteredData = _fileSystemFilter.FilterList(entities, filters);
-
-            var response = filteredData.Select(x => new ListResponse()
+            var response = entities.Select(x => new ListResponse()
             {
                 Id = x.Id,
                 Kind = x.Kind.ToString().ToLower(),

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using FlowSync.Core.Exceptions;
 using EnsureThat;
+using FlowSync.Abstractions.Parers.Sort;
 
 namespace FlowSync.Core.FileSystem.Parers.Sort;
 
@@ -14,7 +15,7 @@ internal class SortParser : ISortParser
         _logger = logger;
     }
 
-    public List<SortInfo> Parse(string sortStatement, string[] properties)
+    public List<SortInfo> Parse(string sortStatement, IEnumerable<string> properties)
     {
         if (string.IsNullOrEmpty(sortStatement))
             sortStatement = "name asc";
@@ -23,13 +24,13 @@ internal class SortParser : ISortParser
     }
 
     #region internal Methods
-    protected List<SortInfo> ParseSortWithSuffix(string sortStatement, string[] properties)
+    protected List<SortInfo> ParseSortWithSuffix(string sortStatement, IEnumerable<string> properties)
     {
         var items = sortStatement.Split(',').Select(p => p.Trim());
         return items.Select(x => ParseSortTerms(x, properties)).ToList();
     }
 
-    private SortInfo ParseSortTerms(string item, string[] properties)
+    private SortInfo ParseSortTerms(string item, IEnumerable<string> properties)
     {
         var pair = item.Split(' ').Select(p => p.Trim()).ToList();
         if (pair.Count > 2)
@@ -52,18 +53,13 @@ internal class SortParser : ISortParser
         return new SortInfo { Name = name, Direction = direction };
     }
 
-    private string NormalizePropertyName(string propertyName, string[] properties)
+    private string NormalizePropertyName(string propertyName, IEnumerable<string> properties)
     {
-        if (!properties.Contains(propertyName, StringComparer.OrdinalIgnoreCase))
-        {
-            _logger.LogError($"Invalid Property. '{properties}' is not valid.");
-            throw new SortParserException(string.Format(FlowSyncCoreResource.FileSystemSortParserInvalidPropertyName, propertyName));
-        }
+        if (properties.Contains(propertyName, StringComparer.OrdinalIgnoreCase)) return propertyName;
 
-        if (string.Equals(propertyName, "age", StringComparison.OrdinalIgnoreCase))
-            propertyName = "CreatedTime";
+        _logger.LogError($"Invalid Property. '{propertyName}' is not valid.");
+        throw new SortParserException(string.Format(FlowSyncCoreResource.FileSystemSortParserInvalidPropertyName, propertyName));
 
-        return propertyName;
     }
 
     private SortDirection NormalizeSortDirection(string sortDirection, string property)
