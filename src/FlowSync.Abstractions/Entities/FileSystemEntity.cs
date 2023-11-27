@@ -4,16 +4,32 @@ namespace FlowSync.Abstractions.Entities;
 
 public sealed class FileSystemEntity : IEquatable<FileSystemEntity>, IComparable<FileSystemEntity>, ICloneable
 {
+    [FilterMember]
     public string Id => GetEntityId();
+
+    [FilterMember]
     public EntityItemKind Kind { get; }
+
     private bool IsDirectory => Kind == EntityItemKind.Directory;
+
     private bool IsFile => Kind == EntityItemKind.File;
+
     public string DirectoryPath { get; private set; } = null!;
+
+    [FilterMember]
     public string Name { get; private set; } = null!;
+
+    [FilterMember]
     public long? Size { get; set; }
+
+    [FilterMember]
     public string? MimeType => GetMimeType();
+
     public string? HashCode { get; set; }
+
     public DateTimeOffset? CreatedTime { get; set; }
+
+    [FilterMember]
     public DateTimeOffset? ModifiedTime { get; set; }
 
     public string FullPath => PathHelper.Combine(DirectoryPath, Name);

@@ -54,9 +54,10 @@ internal static class PathHelper
         }
         path = string.Join(PathSeparatorString, r);
 
-        return removeTrailingSlash
-           ? path
-           : PathSeparatorString + path;
+        return path;
+        //return removeTrailingSlash
+        //   ? path
+        //   : PathSeparatorString + path;
     }
 
     public static string NormalizePart(string part)

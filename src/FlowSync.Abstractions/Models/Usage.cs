@@ -1,4 +1,4 @@
-﻿namespace FlowSync.Abstractions;
+﻿namespace FlowSync.Abstractions.Models;
 
 public class Usage
 {
