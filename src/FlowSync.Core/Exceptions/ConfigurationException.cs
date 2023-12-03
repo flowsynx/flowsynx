@@ -1,4 +1,6 @@
-﻿namespace FlowSync.Core.Exceptions;
+﻿using FlowSync.Abstractions.Exceptions;
+
+namespace FlowSync.Core.Exceptions;
 
 public class ConfigurationException : FlowSyncBaseException
 {

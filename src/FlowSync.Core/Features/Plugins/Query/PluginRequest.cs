@@ -5,5 +5,5 @@ namespace FlowSync.Core.Features.Plugins.Query;
 
 public class PluginRequest : IRequest<Result<IEnumerable<PluginResponse>>>
 {
-
+    public string? Namespace { get; set; }
 }

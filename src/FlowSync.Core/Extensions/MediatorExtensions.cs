@@ -1,14 +1,14 @@
 ﻿using MediatR;
-using FlowSync.Core.Features.List.Query;
-using FlowSync.Core.Features.Size.Query;
-using FlowSync.Core.Features.Version.Query;
-using FlowSync.Core.Features.About.Query;
 using FlowSync.Core.Features.Config.Query.Details;
 using FlowSync.Core.Features.Plugins.Query;
 using FlowSync.Core.Features.Config.Query.List;
 using FlowSync.Core.Common.Models;
-using FlowSync.Core.Features.Delete.Command;
-using FlowSync.Core.Features.Read.Query;
+using FlowSync.Core.Features.Storage.Version.Query;
+using FlowSync.Core.Features.Storage.Delete.Command;
+using FlowSync.Core.Features.Storage.About.Query;
+using FlowSync.Core.Features.Storage.List.Query;
+using FlowSync.Core.Features.Storage.Size.Query;
+using FlowSync.Core.Features.Storage.Read.Query;
 
 namespace FlowSync.Core.Extensions;
 

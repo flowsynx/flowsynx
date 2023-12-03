@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using FlowSync.Core.Common.Models;
 using FlowSync.Core.Plugins;
 using EnsureThat;
+using FlowSync.Abstractions;
+using FlowSync.Core.Common;
 
 namespace FlowSync.Core.Features.Plugins.Query;
 
@@ -23,12 +25,19 @@ internal class PluginHandler : IRequestHandler<PluginRequest, Result<IEnumerable
     {
         try
         {
-            var result = _pluginsManager.Plugins();
+            IEnumerable<IPlugin> plugins;
+            if (string.IsNullOrEmpty(request.Namespace))
+                plugins = _pluginsManager.Plugins();
+            else
+            {
+                var @namespace = EnumUtils.GetEnumValueOrDefault<PluginNamespace>(request.Namespace)!.Value;
+                plugins = _pluginsManager.Plugins(@namespace);
+            }
 
-            var response = result.Select(x => new PluginResponse
+            var response = plugins.Select(x => new PluginResponse
             {
                 Id = x.Id,
-                Namespace = x.Namespace,
+                Type = x.Type,
                 Description = x.Description
             });
 

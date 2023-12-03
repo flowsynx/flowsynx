@@ -1,10 +1,12 @@
 ﻿using FlowSync.Abstractions;
+using FlowSync.Abstractions.Storage;
 
 namespace FlowSync.Core.Plugins;
 
 public interface IPluginsManager
 {
-    IFileSystemPlugin GetPlugin(string type);
-    IEnumerable<IFileSystemPlugin> Plugins();
+    IEnumerable<IPlugin> Plugins();
+    IEnumerable<IPlugin> Plugins(PluginNamespace @namespace);
+    IPlugin GetPlugin(string type);
     bool IsExist(string type);
 }

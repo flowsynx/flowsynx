@@ -1,6 +1,5 @@
-﻿using FlowSync.Core.FileSystem.Parers.Sort;
+﻿using FlowSync.Core.Parers.Sort;
 using System.Linq.Expressions;
-using FlowSync.Abstractions.Parers.Sort;
 
 namespace FlowSync.Core.Extensions;
 
@@ -34,6 +33,5 @@ internal static class SortExtensions
             collection = collection.Provider.CreateQuery<TEntity>(orderByExpression);
         }
         return collection;
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using FluentValidation.Results;
+﻿using FlowSync.Abstractions.Exceptions;
+using FluentValidation.Results;
 
 namespace FlowSync.Core.Exceptions;
 
@@ -8,6 +9,7 @@ public class InputValidationException : FlowSyncBaseException
     {
         Errors = new List<string>();
     }
+
     public List<string> Errors { get; }
     public InputValidationException(IEnumerable<ValidationFailure> failures)
         : this()
