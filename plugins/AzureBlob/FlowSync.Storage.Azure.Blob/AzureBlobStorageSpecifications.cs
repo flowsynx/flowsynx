@@ -1,6 +1,6 @@
-﻿namespace FlowSync.Storage.AzureBlob;
+﻿namespace FlowSync.Storage.Azure.Blob;
 
-internal class AzureBlobSpecifications: IConvertible
+internal class AzureBlobStorageSpecifications: IConvertible
 {
     public string? AccountName { get; set; }
     public string? AccountKey { get; set; }
