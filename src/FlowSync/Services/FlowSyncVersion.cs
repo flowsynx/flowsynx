@@ -23,7 +23,7 @@ public class FlowSyncVersion : IVersion
     private string GetApplicationVersion()
     {
 
-        var assembly = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        var assembly = Assembly.GetExecutingAssembly().GetName().Version;
         if (assembly == null)
             throw new ApiBaseException($"Error in reading executable application.");
 

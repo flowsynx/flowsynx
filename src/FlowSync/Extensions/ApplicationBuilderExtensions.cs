@@ -1,4 +1,5 @@
-﻿using FlowSync.Core.Serialization;
+﻿using FlowSync.Core.Common.Services;
+using FlowSync.Core.Serialization;
 using FlowSync.HealthCheck;
 using FlowSync.Middleware;
 using FlowSync.Models;
@@ -15,13 +16,18 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder UseCustomHeaders(this IApplicationBuilder builder)
+    public static IApplicationBuilder UseCustomHeaders(this IApplicationBuilder app)
     {
-        var headers = new CustomHeadersToAddAndRemove();
-        headers.HeadersToAdd.Add("FlowSync-Version", "v1.1");
+        var serviceProvider = app.ApplicationServices;
+        var versionService = serviceProvider.GetService<IVersion>();
+        if (versionService == null)
+            throw new ArgumentException("Version service could not be initialized.");
 
-        builder.UseMiddleware<CustomHeadersMiddleware>(headers);
-        return builder;
+        var headers = new CustomHeadersToAddAndRemove();
+        headers.HeadersToAdd.Add("FlowSync-Version", versionService.Version);
+
+        app.UseMiddleware<CustomHeadersMiddleware>(headers);
+        return app;
     }
 
     public static IApplicationBuilder UseHealthCheck(this IApplicationBuilder app)

@@ -1,5 +1,5 @@
 ﻿using FlowSync.Core.Extensions;
-using FlowSync.Core.Features.Version.Query;
+using FlowSync.Core.Features.Storage.Version.Query;
 using FlowSync.Extensions;
 using FluentValidation;
 using MediatR;

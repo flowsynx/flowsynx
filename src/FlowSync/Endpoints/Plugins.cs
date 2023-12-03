@@ -11,7 +11,7 @@ public class Plugins : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         app.MapGroup(this)
-            .MapGet(GetPlugins);
+            .MapGet(GetPlugins, "/{Namespace?}");
     }
 
     public async Task<IResult> GetPlugins([AsParameters] PluginRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
