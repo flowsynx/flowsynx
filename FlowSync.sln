@@ -15,11 +15,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AzureBlob", "AzureBlob", "{4E180CEE-C85F-49B4-B948-614028A307ED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSync.Storage.AzureBlob", "plugins\AzureBlob\FlowSync.Storage.AzureBlob\FlowSync.Storage.AzureBlob.csproj", "{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSync.Storage.Azure.Blob", "plugins\AzureBlob\FlowSync.Storage.Azure.Blob\FlowSync.Storage.Azure.Blob.csproj", "{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Local", "Local", "{CFB8E849-EC5A-419F-B07C-881B816B1CA9}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LocalFileSystem", "LocalFileSystem", "{CFB8E849-EC5A-419F-B07C-881B816B1CA9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSync.Storage.Local", "plugins\Local\FlowSync.Storage.Local\FlowSync.Storage.Local.csproj", "{936E400D-B33A-4274-8AE6-75185CB4938F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSync.Storage.LocalFileSystem", "plugins\LocalFileSystem\FlowSync.Storage.LocalFileSystem\FlowSync.Storage.LocalFileSystem.csproj", "{936E400D-B33A-4274-8AE6-75185CB4938F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSync.Abstractions", "src\FlowSync.Abstractions\FlowSync.Abstractions.csproj", "{D742B6C3-A86E-415A-9A68-4380E4161E63}"
 EndProject
