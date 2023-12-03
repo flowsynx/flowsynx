@@ -1,4 +1,4 @@
-﻿namespace FlowSync.Abstractions.Extensions;
+﻿namespace FlowSync.Abstractions.Common.Extensions;
 
 internal static class CollectionExtensions
 {
@@ -17,5 +17,4 @@ internal static class CollectionExtensions
             }
         }
     }
-
 }

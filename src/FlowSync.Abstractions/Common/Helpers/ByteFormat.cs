@@ -1,13 +1,13 @@
-﻿namespace FlowSync.Abstractions.Helpers;
+﻿namespace FlowSync.Abstractions.Common.Helpers;
 
-public class ByteSizeHelper
+public static class ByteFormat
 {
-    public static string FormatByteSize(long? size, bool? applyFormat = true)
+    public static string ToString(long? size, bool? applyFormat = true)
     {
-        return size is null ? $"{0:0.##}" : FormatByteSize(size.Value, applyFormat);
+        return size is null ? $"{0:0.##}" : ToString(size.Value, applyFormat);
     }
 
-    public static string FormatByteSize(long size, bool? applyFormat = true)
+    public static string ToString(long size, bool? applyFormat = true)
     {
         if (applyFormat is null or false)
             return $"{size:0.##}";

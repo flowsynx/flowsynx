@@ -1,7 +1,8 @@
-﻿namespace FlowSync.Abstractions.Helpers;
+﻿namespace FlowSync.Abstractions.Common.Helpers;
 
-public static class MimeTypeHelper
+public static class MimeTypeMap
 {
+    private const string Dot = ".";
     private static readonly IDictionary<string, string> Mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) {
 
         #region Big freaking list of mime types
@@ -574,8 +575,8 @@ public static class MimeTypeHelper
         if (extension == null)
             return "N/A";
 
-        if (!extension.StartsWith("."))
-            extension = "." + extension;
+        if (!extension.StartsWith(Dot))
+            extension = Dot + extension;
 
         try
         {
@@ -584,6 +585,24 @@ public static class MimeTypeHelper
         catch (Exception)
         {
             return "N/A";
+        }
+    }
+
+    public static string GetExtension(string? mimeType)
+    {
+        if (mimeType == null)
+            throw new ArgumentNullException(nameof(mimeType));
+
+        if (mimeType.StartsWith(Dot))
+            throw new ArgumentException("Requested mime type is not valid: " + mimeType);
+
+        try
+        {
+            return Mappings.TryGetValue(mimeType, out var extension) ? extension : string.Empty;
+        }
+        catch (Exception)
+        {
+            return string.Empty;
         }
     }
 }

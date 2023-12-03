@@ -1,8 +1,8 @@
-﻿namespace FlowSync.Abstractions.Extensions;
+﻿namespace FlowSync.Abstractions.Common.Extensions;
 
 public static class ObjectExtensions
 {
-    public static T CastToObject<T>(this IDictionary<string, object>? dict) where T : new()
+    public static T CastToObject<T>(this Specifications? dict) where T : new()
     {
         var t = new T();
 

@@ -1,8 +1,8 @@
 ﻿using System.Runtime.Serialization;
 
-namespace FlowSync.Abstractions.Entities;
+namespace FlowSync.Abstractions.Storage;
 
-public enum FilterItemKind
+public enum StorageFilterItemKind
 {
     File = 0,
     Directory,

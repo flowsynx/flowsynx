@@ -1,6 +1,6 @@
-﻿namespace FlowSync.Abstractions.Models;
+﻿namespace FlowSync.Abstractions.Storage;
 
-public class Usage
+public class StorageUsage
 {
     public long Total { get; set; }
     public long Free { get; set; }

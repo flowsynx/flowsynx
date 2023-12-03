@@ -1,4 +1,4 @@
-﻿namespace FlowSync.Abstractions.Helpers;
+﻿namespace FlowSync.Abstractions.Common.Helpers;
 
 public static class HashHelper
 {
