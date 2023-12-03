@@ -3,6 +3,7 @@ using FlowSync.Core.Plugins;
 using EnsureThat;
 using FlowSync.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
+using FlowSync.Infrastructure.Exceptions;
 
 namespace FlowSync.Infrastructure.Services;
 
@@ -19,26 +20,27 @@ public class PluginsManager : IPluginsManager
         _serviceProvider = serviceProvider;
     }
 
-    public IFileSystemPlugin GetPlugin(string type)
+    public IPlugin GetPlugin(string type)
     {
-        var result = Plugins().FirstOrDefault(x => x.Namespace.Equals(type, StringComparison.OrdinalIgnoreCase));
+        var result = Plugins().FirstOrDefault(x => x.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
 
         if (result != null)
-            return (IFileSystemPlugin)ActivatorUtilities.CreateInstance(_serviceProvider, result.GetType());
+            return (IPlugin)ActivatorUtilities.CreateInstance(_serviceProvider, result.GetType());
         
         _logger.LogError($"Plugin {type} could not found!");
-        throw new ArgumentException("Plugin could not found!");
+        throw new PluginException("Plugin could not found!");
     }
     
     public bool IsExist(string type)
     {
-        var result = Plugins().FirstOrDefault(x => x.Namespace.Equals(type, StringComparison.OrdinalIgnoreCase));
+        var result = Plugins().FirstOrDefault(x => x.Type.Equals(type, StringComparison.OrdinalIgnoreCase));
         if (result != null) return true;
 
         _logger.LogError($"The specified plugin '{type}' not found!");
         return false;
-
     }
 
-    public IEnumerable<IFileSystemPlugin> Plugins() => _serviceProvider.GetServices<IFileSystemPlugin>();
+    public IEnumerable<IPlugin> Plugins() => _serviceProvider.GetServices<IPlugin>();
+
+    public IEnumerable<IPlugin> Plugins(PluginNamespace @namespace) => Plugins().Where(x => x.Namespace == @namespace);
 }

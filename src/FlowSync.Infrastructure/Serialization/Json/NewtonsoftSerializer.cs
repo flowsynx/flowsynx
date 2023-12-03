@@ -1,6 +1,6 @@
-﻿using System.Runtime.Serialization;
-using EnsureThat;
+﻿using EnsureThat;
 using FlowSync.Core.Serialization;
+using FlowSync.Infrastructure.Exceptions;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -25,12 +25,12 @@ public class NewtonsoftSerializer : ISerializer
             if (input is not null) return JsonConvert.SerializeObject(input);
 
             _logger.LogWarning($"Input value can't be empty or null.");
-            throw new ArgumentNullException(nameof(input), "Input value can't be empty or null.");
+            throw new SerializerException("Input value can't be empty or null.");
         }
         catch (Exception ex)
         {
             _logger.LogError($"Error in serializer data. Message: {ex.Message}");
-            throw new SerializationException(ex.Message);
+            throw new SerializerException(ex.Message);
         }
     }
 }
