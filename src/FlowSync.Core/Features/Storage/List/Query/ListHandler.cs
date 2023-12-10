@@ -29,23 +29,27 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
     {
         try
         {
-            var storagePath = _storageNormsParser.Parse(request.Path);
-            var filters = new StorageSearchOptions()
+            var storageNorms = _storageNormsParser.Parse(request.Path);
+            var searchOptions = new StorageSearchOptions()
             {
-                Kind = string.IsNullOrEmpty(request.Kind) ? StorageFilterItemKind.FileAndDirectory : EnumUtils.GetEnumValueOrDefault<StorageFilterItemKind>(request.Kind)!.Value,
                 Include = request.Include,
                 Exclude = request.Exclude,
                 MinimumAge = request.MinAge,
                 MaximumAge = request.MaxAge,
                 MinimumSize = request.MinSize,
                 MaximumSize = request.MaxSize,
-                Sorting = request.Sorting,
                 CaseSensitive = request.CaseSensitive ?? false,
                 Recurse = request.Recurse ?? false,
             };
 
-            var maxResult = request.MaxResults;
-            var entities = await _storageService.List(storagePath, filters, maxResult, cancellationToken);
+            var listOptions = new StorageListOptions()
+            {
+                Kind = string.IsNullOrEmpty(request.Kind) ? StorageFilterItemKind.FileAndDirectory : EnumUtils.GetEnumValueOrDefault<StorageFilterItemKind>(request.Kind)!.Value,
+                Sorting = request.Sorting,
+                MaxResult = request.MaxResults
+            };
+
+            var entities = await _storageService.List(storageNorms, searchOptions, listOptions, cancellationToken);
             var response = entities.Select(x => new ListResponse()
             {
                 Id = x.Id,

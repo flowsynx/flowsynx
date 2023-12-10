@@ -2,11 +2,11 @@
 using FlowSync.Core.Common;
 using FluentValidation;
 
-namespace FlowSync.Core.Features.Storage.Delete.Command;
+namespace FlowSync.Core.Features.Storage.PurgeDirectory.Command;
 
-public class DeleteValidator : AbstractValidator<DeleteRequest>
+public class PurgeDirectoryValidator : AbstractValidator<PurgeDirectoryRequest>
 {
-    public DeleteValidator()
+    public PurgeDirectoryValidator()
     {
         RuleFor(request => request.Path)
             .NotNull()

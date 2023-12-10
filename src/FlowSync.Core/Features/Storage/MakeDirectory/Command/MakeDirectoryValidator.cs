@@ -2,11 +2,11 @@
 using FlowSync.Core.Common;
 using FluentValidation;
 
-namespace FlowSync.Core.Features.Storage.Delete.Command;
+namespace FlowSync.Core.Features.Storage.MakeDirectory.Command;
 
-public class DeleteValidator : AbstractValidator<DeleteRequest>
+public class MakeDirectoryValidator : AbstractValidator<MakeDirectoryRequest>
 {
-    public DeleteValidator()
+    public MakeDirectoryValidator()
     {
         RuleFor(request => request.Path)
             .NotNull()

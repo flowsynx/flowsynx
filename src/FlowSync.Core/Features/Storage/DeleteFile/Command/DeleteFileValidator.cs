@@ -2,11 +2,11 @@
 using FlowSync.Core.Common;
 using FluentValidation;
 
-namespace FlowSync.Core.Features.Storage.Delete.Command;
+namespace FlowSync.Core.Features.Storage.DeleteFile.Command;
 
-public class DeleteValidator : AbstractValidator<DeleteRequest>
+public class DeleteFileValidator : AbstractValidator<DeleteFileRequest>
 {
-    public DeleteValidator()
+    public DeleteFileValidator()
     {
         RuleFor(request => request.Path)
             .NotNull()

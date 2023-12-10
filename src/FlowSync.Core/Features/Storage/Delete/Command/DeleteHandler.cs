@@ -28,23 +28,21 @@ internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<DeleteRespo
     {
         try
         {
-            var storagePath = _storageNormsParser.Parse(request.Path);
+            var storageNorms = _storageNormsParser.Parse(request.Path);
             var filters = new StorageSearchOptions()
             {
-                Kind = string.IsNullOrEmpty(request.Kind) ? StorageFilterItemKind.FileAndDirectory : EnumUtils.GetEnumValueOrDefault<StorageFilterItemKind>(request.Kind)!.Value,
                 Include = request.Include,
                 Exclude = request.Exclude,
                 MinimumAge = request.MinAge,
                 MaximumAge = request.MaxAge,
                 MinimumSize = request.MinSize,
                 MaximumSize = request.MaxSize,
-                Sorting = request.Sorting,
                 CaseSensitive = request.CaseSensitive ?? false,
                 Recurse = request.Recurse ?? false
             };
 
-            await _storageService.Delete(storagePath, filters, cancellationToken);
-            return await Result<DeleteResponse>.SuccessAsync("The files deleted successfully.");
+            await _storageService.Delete(storageNorms, filters, cancellationToken);
+            return await Result<DeleteResponse>.SuccessAsync("The file(s) were deleted successfully.");
         }
         catch (Exception ex)
         {

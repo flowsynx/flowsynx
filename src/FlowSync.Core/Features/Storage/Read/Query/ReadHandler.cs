@@ -26,8 +26,8 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResponse>>
     {
         try
         {
-            var storagePath = _storageNormsParser.Parse(request.Path);
-            var entities = await _storageService.ReadAsync(storagePath, cancellationToken);
+            var storageNorms = _storageNormsParser.Parse(request.Path);
+            var entities = await _storageService.ReadAsync(storageNorms, cancellationToken);
 
             var response = new ReadResponse()
             {

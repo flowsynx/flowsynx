@@ -15,8 +15,7 @@ public class SizeRequest : IRequest<Result<SizeResponse>>
     public string? MinSize { get; set; }
     public string? MaxSize { get; set; }
     public bool? FormatSize { get; set; } = true;
-    public string? Sorting { get; set; }
     public bool? CaseSensitive { get; set; } = false;
     public bool? Recurse { get; set; } = false;
-    public int? MaxResults { get; set; } = 10;
+    public int? MaxResults { get; set; }
 }

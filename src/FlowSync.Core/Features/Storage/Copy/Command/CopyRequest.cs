@@ -1,11 +1,13 @@
 ﻿using MediatR;
 using FlowSync.Core.Common.Models;
+using FlowSync.Abstractions.Storage;
 
-namespace FlowSync.Core.Features.Storage.Delete.Command;
+namespace FlowSync.Core.Features.Storage.Copy.Command;
 
-public class DeleteRequest : IRequest<Result<DeleteResponse>>
+public class CopyRequest : IRequest<Result<CopyResponse>>
 {
-    public required string Path { get; set; }
+    public required string SourcePath { get; set; }
+    public required string DestinationPath { get; set; }
     public string? Include { get; set; }
     public string? Exclude { get; set; }
     public string? MinAge { get; set; }
@@ -14,4 +16,6 @@ public class DeleteRequest : IRequest<Result<DeleteResponse>>
     public string? MaxSize { get; set; }
     public bool? CaseSensitive { get; set; } = false;
     public bool? Recurse { get; set; } = false;
+    public bool? ClearDestinationPath { get; set; } = false;
+    public bool? OverWriteData { get; set; } = false;
 }

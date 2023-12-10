@@ -27,8 +27,8 @@ internal class AboutHandler : IRequestHandler<AboutRequest, Result<AboutResponse
     {
         try
         {
-            var storagePath = _storageNormsParser.Parse(request.Path);
-            var entities = await _storageService.About(storagePath, cancellationToken);
+            var storageNorms = _storageNormsParser.Parse(request.Path);
+            var entities = await _storageService.About(storageNorms, cancellationToken);
             var response = new AboutResponse()
             {
                 Total = ByteFormat.ToString(entities.Total, request.FormatSize),
