@@ -4,22 +4,22 @@ namespace FlowSync.Abstractions.Storage;
 
 public class StorageStream: Stream
 {
-    private readonly Stream _origin;
+    private readonly Stream _stream;
     private bool _noRead = true;
 
     /// <summary>
     /// StorageStream
     /// </summary>
-    public StorageStream(Stream origin)
+    public StorageStream(Stream stream)
     {
-        EnsureArg.IsNotNull(origin, nameof(origin));
-        _origin = origin;
+        EnsureArg.IsNotNull(stream, nameof(stream));
+        _stream = stream;
     }
 
     /// <summary>
     /// No change
     /// </summary>
-    public override bool CanRead => _origin.CanRead;
+    public override bool CanRead => _stream.CanRead;
 
     /// <summary>
     /// Always true
@@ -34,17 +34,17 @@ public class StorageStream: Stream
     /// <summary>
     /// No change
     /// </summary>
-    public override long Length => _origin.Length;
+    public override long Length => _stream.Length;
 
     /// <summary>
     /// No change
     /// </summary>
-    public override long Position { get => _origin.Position; set => _origin.Position = value; }
+    public override long Position { get => _stream.Position; set => _stream.Position = value; }
 
     /// <summary>
     /// No change
     /// </summary>
-    public override void Flush() => _origin.Flush();
+    public override void Flush() => _stream.Flush();
 
     /// <summary>
     /// see <see cref="ReadAsync(byte[], int, int, CancellationToken)"/>
@@ -58,7 +58,7 @@ public class StorageStream: Stream
     {
         _noRead = false;
 
-        return _origin.ReadAsync(buffer, offset, count, cancellationToken);
+        return _stream.ReadAsync(buffer, offset, count, cancellationToken);
     }
 
     /// <summary>
@@ -88,6 +88,6 @@ public class StorageStream: Stream
     /// <param name="disposing"></param>
     protected override void Dispose(bool disposing)
     {
-        _origin.Dispose();
+        _stream.Dispose();
     }
 }
