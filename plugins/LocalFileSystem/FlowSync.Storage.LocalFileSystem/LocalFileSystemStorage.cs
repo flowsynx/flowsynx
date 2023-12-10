@@ -4,6 +4,9 @@ using FlowSync.Abstractions.Exceptions;
 using FlowSync.Abstractions.Storage;
 using Microsoft.Extensions.Logging;
 using EnsureThat;
+using static System.Net.Mime.MediaTypeNames;
+using System.IO;
+using System;
 
 namespace FlowSync.Storage.LocalFileSystem;
 
@@ -49,7 +52,7 @@ public class LocalFileSystemStorage : IStoragePlugin
         return Task.FromResult(new StorageUsage { Total = totalSpace, Free = freeSpace});
     }
 
-    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, int? maxResult, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, StorageListOptions listOptions, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -70,16 +73,16 @@ public class LocalFileSystemStorage : IStoragePlugin
             var result = new List<StorageEntity>();
             var directoryInfo = new DirectoryInfo(path);
 
-            if (searchOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
+            if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
                 result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse).Select(GetVirtualFilePath));
 
-            if (searchOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory)
+            if (listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory)
                 result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse).Select(GetVirtualDirectoryPath));
             
-            var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions);
+            var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
 
-            if (maxResult is > 0)
-                filteredResult = filteredResult.Take(maxResult.Value);
+            if (listOptions.MaxResult is > 0)
+                filteredResult = filteredResult.Take(listOptions.MaxResult.Value);
 
             return Task.FromResult(filteredResult);
         }
@@ -90,16 +93,10 @@ public class LocalFileSystemStorage : IStoragePlugin
         }
     }
 
-    public Task WriteAsync(string path, StorageStream storageStream, bool append = false, CancellationToken cancellationToken = default)
+    public Task WriteAsync(string path, StorageStream storageStream, CancellationToken cancellationToken = default)
     {
-        if (storageStream.Length == 0)
-        {
-            _logger.LogError($"The stream data should not be null.");
-            throw new StorageException($"The stream data should not be null.");
-        }
-
         path = GetPhysicalPath(path);
-        using var fileStream = File.Create(path);
+        using var fileStream = !File.Exists(path) ? File.Create(path) : File.Open(path, FileMode.Append);
         storageStream.CopyTo(fileStream);
         return Task.CompletedTask;
     }
@@ -110,22 +107,29 @@ public class LocalFileSystemStorage : IStoragePlugin
 
         if (File.Exists(path))
         {
-            var stream = new StorageStream(File.OpenRead(path));
-            return Task.FromResult(stream);
+            return Task.FromResult(new StorageStream(File.OpenRead(path)));
         }
 
         _logger.LogError($"The specified path '{path}' is not a file.");
         throw new StorageException($"The specified path '{path}' is not a file.");
     }
-    
+
+    public Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            _logger.LogError("The specified path should not be empty!");
+            throw new StorageException("The specified path should not be empty!");
+        }
+
+        var fileInfo = new FileInfo(path);
+        return Task.FromResult(fileInfo.Exists);
+    }
+
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
-        var files = await ListAsync(path, storageSearches, null, cancellationToken);
-        var entities = files.ToList();
-        if (!entities.Any())
-            throw new StorageException($"There are no files found to delete!");
-
-        foreach (var entity in entities)
+        var entities = await ListAsync(path, storageSearches, new StorageListOptions(), cancellationToken);
+        foreach (var entity in entities.Where(x=>x.IsFile).ToList())
         {
             await DeleteFileAsync(entity.FullPath, cancellationToken);
         }
@@ -145,23 +149,36 @@ public class LocalFileSystemStorage : IStoragePlugin
         return Task.CompletedTask;
     }
 
-    public Task CreateDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    public Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         path = GetPhysicalPath(path);
-
-        if (Directory.Exists(path))
-        {
-            _logger.LogError("The specified path is already exist.");
-            throw new StorageException("The specified path is already exist.");
-        }
-
         Directory.CreateDirectory(path);
         return Task.CompletedTask;
     }
 
-    public Task DeleteDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    public Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var directoryInfo = new DirectoryInfo(path);
+        if (!directoryInfo.Exists)
+        {
+            _logger.LogError("The specified directory path is not exist.");
+            throw new StorageException("The specified directory path is not exist.");
+        }
+
+        Directory.Delete(path, true);
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            _logger.LogError("The specified path should not be empty!");
+            throw new StorageException("The specified path should not be empty!");
+        }
+
+        var fileInfo = new DirectoryInfo(path);
+        return Task.FromResult(fileInfo.Exists);
     }
 
     public void Dispose() { }
