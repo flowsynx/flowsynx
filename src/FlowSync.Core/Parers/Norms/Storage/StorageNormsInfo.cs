@@ -1,12 +1,21 @@
-﻿using FlowSync.Abstractions;
+﻿using EnsureThat;
+using FlowSync.Abstractions;
 using FlowSync.Abstractions.Storage;
 
 namespace FlowSync.Core.Parers.Norms.Storage;
 
 public class StorageNormsInfo
 {
-    public required string Name { get; set; }
-    public required string Path { get; set; }
-    public required IStoragePlugin Plugin { get; set; }
-    public required Specifications? Specifications { get; set; }
+    public StorageNormsInfo(IStoragePlugin plugin, Specifications? specifications, string path)
+    {
+        EnsureArg.IsNotNull(plugin, nameof(plugin));
+        Plugin = plugin;
+        Specifications = specifications;
+        plugin.Specifications = Specifications;
+        Path = path;
+    }
+
+    public string Path { get; }
+    public IStoragePlugin Plugin { get; }
+    public Specifications? Specifications { get; }
 }
