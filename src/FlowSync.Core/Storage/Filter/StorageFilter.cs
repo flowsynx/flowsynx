@@ -29,7 +29,7 @@ internal class StorageFilter: IStorageFilter
         _sortParser = sortParser;
     }
 
-    public IEnumerable<StorageEntity> FilterEntitiesList(IEnumerable<StorageEntity> entities, StorageSearchOptions storageSearchOptions)
+    public IEnumerable<StorageEntity> FilterEntitiesList(IEnumerable<StorageEntity> entities, StorageSearchOptions storageSearchOptions, StorageListOptions listOptions)
     {
         var predicate = PredicateBuilder.True<StorageEntity>();
 
@@ -66,9 +66,9 @@ internal class StorageFilter: IStorageFilter
 
         var result = entities.Where(predicate.Compile());
 
-        if (!string.IsNullOrEmpty(storageSearchOptions.Sorting))
+        if (!string.IsNullOrEmpty(listOptions.Sorting))
         {
-            var parsedSort = _sortParser.Parse(storageSearchOptions.Sorting, ObjectPropertiesList<StorageEntity>());
+            var parsedSort = _sortParser.Parse(listOptions.Sorting, ObjectPropertiesList<StorageEntity>());
             result = result.Sorting(parsedSort);
         }
         
