@@ -1,25 +1,21 @@
 ﻿using EnsureThat;
 using FlowSync.Abstractions.Common.Attributes;
 using FlowSync.Abstractions.Common.Helpers;
+using FlowSync.Abstractions.Exceptions;
 
 namespace FlowSync.Abstractions.Storage;
 
 public sealed class StorageEntity : IEquatable<StorageEntity>, IComparable<StorageEntity>, ICloneable
 {
-    private const char PathSeparator = '/';
-    private readonly string _pathSeparatorString = new string(PathSeparator, 1);
-    private const string RootDirectoryPath = "/";
-    private const string LevelUpDirectoryName = "..";
-
     [SortMember]
     public string Id => HashHelper.CreateMd5($"{this}");
 
     [SortMember]
     public StorageEntityItemKind Kind { get; }
 
-    private bool IsDirectory => Kind == StorageEntityItemKind.Directory;
+    public bool IsDirectory => Kind == StorageEntityItemKind.Directory;
 
-    private bool IsFile => Kind == StorageEntityItemKind.File;
+    public bool IsFile => Kind == StorageEntityItemKind.File;
 
     public string DirectoryPath { get; private set; } = null!;
 
@@ -39,11 +35,11 @@ public sealed class StorageEntity : IEquatable<StorageEntity>, IComparable<Stora
     [SortMember]
     public DateTimeOffset? ModifiedTime { get; set; }
 
-    public string FullPath => Combine(DirectoryPath, Name);
+    public string FullPath => StorageHelper.Combine(DirectoryPath, Name);
 
     public Dictionary<string, object> Metadata { get; private set; } = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-    public bool IsRootFolder => Kind == StorageEntityItemKind.Directory && IsRootPath(FullPath);
+    public bool IsRootFolder => Kind == StorageEntityItemKind.Directory && StorageHelper.IsRootPath(FullPath);
 
     public bool TryGetMetadata<TValue>(string name, out TValue value, TValue defaultValue)
     {
@@ -87,15 +83,16 @@ public sealed class StorageEntity : IEquatable<StorageEntity>, IComparable<Stora
     {
         EnsureArg.IsNotNullOrEmpty(name, nameof(name));
         Name = name;
-        Name = NormalizePart(Name);
-        DirectoryPath = Normalize(folderPath);
+        Name = StorageHelper.NormalizePart(Name);
+        DirectoryPath = StorageHelper.Normalize(folderPath);
         Kind = kind;
     }
 
     public string? GetExtension()
     {
         if (!IsFile)
-            throw new ArgumentException("The specified FileSystemPath is not a file.");
+            throw new StorageException(FlowSyncAbstractionsResource.StorageEntityGetExtensionTheSpecifiedPathIsNotAFile);
+
         var name = Name;
         var extensionIndex = name?.LastIndexOf('.') ?? -1;
         return extensionIndex < 0 ? "" : name?[extensionIndex..];
@@ -134,91 +131,21 @@ public sealed class StorageEntity : IEquatable<StorageEntity>, IComparable<Stora
 
     private void SetFullPath(string fullPath)
     {
-        var path = Normalize(fullPath);
+        var path = StorageHelper.Normalize(fullPath);
 
-        if (IsRootPath(path))
+        if (StorageHelper.IsRootPath(path))
         {
-            Name = RootDirectoryPath;
-            DirectoryPath = RootDirectoryPath;
+            Name = StorageHelper.RootDirectoryPath;
+            DirectoryPath = StorageHelper.RootDirectoryPath;
         }
         else
         {
-            var parts = Split(path);
+            var parts = StorageHelper.Split(path);
 
             Name = parts.Last();
-            DirectoryPath = GetParent(path);
+            DirectoryPath = StorageHelper.GetParent(path);
         }
     }
-
-    private string Normalize(string path, bool removeTrailingSlash = false)
-    {
-        if (IsRootPath(path)) return RootDirectoryPath;
-
-        var parts = Split(path);
-
-        var r = new List<string>(parts.Length);
-        foreach (var part in parts)
-        {
-            if (part == LevelUpDirectoryName)
-            {
-                if (r.Count > 0)
-                {
-                    r.RemoveAt(r.Count - 1);
-                }
-            }
-            else
-            {
-                r.Add(part);
-            }
-        }
-        path = string.Join(_pathSeparatorString, r);
-
-        return path;
-        //return removeTrailingSlash
-        //   ? path
-        //   : PathSeparatorString + path;
-    }
-
-    private bool IsRootPath(string path)
-    {
-        return string.IsNullOrEmpty(path) || path == RootDirectoryPath;
-    }
-
-    private string[] Split(string path)
-    {
-        return path.Split(new[] { PathSeparator }, StringSplitOptions.RemoveEmptyEntries).Select(NormalizePart).ToArray();
-    }
-
-    private string Combine(params string[] parts)
-    {
-        return Combine(parts.AsEnumerable());
-    }
-
-    private string Combine(IEnumerable<string> parts)
-    {
-        var enumerable = parts.ToList();
-        if (!enumerable.Any()) return Normalize(string.Empty);
-        return Normalize(string.Join(_pathSeparatorString, enumerable.Where(p => !string.IsNullOrEmpty(p)).Select(NormalizePart)));
-    }
-
-    private string GetParent(string path)
-    {
-        if (string.IsNullOrEmpty(path)) return string.Empty;
-
-        path = Normalize(path);
-
-        var parts = Split(path);
-        if (parts.Length == 0) return string.Empty;
-
-        return parts.Length > 1 ? Combine(parts.Take(parts.Length - 1)) : _pathSeparatorString;
-    }
-
-    private string NormalizePart(string part)
-    {
-        if (part == null) throw new ArgumentNullException(nameof(part));
-        return part.Trim(PathSeparator);
-    }
-
     public int CompareTo(StorageEntity? other)
     {
         return string.Compare(FullPath, other?.FullPath, StringComparison.Ordinal);
