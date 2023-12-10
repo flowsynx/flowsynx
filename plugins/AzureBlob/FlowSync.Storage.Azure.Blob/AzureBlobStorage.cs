@@ -24,13 +24,13 @@ public class AzureBlobStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions? filters, int? maxResult, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions? filters, StorageListOptions listOptions, CancellationToken cancellationToken = default)
     {
         ICollection<StorageEntity> result = new List<StorageEntity>() { };
         return Task.FromResult(result.AsEnumerable());
     }
 
-    public Task WriteAsync(string path, StorageStream dataStream, bool append = false, CancellationToken cancellationToken = default)
+    public Task WriteAsync(string path, StorageStream dataStream, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -61,4 +61,24 @@ public class AzureBlobStorage : IStoragePlugin
     }
 
     public void Dispose() { }
+
+    public Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
 }
