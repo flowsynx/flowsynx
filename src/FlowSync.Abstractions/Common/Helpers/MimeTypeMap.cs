@@ -1,4 +1,6 @@
-﻿namespace FlowSync.Abstractions.Common.Helpers;
+﻿using FlowSync.Abstractions.Exceptions;
+
+namespace FlowSync.Abstractions.Common.Helpers;
 
 public static class MimeTypeMap
 {
@@ -594,7 +596,7 @@ public static class MimeTypeMap
             throw new ArgumentNullException(nameof(mimeType));
 
         if (mimeType.StartsWith(Dot))
-            throw new ArgumentException("Requested mime type is not valid: " + mimeType);
+            throw new MimeTypeException(string.Format(FlowSyncAbstractionsResource.MimeTypeMapMimeTypeNotValid, mimeType));
 
         try
         {
