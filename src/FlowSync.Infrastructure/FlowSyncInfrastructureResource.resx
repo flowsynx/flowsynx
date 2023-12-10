@@ -117,34 +117,52 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FileSystemDateParserCannotExtractValue" xml:space="preserve">
+  <data name="ConfigurationManagerItemNotFoumd" xml:space="preserve">
+    <value>{0} is not found.</value>
+  </data>
+  <data name="DateParserCannotExtractValue" xml:space="preserve">
     <value>The value from ({0}) could not be extracted!</value>
   </data>
-  <data name="FileSystemDateParserInvalidInput" xml:space="preserve">
+  <data name="DateParserInvalidInput" xml:space="preserve">
     <value>The given datetime is not valid!</value>
   </data>
-  <data name="FileSystemRemotePathParserFileSystemNotFoumd" xml:space="preserve">
-    <value>'{0}' FileSystem not found!</value>
+  <data name="NamespaceParserInvalidType" xml:space="preserve">
+    <value>The given type {0} is not valid!</value>
   </data>
-  <data name="FileSystemSizeParserCannotExtractValue" xml:space="preserve">
-    <value>The value from ({0}) could not be extracted!</value>
+  <data name="NewtonsoftDeserializerValueCanNotBeEmpty" xml:space="preserve">
+    <value>Input value can't be empty or null.</value>
   </data>
-  <data name="FileSystemSizeParserInvalidInput" xml:space="preserve">
-    <value>The given size is not valid!</value>
-  </data>
-  <data name="FileSystemSortParserInvalidProperty" xml:space="preserve">
-    <value>Invalid Property. Order By Format: Property, Property2 ASC, Property2 DESC</value>
-  </data>
-  <data name="FileSystemSortParserInvalidPropertyName" xml:space="preserve">
-    <value>Invalid Property. Given sorting property name '{0}' is not valid.</value>
-  </data>
-  <data name="FileSystemSortParserInvalidSortDirection" xml:space="preserve">
-    <value>Sort direction '{0}' for '{1}' is not valid.</value>
-  </data>
-  <data name="FileSystemSortParserInvalidSortingTerm" xml:space="preserve">
-    <value>Invalid Sorting string '{0}'. Order By Format: Property, Property2 ASC, Property2 DESC</value>
+  <data name="NewtonsoftSerializerValueCanNotBeEmpty" xml:space="preserve">
+    <value>Input value can't be empty or null.</value>
   </data>
   <data name="PlugininItializingInstanceErrorMessage" xml:space="preserve">
     <value>Error in initializing '{0}' plugin instance!</value>
+  </data>
+  <data name="PluginsManagerCouldNotFoumd" xml:space="preserve">
+    <value>Plugin {0} could not found!</value>
+  </data>
+  <data name="SizeParserCannotExtractValue" xml:space="preserve">
+    <value>The value from ({0}) could not be extracted!</value>
+  </data>
+  <data name="SizeParserInvalidInput" xml:space="preserve">
+    <value>The given size is not valid!</value>
+  </data>
+  <data name="SortParserInvalidProperty" xml:space="preserve">
+    <value>Invalid Property. Order By Format: Property, Property2 ASC, Property2 DESC</value>
+  </data>
+  <data name="SortParserInvalidPropertyName" xml:space="preserve">
+    <value>Invalid Property. Given sorting property name '{0}' is not valid.</value>
+  </data>
+  <data name="SortParserInvalidSortDirection" xml:space="preserve">
+    <value>Sort direction '{0}' for '{1}' is not valid.</value>
+  </data>
+  <data name="SortParserInvalidSortingTerm" xml:space="preserve">
+    <value>Invalid Sorting string '{0}'. Order By Format: Property, Property2 ASC, Property2 DESC</value>
+  </data>
+  <data name="StorageNormsParserInvalidStorageType" xml:space="preserve">
+    <value>The selected plugin type '{0}' is not valid storage plugin type.</value>
+  </data>
+  <data name="StorageNormsParserStorageNotFoumd" xml:space="preserve">
+    <value>'{0}' storage not found!</value>
   </data>
 </root>
