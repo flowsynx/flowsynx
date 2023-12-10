@@ -28,7 +28,7 @@ public class PluginsManager : IPluginsManager
             return (IPlugin)ActivatorUtilities.CreateInstance(_serviceProvider, result.GetType());
         
         _logger.LogError($"Plugin {type} could not found!");
-        throw new PluginException("Plugin could not found!");
+        throw new PluginException(string.Format(FlowSyncInfrastructureResource.PluginsManagerCouldNotFoumd, type));
     }
     
     public bool IsExist(string type)

@@ -1,4 +1,5 @@
 ﻿using EnsureThat;
+using FlowSync.Infrastructure.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSync.Infrastructure.IO;
@@ -23,7 +24,7 @@ public class FileWriter : IFileWriter
         catch (Exception ex)
         {
             _logger.LogError($"Error in write data to path '{path}'. Message: {ex.Message}");
-            throw;
+            throw new FileWriterException(ex.Message);
         }
     }
 }

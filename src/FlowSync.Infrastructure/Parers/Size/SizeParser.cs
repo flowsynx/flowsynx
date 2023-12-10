@@ -34,7 +34,7 @@ internal class SizeParser : ISizeParser
         if (!HasSuffix(size))
         {
             _logger.LogError($"The given size ({size}) is not valid!");
-            throw new SizeParserException(FlowSyncInfrastructureResource.FileSystemSizeParserInvalidInput);
+            throw new SizeParserException(FlowSyncInfrastructureResource.SizeParserInvalidInput);
         }
 
         var lastPos = 0;
@@ -73,7 +73,7 @@ internal class SizeParser : ISizeParser
         if (charLocation < 0 || charLocation < size.Length - 1)
         {
             _logger.LogWarning($"The value from ({size}) could not be extracted!");
-            throw new SizeParserException(string.Format(FlowSyncInfrastructureResource.FileSystemSizeParserCannotExtractValue, size));
+            throw new SizeParserException(string.Format(FlowSyncInfrastructureResource.SizeParserCannotExtractValue, size));
         }
 
         var extractedValue = size.Substring(position, charLocation - position);

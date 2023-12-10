@@ -35,13 +35,13 @@ internal class SortParser : ISortParser
         if (pair.Count > 2)
         {
             _logger.LogError($"Invalid OrderBy string '{item}'. Order By Format: Property, Property2 ASC, Property2 DESC");
-            throw new SortParserException(string.Format(FlowSyncInfrastructureResource.FileSystemSortParserInvalidSortingTerm, item));
+            throw new SortParserException(string.Format(FlowSyncInfrastructureResource.SortParserInvalidSortingTerm, item));
         }
 
         var prop = pair[0];
 
         if (string.IsNullOrEmpty(prop))
-            throw new SortParserException(FlowSyncInfrastructureResource.FileSystemSortParserInvalidProperty);
+            throw new SortParserException(FlowSyncInfrastructureResource.SortParserInvalidProperty);
 
         var name = NormalizePropertyName(prop, properties);
 
@@ -57,7 +57,7 @@ internal class SortParser : ISortParser
         if (properties.Contains(propertyName, StringComparer.OrdinalIgnoreCase)) return propertyName;
 
         _logger.LogError($"Invalid Property. '{propertyName}' is not valid.");
-        throw new SortParserException(string.Format(FlowSyncInfrastructureResource.FileSystemSortParserInvalidPropertyName, propertyName));
+        throw new SortParserException(string.Format(FlowSyncInfrastructureResource.SortParserInvalidPropertyName, propertyName));
 
     }
 
@@ -69,7 +69,7 @@ internal class SortParser : ISortParser
             return string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase) ? SortDirection.Descending : SortDirection.Ascending;
 
         _logger.LogWarning($"Sort direction '{sortDirection}' for '{property}' is not valid.");
-        throw new SortParserException(string.Format(FlowSyncInfrastructureResource.FileSystemSortParserInvalidSortDirection, sortDirection, property));
+        throw new SortParserException(string.Format(FlowSyncInfrastructureResource.SortParserInvalidSortDirection, sortDirection, property));
     }
 
     public void Dispose() { }

@@ -46,7 +46,7 @@ internal class DateParser : IDateParser
         if (!HasSuffix(dateTime))
         {
             _logger.LogError($"The given datetime '{dateTime}' is not valid!");
-            throw new DateParserException(FlowSyncInfrastructureResource.FileSystemDateParserInvalidInput);
+            throw new DateParserException(FlowSyncInfrastructureResource.DateParserInvalidInput);
         }
 
         var lastPos = 0;
@@ -116,7 +116,7 @@ internal class DateParser : IDateParser
         if (charLocation < 0)
         {
             _logger.LogWarning($"The value from ({dateTime}) could not be extracted!");
-            throw new DateParserException(string.Format(FlowSyncInfrastructureResource.FileSystemDateParserCannotExtractValue, dateTime));
+            throw new DateParserException(string.Format(FlowSyncInfrastructureResource.DateParserCannotExtractValue, dateTime));
         }
 
         var extractedValue = dateTime.Substring(position, charLocation - position);

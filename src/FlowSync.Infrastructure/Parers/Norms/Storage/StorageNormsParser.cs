@@ -47,40 +47,28 @@ internal class StorageNormsParser : IStorageNormsParser
             var segments = path.Split(ParserSeparator);
             if (segments.Length != 2)
             {
-                return new StorageNormsInfo
-                {
-                    Name = "LocalFileSystem",
-                    Plugin = new LocalFileSystemStorage(_localStorageLogger, _storageFilter),
-                    Specifications = null,
-                    Path = path
-                };
+                return new StorageNormsInfo (new LocalFileSystemStorage(_localStorageLogger, _storageFilter), null, path);
             }
 
             var fileSystemExist = _configurationManager.IsExist(segments[0]);
             if (!fileSystemExist)
-                throw new StorageNormsParserException(string.Format(FlowSyncInfrastructureResource.FileSystemRemotePathParserFileSystemNotFoumd, segments[0]));
+                throw new StorageNormsParserException(string.Format(FlowSyncInfrastructureResource.StorageNormsParserStorageNotFoumd, segments[0]));
 
             var fileSystem = _configurationManager.GetSetting(segments[0]);
 
             if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)
-                throw new StorageNormsParserException($"The selected plugin type '{fileSystem.Type}' is not valid storage plugin type.");
+                throw new StorageNormsParserException(string.Format(FlowSyncInfrastructureResource.StorageNormsParserInvalidStorageType, fileSystem.Type));
 
             var specifications = new Specifications();
             if (fileSystem.Specifications != null)
                 specifications = _deserializer.Deserialize<Specifications>(fileSystem.Specifications.ToString());
 
-            return new StorageNormsInfo
-            {
-                Name = fileSystem.Name,
-                Plugin = _pluginsManager.GetPlugin(fileSystem.Type).CastTo<IStoragePlugin>(),
-                Specifications = specifications,
-                Path = segments[1]
-            };
+            return new StorageNormsInfo(_pluginsManager.GetPlugin(fileSystem.Type).CastTo<IStoragePlugin>(), specifications, segments[1]);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex.Message);
-            throw;
+            throw new StorageNormsParserException(ex.Message);
         }
     }
 

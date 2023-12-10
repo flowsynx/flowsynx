@@ -1,6 +1,6 @@
 ﻿namespace FlowSync.Infrastructure.Parers.Date;
 
-enum DateTimeSpanPhase
+internal enum DateTimeSpanPhase
 {
     Years,
     Months,

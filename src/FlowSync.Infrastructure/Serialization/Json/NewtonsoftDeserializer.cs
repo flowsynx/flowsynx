@@ -25,7 +25,7 @@ public class NewtonsoftDeserializer : IDeserializer
             if (!string.IsNullOrWhiteSpace(input)) return JsonConvert.DeserializeObject<T>(input);
 
             _logger.LogWarning($"Input value can't be empty or null.");
-            throw new DeserializerException("Input value can't be empty or null.");
+            throw new DeserializerException(FlowSyncInfrastructureResource.NewtonsoftDeserializerValueCanNotBeEmpty);
         }
         catch (Exception ex)
         {

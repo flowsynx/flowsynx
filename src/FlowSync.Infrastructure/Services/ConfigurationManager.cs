@@ -1,6 +1,7 @@
 ﻿using EnsureThat;
 using FlowSync.Core.Configuration;
 using FlowSync.Core.Serialization;
+using FlowSync.Infrastructure.Exceptions;
 using FlowSync.Infrastructure.IO;
 using Microsoft.Extensions.Logging;
 
@@ -39,7 +40,8 @@ public class ConfigurationManager : IConfigurationManager
         var data = _deserializer.Deserialize<Configuration>(contents);
 
         var convertedData = data?.Configurations;
-        var findItems = convertedData?.Where(x => string.Equals(x.Name, configuration.Name, StringComparison.CurrentCultureIgnoreCase));
+        var findItems = convertedData?.Where(x => 
+            string.Equals(x.Name, configuration.Name, StringComparison.CurrentCultureIgnoreCase));
 
         if (findItems != null && findItems.Any())
         {
@@ -87,8 +89,7 @@ public class ConfigurationManager : IConfigurationManager
         };
 
         var dataToWrite = _serializer.Serialize(newSetting);
-        var result = _fileWriter.Write(_options.Path, dataToWrite);
-        return result;
+        return _fileWriter.Write(_options.Path, dataToWrite);
     }
 
     public ConfigurationItem GetSetting(string name)
@@ -100,7 +101,7 @@ public class ConfigurationManager : IConfigurationManager
 
         if (result != null) return result;
         _logger.LogWarning($"{name} is not found.");
-        throw new Exception($"{name} is not found.");
+        throw new ConfigurationException(string.Format(FlowSyncInfrastructureResource.ConfigurationManagerItemNotFoumd, name));
     }
 
     public IEnumerable<ConfigurationItem> GetSettings()

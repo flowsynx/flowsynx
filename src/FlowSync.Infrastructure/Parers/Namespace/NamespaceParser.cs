@@ -4,6 +4,7 @@ using FlowSync.Core.Common;
 using FlowSync.Core.Parers.Namespace;
 using FlowSync.Infrastructure.Exceptions;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace FlowSync.Infrastructure.Parers.Namespace;
 
@@ -25,14 +26,14 @@ internal class NamespaceParser : INamespaceParser
             if (terms.Length != 2)
             {
                 _logger.LogError($"The given type {type} is not valid!");
-                throw new NamespaceParserException($"The given type {type} is not valid!");
+                throw new NamespaceParserException(string.Format(FlowSyncInfrastructureResource.NamespaceParserInvalidType, type));
             }
 
             var firstTerm = terms[0].Split(".");
             if (firstTerm.Length != 2)
             {
                 _logger.LogError($"The given type {terms[0]} is not valid!");
-                throw new NamespaceParserException($"The given type {terms[0]} is not valid!");
+                throw new NamespaceParserException(string.Format(FlowSyncInfrastructureResource.NamespaceParserInvalidType, terms[0]));
             }
 
             return EnumUtils.GetEnumValueOrDefault<PluginNamespace>(firstTerm[1])!.Value;

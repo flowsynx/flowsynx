@@ -1,4 +1,5 @@
 ﻿using EnsureThat;
+using FlowSync.Infrastructure.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSync.Infrastructure.IO;
@@ -22,7 +23,7 @@ public class FileReader : IFileReader
         catch (Exception ex)
         {
             _logger.LogError($"Error in read data from path '{path}'. Message: {ex.Message}");
-            throw;
+            throw new FileReaderException(ex.Message);
         }
     }
 }
