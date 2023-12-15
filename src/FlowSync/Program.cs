@@ -7,12 +7,16 @@ using FlowSync.Models;
 using FlowSync.Services;
 using FlowSync.ApplicationBuilders;
 using FlowSync.Commands;
+using FlowSync.Core.Common.Services;
 
 IServiceCollection serviceCollection = new ServiceCollection()
+    .AddLocation()
+    .AddEnvironmentVariableManager()
     .AddLoggingService(true, AppLogLevel.All)
     .AddFlowSyncInfrastructure()
     .AddTransient<RootCommand, Root>()
     .AddTransient<IOptionsVerifier, OptionsVerifier>()
+    .AddTransient<IDefaultEndpoint, DefaultEndpoint>()
     .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
     .AddTransient<ICliApplicationBuilder, CliApplicationBuilder>();
 

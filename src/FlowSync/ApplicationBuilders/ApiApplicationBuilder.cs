@@ -1,4 +1,5 @@
 ﻿using FlowSync.Commands;
+using FlowSync.Core.Common.Services;
 using FlowSync.Core.Extensions;
 using FlowSync.Extensions;
 using FlowSync.Infrastructure.Extensions;
@@ -7,11 +8,18 @@ namespace FlowSync.ApplicationBuilders;
 
 public class ApiApplicationBuilder : IApiApplicationBuilder
 {
+    private readonly IDefaultEndpoint _defaultEndpoint;
+
+    public ApiApplicationBuilder(IDefaultEndpoint defaultEndpoint)
+    {
+        _defaultEndpoint = defaultEndpoint;
+    }
+
     public async Task RunAsync(RootCommandOptions rootCommandOptions)
     {
         var builder = WebApplication.CreateBuilder();
 
-        builder.WebHost.ConfigHttpServer(rootCommandOptions.Port);
+        builder.WebHost.ConfigHttpServer(_defaultEndpoint.GetDefaultHttpEndpoint());
 
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.AppLogLevel);

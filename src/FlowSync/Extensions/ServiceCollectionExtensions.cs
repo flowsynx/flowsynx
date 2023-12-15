@@ -21,6 +21,12 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddEnvironmentVariableManager(this IServiceCollection services)
+    {
+        services.AddTransient<IEnvironmentVariablesManager, EnvironmentVariablesManager>();
+        return services;
+    }
+
     public static IServiceCollection AddLoggingService(this IServiceCollection services, bool enable, AppLogLevel logLevel)
     {
         var level = logLevel switch
