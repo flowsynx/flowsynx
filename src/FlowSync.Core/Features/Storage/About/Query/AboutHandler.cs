@@ -31,9 +31,9 @@ internal class AboutHandler : IRequestHandler<AboutRequest, Result<AboutResponse
             var entities = await _storageService.About(storageNorms, cancellationToken);
             var response = new AboutResponse()
             {
-                Total = ByteFormat.ToString(entities.Total, request.FormatSize),
-                Free = ByteFormat.ToString(entities.Free, request.FormatSize),
-                Used = ByteFormat.ToString(entities.Used, request.FormatSize)
+                Total = ByteFormat.ToString(entities.Total, !request.Full),
+                Free = ByteFormat.ToString(entities.Free, !request.Full),
+                Used = ByteFormat.ToString(entities.Used, !request.Full)
             };
 
             return await Result<AboutResponse>.SuccessAsync(response);

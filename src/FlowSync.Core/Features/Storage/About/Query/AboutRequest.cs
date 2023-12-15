@@ -6,5 +6,5 @@ namespace FlowSync.Core.Features.Storage.About.Query;
 public class AboutRequest : IRequest<Result<AboutResponse>>
 {
     public required string Path { get; set; }
-    public bool? FormatSize { get; set; } = true;
+    public bool? Full { get; set; } = false;
 }
