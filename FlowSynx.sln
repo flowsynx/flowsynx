@@ -1,0 +1,59 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34024.191
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx", "src\FlowSynx\FlowSynx.csproj", "{855FAD1D-289E-44C8-AA86-FEBFF8309CC1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Core", "src\FlowSynx.Core\FlowSynx.Core.csproj", "{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{F0C26331-6C4A-4389-80E3-7580C3977871}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE3-4780-9B97-FFC76E73B354}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AzureBlob", "AzureBlob", "{4E180CEE-C85F-49B4-B948-614028A307ED}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azure.Blob", "plugins\AzureBlob\FlowSynx.Plugin.Storage.Azure.Blob\FlowSynx.Plugin.Storage.Azure.Blob.csproj", "{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "LocalFileSystem", "LocalFileSystem", "{CFB8E849-EC5A-419F-B07C-881B816B1CA9}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.LocalFileSystem", "plugins\LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj", "{936E400D-B33A-4274-8AE6-75185CB4938F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{855FAD1D-289E-44C8-AA86-FEBFF8309CC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{855FAD1D-289E-44C8-AA86-FEBFF8309CC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{855FAD1D-289E-44C8-AA86-FEBFF8309CC1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{855FAD1D-289E-44C8-AA86-FEBFF8309CC1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12}.Release|Any CPU.Build.0 = Release|Any CPU
+		{936E400D-B33A-4274-8AE6-75185CB4938F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{936E400D-B33A-4274-8AE6-75185CB4938F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{936E400D-B33A-4274-8AE6-75185CB4938F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{936E400D-B33A-4274-8AE6-75185CB4938F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{855FAD1D-289E-44C8-AA86-FEBFF8309CC1} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
+		{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
+		{4E180CEE-C85F-49B4-B948-614028A307ED} = {F0C26331-6C4A-4389-80E3-7580C3977871}
+		{A208E84B-E8C8-4F07-A02F-B18B8FE3EC12} = {4E180CEE-C85F-49B4-B948-614028A307ED}
+		{CFB8E849-EC5A-419F-B07C-881B816B1CA9} = {F0C26331-6C4A-4389-80E3-7580C3977871}
+		{936E400D-B33A-4274-8AE6-75185CB4938F} = {CFB8E849-EC5A-419F-B07C-881B816B1CA9}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}
+	EndGlobalSection
+EndGlobal

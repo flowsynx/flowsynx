@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FlowSynx.Commons" Version="0.1.0" />
+    <PackageReference Include="FlowSynx.Configuration" Version="0.1.0" />
+    <PackageReference Include="FlowSynx.Environment" Version="0.1.0" />
+    <PackageReference Include="FlowSynx.Formatting" Version="0.1.0" />
+    <PackageReference Include="FlowSynx.Parsers" Version="0.1.0" />
+    <PackageReference Include="FlowSynx.Plugin" Version="0.1.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />
+    <PackageReference Include="MediatR" Version="12.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\plugins\AzureBlob\FlowSynx.Plugin.Storage.Azure.Blob\FlowSynx.Plugin.Storage.Azure.Blob.csproj" />
+    <ProjectReference Include="..\..\plugins\LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
