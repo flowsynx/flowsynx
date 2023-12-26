@@ -1,22 +1,20 @@
 ﻿using System.CommandLine.Binding;
 using System.CommandLine;
-using FlowSynx.Enums;
-using FlowSynx.IO.Serialization;
 
 namespace FlowSynx.Commands;
 
 public class RootOptionsBinder : BinderBase<RootCommandOptions>
 {
-    private readonly Option<string> _config;
+    private readonly Option<string> _configFile;
     private readonly Option<bool> _enableHealthCheck;
     private readonly Option<bool> _enableLog;
     private readonly Option<AppLogLevel> _logLevel;
     private readonly Option<int> _retry;
 
-    public RootOptionsBinder(Option<string> config, Option<bool> enableHealthCheck, 
+    public RootOptionsBinder(Option<string> configFile, Option<bool> enableHealthCheck, 
         Option<bool> enableLog, Option<AppLogLevel> logLevel, Option<int> retry)
     {
-        _config = config;
+        _configFile = configFile;
         _enableHealthCheck = enableHealthCheck;
         _enableLog = enableLog;
         _logLevel = logLevel;
@@ -25,13 +23,12 @@ public class RootOptionsBinder : BinderBase<RootCommandOptions>
 
     protected override RootCommandOptions GetBoundValue(BindingContext bindingContext)
     {
-        var serializer = bindingContext.GetService<ISerializer>();
         return new RootCommandOptions
         {
-            Config = bindingContext.ParseResult.GetValueForOption(_config) ?? string.Empty,
+            ConfigFile = bindingContext.ParseResult.GetValueForOption(_configFile) ?? string.Empty,
             EnableHealthCheck = bindingContext.ParseResult.GetValueForOption(_enableHealthCheck),
             EnableLog = bindingContext.ParseResult.GetValueForOption(_enableLog),
-            AppLogLevel = bindingContext.ParseResult.GetValueForOption(_logLevel),
+            LogLevel = bindingContext.ParseResult.GetValueForOption(_logLevel),
             Retry = bindingContext.ParseResult.GetValueForOption(_retry)
         };
     }

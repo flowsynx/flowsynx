@@ -1,7 +1,6 @@
 ﻿using System.CommandLine;
 using FlowSynx.ApplicationBuilders;
 using FlowSynx.Core.Services;
-using FlowSynx.Enums;
 using FlowSynx.Environment;
 using FlowSynx.Services;
 
@@ -11,23 +10,23 @@ public class Root : RootCommand
 {
     public Root(ILogger<Root> logger, ILocation location, IEnvironmentManager environmentManager,
         IOptionsVerifier optionsVerifier, IApiApplicationBuilder apiApplicationBuilder)
-        : base("Command Line Interface application for Cloud Storage")
+        : base("Command Line Interface application for FlowSynx")
     {
-        var configOption = new Option<string>(new[] { "-c", "--config-file" }, description: "FlowSync configuration file");
+        var configFileOption = new Option<string>(new[] { "-c", "--config-file" }, description: "FlowSync configuration file");
 
-        var enableHealthCheckOption = new Option<bool>(new[] { "-H", "--enable-health-check" }, getDefaultValue: () => true, 
+        var enableHealthCheckOption = new Option<bool>(new[] { "--enable-health-check" }, getDefaultValue: () => true, 
             description: "Enable health checks for the FlowSync");
 
-        var enableLogOption = new Option<bool>(new[] { "-L", "--enable-log" }, getDefaultValue: () => true, 
+        var enableLogOption = new Option<bool>(new[] {"--enable-log" }, getDefaultValue: () => true, 
             description: "Enable logging to records the details of events during FlowSync running");
 
-        var logLevelOption = new Option<AppLogLevel>(new[] { "-l", "--log-level" }, getDefaultValue: () => AppLogLevel.Information, 
+        var logLevelOption = new Option<AppLogLevel>(new[] { "-l", "--log-level" }, getDefaultValue: () => AppLogLevel.Info, 
             description: "The log verbosity to controls the amount of detail emitted for each event that is logged");
 
         var retryOption = new Option<int>(new[] { "-r", "--retry" }, getDefaultValue: () => 3, 
             description: "The number of times FlowSync needs to try to receive data if there is a connection problem");
 
-        AddOption(configOption);
+        AddOption(configFileOption);
         AddOption(enableHealthCheckOption);
         AddOption(enableLogOption);
         AddOption(logLevelOption);
@@ -53,6 +52,6 @@ public class Root : RootCommand
                 logger.LogError(ex.Message);
             }
         },
-        new RootOptionsBinder(configOption, enableHealthCheckOption, enableLogOption, logLevelOption, retryOption));
+        new RootOptionsBinder(configFileOption, enableHealthCheckOption, enableLogOption, logLevelOption, retryOption));
     }
 }
