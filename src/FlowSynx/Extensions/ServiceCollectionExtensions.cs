@@ -1,10 +1,8 @@
-﻿using Serilog;
-using Serilog.Events;
-using FlowSynx.Enums;
-using FlowSynx.HealthCheck;
+﻿using FlowSynx.HealthCheck;
 using FlowSynx.Services;
 using FlowSynx.Core.Services;
 using FlowSynx.Environment;
+using FlowSynx.Logging;
 
 namespace FlowSynx.Extensions;
 
@@ -24,28 +22,36 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddLoggingService(this IServiceCollection services, bool enable, AppLogLevel logLevel)
     {
-        var level = logLevel switch
-        {
-            AppLogLevel.All => LogEventLevel.Verbose,
-            AppLogLevel.Debug => LogEventLevel.Debug,
-            AppLogLevel.Error => LogEventLevel.Error,
-            AppLogLevel.Fatal => LogEventLevel.Fatal,
-            AppLogLevel.Information => LogEventLevel.Information,
-            AppLogLevel.Warning => LogEventLevel.Warning,
-            _ => LogEventLevel.Verbose
-        };
-
         services.AddLogging(c => c.ClearProviders());
 
-        var logger = new LoggerConfiguration()
-            .WriteTo.Conditional(_ => enable,
-                config => config.Console(restrictedToMinimumLevel: level, outputTemplate: "[time={Timestamp:HH:mm:ss} level={Level}] message=\"{Message}\"{NewLine}{Exception}"))
-            .CreateLogger();
+        if (!enable)
+            return services;
+        
+        var level = logLevel switch
+        {
+            AppLogLevel.Dbug => LogLevel.Debug,
+            AppLogLevel.Info => LogLevel.Information,
+            AppLogLevel.Warn => LogLevel.Warning,
+            AppLogLevel.Fail => LogLevel.Error,
+            AppLogLevel.Crit => LogLevel.Critical,
+            _ => LogLevel.Information,
+        };
 
-        services.AddSerilog(logger);
+        const string template = "[time={timestamp} | level={level} | machine={machine}] message=\"{message}\"";
+        services.AddLogging(builder => builder.AddConsoleLogger(config =>
+        {
+            config.OutputTemplate = template;
+            config.MinLevel = level;
+        }));
+        services.AddLogging(builder => builder.AddFileLogger(config =>
+        {
+            config.Path = @"D:\AminLog\";
+            config.OutputTemplate = template;
+            config.MinLevel = level;
+        }));
         return services;
     }
-
+    
     public static IServiceCollection AddHealthChecker(this IServiceCollection services)
     {
         services
