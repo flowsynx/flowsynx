@@ -2,7 +2,7 @@
   "profiles": {
     "http": {
       "commandName": "Project",
-      "commandLineArgs": "--port 4401 --config-file configuration.json",
+      "commandLineArgs": "-l Info --config-file configuration.json",
       "launchBrowser": true,
       "launchUrl": "api-docs",
       "environmentVariables": {
@@ -13,6 +13,7 @@
     },
     "https": {
       "commandName": "Project",
+      "commandLineArgs": "-l Info --config-file configuration.json",
       "launchBrowser": true,
       "launchUrl": "api-docs",
       "environmentVariables": {
