@@ -22,12 +22,12 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
 
         builder.Services
             .AddEndpointsApiExplorer()
-            .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.AppLogLevel)
+            .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel)
             .AddLocation()
             .AddVersion()
             .AddFlowSynxCore()
             .AddFlowSynxPlugins()
-            .AddFlowSynxConfiguration(rootCommandOptions.Config);
+            .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
         
         if (rootCommandOptions.EnableHealthCheck)
             builder.Services.AddHealthChecker();
