@@ -19,7 +19,7 @@ public class CliApplicationBuilder : ICliApplicationBuilder
         _rootCommand = rootCommand;
     }
 
-    public async Task<int> RunAsync(string[] args)
+    public Task<int> RunAsync(string[] args)
     {
         try
         {
@@ -34,12 +34,12 @@ public class CliApplicationBuilder : ICliApplicationBuilder
                 .UseExceptionHandler()
                 .CancelOnProcessTermination();
 
-            return await commandLineBuilder.Build().InvokeAsync(args);
+            return commandLineBuilder.Build().InvokeAsync(args);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex.Message);
-            return ExitCode.Error;
+            return Task.FromResult(ExitCode.Error);
         }
     }
 }
