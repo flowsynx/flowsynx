@@ -20,7 +20,7 @@ public class OptionsVerifier: IOptionsVerifier
 
     public void Verify(ref RootCommandOptions options)
     {
-        options.Config = CheckConfigurationPath(options.Config);
+        options.ConfigFile = CheckConfigurationPath(options.ConfigFile);
     }
 
     public string CheckConfigurationPath(string configPath)
