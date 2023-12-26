@@ -2,7 +2,6 @@ using System.CommandLine;
 using FlowSynx;
 using FlowSynx.ApplicationBuilders;
 using FlowSynx.Commands;
-using FlowSynx.Enums;
 using FlowSynx.Environment;
 using FlowSynx.Extensions;
 using FlowSynx.IO;
@@ -14,7 +13,7 @@ IServiceCollection serviceCollection = new ServiceCollection()
     .AddSerialization()
     .AddEnvironmentManager()
     .AddEndpoint()
-    .AddLoggingService(true, AppLogLevel.All)
+    .AddLoggingService(true, AppLogLevel.Info)
     .AddTransient<RootCommand, Root>()
     .AddTransient<IOptionsVerifier, OptionsVerifier>()
     .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
