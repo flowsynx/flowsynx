@@ -22,10 +22,6 @@ public class FlowSyncVersion : IVersion
     #region MyRegion
     private string GetApplicationVersion()
     {
-        var assembly = Assembly.GetExecutingAssembly().GetName().Version;
-        if (assembly == null)
-            throw new ApiBaseException(Resources.FlowSyncVersionErrorInReadingExecutableApplication);
-
         Assembly? thisAssembly = null;
         try
         {
@@ -40,9 +36,12 @@ public class FlowSyncVersion : IVersion
             }
         }
 
+        if (thisAssembly == null)
+            throw new ApiBaseException(Resources.FlowSyncVersionErrorInReadingExecutableApplication);
+
         var fullAssemblyName = thisAssembly.Location;
         var versionInfo = FileVersionInfo.GetVersionInfo(fullAssemblyName);
-        return versionInfo.ProductVersion ?? "V1.0";
+        return versionInfo.ProductVersion ?? "1.0.0.0";
     }
     #endregion
 }

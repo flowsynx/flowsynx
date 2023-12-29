@@ -3,9 +3,8 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Environment;
-using FlowSynx.Core.Services;
 
-namespace FlowSynx.Core.Features.Storage.Version.Query;
+namespace FlowSynx.Core.Features.Version.Query;
 
 internal class VersionHandler : IRequestHandler<VersionRequest, Result<VersionResponse>>
 {
@@ -29,7 +28,7 @@ internal class VersionHandler : IRequestHandler<VersionRequest, Result<VersionRe
         {
             var response = new VersionResponse()
             {
-                FlowSyncVersion = _version.Version,
+                FlowSynx = _version.Version,
                 OSVersion = _operatingSystemInfo.Version,
                 OSType = _operatingSystemInfo.Type,
                 OSArchitecture = _operatingSystemInfo.Architecture

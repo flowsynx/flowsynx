@@ -1,8 +1,8 @@
-﻿namespace FlowSynx.Core.Features.Storage.Version.Query;
+﻿namespace FlowSynx.Core.Features.Version.Query;
 
 public class VersionResponse
 {
-    public required string FlowSyncVersion { get; set; }
+    public required string FlowSynx { get; set; }
     public string? OSVersion { get; set; } = string.Empty;
     public string? OSArchitecture { get; set; } = string.Empty;
     public string? OSType { get; set; }

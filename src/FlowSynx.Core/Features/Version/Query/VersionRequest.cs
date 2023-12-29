@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using FlowSynx.Abstractions;
 
-namespace FlowSynx.Core.Features.Storage.Version.Query;
+namespace FlowSynx.Core.Features.Version.Query;
 
 public class VersionRequest : IRequest<Result<VersionResponse>>
 {

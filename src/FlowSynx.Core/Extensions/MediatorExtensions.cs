@@ -13,11 +13,11 @@ using FlowSynx.Core.Features.Storage.Move.Command;
 using FlowSynx.Core.Features.Storage.PurgeDirectory.Command;
 using FlowSynx.Core.Features.Storage.Read.Query;
 using FlowSynx.Core.Features.Storage.Size.Query;
-using FlowSynx.Core.Features.Storage.Version.Query;
 using FlowSynx.Core.Features.Storage.Write.Command;
 using FlowSynx.Core.Features.Config.Command.Delete;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
+using FlowSynx.Core.Features.Version.Query;
 
 namespace FlowSynx.Core.Extensions;
 

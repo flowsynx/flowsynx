@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Core.Extensions;
-using FlowSynx.Core.Features.Storage.Version.Query;
+using FlowSynx.Core.Features.Version.Query;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
