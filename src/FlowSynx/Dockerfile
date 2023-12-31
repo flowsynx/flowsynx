@@ -9,13 +9,13 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["src/FlowSync/FlowSynx.csproj", "src/FlowSync/"]
-COPY ["src/FlowSync.Core/FlowSynx.Core.csproj", "src/FlowSync.Core/"]
-COPY ["plugins/AzureBlob/FlowSynx.Storage.Azure.Blob/FlowSynx.Storage.Azure.Blob.csproj", "plugins/AzureBlob/FlowSynx.Storage.Azure.Blob/"]
-COPY ["plugins/LocalFileSystem/FlowSynx.Storage.LocalFileSystem/FlowSynx.Storage.LocalFileSystem.csproj", "plugins/LocalFileSystem/FlowSynx.Storage.LocalFileSystem/"]
-RUN dotnet restore "./src/FlowSync/./FlowSynx.csproj"
+COPY ["src/FlowSynx/FlowSynx.csproj", "src/FlowSynx/"]
+COPY ["src/FlowSynx.Core/FlowSynx.Core.csproj", "src/FlowSynx.Core/"]
+COPY ["plugins/AzureBlob/FlowSynx.Plugin.Storage.Azure.Blob/FlowSynx.Plugin.Storage.Azure.Blob.csproj", "plugins/AzureBlob/FlowSynx.Plugin.Storage.Azure.Blob/"]
+COPY ["plugins/LocalFileSystem/FlowSynx.Plugin.Storage.LocalFileSystem/FlowSynx.Plugin.Storage.LocalFileSystem.csproj", "plugins/LocalFileSystem/FlowSynx.Plugin.Storage.LocalFileSystem/"]
+RUN dotnet restore "./src/FlowSynx/./FlowSynx.csproj"
 COPY . .
-WORKDIR "/src/src/FlowSync"
+WORKDIR "/src/src/FlowSynx"
 RUN dotnet build "./FlowSynx.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

@@ -108,36 +108,36 @@ namespace FlowSynx {
         /// <summary>
         ///   Looks up a localized string similar to Base location not found.
         /// </summary>
-        internal static string FlowSyncLocationBaseLocationNotFound {
+        internal static string FlowSynxLocationBaseLocationNotFound {
             get {
-                return ResourceManager.GetString("FlowSyncLocationBaseLocationNotFound", resourceCulture);
+                return ResourceManager.GetString("FlowSynxLocationBaseLocationNotFound", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Root location not found.
         /// </summary>
-        internal static string FlowSyncLocationRootLocationNotFound {
+        internal static string FlowSynxLocationRootLocationNotFound {
             get {
-                return ResourceManager.GetString("FlowSyncLocationRootLocationNotFound", resourceCulture);
+                return ResourceManager.GetString("FlowSynxLocationRootLocationNotFound", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The EntryAssembly not found. Getting ExecutingAssembly!.
         /// </summary>
-        internal static string FlowSyncVersionEntryAssemblyNotFound {
+        internal static string FlowSynxVersionEntryAssemblyNotFound {
             get {
-                return ResourceManager.GetString("FlowSyncVersionEntryAssemblyNotFound", resourceCulture);
+                return ResourceManager.GetString("FlowSynxVersionEntryAssemblyNotFound", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Error in reading executable application..
         /// </summary>
-        internal static string FlowSyncVersionErrorInReadingExecutableApplication {
+        internal static string FlowSynxVersionErrorInReadingExecutableApplication {
             get {
-                return ResourceManager.GetString("FlowSyncVersionErrorInReadingExecutableApplication", resourceCulture);
+                return ResourceManager.GetString("FlowSynxVersionErrorInReadingExecutableApplication", resourceCulture);
             }
         }
         

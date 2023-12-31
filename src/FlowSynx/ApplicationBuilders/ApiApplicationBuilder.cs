@@ -22,7 +22,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
 
         builder.Services
             .AddEndpointsApiExplorer()
-            .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel)
+            .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel, rootCommandOptions.LogFile)
             .AddLocation()
             .AddVersion()
             .AddFlowSynxCore()

@@ -57,7 +57,7 @@ public class Storage : EndpointGroupBase
         var result = await mediator.Read(request, cancellationToken);
         if (!result.Succeeded) return Results.NotFound(result);
 
-        return result.Data.Content == null ? Results.BadRequest() : Results.Stream(result.Data.Content);
+        return result.Data.Content != null ? Results.Stream(result.Data.Content) : Results.BadRequest();
     }
 
     public async Task<IResult> DoWrite([FromBody] WriteRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)

@@ -6,12 +6,12 @@ using FlowSynx.Environment;
 
 namespace FlowSynx.Services;
 
-public class FlowSyncVersion : IVersion
+public class FlowSynxVersion : IVersion
 {
-    private readonly ILogger<FlowSyncLocation> _logger;
+    private readonly ILogger<FlowSynxLocation> _logger;
     private readonly string? _rootLocation = Path.GetDirectoryName(System.AppContext.BaseDirectory);
 
-    public FlowSyncVersion(ILogger<FlowSyncLocation> logger)
+    public FlowSynxVersion(ILogger<FlowSynxLocation> logger)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
@@ -31,13 +31,13 @@ public class FlowSyncVersion : IVersion
         {
             if (thisAssembly is null)
             {
-                _logger.LogWarning(Resources.FlowSyncVersionEntryAssemblyNotFound);
+                _logger.LogWarning(Resources.FlowSynxVersionEntryAssemblyNotFound);
                 thisAssembly = Assembly.GetExecutingAssembly();
             }
         }
 
         if (thisAssembly == null)
-            throw new ApiBaseException(Resources.FlowSyncVersionErrorInReadingExecutableApplication);
+            throw new ApiBaseException(Resources.FlowSynxVersionErrorInReadingExecutableApplication);
 
         var fullAssemblyName = thisAssembly.Location;
         var versionInfo = FileVersionInfo.GetVersionInfo(fullAssemblyName);

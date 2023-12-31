@@ -3,12 +3,12 @@ using FlowSynx.Core.Services;
 
 namespace FlowSynx.Services;
 
-public class FlowSyncLocation : ILocation
+public class FlowSynxLocation : ILocation
 {
-    private readonly ILogger<FlowSyncLocation> _logger;
+    private readonly ILogger<FlowSynxLocation> _logger;
     private readonly string? _rootLocation = Path.GetDirectoryName(System.AppContext.BaseDirectory);
 
-    public FlowSyncLocation(ILogger<FlowSyncLocation> logger)
+    public FlowSynxLocation(ILogger<FlowSynxLocation> logger)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
@@ -16,7 +16,7 @@ public class FlowSyncLocation : ILocation
         if (_rootLocation == null)
         {
             logger.LogError("Base location not found");
-            throw new Exception(Resources.FlowSyncLocationBaseLocationNotFound);
+            throw new Exception(Resources.FlowSynxLocationBaseLocationNotFound);
         }
     }
 
@@ -27,7 +27,7 @@ public class FlowSyncLocation : ILocation
     {
         if (_rootLocation is not null) return _rootLocation;
         _logger.LogError("Root location not found");
-        throw new Exception(Resources.FlowSyncLocationRootLocationNotFound);
+        throw new Exception(Resources.FlowSynxLocationRootLocationNotFound);
     }
     #endregion
 }

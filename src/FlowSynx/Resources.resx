@@ -132,16 +132,16 @@
   <data name="EntryPointErrorInExecutteApplication" xml:space="preserve">
     <value>Something wrong happen during execute the application.</value>
   </data>
-  <data name="FlowSyncLocationBaseLocationNotFound" xml:space="preserve">
+  <data name="FlowSynxLocationBaseLocationNotFound" xml:space="preserve">
     <value>Base location not found</value>
   </data>
-  <data name="FlowSyncLocationRootLocationNotFound" xml:space="preserve">
+  <data name="FlowSynxLocationRootLocationNotFound" xml:space="preserve">
     <value>Root location not found</value>
   </data>
-  <data name="FlowSyncVersionEntryAssemblyNotFound" xml:space="preserve">
+  <data name="FlowSynxVersionEntryAssemblyNotFound" xml:space="preserve">
     <value>The EntryAssembly not found. Getting ExecutingAssembly!</value>
   </data>
-  <data name="FlowSyncVersionErrorInReadingExecutableApplication" xml:space="preserve">
+  <data name="FlowSynxVersionErrorInReadingExecutableApplication" xml:space="preserve">
     <value>Error in reading executable application.</value>
   </data>
   <data name="OptionsVerifierErrorInReadingExecutableApplicationPath" xml:space="preserve">

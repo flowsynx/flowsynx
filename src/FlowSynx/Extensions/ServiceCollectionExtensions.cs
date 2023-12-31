@@ -10,17 +10,18 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddLocation(this IServiceCollection services)
     {
-        services.AddTransient<ILocation, FlowSyncLocation>();
+        services.AddTransient<ILocation, FlowSynxLocation>();
         return services;
     }
 
     public static IServiceCollection AddVersion(this IServiceCollection services)
     {
-        services.AddTransient<IVersion, FlowSyncVersion>();
+        services.AddTransient<IVersion, FlowSynxVersion>();
         return services;
     }
 
-    public static IServiceCollection AddLoggingService(this IServiceCollection services, bool enable, AppLogLevel logLevel)
+    public static IServiceCollection AddLoggingService(this IServiceCollection services, bool enable = true, 
+        LoggingLevel logLevel = LoggingLevel.Info, string logFile = "")
     {
         services.AddLogging(c => c.ClearProviders());
 
@@ -29,11 +30,11 @@ public static class ServiceCollectionExtensions
         
         var level = logLevel switch
         {
-            AppLogLevel.Dbug => LogLevel.Debug,
-            AppLogLevel.Info => LogLevel.Information,
-            AppLogLevel.Warn => LogLevel.Warning,
-            AppLogLevel.Fail => LogLevel.Error,
-            AppLogLevel.Crit => LogLevel.Critical,
+            LoggingLevel.Dbug => LogLevel.Debug,
+            LoggingLevel.Info => LogLevel.Information,
+            LoggingLevel.Warn => LogLevel.Warning,
+            LoggingLevel.Fail => LogLevel.Error,
+            LoggingLevel.Crit => LogLevel.Critical,
             _ => LogLevel.Information,
         };
 
@@ -43,12 +44,17 @@ public static class ServiceCollectionExtensions
             config.OutputTemplate = template;
             config.MinLevel = level;
         }));
-        services.AddLogging(builder => builder.AddFileLogger(config =>
+
+        if (!string.IsNullOrEmpty(logFile))
         {
-            config.Path = @"D:\AminLog\";
-            config.OutputTemplate = template;
-            config.MinLevel = level;
-        }));
+            services.AddLogging(builder => builder.AddFileLogger(config =>
+            {
+                config.Path = logFile;
+                config.OutputTemplate = template;
+                config.MinLevel = level;
+            }));
+        }
+
         return services;
     }
     

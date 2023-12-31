@@ -5,6 +5,7 @@ using FlowSynx.Commands;
 using FlowSynx.Environment;
 using FlowSynx.Extensions;
 using FlowSynx.IO;
+using FlowSynx.Logging;
 using FlowSynx.Models;
 using FlowSynx.Services;
 
@@ -13,7 +14,7 @@ IServiceCollection serviceCollection = new ServiceCollection()
     .AddSerialization()
     .AddEnvironmentManager()
     .AddEndpoint()
-    .AddLoggingService(true, AppLogLevel.Info)
+    .AddLoggingService()
     .AddTransient<RootCommand, Root>()
     .AddTransient<IOptionsVerifier, OptionsVerifier>()
     .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
