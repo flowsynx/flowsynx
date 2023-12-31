@@ -61,7 +61,7 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task<StorageStream> ReadAsync(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
+    public async Task<StorageRead> ReadAsync(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -167,7 +167,7 @@ internal class StorageService : IStorageService
         }
 
         var sourceStream = await sourcePlugin.ReadAsync(sourceFile, cancellationToken);
-        await destinationPlugin.WriteAsync(destinationFile, sourceStream, cancellationToken);
+        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, cancellationToken);
         _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
 
@@ -226,8 +226,8 @@ internal class StorageService : IStorageService
 
     private async void MoveFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, CancellationToken cancellationToken = default)
     {
-        await using var sourceStream = await sourcePlugin.ReadAsync(sourceFile, cancellationToken);
-        await destinationPlugin.WriteAsync(destinationFile, sourceStream, cancellationToken);
+        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, cancellationToken);
+        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, cancellationToken);
         _logger.LogInformation($"Move operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
 

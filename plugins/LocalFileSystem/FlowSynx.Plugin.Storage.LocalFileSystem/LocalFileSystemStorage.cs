@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.IO;
+using FlowSynx.Net;
 using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
@@ -96,13 +97,20 @@ public class LocalFileSystemStorage : IStoragePlugin
         return Task.CompletedTask;
     }
 
-    public Task<StorageStream> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public Task<StorageRead> ReadAsync(string path, CancellationToken cancellationToken = default)
     {
         path = GetPhysicalPath(path);
 
         if (File.Exists(path))
         {
-            return Task.FromResult(new StorageStream(File.OpenRead(path)));
+            var fileExtension = Path.GetExtension(path);
+            var result = new StorageRead()
+            {
+                Stream = new StorageStream(File.OpenRead(path)),
+                MimeType = fileExtension.GetMimeType(),
+                Extension = fileExtension
+            };
+            return Task.FromResult(result);
         }
 
         _logger.LogError($"The specified path '{path}' is not a file.");

@@ -35,7 +35,7 @@ public class AzureBlobStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public Task<StorageStream> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public Task<StorageRead> ReadAsync(string path, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

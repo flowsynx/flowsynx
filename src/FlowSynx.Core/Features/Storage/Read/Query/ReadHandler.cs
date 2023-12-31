@@ -27,11 +27,13 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResponse>>
         try
         {
             var storageNorms = _storageNormsParser.Parse(request.Path);
-            var entities = await _storageService.ReadAsync(storageNorms, cancellationToken);
+            var entity = await _storageService.ReadAsync(storageNorms, cancellationToken);
 
             var response = new ReadResponse()
             {
-                Content = entities
+                Content = entity.Stream,
+                Extension = entity.Extension,
+                MimeType = entity.MimeType
             };
 
             return await Result<ReadResponse>.SuccessAsync(response);
