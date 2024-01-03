@@ -11,14 +11,12 @@ namespace FlowSynx.Core.Storage;
 internal class StorageService : IStorageService
 {
     private readonly ILogger<StorageService> _logger;
-    private readonly IPluginsManager _pluginsManager;
 
     public StorageService(ILogger<StorageService> logger, IPluginsManager pluginsManager)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
         _logger = logger;
-        _pluginsManager = pluginsManager;
     }
 
     public async Task<StorageUsage> About(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
@@ -157,7 +155,8 @@ internal class StorageService : IStorageService
         }
     }
 
-    private async void CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, bool? overWrite, CancellationToken cancellationToken = default)
+    private async void CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, 
+        string destinationFile, bool? overWrite, CancellationToken cancellationToken = default)
     {
         var fileExist = await sourcePlugin.FileExistAsync(destinationFile, cancellationToken);
         if (overWrite is null or false && fileExist)
