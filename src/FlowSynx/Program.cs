@@ -5,7 +5,6 @@ using FlowSynx.Commands;
 using FlowSynx.Environment;
 using FlowSynx.Extensions;
 using FlowSynx.IO;
-using FlowSynx.Logging;
 using FlowSynx.Models;
 using FlowSynx.Services;
 
