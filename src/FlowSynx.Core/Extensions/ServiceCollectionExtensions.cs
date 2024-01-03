@@ -64,9 +64,16 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection RegisterPlugins(this IServiceCollection services)
     {
         var pluginType = typeof(IPlugin);
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
 
-        var types = assemblies
+        var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
+        var loadedPaths = loadedAssemblies.Select(a => a.Location).ToArray();
+
+        var referencedPaths = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll");
+        var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
+
+        toLoad.ForEach(path => loadedAssemblies.Add(AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(path))));
+        
+        var types = loadedAssemblies
             .SelectMany(s => s.GetTypes())
             .Where(p => p.GetInterfaces().Contains(pluginType) && p is {IsClass: true, IsPublic: true}).Select(s => new
             {
