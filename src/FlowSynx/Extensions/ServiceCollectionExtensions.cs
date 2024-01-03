@@ -21,7 +21,7 @@ public static class ServiceCollectionExtensions
     }
 
     public static IServiceCollection AddLoggingService(this IServiceCollection services, bool enable = true, 
-        LoggingLevel logLevel = LoggingLevel.Info, string logFile = "")
+        LoggingLevel logLevel = LoggingLevel.Info, string? logFile = "")
     {
         services.AddLogging(c => c.ClearProviders());
 

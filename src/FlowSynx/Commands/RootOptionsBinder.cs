@@ -10,10 +10,10 @@ public class RootOptionsBinder : BinderBase<RootCommandOptions>
     private readonly Option<bool> _enableHealthCheck;
     private readonly Option<bool> _enableLog;
     private readonly Option<LoggingLevel> _logLevel;
-    private readonly Option<string> _logFile;
+    private readonly Option<string?> _logFile;
 
     public RootOptionsBinder(Option<string> configFile, Option<bool> enableHealthCheck, 
-        Option<bool> enableLog, Option<LoggingLevel> logLevel, Option<string> logFile)
+        Option<bool> enableLog, Option<LoggingLevel> logLevel, Option<string?> logFile)
     {
         _configFile = configFile;
         _enableHealthCheck = enableHealthCheck;
@@ -30,7 +30,7 @@ public class RootOptionsBinder : BinderBase<RootCommandOptions>
             EnableHealthCheck = bindingContext.ParseResult.GetValueForOption(_enableHealthCheck),
             EnableLog = bindingContext.ParseResult.GetValueForOption(_enableLog),
             LogLevel = bindingContext.ParseResult.GetValueForOption(_logLevel),
-            LogFile = bindingContext.ParseResult.GetValueForOption(_logFile),
+            LogFile = bindingContext.ParseResult.GetValueForOption(_logFile) ?? string.Empty,
         };
     }
 }
