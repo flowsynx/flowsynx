@@ -9,7 +9,6 @@ public static class WebHostBuilderExtensions
             options.ListenAnyIP(port);
         });
         webHost.UseKestrel(option => option.AddServerHeader = false);
-
         return webHost;
     }
 }
