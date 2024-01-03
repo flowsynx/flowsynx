@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\plugins\AzureBlob\FlowSynx.Plugin.Storage.Azure.Blob\FlowSynx.Plugin.Storage.Azure.Blob.csproj" />
     <ProjectReference Include="..\..\plugins\LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj" />
   </ItemGroup>
 
