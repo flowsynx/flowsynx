@@ -8,22 +8,12 @@ using FlowSynx.IO;
 using FlowSynx.Models;
 using FlowSynx.Services;
 
-IServiceCollection serviceCollection = new ServiceCollection()
-    .AddLocation()
-    .AddSerialization()
-    .AddEnvironmentManager()
-    .AddEndpoint()
-    .AddLoggingService()
-    .AddTransient<RootCommand, Root>()
-    .AddTransient<IOptionsVerifier, OptionsVerifier>()
-    .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
-    .AddTransient<ICliApplicationBuilder, CliApplicationBuilder>();
-
-IServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
+IHost host = GetHost();
+IServiceProvider serviceProvider = host.Services;
 
 try
 {
-    var cli = serviceProvider.GetService<ICliApplicationBuilder>();
+    var cli = serviceProvider.GetRequiredService<ICliApplicationBuilder>();
 
     if (cli == null)
         throw new Exception(Resources.EntryPointErrorInExecutteApplication);
@@ -39,4 +29,22 @@ catch (Exception ex)
         Console.Error.WriteLine(ex.Message);
 
     return ExitCode.Error;
+}
+
+IHost GetHost()
+{
+    var hostBuilder = new HostBuilder().ConfigureServices(services =>
+    {
+        services.AddLocation()
+                .AddSerialization()
+                .AddEnvironmentManager()
+                .AddEndpoint()
+                .AddLoggingService()
+                .AddTransient<RootCommand, Root>()
+                .AddTransient<IOptionsVerifier, OptionsVerifier>()
+                .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
+                .AddTransient<ICliApplicationBuilder, CliApplicationBuilder>();
+    });
+    
+    return hostBuilder.UseConsoleLifetime().Build();
 }

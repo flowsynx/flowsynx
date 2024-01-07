@@ -21,13 +21,13 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
         builder.WebHost.ConfigHttpServer(_endpoint.GetDefaultHttpPort());
 
         builder.Services
-            .AddEndpointsApiExplorer()
-            .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel, rootCommandOptions.LogFile)
-            .AddLocation()
-            .AddVersion()
-            .AddFlowSynxCore()
-            .AddFlowSynxPlugins()
-            .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
+               .AddEndpointsApiExplorer()
+               .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel, rootCommandOptions.LogFile)
+               .AddLocation()
+               .AddVersion()
+               .AddFlowSynxCore()
+               .AddFlowSynxPlugins()
+               .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
         
         if (rootCommandOptions.EnableHealthCheck)
             builder.Services.AddHealthChecker();
