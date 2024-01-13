@@ -65,13 +65,30 @@ public static class ServiceCollectionExtensions
     {
         var pluginType = typeof(IPlugin);
 
-        var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies().ToList();
-        var loadedPaths = loadedAssemblies.Select(a => a.Location).ToArray();
+        var nameQueue = new Queue<AssemblyName>(AppDomain.CurrentDomain.GetAssemblies().Select(x=>x.GetName()));
+        var alreadyProcessed = new HashSet<string>() { };
+        var loadedAssemblies = new List<Assembly>();
+        while (nameQueue.Any())
+        {
+            var name = nameQueue.Dequeue();
+            var fullName = name.FullName;
 
-        var referencedPaths = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "*.dll");
-        var toLoad = referencedPaths.Where(r => !loadedPaths.Contains(r, StringComparer.InvariantCultureIgnoreCase)).ToList();
+            if (string.IsNullOrEmpty(fullName) || alreadyProcessed.Contains(fullName) || fullName.StartsWith("Microsoft.") || fullName.StartsWith("System."))
+                continue;
 
-        toLoad.ForEach(path => loadedAssemblies.Add(AppDomain.CurrentDomain.Load(AssemblyName.GetAssemblyName(path))));
+            alreadyProcessed.Add(fullName);
+            try
+            {
+                var newAssembly = Assembly.Load(name.FullName);
+                loadedAssemblies.Add(newAssembly);
+                foreach (var innerAsmName in newAssembly.GetReferencedAssemblies())
+                    nameQueue.Enqueue(innerAsmName);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
         
         var types = loadedAssemblies
             .SelectMany(s => s.GetTypes())
@@ -80,7 +97,7 @@ public static class ServiceCollectionExtensions
                 Service = pluginType,
                 Implementation = s
             }).ToList();
-
+        
         types.ForEach(x => services.AddScoped(x.Service, x.Implementation));
         return services;
     }
