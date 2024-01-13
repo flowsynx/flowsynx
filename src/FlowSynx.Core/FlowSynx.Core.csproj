@@ -23,9 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\plugins\LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj">
-      <Private></Private>
-    </ProjectReference>
+    <ProjectReference Include="..\..\plugins\LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj" />
   </ItemGroup>
 
   <ItemGroup>
