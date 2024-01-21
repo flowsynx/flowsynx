@@ -6,7 +6,7 @@ namespace FlowSynx.Services;
 public class FlowSynxLocation : ILocation
 {
     private readonly ILogger<FlowSynxLocation> _logger;
-    private readonly string? _rootLocation = Path.GetDirectoryName(System.AppContext.BaseDirectory);
+    private readonly string? _rootLocation = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
 
     public FlowSynxLocation(ILogger<FlowSynxLocation> logger)
     {
