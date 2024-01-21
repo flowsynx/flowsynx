@@ -37,7 +37,6 @@ IHost GetHost()
     {
         services.AddLocation()
                 .AddSerialization()
-                .AddEnvironmentManager()
                 .AddEndpoint()
                 .AddLoggingService()
                 .AddTransient<RootCommand, Root>()
