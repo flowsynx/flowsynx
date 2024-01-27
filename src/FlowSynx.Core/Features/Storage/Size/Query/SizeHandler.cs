@@ -52,7 +52,7 @@ internal class SizeHandler : IRequestHandler<SizeRequest, Result<SizeResponse>>
             var entities = await _storageService.List(storageNorms, searchOptions, listOptions, cancellationToken);
             var response = new SizeResponse()
             {
-                Size = entities.Sum(x => x.Size).ToString(request.FormatSize),
+                Size = entities.Sum(x => x.Size).ToString(!request.Full),
             };
 
             return await Result<SizeResponse>.SuccessAsync(response);
