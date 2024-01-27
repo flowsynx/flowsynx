@@ -117,9 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AboutValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>{PropertyName} should be not empty.</value>
-  </data>
   <data name="FileSystemDateParserCannotExtractValue" xml:space="preserve">
     <value>The value from ({0}) could not be extracted!</value>
   </data>

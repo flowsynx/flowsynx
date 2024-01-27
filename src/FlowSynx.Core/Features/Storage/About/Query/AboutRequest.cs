@@ -5,6 +5,6 @@ namespace FlowSynx.Core.Features.Storage.About.Query;
 
 public class AboutRequest : IRequest<Result<AboutResponse>>
 {
-    public required string Path { get; set; }
+    public string Path { get; set; } = string.Empty;
     public bool? Full { get; set; } = false;
 }

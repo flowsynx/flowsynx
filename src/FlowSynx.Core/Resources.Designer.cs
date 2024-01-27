@@ -61,15 +61,6 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {PropertyName} should be not empty..
-        /// </summary>
-        internal static string AboutValidatorPathValueMustNotNullOrEmptyMessage {
-            get {
-                return ResourceManager.GetString("AboutValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The given config name is already exist!.
         /// </summary>
         internal static string AddConfigHandlerItemIsAlreadyExist {

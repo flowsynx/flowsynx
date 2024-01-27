@@ -6,9 +6,6 @@ public class AboutValidator : AbstractValidator<AboutRequest>
 {
     public AboutValidator()
     {
-        RuleFor(request => request.Path)
-            .NotNull()
-            .NotEmpty()
-            .WithMessage(Resources.AboutValidatorPathValueMustNotNullOrEmptyMessage);
+
     }
 }
