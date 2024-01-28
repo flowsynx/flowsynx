@@ -100,7 +100,7 @@ jobs:
     - name: Create Release
       uses: ncipollo/release-action@v1
       with:
-        tag: ${{ inputs.rel_version }}
+        tag: v${{ inputs.rel_version }}
         name: FlowSynx v${{ inputs.rel_version }}
         body: "This is the v${{ inputs.rel_version }} release of FlowSynx"
         artifacts: "**/*.*"
