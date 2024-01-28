@@ -4,14 +4,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	<AssemblyName>FlowSynx</AssemblyName>
+	<AssemblyName>flowsynx</AssemblyName>
     <UserSecretsId>ee556b65-5e94-4153-88d3-9256fb61d188</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>..\..</DockerfileContext>
 	<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	<Title>FlowSynx</Title>
 	<Company>FlowSynx</Company>
-	<Copyright>© 2024 Microsoft Corporation. All rights reserved.</Copyright>
+	<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
 	<Authors>FlowSynx</Authors>
 	<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
 	<PackageProjectUrl>flowsynx.io</PackageProjectUrl>
