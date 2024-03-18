@@ -9,4 +9,5 @@ public class ListResponse
     public string? Size { get; set; }
     public string? MimeType { get; set; }
     public DateTimeOffset? ModifiedTime { get; set; }
+    public string? Md5 { get; set; } = string.Empty;
 }
