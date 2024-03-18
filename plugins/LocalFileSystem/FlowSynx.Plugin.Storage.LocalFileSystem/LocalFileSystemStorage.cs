@@ -48,7 +48,8 @@ public class LocalFileSystemStorage : IStoragePlugin
         return Task.FromResult(new StorageUsage { Total = totalSpace, Free = freeSpace});
     }
 
-    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, StorageListOptions listOptions, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, 
+        StorageListOptions listOptions, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -70,10 +71,10 @@ public class LocalFileSystemStorage : IStoragePlugin
             var directoryInfo = new DirectoryInfo(path);
 
             if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
-                result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse).Select(GetVirtualFilePath));
+                result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse).Select(LocalFileSystemConverter.ToEntity));
 
             if (listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory)
-                result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse).Select(GetVirtualDirectoryPath));
+                result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse).Select(LocalFileSystemConverter.ToEntity));
             
             var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
 
@@ -190,25 +191,5 @@ public class LocalFileSystemStorage : IStoragePlugin
     private string GetPhysicalPath(string path) => IsWindows ? path.ToWindowsPath() : path;
 
     private bool IsWindows => OperatingSystem.IsWindows();
-
-    private StorageEntity GetVirtualDirectoryPath(DirectoryInfo directory)
-    {
-        return new StorageEntity(directory.FullName.ToUnixPath(), StorageEntityItemKind.Directory)
-        {
-            CreatedTime = directory.CreationTime,
-            ModifiedTime = directory.LastWriteTime,
-            Size = null
-        };
-    }
-
-    private StorageEntity GetVirtualFilePath(FileInfo file)
-    {
-        return new StorageEntity(file.FullName.ToUnixPath(), StorageEntityItemKind.File)
-        {
-            CreatedTime = file.CreationTimeUtc,
-            ModifiedTime = file.LastWriteTimeUtc,
-            Size = file.Length
-        };
-    }
     #endregion
 }
