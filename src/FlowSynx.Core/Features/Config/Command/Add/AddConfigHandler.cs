@@ -24,7 +24,7 @@ internal class AddConfigHandler : IRequestHandler<AddConfigRequest, Result<AddCo
     {
         try
         {
-            var configItem = new ConfigurationItem(Guid.NewGuid(), request.Name, request.Type)
+            var configItem = new ConfigurationItem
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name,

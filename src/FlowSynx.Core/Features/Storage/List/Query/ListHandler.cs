@@ -59,7 +59,7 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
                 ModifiedTime = x.ModifiedTime,
                 Size = x.Size.ToString(!request.Full),
                 MimeType = x.MimeType,
-                Md5 = x.HashCode,
+                Md5 = x.Md5,
             });
 
             return await Result<IEnumerable<ListResponse>>.SuccessAsync(response);
