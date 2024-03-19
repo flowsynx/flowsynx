@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Plugin.Storage.LocalFileSystem;
+﻿using FlowSynx.Security;
+
+namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
 static class LocalFileSystemConverter
 {
@@ -18,7 +20,8 @@ static class LocalFileSystemConverter
         {
             CreatedTime = file.CreationTimeUtc,
             ModifiedTime = file.LastWriteTimeUtc,
-            Size = file.Length
+            Size = file.Length,
+            Md5 = HashHelper.GetMd5HashFile(file.FullName)
         };
     }
 }
