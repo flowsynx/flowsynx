@@ -24,7 +24,7 @@ public static class ApplicationBuilderExtensions
             throw new ArgumentException(Resources.UseCustomHeadersVersionServiceCouldNotBeInitialized);
 
         var headers = new CustomHeadersToAddAndRemove();
-        headers.HeadersToAdd.Add("FlowSynx-Version", versionService.Version);
+        headers.HeadersToAdd.Add("flowsynx-version", versionService.Version);
 
         app.UseMiddleware<CustomHeadersMiddleware>(headers);
         return app;

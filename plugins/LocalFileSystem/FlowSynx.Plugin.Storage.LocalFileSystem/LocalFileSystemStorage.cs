@@ -3,6 +3,7 @@ using EnsureThat;
 using FlowSynx.IO;
 using FlowSynx.Net;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Security;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
@@ -109,7 +110,8 @@ public class LocalFileSystemStorage : IStoragePlugin
             {
                 Stream = new StorageStream(File.OpenRead(path)),
                 MimeType = fileExtension.GetMimeType(),
-                Extension = fileExtension
+                Extension = fileExtension,
+                Md5 = HashHelper.GetMd5HashFile(path)
             };
             return Task.FromResult(result);
         }

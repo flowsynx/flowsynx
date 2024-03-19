@@ -52,12 +52,16 @@ public class Storage : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoRead([FromBody] ReadRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> DoRead([FromBody] ReadRequest request, [FromServices] IMediator mediator, HttpContext http, CancellationToken cancellationToken)
     {
         var result = await mediator.Read(request, cancellationToken);
         if (!result.Succeeded) return Results.NotFound(result);
 
-        return result.Data.Content != null ? Results.Stream(result.Data.Content) : Results.BadRequest();
+        if (result.Data.Content == null) return Results.BadRequest();
+
+        http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
+        return Results.Stream(result.Data.Content);
+
     }
 
     public async Task<IResult> DoWrite([FromBody] WriteRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)

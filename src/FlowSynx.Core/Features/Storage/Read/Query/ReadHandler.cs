@@ -33,7 +33,8 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResponse>>
             {
                 Content = entity.Stream,
                 Extension = entity.Extension,
-                MimeType = entity.MimeType
+                MimeType = entity.MimeType,
+                Md5 = entity.Md5
             };
 
             return await Result<ReadResponse>.SuccessAsync(response);
