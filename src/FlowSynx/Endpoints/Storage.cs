@@ -59,7 +59,9 @@ public class Storage : EndpointGroupBase
 
         if (result.Data.Content == null) return Results.BadRequest();
 
-        http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
+        if (!string.IsNullOrEmpty(result.Data.Md5))
+            http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
+
         return Results.Stream(result.Data.Content);
 
     }
