@@ -13,9 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.LocalFileSystem", "plugins\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj", "{EE1A893C-E84D-4D7D-93C8-0646EC729685}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azure.Blob", "plugins\FlowSynx.Plugin.Storage.Azure.Blob\FlowSynx.Plugin.Storage.Azure.Blob.csproj", "{60854C55-D120-4359-BEDF-883A825B603F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azure.Blobs", "plugins\FlowSynx.Plugin.Storage.Azure.Blobs\FlowSynx.Plugin.Storage.Azure.Blobs.csproj", "{60854C55-D120-4359-BEDF-883A825B603F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azure.File", "plugins\FlowSynx.Plugin.Storage.Azure.File\FlowSynx.Plugin.Storage.Azure.File.csproj", "{7B41A66B-26F1-4428-9426-FDFFF1D58F75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azure.Files", "plugins\FlowSynx.Plugin.Storage.Azure.Files\FlowSynx.Plugin.Storage.Azure.Files.csproj", "{7B41A66B-26F1-4428-9426-FDFFF1D58F75}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

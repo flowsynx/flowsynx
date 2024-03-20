@@ -14,7 +14,7 @@ public class AzureBlobStorage : IStoragePlugin
     }
 
     public Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
-    public string Name => "Azure.Blob";
+    public string Name => "Azure.Blobs";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => null;
     public Specifications? Specifications { get; set; }
