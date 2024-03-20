@@ -14,6 +14,8 @@ using FlowSynx.Parsers;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin;
 using FlowSynx.Plugin.Storage;
+using FlowSynx.Plugin.Storage.Azure.Files;
+using FlowSynx.Plugin.Storage.LocalFileSystem;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -63,42 +65,8 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection RegisterPlugins(this IServiceCollection services)
     {
-        var pluginType = typeof(IPlugin);
-
-        var nameQueue = new Queue<AssemblyName>(AppDomain.CurrentDomain.GetAssemblies().Select(x=>x.GetName()));
-        var alreadyProcessed = new HashSet<string>() { };
-        var loadedAssemblies = new List<Assembly>();
-        while (nameQueue.Any())
-        {
-            var name = nameQueue.Dequeue();
-            var fullName = name.FullName;
-
-            if (string.IsNullOrEmpty(fullName) || alreadyProcessed.Contains(fullName) || fullName.StartsWith("Microsoft.") || fullName.StartsWith("System."))
-                continue;
-
-            alreadyProcessed.Add(fullName);
-            try
-            {
-                var newAssembly = Assembly.Load(name.FullName);
-                loadedAssemblies.Add(newAssembly);
-                foreach (var innerAsmName in newAssembly.GetReferencedAssemblies())
-                    nameQueue.Enqueue(innerAsmName);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-        }
-        
-        var types = loadedAssemblies
-            .SelectMany(s => s.GetTypes())
-            .Where(p => p.GetInterfaces().Contains(pluginType) && p is {IsClass: true, IsPublic: true}).Select(s => new
-            {
-                Service = pluginType,
-                Implementation = s
-            }).ToList();
-        
-        types.ForEach(x => services.AddScoped(x.Service, x.Implementation));
+        services.AddScoped<IPlugin, LocalFileSystemStorage>();
+        services.AddScoped<IPlugin, AzureFileStorage>();
         return services;
     }
 }
