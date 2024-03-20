@@ -14,14 +14,14 @@ static class LocalFileSystemConverter
         };
     }
 
-    public static StorageEntity ToEntity(FileInfo file)
+    public static StorageEntity ToEntity(FileInfo file, bool? hashing)
     {
         return new StorageEntity(file.FullName.ToUnixPath(), StorageEntityItemKind.File)
         {
             CreatedTime = file.CreationTimeUtc,
             ModifiedTime = file.LastWriteTimeUtc,
             Size = file.Length,
-            Md5 = HashHelper.GetMd5HashFile(file.FullName)
+            Md5 = hashing is true ? HashHelper.GetMd5HashFile(file.FullName) : null,
         };
     }
 }

@@ -33,11 +33,11 @@ internal class StorageService : IStorageService
     }
 
     public async Task<IEnumerable<StorageEntity>> List(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions, 
-        StorageListOptions listOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
     {
         try
         {
-            return await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions, listOptions, cancellationToken);
+            return await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions, listOptions, hashOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -59,11 +59,12 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task<StorageRead> ReadAsync(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
+    public async Task<StorageRead> ReadAsync(StorageNormsInfo storageNormsInfo, StorageHashOptions hashOptions, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            return await storageNormsInfo.Plugin.ReadAsync(storageNormsInfo.Path, cancellationToken);
+            return await storageNormsInfo.Plugin.ReadAsync(storageNormsInfo.Path, hashOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -165,7 +166,7 @@ internal class StorageService : IStorageService
             return;
         }
 
-        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, cancellationToken);
+        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
         await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, cancellationToken);
         _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
@@ -177,7 +178,8 @@ internal class StorageService : IStorageService
         if (!PathHelper.IsRootPath(destinationDirectory))
             await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
 
-        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions, new StorageListOptions(), cancellationToken);
+        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions, 
+            new StorageListOptions(), new StorageHashOptions(), cancellationToken);
 
         var storageEntities = entities.ToList();
         foreach (string dirPath in storageEntities.Where(x => x.Kind == StorageEntityItemKind.Directory))
@@ -225,7 +227,7 @@ internal class StorageService : IStorageService
 
     private async void MoveFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, CancellationToken cancellationToken = default)
     {
-        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, cancellationToken);
+        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
         await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, cancellationToken);
         _logger.LogInformation($"Move operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
@@ -235,7 +237,8 @@ internal class StorageService : IStorageService
         if (!PathHelper.IsRootPath(destinationDirectory))
             await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
 
-        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions, new StorageListOptions(), cancellationToken);
+        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions,
+            new StorageListOptions(), new StorageHashOptions(), cancellationToken);
 
         var storageEntities = entities.ToList();
         foreach (string dirPath in storageEntities.Where(x => x.Kind == StorageEntityItemKind.Directory))

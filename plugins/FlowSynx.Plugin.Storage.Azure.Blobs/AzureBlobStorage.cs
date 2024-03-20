@@ -24,7 +24,8 @@ public class AzureBlobStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions? filters, StorageListOptions listOptions, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions? filters, 
+        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
     {
         ICollection<StorageEntity> result = new List<StorageEntity>() { };
         return Task.FromResult(result.AsEnumerable());
@@ -35,7 +36,8 @@ public class AzureBlobStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public Task<StorageRead> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

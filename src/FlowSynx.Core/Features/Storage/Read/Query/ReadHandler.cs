@@ -4,6 +4,7 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Core.Parers.Norms.Storage;
 using FlowSynx.Core.Storage;
+using FlowSynx.Plugin.Storage;
 
 namespace FlowSynx.Core.Features.Storage.Read.Query;
 
@@ -27,14 +28,20 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResponse>>
         try
         {
             var storageNorms = _storageNormsParser.Parse(request.Path);
-            var entity = await _storageService.ReadAsync(storageNorms, cancellationToken);
+
+            var hashOptions = new StorageHashOptions()
+            {
+                Hashing = request.Hashing
+            };
+
+            var entity = await _storageService.ReadAsync(storageNorms, hashOptions, cancellationToken);
 
             var response = new ReadResponse()
             {
                 Content = entity.Stream,
                 Extension = entity.Extension,
                 MimeType = entity.MimeType,
-                Md5 = entity.Md5
+                Md5 = request.Hashing is true ? entity.Md5 : null
             };
 
             return await Result<ReadResponse>.SuccessAsync(response);

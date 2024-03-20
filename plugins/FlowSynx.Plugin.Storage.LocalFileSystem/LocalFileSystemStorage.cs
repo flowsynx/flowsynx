@@ -50,7 +50,7 @@ public class LocalFileSystemStorage : IStoragePlugin
     }
 
     public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, 
-        StorageListOptions listOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -72,11 +72,17 @@ public class LocalFileSystemStorage : IStoragePlugin
             var directoryInfo = new DirectoryInfo(path);
 
             if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
-                result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse).Select(LocalFileSystemConverter.ToEntity));
+            {
+                result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse)
+                      .Select(file => LocalFileSystemConverter.ToEntity(file, hashOptions.Hashing)));
+            }
 
             if (listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory)
-                result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse).Select(LocalFileSystemConverter.ToEntity));
-            
+            {
+                result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse)
+                      .Select(LocalFileSystemConverter.ToEntity));
+            }
+
             var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
 
             if (listOptions.MaxResult is > 0)
@@ -99,7 +105,8 @@ public class LocalFileSystemStorage : IStoragePlugin
         return Task.CompletedTask;
     }
 
-    public Task<StorageRead> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions, 
+        CancellationToken cancellationToken = default)
     {
         path = GetPhysicalPath(path);
 
@@ -134,7 +141,9 @@ public class LocalFileSystemStorage : IStoragePlugin
 
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(path, storageSearches, new StorageListOptions(), cancellationToken);
+        var entities = await ListAsync(path, storageSearches,
+            new StorageListOptions(), new StorageHashOptions(), cancellationToken);
+
         foreach (var entity in entities.Where(x=>x.IsFile).ToList())
         {
             await DeleteFileAsync(entity.FullPath, cancellationToken);

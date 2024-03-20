@@ -29,7 +29,7 @@ public class AzureFileStorage : IStoragePlugin
     }
 
     public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
@@ -39,7 +39,8 @@ public class AzureFileStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public Task<StorageRead> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

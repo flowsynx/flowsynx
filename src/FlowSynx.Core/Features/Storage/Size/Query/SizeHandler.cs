@@ -44,12 +44,21 @@ internal class SizeHandler : IRequestHandler<SizeRequest, Result<SizeResponse>>
 
             var listOptions = new StorageListOptions()
             {
-                Kind = string.IsNullOrEmpty(request.Kind) ? StorageFilterItemKind.FileAndDirectory : EnumUtils.GetEnumValueOrDefault<StorageFilterItemKind>(request.Kind)!.Value,
+                Kind = string.IsNullOrEmpty(request.Kind) ? 
+                    StorageFilterItemKind.FileAndDirectory : 
+                    EnumUtils.GetEnumValueOrDefault<StorageFilterItemKind>(request.Kind)!.Value,
                 Sorting = null,
                 MaxResult = request.MaxResults
             };
 
-            var entities = await _storageService.List(storageNorms, searchOptions, listOptions, cancellationToken);
+            var hashOptions = new StorageHashOptions()
+            {
+                Hashing = false
+            };
+
+            var entities = await _storageService.List(storageNorms, searchOptions, 
+                listOptions, hashOptions, cancellationToken);
+
             var response = new SizeResponse()
             {
                 Size = entities.Sum(x => x.Size).ToString(!request.Full),
