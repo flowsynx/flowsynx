@@ -1,4 +1,5 @@
-﻿using EnsureThat;
+﻿using System.Reflection;
+using EnsureThat;
 using FlowSynx.Configuration;
 using FlowSynx.Core.Exceptions;
 using FlowSynx.Core.Extensions;
@@ -57,10 +58,10 @@ internal class StorageNormsParser : IStorageNormsParser
             if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)
                 throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserInvalidStorageType, fileSystem.Type));
 
-            var specifications = new Specifications();
+            var specifications = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
             if (fileSystem.Specifications != null)
-                specifications = _deserializer.Deserialize<Specifications>(fileSystem.Specifications.ToString());
-
+                specifications = fileSystem.Specifications;
+            
             return new StorageNormsInfo(_pluginsManager.GetPlugin(fileSystem.Type).CastTo<IStoragePlugin>(), specifications, segments[1]);
         }
         catch (Exception ex)
@@ -69,6 +70,6 @@ internal class StorageNormsParser : IStorageNormsParser
             throw new StorageNormsParserException(ex.Message);
         }
     }
-
+    
     public void Dispose() { }
 }

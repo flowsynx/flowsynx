@@ -6,7 +6,7 @@ namespace FlowSynx.Core.Parers.Norms.Storage;
 
 public class StorageNormsInfo
 {
-    public StorageNormsInfo(IStoragePlugin plugin, Specifications? specifications, string path)
+    public StorageNormsInfo(IStoragePlugin plugin, Dictionary<string, object?>? specifications, string path)
     {
         EnsureArg.IsNotNull(plugin, nameof(plugin));
         Plugin = plugin;
@@ -17,5 +17,5 @@ public class StorageNormsInfo
 
     public string Path { get; }
     public IStoragePlugin Plugin { get; }
-    public Specifications? Specifications { get; }
+    public Dictionary<string, object?>? Specifications { get; }
 }
