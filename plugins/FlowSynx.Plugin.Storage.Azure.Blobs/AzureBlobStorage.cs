@@ -2,7 +2,7 @@
 using FlowSynx.Plugin.Storage;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Plugin.Storage.Azure.Blob;
+namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
 public class AzureBlobStorage : IStoragePlugin
 {
@@ -17,7 +17,7 @@ public class AzureBlobStorage : IStoragePlugin
     public string Name => "Azure.Blobs";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => null;
-    public Specifications? Specifications { get; set; }
+    public Dictionary<string, object?>? Specifications { get; set; }
     
     public Task<StorageUsage> About(CancellationToken cancellationToken = default)
     {
@@ -31,7 +31,8 @@ public class AzureBlobStorage : IStoragePlugin
         return Task.FromResult(result.AsEnumerable());
     }
 
-    public Task WriteAsync(string path, StorageStream dataStream, CancellationToken cancellationToken = default)
+    public Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

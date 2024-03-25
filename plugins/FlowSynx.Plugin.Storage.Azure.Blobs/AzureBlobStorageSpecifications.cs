@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Plugin.Storage.Azure.Blob;
+﻿namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
 internal class AzureBlobStorageSpecifications: IConvertible
 {
