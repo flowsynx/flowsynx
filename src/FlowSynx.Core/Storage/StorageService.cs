@@ -46,11 +46,12 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, CancellationToken cancellationToken = default)
+    public async Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, StorageWriteOptions writeOptions, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            await storageNormsInfo.Plugin.WriteAsync(storageNormsInfo.Path, storageStream, cancellationToken);
+            await storageNormsInfo.Plugin.WriteAsync(storageNormsInfo.Path, storageStream, writeOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -167,7 +168,7 @@ internal class StorageService : IStorageService
         }
 
         var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
-        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, cancellationToken);
+        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, new StorageWriteOptions(){Overwrite = overWrite }, cancellationToken);
         _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
 
@@ -228,7 +229,7 @@ internal class StorageService : IStorageService
     private async void MoveFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, CancellationToken cancellationToken = default)
     {
         var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
-        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, cancellationToken);
+        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, new StorageWriteOptions(){Overwrite = true}, cancellationToken);
         _logger.LogInformation($"Move operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
 

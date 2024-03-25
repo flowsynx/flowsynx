@@ -11,7 +11,8 @@ internal interface IStorageService
     Task<IEnumerable<StorageEntity>> List(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions, 
         StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default);
 
-    Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, CancellationToken cancellationToken = default);
+    Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, StorageWriteOptions writeOptions, 
+        CancellationToken cancellationToken = default);
 
     Task<StorageRead> ReadAsync(StorageNormsInfo storageNormsInfo, StorageHashOptions hashOptions, 
         CancellationToken cancellationToken = default);

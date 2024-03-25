@@ -31,7 +31,8 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<WriteResponse
             var storageNorms = _storageNormsParser.Parse(request.Path);
             var stream = request.Data.IsBase64String() ? request.Data.Base64ToStream() : request.Data.ToStream();
             var storageStream = new StorageStream(stream);
-            await _storageService.WriteAsync(storageNorms, storageStream, cancellationToken);
+            var writeOptions = new StorageWriteOptions {Overwrite = request.Overwrite};
+            await _storageService.WriteAsync(storageNorms, storageStream, writeOptions, cancellationToken);
             return await Result<WriteResponse>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)
