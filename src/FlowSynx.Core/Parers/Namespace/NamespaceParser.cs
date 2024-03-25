@@ -34,7 +34,7 @@ internal class NamespaceParser : INamespaceParser
                 throw new NamespaceParserException(string.Format(Resources.NamespaceParserInvalidType, terms[0]));
             }
 
-            if (!string.Equals(firstTerm[1], "flowsynx", StringComparison.InvariantCultureIgnoreCase))
+            if (!string.Equals(firstTerm[0], "flowsynx", StringComparison.InvariantCultureIgnoreCase))
             {
                 _logger.LogError($"The given type {terms[0]} is not valid!");
                 throw new NamespaceParserException(string.Format(Resources.NamespaceParserInvalidType, terms[0]));
