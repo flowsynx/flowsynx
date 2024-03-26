@@ -120,7 +120,7 @@ public class LocalFileSystemStorage : IStoragePlugin
         var result = new StorageRead()
         {
             Stream = new StorageStream(File.OpenRead(path)),
-            MimeType = fileExtension.GetMimeType(),
+            MimeType = fileExtension.GetContentType(),
             Extension = fileExtension,
             Md5 = HashHelper.GetMd5HashFile(path)
         };

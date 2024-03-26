@@ -67,7 +67,7 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
                 Path = x.FullPath,
                 ModifiedTime = x.ModifiedTime,
                 Size = x.Size.ToString(!request.Full),
-                MimeType = x.MimeType,
+                ContentType = x.ContentType,
                 Md5 = x.Md5,
             });
 
