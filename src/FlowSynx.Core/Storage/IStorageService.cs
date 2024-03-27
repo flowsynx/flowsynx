@@ -21,6 +21,8 @@ internal interface IStorageService
 
     Task DeleteFile(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default);
 
+    Task<bool> FileExist(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default);
+
     Task MakeDirectoryAsync(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default);
 
     Task PurgeDirectoryAsync(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default);

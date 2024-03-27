@@ -100,6 +100,19 @@ internal class StorageService : IStorageService
         }
     }
 
+    public async Task<bool> FileExist(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            return await storageNormsInfo.Plugin.FileExistAsync(storageNormsInfo.Path, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"File exist in storage. Message: {ex.Message}");
+            throw new StorageException(ex.Message);
+        }
+    }
+
     public async Task MakeDirectoryAsync(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
     {
         try

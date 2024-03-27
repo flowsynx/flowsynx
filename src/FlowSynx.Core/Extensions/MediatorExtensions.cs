@@ -17,13 +17,14 @@ using FlowSynx.Core.Features.Storage.Write.Command;
 using FlowSynx.Core.Features.Config.Command.Delete;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
+using FlowSynx.Core.Features.Storage.Exist.Query;
 using FlowSynx.Core.Features.Version.Query;
 
 namespace FlowSynx.Core.Extensions;
 
 public static class MediatorExtensions
 {
-    #region FileSystem
+    #region Storage
     public static Task<Result<AboutResponse>> About(this IMediator mediator, AboutRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -55,6 +56,11 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<DeleteFileResponse>> DeleteFile(this IMediator mediator, DeleteFileRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<ExistResponse>> Exist(this IMediator mediator, ExistRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

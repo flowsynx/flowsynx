@@ -3,6 +3,7 @@ using FlowSynx.Core.Features.Storage.About.Query;
 using FlowSynx.Core.Features.Storage.Copy.Command;
 using FlowSynx.Core.Features.Storage.Delete.Command;
 using FlowSynx.Core.Features.Storage.DeleteFile.Command;
+using FlowSynx.Core.Features.Storage.Exist.Query;
 using FlowSynx.Core.Features.Storage.List.Query;
 using FlowSynx.Core.Features.Storage.MakeDirectory.Command;
 using FlowSynx.Core.Features.Storage.Move.Command;
@@ -28,6 +29,7 @@ public class Storage : EndpointGroupBase
             .MapPost(DoWrite, "/write")
             .MapDelete(DoDelete, "/delete")
             .MapDelete(DoDeleteFile, "/deleteFile")
+            .MapPost(DoCheckExistence, "/exist")
             .MapPost(DoMakeDirectory, "/mkdir")
             .MapDelete(DoPurgeDirectory, "/purge")
             .MapPost(DoCopy, "/copy")
@@ -81,6 +83,12 @@ public class Storage : EndpointGroupBase
     public async Task<IResult> DoDeleteFile([FromBody] DeleteFileRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.DeleteFile(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> DoCheckExistence([FromBody] ExistRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Exist(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
