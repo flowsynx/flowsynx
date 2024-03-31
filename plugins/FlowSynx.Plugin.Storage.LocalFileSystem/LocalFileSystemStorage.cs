@@ -21,10 +21,16 @@ public class LocalFileSystemStorage : IStoragePlugin
     }
 
     public Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
+    
     public string Name => "LocalFileSystem";
+    
     public PluginNamespace Namespace => PluginNamespace.Storage;
+    
     public string? Description => "Plugin for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever";
+    
     public Dictionary<string, object?>? Specifications { get; set; }
+
+    public Type SpecificationsType => typeof(LocalFileSystemSpecifications);
 
     public Task<StorageUsage> About(CancellationToken cancellationToken = default)
     {
