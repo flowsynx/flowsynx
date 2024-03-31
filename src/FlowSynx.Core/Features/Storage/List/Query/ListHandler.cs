@@ -59,19 +59,29 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
             var entities = await _storageService.List(storageNorms, searchOptions, 
                 listOptions, hashOptions, cancellationToken);
 
-            var response = entities.Select(x => new ListResponse()
+            var storageEntities = entities.ToList();
+            var result = new List<ListResponse>(storageEntities.Count());
+            foreach (var entity in storageEntities)
             {
-                Id = x.Id,
-                Kind = x.Kind.ToString().ToLower(),
-                Name = x.Name,
-                Path = x.FullPath,
-                ModifiedTime = x.ModifiedTime,
-                Size = x.Size.ToString(!request.Full),
-                ContentType = x.ContentType,
-                Md5 = x.Md5,
-            });
+                var response = new ListResponse
+                {
+                    Id = entity.Id,
+                    Kind = entity.Kind.ToString().ToLower(),
+                    Name = entity.Name,
+                    Path = entity.FullPath,
+                    ModifiedTime = entity.ModifiedTime,
+                    Size = entity.Size.ToString(!request.Full),
+                    ContentType = entity.ContentType,
+                    Md5 = entity.Md5,
+                };
 
-            return await Result<IEnumerable<ListResponse>>.SuccessAsync(response);
+                if (request.ShowMetadata)
+                    response.Metadata = entity.Metadata;
+
+                result.Add(response);
+            }
+            
+            return await Result<IEnumerable<ListResponse>>.SuccessAsync(result);
         }
         catch (Exception ex)
         {
