@@ -43,7 +43,7 @@ public class AzureFileStorage : IStoragePlugin
 
     public Type SpecificationsType => typeof(AzureFilesSpecifications);
 
-    private static ShareClient CreateShareClient(AzureFilesSpecifications specifications)
+    private ShareClient CreateShareClient(AzureFilesSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.ShareName))
             throw new StorageException("The ShareName value in azure file specifications should be not empty.");
