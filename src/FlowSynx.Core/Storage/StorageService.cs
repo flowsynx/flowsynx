@@ -32,7 +32,7 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task<IEnumerable<StorageEntity>> List(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions, 
+    public async Task<IEnumerable<StorageEntity>> List(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions,
         StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
     {
         try
@@ -46,7 +46,7 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, StorageWriteOptions writeOptions, 
+    public async Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, StorageWriteOptions writeOptions,
         CancellationToken cancellationToken = default)
     {
         try
@@ -60,7 +60,7 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task<StorageRead> ReadAsync(StorageNormsInfo storageNormsInfo, StorageHashOptions hashOptions, 
+    public async Task<StorageRead> ReadAsync(StorageNormsInfo storageNormsInfo, StorageHashOptions hashOptions,
         CancellationToken cancellationToken = default)
     {
         try
@@ -139,7 +139,7 @@ internal class StorageService : IStorageService
         }
     }
 
-    public async Task Copy(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo, 
+    public async Task Copy(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo,
         StorageSearchOptions searchOptions, StorageCopyOptions copyOptions, CancellationToken cancellationToken = default)
     {
         try
@@ -150,18 +150,22 @@ internal class StorageService : IStorageService
 
             if (copyOptions.ClearDestinationPath is true)
             {
-                _logger.LogWarning($"Purge directory from destination storage before copying.");
+                _logger.LogWarning("Purge directory from destination storage before copying.");
                 await destinationStorageNormsInfo.Plugin.DeleteAsync(destinationStorageNormsInfo.Path, new StorageSearchOptions(), cancellationToken);
             }
 
             if (isFile)
-                CopyFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, 
-                    destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, 
+            {
+                CopyFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
+                    destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path,
                     copyOptions.OverWriteData, cancellationToken);
+            }
             else
-                CopyDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, 
-                    destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, 
+            {
+                CopyDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
+                    destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path,
                     searchOptions, copyOptions.OverWriteData, cancellationToken);
+            }
         }
         catch (Exception ex)
         {
@@ -170,7 +174,7 @@ internal class StorageService : IStorageService
         }
     }
 
-    private async void CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, 
+    private async void CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin,
         string destinationFile, bool? overWrite, CancellationToken cancellationToken = default)
     {
         var fileExist = await sourcePlugin.FileExistAsync(destinationFile, cancellationToken);
@@ -185,14 +189,14 @@ internal class StorageService : IStorageService
         _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
     }
 
-    private async void CopyDirectory(IStoragePlugin sourcePlugin, string sourceDirectory, 
-        IStoragePlugin destinationPlugin, string destinationDirectory, 
+    private async void CopyDirectory(IStoragePlugin sourcePlugin, string sourceDirectory,
+        IStoragePlugin destinationPlugin, string destinationDirectory,
         StorageSearchOptions searchOptions, bool? overWrite, CancellationToken cancellationToken = default)
     {
         if (!PathHelper.IsRootPath(destinationDirectory))
             await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
 
-        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions, 
+        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions,
             new StorageListOptions(), new StorageHashOptions(), cancellationToken);
 
         var storageEntities = entities.ToList();
@@ -214,7 +218,7 @@ internal class StorageService : IStorageService
     {
         try
         {
-            if (string.Equals(sourceStorageNormsInfo.Plugin.Name, destinationStorageNormsInfo.Plugin.Name, StringComparison.InvariantCultureIgnoreCase) && 
+            if (string.Equals(sourceStorageNormsInfo.Plugin.Name, destinationStorageNormsInfo.Plugin.Name, StringComparison.InvariantCultureIgnoreCase) &&
                 string.Equals(sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Path, StringComparison.InvariantCultureIgnoreCase))
             {
                 throw new StorageException(Resources.MoveTheSourceAndDestinationPathAreIdenticalAndOverlap);

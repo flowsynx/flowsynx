@@ -3,7 +3,6 @@ using FlowSynx.Configuration;
 using FlowSynx.Core.Exceptions;
 using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Parers.Namespace;
-using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
@@ -16,23 +15,24 @@ internal class StorageNormsParser : IStorageNormsParser
     private readonly ILogger<StorageNormsParser> _logger;
     private readonly IConfigurationManager _configurationManager;
     private readonly IPluginsManager _pluginsManager;
-    private readonly IDeserializer _deserializer;
     private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
     private readonly IStorageFilter _storageFilter;
     private readonly INamespaceParser _namespaceParser;
     private const string ParserSeparator = "::";
 
     public StorageNormsParser(ILogger<StorageNormsParser> logger, IConfigurationManager configurationManager,
-        IPluginsManager pluginsManager, IDeserializer deserializer, ILogger<LocalFileSystemStorage> localStorageLogger,
+        IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
         IStorageFilter storageFilter, INamespaceParser namespaceParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(configurationManager, nameof(configurationManager));
-        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
+        EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
+        EnsureArg.IsNotNull(localStorageLogger, nameof(localStorageLogger));
+        EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
+        EnsureArg.IsNotNull(namespaceParser, nameof(namespaceParser));
         _logger = logger;
         _configurationManager = configurationManager;
         _pluginsManager = pluginsManager;
-        _deserializer = deserializer;
         _localStorageLogger = localStorageLogger;
         _storageFilter = storageFilter;
         _namespaceParser = namespaceParser;
