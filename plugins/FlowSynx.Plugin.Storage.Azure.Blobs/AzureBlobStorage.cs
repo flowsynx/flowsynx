@@ -18,26 +18,27 @@ public class AzureBlobStorage : IStoragePlugin
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => null;
     public Dictionary<string, object?>? Specifications { get; set; }
-    
+    public Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
+
     public Task<StorageUsage> About(CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions? filters, 
+    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions? filters,
         StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
     {
         ICollection<StorageEntity> result = new List<StorageEntity>() { };
         return Task.FromResult(result.AsEnumerable());
     }
 
-    public Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions, 
+    public Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions, 
+    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
