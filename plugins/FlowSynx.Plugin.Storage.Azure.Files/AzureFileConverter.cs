@@ -8,7 +8,6 @@ static class AzureFileConverter
     public static async Task<StorageEntity> ToEntity(string path, ShareFileItem fileItem, ShareFileClient client, CancellationToken cancellationToken)
     {
         var fileProperties = await client.GetPropertiesAsync(cancellationToken);
-        
         var entity = new StorageEntity(path, fileItem.Name, StorageEntityItemKind.File)
         {
             ModifiedTime = fileItem.Properties.LastWrittenOn,
@@ -37,7 +36,6 @@ static class AzureFileConverter
         {
             ModifiedTime = fileItem.Properties.LastWrittenOn
         };
-        
         entity.TryAddMetadata(
             "ChangeTime", fileItem.Properties.ChangedOn?.ToString() ?? string.Empty,
             "CreationTime", fileItem.Properties.CreatedOn?.ToString() ?? string.Empty,

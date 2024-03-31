@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Plugin.Abstractions;
 using Azure.Storage.Files.Shares;
-using FlowSynx.IO.Serialization;
 using FlowSynx.Reflections;
 using Azure.Storage.Files.Shares.Models;
 using FlowSynx.IO;
@@ -15,18 +14,16 @@ public class AzureFileStorage : IStoragePlugin
 {
     private readonly ILogger<AzureFileStorage> _logger;
     private readonly IStorageFilter _storageFilter;
-    private readonly IDeserializer _deserializer;
     private Dictionary<string, object?>? _specifications;
     private AzureFilesSpecifications? _azureFilesSpecifications;
     private ShareClient _client = null!;
 
-    public AzureFileStorage(ILogger<AzureFileStorage> logger, IStorageFilter storageFilter, IDeserializer deserializer)
+    public AzureFileStorage(ILogger<AzureFileStorage> logger, IStorageFilter storageFilter)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
         _logger = logger;
         _storageFilter = storageFilter;
-        _deserializer = deserializer;
     }
 
     public Guid Id => Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d");
@@ -44,7 +41,9 @@ public class AzureFileStorage : IStoragePlugin
         }
     }
 
-    private ShareClient CreateShareClient(AzureFilesSpecifications specifications)
+    public Type SpecificationsType => typeof(AzureFilesSpecifications);
+
+    private static ShareClient CreateShareClient(AzureFilesSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.ShareName))
             throw new StorageException("The ShareName value in azure file specifications should be not empty.");
@@ -59,7 +58,6 @@ public class AzureFileStorage : IStoragePlugin
         var uri = new Uri($"https://{specifications.AccountName}.file.core.windows.net/{specifications.ShareName}");
         var credential = new StorageSharedKeyCredential(specifications.AccountName, specifications.AccountKey);
         return new ShareClient(shareUri: uri, credential: credential);
-
     }
 
     public async Task<StorageUsage> About(CancellationToken cancellationToken = default)
