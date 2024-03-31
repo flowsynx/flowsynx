@@ -6,6 +6,7 @@ using FlowSynx.Configuration;
 using FlowSynx.Core.Behaviors;
 using FlowSynx.Core.Parers.Namespace;
 using FlowSynx.Core.Parers.Norms.Storage;
+using FlowSynx.Core.Parers.Specifications;
 using FlowSynx.Core.Storage;
 using FlowSynx.Core.Storage.Filter;
 using FlowSynx.Environment;
@@ -41,6 +42,7 @@ public static class ServiceCollectionExtensions
             .AddParsers()
             .AddScoped<IStorageNormsParser, StorageNormsParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
+            .AddScoped<ISpecificationsParser, SpecificationsParser>()
             .AddScoped<IStorageFilter, StorageFilter>()
             .AddScoped<IStorageService, StorageService>();
 
