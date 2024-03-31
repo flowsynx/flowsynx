@@ -249,4 +249,10 @@
   <data name="DeleteConfigValidatorNameValueMustNotNullOrEmptyMessage" xml:space="preserve">
     <value>Name should be not empty.</value>
   </data>
+  <data name="SpecificationsMustHaveValue" xml:space="preserve">
+    <value>The specification(s) [{0}] are required and must have value.</value>
+  </data>
+  <data name="SpecificationsRequiredMemberMustHaveValue" xml:space="preserve">
+    <value>The value of '{0}' in specifications is required and must have a value.</value>
+  </data>
 </root>
