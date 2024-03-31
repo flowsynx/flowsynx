@@ -10,4 +10,5 @@ public class ListResponse
     public string? ContentType { get; set; }
     public DateTimeOffset? ModifiedTime { get; set; }
     public string? Md5 { get; set; } = string.Empty;
+    public Dictionary<string, object>? Metadata { get; set; }
 }
