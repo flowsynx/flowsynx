@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Features.Storage.About.Query;
+using FlowSynx.Core.Features.Storage.Check.Command;
 using FlowSynx.Core.Features.Storage.Copy.Command;
 using FlowSynx.Core.Features.Storage.Delete.Command;
 using FlowSynx.Core.Features.Storage.DeleteFile.Command;
@@ -33,7 +34,8 @@ public class Storage : EndpointGroupBase
             .MapPost(DoMakeDirectory, "/mkdir")
             .MapDelete(DoPurgeDirectory, "/purge")
             .MapPost(DoCopy, "/copy")
-            .MapPost(DoMove, "/move");
+            .MapPost(DoMove, "/move")
+            .MapPost(DoCheck, "/check");
     }
 
     public async Task<IResult> GetAbout([FromBody] AboutRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
@@ -113,6 +115,12 @@ public class Storage : EndpointGroupBase
     public async Task<IResult> DoMove([FromBody] MoveRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Move(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> DoCheck([FromBody] CheckRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.Check(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

@@ -5,6 +5,8 @@ using FlowSynx.Core.Storage.Options;
 using FlowSynx.IO;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
+using FlowSynx.Core.Features.Storage.Check.Command;
+using FlowSynx.Core.Storage.Models;
 
 namespace FlowSynx.Core.Storage;
 
@@ -270,6 +272,83 @@ internal class StorageService : IStorageService
         {
             var destinationFile = file.Replace(sourceDirectory, destinationDirectory);
             MoveFile(sourcePlugin, file, destinationPlugin, destinationFile, cancellationToken);
+        }
+    }
+
+    public async Task<IEnumerable<CheckResult>> Check(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo,
+        StorageSearchOptions searchOptions, StorageCheckOptions checkOptions, CancellationToken cancellationToken = default)
+    {
+        var result = new List<CheckResult>();
+        try
+        {
+            var sourceEntities = await sourceStorageNormsInfo.Plugin.ListAsync(sourceStorageNormsInfo.Path, 
+                searchOptions,
+                new StorageListOptions { Kind = StorageFilterItemKind.File}, 
+                new StorageHashOptions { Hashing = checkOptions.CheckHash }, 
+                cancellationToken);
+
+            var destinationEntities = await destinationStorageNormsInfo.Plugin.ListAsync(destinationStorageNormsInfo.Path,
+                searchOptions,
+                new StorageListOptions { Kind = StorageFilterItemKind.File },
+                new StorageHashOptions { Hashing = checkOptions.CheckHash },
+                cancellationToken);
+
+            var storageSourceEntities = sourceEntities.ToList();
+            var storageDestinationEntities = destinationEntities.ToList();
+
+            var existOnSourceEntities = storageSourceEntities
+                .Join(storageDestinationEntities, source => source.Name, 
+                    destination => destination.Name, 
+                    (source, destination) => (Source: source, Destination: destination)).ToList();
+
+            var missedOnDestination = storageSourceEntities.Except(existOnSourceEntities.Select(x=>x.Source));
+
+            IEnumerable<StorageEntity> missedOnSource = new List<StorageEntity>();
+            if (checkOptions.OneWay is false)
+            {
+                var existOnDestinationEntities = storageDestinationEntities
+                    .Join(storageSourceEntities, source => source.Name, destination => destination.Name, (source, destination) => source)
+                    .ToList();
+
+                missedOnSource = storageDestinationEntities.Except(existOnDestinationEntities);
+            }
+
+            foreach (var sourceEntity in existOnSourceEntities)
+            {
+                var state = CheckState.Different;
+                if (sourceEntity.Source.Name == sourceEntity.Destination.Name)
+                {
+                    state = checkOptions switch
+                    {
+                        {CheckSize: true, CheckHash: false} => sourceEntity.Source.Size == sourceEntity.Destination.Size 
+                                                                ? CheckState.Match 
+                                                                : CheckState.Different,
+                        {CheckSize: false, CheckHash: true} => !string.IsNullOrEmpty(sourceEntity.Source.Md5) 
+                                                               && !string.IsNullOrEmpty(sourceEntity.Destination.Md5) 
+                                                               && sourceEntity.Source.Md5 == sourceEntity.Destination.Md5 
+                                                                ? CheckState.Match 
+                                                                : CheckState.Different,
+                        {CheckSize: true, CheckHash: true} => sourceEntity.Source.Size == sourceEntity.Destination.Size 
+                                                              && !string.IsNullOrEmpty(sourceEntity.Source.Md5)
+                                                              && !string.IsNullOrEmpty(sourceEntity.Destination.Md5)
+                                                              && sourceEntity.Source.Md5 == sourceEntity.Destination.Md5 
+                                                                ? CheckState.Match 
+                                                                : CheckState.Different,
+                        _ => state = CheckState.Match,
+                    };
+                }
+                result.Add(new CheckResult {Entity = sourceEntity.Source, State = state});
+            }
+
+            result.AddRange(missedOnDestination.Select(sourceEntity => new CheckResult {Entity = sourceEntity, State = CheckState.MissedOnDestination}));
+            result.AddRange(missedOnSource.Select(sourceEntity => new CheckResult {Entity = sourceEntity, State = CheckState.MissedOnSource}));
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Move from storage '{sourceStorageNormsInfo.Plugin.Name}' to {destinationStorageNormsInfo.Plugin.Name}. Message: {ex.Message}");
+            throw new StorageException(ex.Message);
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using FlowSynx.Core.Parers.Norms.Storage;
+﻿using FlowSynx.Core.Features.Storage.Check.Command;
+using FlowSynx.Core.Parers.Norms.Storage;
+using FlowSynx.Core.Storage.Models;
 using FlowSynx.Core.Storage.Options;
 using FlowSynx.Plugin.Storage;
 
@@ -32,4 +34,7 @@ internal interface IStorageService
 
     Task Move(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo, 
         StorageSearchOptions searchOptions, StorageMoveOptions moveOptions, CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<CheckResult>> Check(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo,
+        StorageSearchOptions searchOptions, StorageCheckOptions checkOptions, CancellationToken cancellationToken = default);
 }

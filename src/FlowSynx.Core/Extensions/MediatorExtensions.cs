@@ -17,6 +17,7 @@ using FlowSynx.Core.Features.Storage.Write.Command;
 using FlowSynx.Core.Features.Config.Command.Delete;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
+using FlowSynx.Core.Features.Storage.Check.Command;
 using FlowSynx.Core.Features.Storage.Exist.Query;
 using FlowSynx.Core.Features.Version.Query;
 
@@ -81,6 +82,11 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<MoveResponse>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<IEnumerable<CheckResponse>>> Check(this IMediator mediator, CheckRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
