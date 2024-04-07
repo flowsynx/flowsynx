@@ -129,7 +129,7 @@ public class Storage : EndpointGroupBase
     public async Task<IResult> DoCompress([FromBody] CompressRequest request, [FromServices] IMediator mediator, 
         HttpContext http, CancellationToken cancellationToken)
     {
-        var result = mediator.Compress(request, cancellationToken).Result;
+        var result = await mediator.Compress(request, cancellationToken);
         if (!result.Succeeded) return Results.NotFound(result);
 
         if (result.Data.Content == null) return Results.BadRequest();

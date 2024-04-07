@@ -1,6 +1,4 @@
-﻿using FlowSynx.Core.Storage.Models;
-
-namespace FlowSynx.Core.Features.Storage.Compress.Command;
+﻿namespace FlowSynx.Core.Features.Storage.Compress.Command;
 
 public class CompressResponse
 {

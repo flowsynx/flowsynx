@@ -4,7 +4,7 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Core.Parers.Norms.Storage;
 using FlowSynx.Core.Storage;
-using FlowSynx.Core.Storage.Options;
+using FlowSynx.Core.Storage.Check;
 using FlowSynx.Plugin.Storage;
 
 namespace FlowSynx.Core.Features.Storage.Check.Command;

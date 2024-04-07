@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Core.Storage.Models;
+﻿namespace FlowSynx.Core.Storage.Check;
 
 public enum CheckState
 {

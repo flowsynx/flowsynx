@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Plugin.Storage;
 
-namespace FlowSynx.Core.Storage.Models;
+namespace FlowSynx.Core.Storage.Compress;
 
 public class CompressResult
 {

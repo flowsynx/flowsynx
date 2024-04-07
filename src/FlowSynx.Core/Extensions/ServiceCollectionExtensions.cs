@@ -19,6 +19,10 @@ using FlowSynx.Plugin.Storage.Azure.Files;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
 using System.Security.Cryptography;
 using FlowSynx.Core.Services;
+using FlowSynx.Core.Storage.Check;
+using FlowSynx.Core.Storage.Compress;
+using FlowSynx.Core.Storage.Copy;
+using FlowSynx.Core.Storage.Move;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -43,6 +47,7 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
+            .AddFlowSynxStorageServices()
             .AddScoped<IStorageNormsParser, StorageNormsParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>()
@@ -59,7 +64,17 @@ public static class ServiceCollectionExtensions
             .AddConfiguration();
         return services;
     }
-    
+
+    public static IServiceCollection AddFlowSynxStorageServices(this IServiceCollection services)
+    {
+        services
+            .AddScoped<IEntityCopier, EntityCopier>()
+            .AddScoped<IEntityMover, EntityMover>()
+            .AddScoped<IEntityChecker, EntityChecker>()
+            .AddScoped<IEntityCompress, EntityCompress>();
+        return services;
+    }
+
     public static IServiceCollection AddFlowSynxPlugins(this IServiceCollection services)
     {
         services

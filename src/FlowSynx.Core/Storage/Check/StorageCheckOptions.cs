@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Core.Storage.Options;
+﻿namespace FlowSynx.Core.Storage.Check;
 
 public class StorageCheckOptions
 {

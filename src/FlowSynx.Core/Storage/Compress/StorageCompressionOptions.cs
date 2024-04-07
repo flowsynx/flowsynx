@@ -1,6 +1,6 @@
 ﻿using FlowSynx.IO.Compression;
 
-namespace FlowSynx.Core.Storage.Options;
+namespace FlowSynx.Core.Storage.Compress;
 
 public class StorageCompressionOptions
 {

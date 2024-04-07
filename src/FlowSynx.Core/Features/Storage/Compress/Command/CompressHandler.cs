@@ -4,10 +4,10 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Core.Parers.Norms.Storage;
 using FlowSynx.Core.Storage;
-using FlowSynx.Core.Storage.Options;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Commons;
 using FlowSynx.Core.Services;
+using FlowSynx.Core.Storage.Compress;
 using FlowSynx.IO.Compression;
 using SharpCompress.Common;
 

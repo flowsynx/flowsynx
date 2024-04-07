@@ -1,31 +1,39 @@
 ﻿using EnsureThat;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Parers.Norms.Storage;
-using FlowSynx.Core.Storage.Options;
-using FlowSynx.IO;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
-using FlowSynx.Core.Features.Storage.Check.Command;
-using FlowSynx.Core.Storage.Models;
-using System.Diagnostics;
-using FlowSynx.Core.Services;
 using FlowSynx.Security;
 using FlowSynx.IO.Compression;
+using FlowSynx.Core.Storage.Copy;
+using FlowSynx.Core.Storage.Move;
+using FlowSynx.Core.Storage.Check;
+using FlowSynx.Core.Storage.Compress;
 
 namespace FlowSynx.Core.Storage;
 
 internal class StorageService : IStorageService
 {
     private readonly ILogger<StorageService> _logger;
-    private readonly Func<CompressType, ICompression> _compressionManager;
+    private readonly IEntityCopier _entityCopier;
+    private readonly IEntityMover _entityMover;
+    private readonly IEntityChecker _entityChecker;
+    private readonly IEntityCompress _entityCompress;
 
-    public StorageService(ILogger<StorageService> logger, IPluginsManager pluginsManager,
-        Func<CompressType, ICompression> compressionManager)
+    public StorageService(ILogger<StorageService> logger,
+        IEntityCopier entityCopier, IEntityMover entityMover, 
+        IEntityChecker entityChecker, IEntityCompress entityCompress)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
+        EnsureArg.IsNotNull(entityCopier, nameof(entityCopier));
+        EnsureArg.IsNotNull(entityMover, nameof(entityMover));
+        EnsureArg.IsNotNull(entityChecker, nameof(entityChecker));
+        EnsureArg.IsNotNull(entityCompress, nameof(entityCompress));
         _logger = logger;
-        _compressionManager = compressionManager;
+        _entityCopier = entityCopier;
+        _entityMover = entityMover;
+        _entityChecker = entityChecker;
+        _entityCompress = entityCompress;
     }
 
     public async Task<StorageUsage> About(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
@@ -153,28 +161,8 @@ internal class StorageService : IStorageService
     {
         try
         {
-            bool isFile;
-            if ((isFile = PathHelper.IsFile(sourceStorageNormsInfo.Path)) != PathHelper.IsFile(destinationStorageNormsInfo.Path))
-                throw new StorageException(Resources.CopyDestinationPathIsDifferentThanSourcePath);
-
-            if (copyOptions.ClearDestinationPath is true)
-            {
-                _logger.LogWarning("Purge directory from destination storage before copying.");
-                await destinationStorageNormsInfo.Plugin.DeleteAsync(destinationStorageNormsInfo.Path, new StorageSearchOptions(), cancellationToken);
-            }
-
-            if (isFile)
-            {
-                CopyFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
-                    destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path,
-                    copyOptions.OverWriteData, cancellationToken);
-            }
-            else
-            {
-                CopyDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
-                    destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path,
-                    searchOptions, copyOptions.OverWriteData, cancellationToken);
-            }
+            await _entityCopier.Copy(sourceStorageNormsInfo, destinationStorageNormsInfo, searchOptions, 
+                copyOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -182,68 +170,14 @@ internal class StorageService : IStorageService
             throw new StorageException(ex.Message);
         }
     }
-
-    private async void CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin,
-        string destinationFile, bool? overWrite, CancellationToken cancellationToken = default)
-    {
-        var fileExist = await sourcePlugin.FileExistAsync(destinationFile, cancellationToken);
-        if (overWrite is null or false && fileExist)
-        {
-            _logger.LogInformation($"Copy operation ignored - The file '{destinationFile}' is already exist on '{destinationPlugin.Name}'");
-            return;
-        }
-
-        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
-        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, new StorageWriteOptions(){Overwrite = overWrite }, cancellationToken);
-        _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
-    }
-
-    private async void CopyDirectory(IStoragePlugin sourcePlugin, string sourceDirectory,
-        IStoragePlugin destinationPlugin, string destinationDirectory,
-        StorageSearchOptions searchOptions, bool? overWrite, CancellationToken cancellationToken = default)
-    {
-        if (!PathHelper.IsRootPath(destinationDirectory))
-            await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
-
-        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions,
-            new StorageListOptions(), new StorageHashOptions(), cancellationToken);
-
-        var storageEntities = entities.ToList();
-        foreach (string dirPath in storageEntities.Where(x => x.Kind == StorageEntityItemKind.Directory))
-        {
-            var destinationDir = dirPath.Replace(sourceDirectory, destinationDirectory);
-            await destinationPlugin.MakeDirectoryAsync(destinationDir, cancellationToken);
-            _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for directory '{dirPath}'");
-        }
-
-        foreach (string file in storageEntities.Where(x => x.Kind == StorageEntityItemKind.File))
-        {
-            var destinationFile = file.Replace(sourceDirectory, destinationDirectory);
-            CopyFile(sourcePlugin, file, destinationPlugin, destinationFile, overWrite, cancellationToken);
-        }
-    }
-
-    public async Task Move(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo, StorageSearchOptions searchOptions, StorageMoveOptions moveOptions, CancellationToken cancellationToken = default)
+    
+    public async Task Move(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo, 
+        StorageSearchOptions searchOptions, StorageMoveOptions moveOptions, CancellationToken cancellationToken = default)
     {
         try
         {
-            if (string.Equals(sourceStorageNormsInfo.Plugin.Name, destinationStorageNormsInfo.Plugin.Name, StringComparison.InvariantCultureIgnoreCase) &&
-                string.Equals(sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Path, StringComparison.InvariantCultureIgnoreCase))
-            {
-                throw new StorageException(Resources.MoveTheSourceAndDestinationPathAreIdenticalAndOverlap);
-            }
-
-            bool isFile;
-            if ((isFile = PathHelper.IsFile(sourceStorageNormsInfo.Path)) != PathHelper.IsFile(destinationStorageNormsInfo.Path))
-                throw new StorageException(Resources.MoveDestinationPathIsDifferentThanSourcePath);
-
-            if (isFile)
-                MoveFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, cancellationToken);
-            else
-                MoveDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, searchOptions, cancellationToken);
-
-            if (!PathHelper.IsRootPath(sourceStorageNormsInfo.Path))
-                await sourceStorageNormsInfo.Plugin.DeleteAsync(sourceStorageNormsInfo.Path, searchOptions, cancellationToken);
+            await _entityMover.Move(sourceStorageNormsInfo, destinationStorageNormsInfo, searchOptions, 
+                moveOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -251,106 +185,15 @@ internal class StorageService : IStorageService
             throw new StorageException(ex.Message);
         }
     }
-
-    private async void MoveFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, CancellationToken cancellationToken = default)
+    
+    public async Task<IEnumerable<CheckResult>> Check(StorageNormsInfo sourceStorageNormsInfo, 
+        StorageNormsInfo destinationStorageNormsInfo, StorageSearchOptions searchOptions, 
+        StorageCheckOptions checkOptions, CancellationToken cancellationToken = default)
     {
-        var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
-        await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, new StorageWriteOptions(){Overwrite = true}, cancellationToken);
-        _logger.LogInformation($"Move operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
-    }
-
-    private async void MoveDirectory(IStoragePlugin sourcePlugin, string sourceDirectory, IStoragePlugin destinationPlugin, string destinationDirectory, StorageSearchOptions searchOptions, CancellationToken cancellationToken = default)
-    {
-        if (!PathHelper.IsRootPath(destinationDirectory))
-            await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
-
-        var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions,
-            new StorageListOptions(), new StorageHashOptions(), cancellationToken);
-
-        var storageEntities = entities.ToList();
-        foreach (string dirPath in storageEntities.Where(x => x.Kind == StorageEntityItemKind.Directory))
-        {
-            var destinationDir = dirPath.Replace(sourceDirectory, destinationDirectory);
-            await destinationPlugin.MakeDirectoryAsync(destinationDir, cancellationToken);
-            _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for directory '{dirPath}'");
-        }
-
-        foreach (string file in storageEntities.Where(x => x.Kind == StorageEntityItemKind.File))
-        {
-            var destinationFile = file.Replace(sourceDirectory, destinationDirectory);
-            MoveFile(sourcePlugin, file, destinationPlugin, destinationFile, cancellationToken);
-        }
-    }
-
-    public async Task<IEnumerable<CheckResult>> Check(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo,
-        StorageSearchOptions searchOptions, StorageCheckOptions checkOptions, CancellationToken cancellationToken = default)
-    {
-        var result = new List<CheckResult>();
         try
         {
-            var sourceEntities = await sourceStorageNormsInfo.Plugin.ListAsync(sourceStorageNormsInfo.Path, 
-                searchOptions,
-                new StorageListOptions { Kind = StorageFilterItemKind.File}, 
-                new StorageHashOptions { Hashing = checkOptions.CheckHash }, 
-                cancellationToken);
-
-            var destinationEntities = await destinationStorageNormsInfo.Plugin.ListAsync(destinationStorageNormsInfo.Path,
-                searchOptions,
-                new StorageListOptions { Kind = StorageFilterItemKind.File },
-                new StorageHashOptions { Hashing = checkOptions.CheckHash },
-                cancellationToken);
-
-            var storageSourceEntities = sourceEntities.ToList();
-            var storageDestinationEntities = destinationEntities.ToList();
-
-            var existOnSourceEntities = storageSourceEntities
-                .Join(storageDestinationEntities, source => source.Id, 
-                    destination => destination.Id, 
-                    (source, destination) => (Source: source, Destination: destination)).ToList();
-
-            var missedOnDestination = storageSourceEntities.Except(existOnSourceEntities.Select(x=>x.Source));
-
-            IEnumerable<StorageEntity> missedOnSource = new List<StorageEntity>();
-            if (checkOptions.OneWay is false)
-            {
-                var existOnDestinationEntities = storageDestinationEntities
-                    .Join(storageSourceEntities, source => source.Id, destination => destination.Id, (source, destination) => source)
-                    .ToList();
-
-                missedOnSource = storageDestinationEntities.Except(existOnDestinationEntities);
-            }
-
-            foreach (var sourceEntity in existOnSourceEntities)
-            {
-                var state = CheckState.Different;
-                if (sourceEntity.Source.Id == sourceEntity.Destination.Id)
-                {
-                    state = checkOptions switch
-                    {
-                        {CheckSize: true, CheckHash: false} => sourceEntity.Source.Size == sourceEntity.Destination.Size 
-                                                                ? CheckState.Match 
-                                                                : CheckState.Different,
-                        {CheckSize: false, CheckHash: true} => !string.IsNullOrEmpty(sourceEntity.Source.Md5) 
-                                                               && !string.IsNullOrEmpty(sourceEntity.Destination.Md5) 
-                                                               && sourceEntity.Source.Md5 == sourceEntity.Destination.Md5 
-                                                                ? CheckState.Match 
-                                                                : CheckState.Different,
-                        {CheckSize: true, CheckHash: true} => sourceEntity.Source.Size == sourceEntity.Destination.Size 
-                                                              && !string.IsNullOrEmpty(sourceEntity.Source.Md5)
-                                                              && !string.IsNullOrEmpty(sourceEntity.Destination.Md5)
-                                                              && sourceEntity.Source.Md5 == sourceEntity.Destination.Md5 
-                                                                ? CheckState.Match 
-                                                                : CheckState.Different,
-                        _ => state = CheckState.Match,
-                    };
-                }
-                result.Add(new CheckResult {Entity = sourceEntity.Source, State = state});
-            }
-
-            result.AddRange(missedOnDestination.Select(sourceEntity => new CheckResult {Entity = sourceEntity, State = CheckState.MissedOnDestination}));
-            result.AddRange(missedOnSource.Select(sourceEntity => new CheckResult {Entity = sourceEntity, State = CheckState.MissedOnSource}));
-
-            return result;
+            return await _entityChecker.Check(sourceStorageNormsInfo, destinationStorageNormsInfo, 
+                searchOptions, checkOptions, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -365,36 +208,8 @@ internal class StorageService : IStorageService
     {
         try
         {
-            var entities = await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions, 
-                listOptions, new StorageHashOptions(), cancellationToken);
-
-            var storageEntities = entities.Where(x=>x.IsFile).ToList();
-            if (storageEntities == null || !storageEntities.Any())
-            {
-                throw new StorageException("No file found to make a compression archive.");
-            }
-
-            var en = new List<CompressEntry>();
-            foreach (var entity in storageEntities)
-            {
-                var stream = await storageNormsInfo.Plugin.ReadAsync(entity.FullPath, new StorageHashOptions(), cancellationToken);
-                en.Add(new CompressEntry
-                {
-                    Name = entity.Name,
-                    ContentType = entity.ContentType,
-                    Stream = stream.Stream
-                });
-            }
-
-            var compressResult = await _compressionManager(compressionOptions.CompressType).Compress(en);
-            var md5Hash = string.Empty;
-
-            if (hashOptions.Hashing is true)
-            {
-                md5Hash = HashHelper.GetMd5Hash(compressResult.Stream);
-            }
-
-            return new CompressResult{ Stream = compressResult.Stream, ContentType = compressResult.ContentType, Md5 = md5Hash };
+            return await _entityCompress.Compress(storageNormsInfo, searchOptions, listOptions, hashOptions, 
+                compressionOptions, cancellationToken);
         }
         catch (Exception ex)
         {

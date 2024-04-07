@@ -1,6 +1,4 @@
-﻿using FlowSynx.Core.Storage.Models;
-
-namespace FlowSynx.Core.Features.Storage.Check.Command;
+﻿namespace FlowSynx.Core.Features.Storage.Check.Command;
 
 public class CheckResponse
 {

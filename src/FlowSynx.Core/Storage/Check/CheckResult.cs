@@ -1,7 +1,6 @@
-﻿using FlowSynx.Core.Storage.Models;
-using FlowSynx.Plugin.Storage;
+﻿using FlowSynx.Plugin.Storage;
 
-namespace FlowSynx.Core.Storage.Models;
+namespace FlowSynx.Core.Storage.Check;
 
 public class CheckResult
 {
