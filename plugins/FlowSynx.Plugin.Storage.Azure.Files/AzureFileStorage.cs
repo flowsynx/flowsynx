@@ -191,7 +191,7 @@ public class AzureFileStorage : IStoragePlugin
             return new StorageRead()
             {
                 Stream = new StorageStream(stream),
-                MimeType = fileProperties.Value.ContentType,
+                ContentType = fileProperties.Value.ContentType,
                 Extension = fileExtension,
                 Md5 = fileProperties.Value.ContentHash != null
                     ? System.Text.Encoding.UTF8.GetString(fileProperties.Value.ContentHash) 

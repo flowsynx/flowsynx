@@ -122,13 +122,14 @@ public class LocalFileSystemStorage : IStoragePlugin
         if (!File.Exists(path))
             throw new StorageException($"The specified path '{path}' is not a file.");
 
-        var fileExtension = Path.GetExtension(path);
+        var file = new FileInfo(path);
+        var fileExtension = file.Extension;
         var result = new StorageRead()
         {
             Stream = new StorageStream(File.OpenRead(path)),
-            MimeType = fileExtension.GetContentType(),
+            ContentType = fileExtension.GetContentType(),
             Extension = fileExtension,
-            Md5 = HashHelper.GetMd5HashFile(path)
+            Md5 = HashHelper.GetMd5Hash(file)
         };
 
         return Task.FromResult(result);
