@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Features.Storage.About.Query;
 using FlowSynx.Core.Features.Storage.Check.Command;
+using FlowSynx.Core.Features.Storage.Compress.Command;
 using FlowSynx.Core.Features.Storage.Copy.Command;
 using FlowSynx.Core.Features.Storage.Delete.Command;
 using FlowSynx.Core.Features.Storage.DeleteFile.Command;
@@ -35,7 +36,8 @@ public class Storage : EndpointGroupBase
             .MapDelete(DoPurgeDirectory, "/purge")
             .MapPost(DoCopy, "/copy")
             .MapPost(DoMove, "/move")
-            .MapPost(DoCheck, "/check");
+            .MapPost(DoCheck, "/check")
+            .MapPost(DoCompress, "/compress");
     }
 
     public async Task<IResult> GetAbout([FromBody] AboutRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
@@ -122,5 +124,19 @@ public class Storage : EndpointGroupBase
     {
         var result = await mediator.Check(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> DoCompress([FromBody] CompressRequest request, [FromServices] IMediator mediator, 
+        HttpContext http, CancellationToken cancellationToken)
+    {
+        var result = mediator.Compress(request, cancellationToken).Result;
+        if (!result.Succeeded) return Results.NotFound(result);
+
+        if (result.Data.Content == null) return Results.BadRequest();
+
+        if (!string.IsNullOrEmpty(result.Data.Md5))
+            http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
+
+        return Results.Stream(result.Data.Content);
     }
 }

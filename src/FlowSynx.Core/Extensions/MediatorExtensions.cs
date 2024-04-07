@@ -20,6 +20,7 @@ using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Features.Storage.Check.Command;
 using FlowSynx.Core.Features.Storage.Exist.Query;
 using FlowSynx.Core.Features.Version.Query;
+using FlowSynx.Core.Features.Storage.Compress.Command;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -87,6 +88,11 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<IEnumerable<CheckResponse>>> Check(this IMediator mediator, CheckRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<CompressResponse>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

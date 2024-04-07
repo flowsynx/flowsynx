@@ -17,6 +17,8 @@ using FlowSynx.Plugin;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Plugin.Storage.Azure.Files;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
+using System.Security.Cryptography;
+using FlowSynx.Core.Services;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -40,6 +42,7 @@ public static class ServiceCollectionExtensions
             .AddSerialization()
             .AddFileSystem()
             .AddParsers()
+            .AddCompressions()
             .AddScoped<IStorageNormsParser, StorageNormsParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>()
@@ -56,7 +59,7 @@ public static class ServiceCollectionExtensions
             .AddConfiguration();
         return services;
     }
-
+    
     public static IServiceCollection AddFlowSynxPlugins(this IServiceCollection services)
     {
         services

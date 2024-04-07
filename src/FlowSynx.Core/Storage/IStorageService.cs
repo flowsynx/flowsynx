@@ -37,4 +37,8 @@ internal interface IStorageService
 
     Task<IEnumerable<CheckResult>> Check(StorageNormsInfo sourceStorageNormsInfo, StorageNormsInfo destinationStorageNormsInfo,
         StorageSearchOptions searchOptions, StorageCheckOptions checkOptions, CancellationToken cancellationToken = default);
+
+    Task<CompressResult> Compress(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions,
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageCompressionOptions compressionOptions, 
+        CancellationToken cancellationToken = default);
 }

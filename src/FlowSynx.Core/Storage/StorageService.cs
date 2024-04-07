@@ -7,18 +7,25 @@ using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Core.Features.Storage.Check.Command;
 using FlowSynx.Core.Storage.Models;
+using System.Diagnostics;
+using FlowSynx.Core.Services;
+using FlowSynx.Security;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Core.Storage;
 
 internal class StorageService : IStorageService
 {
     private readonly ILogger<StorageService> _logger;
+    private readonly Func<CompressType, ICompression> _compressionManager;
 
-    public StorageService(ILogger<StorageService> logger, IPluginsManager pluginsManager)
+    public StorageService(ILogger<StorageService> logger, IPluginsManager pluginsManager,
+        Func<CompressType, ICompression> compressionManager)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
         _logger = logger;
+        _compressionManager = compressionManager;
     }
 
     public async Task<StorageUsage> About(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default)
@@ -297,8 +304,8 @@ internal class StorageService : IStorageService
             var storageDestinationEntities = destinationEntities.ToList();
 
             var existOnSourceEntities = storageSourceEntities
-                .Join(storageDestinationEntities, source => source.Name, 
-                    destination => destination.Name, 
+                .Join(storageDestinationEntities, source => source.Id, 
+                    destination => destination.Id, 
                     (source, destination) => (Source: source, Destination: destination)).ToList();
 
             var missedOnDestination = storageSourceEntities.Except(existOnSourceEntities.Select(x=>x.Source));
@@ -307,7 +314,7 @@ internal class StorageService : IStorageService
             if (checkOptions.OneWay is false)
             {
                 var existOnDestinationEntities = storageDestinationEntities
-                    .Join(storageSourceEntities, source => source.Name, destination => destination.Name, (source, destination) => source)
+                    .Join(storageSourceEntities, source => source.Id, destination => destination.Id, (source, destination) => source)
                     .ToList();
 
                 missedOnSource = storageDestinationEntities.Except(existOnDestinationEntities);
@@ -316,7 +323,7 @@ internal class StorageService : IStorageService
             foreach (var sourceEntity in existOnSourceEntities)
             {
                 var state = CheckState.Different;
-                if (sourceEntity.Source.Name == sourceEntity.Destination.Name)
+                if (sourceEntity.Source.Id == sourceEntity.Destination.Id)
                 {
                     state = checkOptions switch
                     {
@@ -348,6 +355,50 @@ internal class StorageService : IStorageService
         catch (Exception ex)
         {
             _logger.LogError($"Move from storage '{sourceStorageNormsInfo.Plugin.Name}' to {destinationStorageNormsInfo.Plugin.Name}. Message: {ex.Message}");
+            throw new StorageException(ex.Message);
+        }
+    }
+
+    public async Task<CompressResult> Compress(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions,
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageCompressionOptions compressionOptions, 
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var entities = await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions, 
+                listOptions, new StorageHashOptions(), cancellationToken);
+
+            var storageEntities = entities.Where(x=>x.IsFile).ToList();
+            if (storageEntities == null || !storageEntities.Any())
+            {
+                throw new StorageException("No file found to make a compression archive.");
+            }
+
+            var en = new List<CompressEntry>();
+            foreach (var entity in storageEntities)
+            {
+                var stream = await storageNormsInfo.Plugin.ReadAsync(entity.FullPath, new StorageHashOptions(), cancellationToken);
+                en.Add(new CompressEntry
+                {
+                    Name = entity.Name,
+                    ContentType = entity.ContentType,
+                    Stream = stream.Stream
+                });
+            }
+
+            var compressResult = await _compressionManager(compressionOptions.CompressType).Compress(en);
+            var md5Hash = string.Empty;
+
+            if (hashOptions.Hashing is true)
+            {
+                md5Hash = HashHelper.GetMd5Hash(compressResult.Stream);
+            }
+
+            return new CompressResult{ Stream = compressResult.Stream, ContentType = compressResult.ContentType, Md5 = md5Hash };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Getting entities list from storage. Message: {ex.Message}");
             throw new StorageException(ex.Message);
         }
     }
