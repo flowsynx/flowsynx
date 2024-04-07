@@ -75,7 +75,7 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
                     Md5 = entity.Md5,
                 };
 
-                if (request.ShowMetadata)
+                if (request.ShowMetadata is true)
                     response.Metadata = entity.Metadata;
 
                 result.Add(response);
