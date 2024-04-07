@@ -40,7 +40,7 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResponse>>
             {
                 Content = entity.Stream,
                 Extension = entity.Extension,
-                MimeType = entity.MimeType,
+                ContentType = entity.ContentType,
                 Md5 = request.Hashing is true ? entity.Md5 : null
             };
 
