@@ -13,7 +13,7 @@ public class CompressValidator : AbstractValidator<CompressRequest>
             .NotEmpty()
             .WithMessage(Resources.CopyValidatorSourcePathValueMustNotNullOrEmptyMessage);
 
-        RuleFor(x => x.Kind)
+        RuleFor(x => x.CompressType)
             .Must(x => string.IsNullOrEmpty(x) || EnumUtils.TryParseWithMemberName<CompressType>(x, out _))
             .WithMessage(Resources.ListValidatorKindValueMustBeValidMessage);
     }
