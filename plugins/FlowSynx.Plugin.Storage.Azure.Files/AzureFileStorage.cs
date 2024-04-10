@@ -141,7 +141,7 @@ public class AzureFileStorage : IStoragePlugin
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException("The specified path must be not empty!");
 
         try
         {
@@ -168,13 +168,21 @@ public class AzureFileStorage : IStoragePlugin
         {
             throw new StorageException($"The specified resource name contains invalid characters.");
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+        }
     }
 
     public async Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException("The specified path must be not empty!");
 
         try
         {
@@ -206,12 +214,23 @@ public class AzureFileStorage : IStoragePlugin
         {
             throw new StorageException($"Share item '{path}' not found!");
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+        }
     }
 
     public async Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new StorageException("The path must be a file. Please specified a file path.");
+            
             ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
             return await fileClient.ExistsAsync(cancellationToken: cancellationToken);
         }
@@ -222,6 +241,14 @@ public class AzureFileStorage : IStoragePlugin
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
             throw new StorageException($"Share item '{path}' not found!");
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
         }
     }
 
@@ -243,7 +270,7 @@ public class AzureFileStorage : IStoragePlugin
     public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException("The specified path must not be empty!");
 
         try
         {
@@ -263,12 +290,20 @@ public class AzureFileStorage : IStoragePlugin
         {
             throw new StorageException($"Share item '{path}' not found!");
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+        }
     }
 
     public async Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException("The specified path must be not empty!");
 
         try
         {
@@ -283,12 +318,20 @@ public class AzureFileStorage : IStoragePlugin
         {
             throw new StorageException($"Share item '{path}' not found!");
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+        }
     }
 
     public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException("The specified path must be not empty!");
 
         try
         {
@@ -309,12 +352,20 @@ public class AzureFileStorage : IStoragePlugin
         {
             throw new StorageException($"Share item '{path}' not found!");
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+        }
     }
 
     public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException("The specified path must be not empty!");
 
         try
         {
@@ -328,6 +379,14 @@ public class AzureFileStorage : IStoragePlugin
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
             throw new StorageException($"Share item '{path}' not found!");
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException("Invalid path entered.");
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
         }
     }
 
