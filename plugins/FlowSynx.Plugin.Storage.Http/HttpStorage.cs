@@ -181,8 +181,8 @@ public class HttpStorage : IStoragePlugin
             Uri = url,
             HttpMethod = HttpMethod.Get
         };
-        var stream = await _httpRequestService.SendRequestAsync(request, cancellationToken);
-        using var reader = new StreamReader(stream);
+        var result = await _httpRequestService.SendRequestAsync(request, cancellationToken);
+        using var reader = new StreamReader(result.Payload);
         return await reader.ReadToEndAsync(cancellationToken);
     }
 }
