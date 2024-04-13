@@ -8,9 +8,6 @@ on:
         required: true 
         type: string
 
-  push:
-    branches:
-      - release-0.2.0
 jobs:
   build:
     strategy:
@@ -40,7 +37,11 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0 #fetch-depth is needed for GitVersion
-        
+    - run: |
+          git checkout master
+          git checkout -b release-${{inputs.rel_version}}
+          git push origin release-${{inputs.rel_version}}
+
     #Install and calculate the new version with GitVersion  
     - name: Install GitVersion
       uses: gittools/actions/gitversion/setup@v0.9.7
