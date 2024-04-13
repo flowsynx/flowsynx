@@ -14,7 +14,7 @@
 	<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
 	<Authors>flowsynx</Authors>
 	<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
-	<PackageProjectUrl>flowsynx.io</PackageProjectUrl>
+	<PackageProjectUrl>http://flowsynx.io</PackageProjectUrl>
 	<RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
