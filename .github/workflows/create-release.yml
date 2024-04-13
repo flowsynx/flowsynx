@@ -57,7 +57,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Prep packages
-      run: dotnet nuget add source --username ziagham --password ${{ secrets.NUGET_PACKAGE_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{github.repository_owner}}/index.json"
+      run: dotnet nuget add source --username ziagham --password ${{ secrets.GH_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{github.repository_owner}}/index.json"
     - name: Publish
       shell: bash
       run: |
@@ -104,7 +104,7 @@ jobs:
         name: FlowSynx v${{ inputs.rel_version }}
         body: "This is the v${{ inputs.rel_version }} release of FlowSynx"
         artifacts: "**/*.*"
-        token: ${{ secrets.NUGET_PACKAGE_TOKEN }}
+        token: ${{ secrets.GH_TOKEN }}
 
     - uses: actions/checkout@v2
     - name: Create Branche
@@ -114,4 +114,4 @@ jobs:
         release_branch: release/${{ inputs.rel_version }}
         tag: ${{ inputs.rel_version }}
       env:
-          GITHUB_TOKEN: ${{ secrets.NUGET_PACKAGE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
