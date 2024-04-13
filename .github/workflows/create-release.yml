@@ -105,13 +105,3 @@ jobs:
         body: "This is the v${{ inputs.rel_version }} release of FlowSynx"
         artifacts: "**/*.*"
         token: ${{ secrets.GH_TOKEN }}
-
-    - uses: actions/checkout@v2
-    - name: Create Branche
-      uses: aaiezza/create-release@master
-      id: create_release
-      with:
-        release_branch: release/${{ inputs.rel_version }}
-        tag: ${{ inputs.rel_version }}
-      env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
