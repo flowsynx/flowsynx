@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
@@ -17,7 +16,7 @@ public class AzureBlobStorage : IStoragePlugin
     public string Name => "Azure.Blobs";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => null;
-    public Dictionary<string, object?>? Specifications { get; set; }
+    public Dictionary<string, string?>? Specifications { get; set; }
     public Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
 
     public Task<StorageUsage> About(CancellationToken cancellationToken = default)

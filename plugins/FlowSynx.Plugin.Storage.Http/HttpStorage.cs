@@ -14,7 +14,7 @@ public class HttpStorage : IStoragePlugin
     private readonly ILogger<HttpStorage> _logger;
     private readonly IStorageFilter _storageFilter;
     private readonly IHttpRequestService _httpRequestService;
-    private Dictionary<string, object?>? _specifications;
+    private Dictionary<string, string?>? _specifications;
     private HttpSpecifications? _httpSpecifications;
 
     public HttpStorage(ILogger<HttpStorage> logger, IStorageFilter storageFilter, 
@@ -35,7 +35,7 @@ public class HttpStorage : IStoragePlugin
 
     public string? Description => "This is a read only storage for reading files of a web server. The web server should provide file listings which flowsynx will read it.";
 
-    public Dictionary<string, object?>? Specifications
+    public Dictionary<string, string?>? Specifications
     {
         get => _specifications;
         set

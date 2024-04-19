@@ -25,7 +25,7 @@ public class MemoryStorage : IStoragePlugin
     public string Name => "Memory";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => "Plugin for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever";
-    public Dictionary<string, object?>? Specifications { get; set; }
+    public Dictionary<string, string?>? Specifications { get; set; }
 
     public Type SpecificationsType => null;
 

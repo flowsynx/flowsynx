@@ -14,7 +14,7 @@ public class AzureFileStorage : IStoragePlugin
 {
     private readonly ILogger<AzureFileStorage> _logger;
     private readonly IStorageFilter _storageFilter;
-    private Dictionary<string, object?>? _specifications;
+    private Dictionary<string, string?>? _specifications;
     private AzureFilesSpecifications? _azureFilesSpecifications;
     private ShareClient _client = null!;
 
@@ -30,7 +30,7 @@ public class AzureFileStorage : IStoragePlugin
     public string Name => "Azure.Files";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => "Plugin for managing Microsoft Azure File storage system.";
-    public Dictionary<string, object?>? Specifications
+    public Dictionary<string, string?>? Specifications
     {
         get => _specifications;
         set
