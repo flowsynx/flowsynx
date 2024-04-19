@@ -7,18 +7,11 @@ namespace FlowSynx.ApplicationBuilders;
 
 public class ApiApplicationBuilder : IApiApplicationBuilder
 {
-    private readonly IEndpoint _endpoint;
-
-    public ApiApplicationBuilder(IEndpoint endpoint)
-    {
-        _endpoint = endpoint;
-    }
-
     public async Task RunAsync(RootCommandOptions rootCommandOptions)
     {
         var builder = WebApplication.CreateBuilder();
 
-        builder.WebHost.ConfigHttpServer(_endpoint.GetDefaultHttpPort());
+        builder.WebHost.ConfigHttpServer(EnvironmentVariables.FlowSynxHttpPort);
 
         builder.Services
                .AddEndpointsApiExplorer()
