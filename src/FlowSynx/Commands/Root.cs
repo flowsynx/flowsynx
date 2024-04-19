@@ -1,7 +1,6 @@
 ﻿using System.CommandLine;
 using System.Diagnostics;
 using FlowSynx.ApplicationBuilders;
-using FlowSynx.Environment;
 using FlowSynx.Logging;
 using FlowSynx.Services;
 
@@ -9,7 +8,7 @@ namespace FlowSynx.Commands;
 
 public class Root : RootCommand
 {
-    public Root(ILogger<Root> logger, IOptionsVerifier optionsVerifier, IApiApplicationBuilder apiApplicationBuilder, IEndpoint endpoint)
+    public Root(ILogger<Root> logger, IOptionsVerifier optionsVerifier, IApiApplicationBuilder apiApplicationBuilder)
         : base("A system for managing and synchronizing data between different repositories and storage, including cloud, local, and etc.")
     {
         var configFileOption = new Option<string>(new[] { "--config-file" }, description: "FlowSynx configuration file");
