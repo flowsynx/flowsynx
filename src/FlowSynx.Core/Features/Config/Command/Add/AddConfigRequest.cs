@@ -7,5 +7,5 @@ public class AddConfigRequest : IRequest<Result<AddConfigResponse>>
 {
     public required string Name { get; set; }
     public required string Type { get; set; }
-    public Dictionary<string, object?>? Specifications { get; set; }
+    public Dictionary<string, string?>? Specifications { get; set; }
 }

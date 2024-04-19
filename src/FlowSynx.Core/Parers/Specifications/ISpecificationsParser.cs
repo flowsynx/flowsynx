@@ -2,5 +2,5 @@
 
 public interface ISpecificationsParser
 {
-    SpecificationsResult Parse(string type, Dictionary<string, object?>? specifications);
+    SpecificationsResult Parse(string type, Dictionary<string, string?>? specifications);
 }

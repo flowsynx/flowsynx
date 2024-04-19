@@ -13,7 +13,7 @@ public class SpecificationsParser : ISpecificationsParser
         _pluginsManager = pluginsManager;
     }
 
-    public SpecificationsResult Parse(string type, Dictionary<string, object?>? specifications)
+    public SpecificationsResult Parse(string type, Dictionary<string, string?>? specifications)
     {
         IPlugin plugin = _pluginsManager.GetPlugin(type);
         var specificationsType = plugin.SpecificationsType;
@@ -56,7 +56,7 @@ public class SpecificationsParser : ISpecificationsParser
         return new SpecificationsResult { Valid = true };
     }
 
-    private Dictionary<string, object?>? ConvertKeysToLowerCase(Dictionary<string, object?>? dictionaries)
+    private Dictionary<string, object?>? ConvertKeysToLowerCase(Dictionary<string, string?>? dictionaries)
     {
         var convertedDictionary = new Dictionary<string, object?>();
 

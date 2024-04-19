@@ -36,7 +36,7 @@ public class AddConfigValidator : AbstractValidator<AddConfigRequest>
         return _pluginsManager.IsExist(type);
     }
 
-    private void IsSpecificationsValid(Dictionary<string, object?>? specifications, ValidationContext<AddConfigRequest> context)
+    private void IsSpecificationsValid(Dictionary<string, string?>? specifications, ValidationContext<AddConfigRequest> context)
     {
         var result = _specificationsParser.Parse(context.InstanceToValidate.Type, specifications);
         if (!result.Valid)

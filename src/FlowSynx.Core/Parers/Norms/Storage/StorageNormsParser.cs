@@ -57,7 +57,7 @@ internal class StorageNormsParser : IStorageNormsParser
             if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)
                 throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserInvalidStorageType, fileSystem.Type));
 
-            var specifications = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            var specifications = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
             if (fileSystem.Specifications != null)
                 specifications = fileSystem.Specifications;
             
