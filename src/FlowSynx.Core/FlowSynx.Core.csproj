@@ -12,12 +12,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlowSynx.Commons" Version="0.8.0" />
-    <PackageReference Include="FlowSynx.Configuration" Version="0.8.0" />
-    <PackageReference Include="FlowSynx.Environment" Version="0.8.0" />
-    <PackageReference Include="FlowSynx.Formatting" Version="0.8.0" />
-    <PackageReference Include="FlowSynx.Parsers" Version="0.8.0" />
-    <PackageReference Include="FlowSynx.Plugin" Version="0.8.0" />
+    <PackageReference Include="FlowSynx.Commons" Version="0.8.1" />
+    <PackageReference Include="FlowSynx.Configuration" Version="0.8.1" />
+    <PackageReference Include="FlowSynx.Environment" Version="0.8.1" />
+    <PackageReference Include="FlowSynx.Formatting" Version="0.8.1" />
+    <PackageReference Include="FlowSynx.Parsers" Version="0.8.1" />
+    <PackageReference Include="FlowSynx.Plugin" Version="0.8.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />
     <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="SharpCompress" Version="0.36.0" />
