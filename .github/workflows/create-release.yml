@@ -49,14 +49,6 @@ jobs:
     - name: Display GitVersion outputs
       run: |
         echo "Version: ${{ inputs.rel_version }}"
-
-    - name: Create Branch
-      uses: peterjgrainger/action-create-branch@v2.2.0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-      with:
-        branch: 'release-${{ inputs.rel_version }}'
-        sha: '${{ github.event.pull_request.head.sha }}'
   
     #Build/pack the project
     - name: Setup .NET
@@ -113,3 +105,10 @@ jobs:
         body: "This is the v${{ inputs.rel_version }} release of FlowSynx"
         artifacts: "**/*.*"
         token: ${{ secrets.GH_TOKEN }}
+    - name: Create Branch
+      uses: peterjgrainger/action-create-branch@v2.2.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      with:
+        branch: 'release-${{ inputs.rel_version }}'
+        sha: '${{ github.event.pull_request.head.sha }}'
