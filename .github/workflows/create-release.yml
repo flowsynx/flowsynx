@@ -61,7 +61,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Prep packages
-      run: dotnet nuget add source --username ziagham --password ${{ secrets.GH_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+      run: dotnet nuget add source --username ${{ secrets.GH_USERNAME }} --password ${{ secrets.GH_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
     - name: Publish
       shell: bash
       run: |
