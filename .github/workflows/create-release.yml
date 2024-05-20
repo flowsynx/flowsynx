@@ -9,8 +9,8 @@ on:
         type: string
 
 env:
-  DOCKER_USER_NAME: "flowsynx"
-  DOCKER_IMAGE_NAME: "flowsynx" 
+  DOCKER_USER_NAME: ${{ github.repository_owner }}
+  DOCKER_IMAGE_NAME: ${{ github.repository }} 
 
 jobs:
   build:
@@ -61,19 +61,19 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Prep packages
-      run: dotnet nuget add source --username ziagham --password ${{ secrets.GH_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{github.repository_owner}}/index.json"
+      run: dotnet nuget add source --username ziagham --password ${{ secrets.GH_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
     - name: Publish
       shell: bash
       run: |
           release_name="flowsynx-${{ matrix.title }}-${{ matrix.os_arch }}"
-          dotnet publish src/FlowSynx/FlowSynx.csproj /property:PublishSingleFile=true /property:PublishReadyToRun=true --runtime '${{ matrix.kind }}-${{ matrix.os_arch }}' -c Release --self-contained true /property:Version='${{ inputs.rel_version }}' -o "${{github.workspace}}/$release_name"
+          dotnet publish src/FlowSynx/FlowSynx.csproj /property:PublishSingleFile=true /property:PublishReadyToRun=true --runtime '${{ matrix.kind }}-${{ matrix.os_arch }}' -c Release --self-contained true /property:Version='${{ inputs.rel_version }}' -o "${{ github.workspace }}/$release_name"
           
-          mkdir -p "${{github.workspace}}/dist"
+          mkdir -p "${{ github.workspace }}/dist"
           cd "${{github.workspace}}/${release_name}"
           if [ "${{ matrix.kind }}" == "win" ]; then
-            7z a -tzip "${{github.workspace}}/dist/${release_name}.zip" *
+            7z a -tzip "${{ github.workspace }}/dist/${release_name}.zip" *
           else
-            tar czvf "${{github.workspace}}/dist/${release_name}.tar.gz" *
+            tar czvf "${{ github.workspace }}/dist/${release_name}.tar.gz" *
           fi
           cd "${{github.workspace}}"
 
