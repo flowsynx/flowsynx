@@ -13,17 +13,6 @@ env:
   DOCKER_IMAGE_NAME: "flowsynx" 
 
 jobs:
-  compute:
-    runs-on: ubuntu-latest
-    outputs:
-      docker_user_name: ${{ env.DOCKER_USER_NAME }}
-      docker_image_name: ${{ env.DOCKER_IMAGE_NAME }}
-    steps:
-      - name: Compute outputs
-        run: |
-          echo "docker_user_name=${{ env.DOCKER_USER_NAME }}" >> $GITHUB_OUTPUT
-          echo "docker_image_name=${{ env.DOCKER_IMAGE_NAME }}" >> $GITHUB_OUTPUT
-
   build:
     strategy:
       matrix:
@@ -45,7 +34,6 @@ jobs:
           - os: macOS-latest
             os_arch: arm
     runs-on: ${{ matrix.os }}
-    needs: compute
     env:
        ARCHIVE_OUTDIR: dist/archives
 
@@ -129,9 +117,37 @@ jobs:
         branch: 'release-${{ inputs.rel_version }}'
         sha: '${{ github.event.pull_request.head.sha }}'
 
+  compute:
+    runs-on: ubuntu-latest
+    outputs:
+      docker_user_name: ${{ env.DOCKER_USER_NAME }}
+      docker_image_name: ${{ env.DOCKER_IMAGE_NAME }}
+    steps:
+      - name: Compute outputs
+        run: |
+          echo "docker_user_name=${{ env.DOCKER_USER_NAME }}" >> $GITHUB_OUTPUT
+          echo "docker_image_name=${{ env.DOCKER_IMAGE_NAME }}" >> $GITHUB_OUTPUT
+
   dcoker:
-    runs-on: ubuntu-latest    
-    needs: [build, release]
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-2019, windows-2022]
+        include:
+          - os: ubuntu-latest
+            version: alpine3.18
+            file: Dockerfile.linux
+            tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-linux-amd64
+          - os: windows-2019
+            version: nanoserver-1809
+            file: Dockerfile.windows
+            tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-windows-1809-amd64
+          - os: windows-2022
+            version: nanoserver-ltsc2022
+            file: Dockerfile.windows
+            tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-windows-ltsc2022-amd64
+    runs-on: ${{ matrix.os }}
+    needs: [compute, build, release]
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
