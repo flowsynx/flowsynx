@@ -135,15 +135,15 @@ jobs:
         include:
           - os: ubuntu-latest
             version: alpine3.18
-            file: Dockerfile.linux
+            file: /docker/Dockerfile.linux
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-linux-amd64
           - os: windows-2019
             version: nanoserver-1809
-            file: Dockerfile.windows
+            file: /docker/Dockerfile.windows
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-windows-1809-amd64
           - os: windows-2022
             version: nanoserver-ltsc2022
-            file: Dockerfile.windows
+            file: /docker/Dockerfile.windows
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-windows-ltsc2022-amd64
     runs-on: ${{ matrix.os }}
     needs: [compute, build, release]
@@ -158,7 +158,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Docker Build
       run: |
-        docker build -f ${{ matrix.file }} --build-arg OS_VERSION=${{ matrix.version }} -t ${{ matrix.tag }} .        
+        docker build -f ${{ matrix.file }} --build-arg OS_VERSION=${{ matrix.version }} NUGET_ORGANIZATION=${{ github.repository_owner }} NUGET_USERNAME=${{ secrets.GH_USERNAME }} NUGET_PASSWORD=${{ secrets.GH_TOKEN }} APP_VERSION=${{ inputs.rel_version }} -t ${{ matrix.tag }} .        
     - name: Docker Push
       run: |
         docker push ${{ matrix.tag }}
