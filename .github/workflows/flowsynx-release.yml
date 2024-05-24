@@ -1,4 +1,4 @@
-name: flowsynx-release
+name: flowsynx
 
 on:      
   workflow_dispatch:
