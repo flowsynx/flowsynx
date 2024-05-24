@@ -1,4 +1,4 @@
-name: Publish the project for different OS and create release and tag
+name: flowsynx-release
 
 on:      
   workflow_dispatch:
