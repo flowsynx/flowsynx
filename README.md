@@ -42,3 +42,7 @@ See our [Getting Started](https://flowsynx.io/docs/category/getting-started) gui
 | [Shared-Components](https://github.com/flowsynx/shared-components) | The purpose of components contrib is to provide open, community driven reusable components for building flowsynx applications.
 | [Dashboard ](https://github.com/flowsynx/dashboard) | General purpose dashboard for FlowSynx
 | [C# SDK](https://github.com/flowsynx/csharp-sdk) | FlowSynx SDK for .NET
+
+## License
+
+This is free software under the terms of the MIT license (check the [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) file included in this package).
