@@ -15,3 +15,30 @@ FlowSynx is a cross-platform program to manage files and data on cloud storage a
 It is a feature-rich alternative to cloud vendors' web storage interfaces. 
 It will try to cover and support most of the cloud storage products including 
 Azure Files, Azure Blobs, business & consumer file storage services, as well as standard transfer protocols.
+
+## Features
+
+* Storage management with pluggable data storage
+* Unified API to interface with all major cloud providers for storage (e.g., Azure).
+* Support common data operations like copy, move, list, delete, mkdir, read, write, etc).
+* Data transformation sinks for compression.
+* Runs anywhere, as a process or containerized
+* Lightweight (100MB binary, 8MB physical memory)
+* Dedicated CLI
+* Run a command against a running remote FlowSynx instance.
+* Software Devlopment Kit (SDK) for .NET Core
+
+## Get Started using FlowSynx
+
+See our [Getting Started](https://flowsynx.io/docs/category/getting-started) guide over in our docs.
+
+## Repositories
+
+| Repo | Description |
+|:-----|:------------|
+| [FlowSynx](https://github.com/flowsynx/flowsynx) | The main repository that you are currently in. Contains the FlowSynx runtime code and overview documentation.
+| [CLI](https://github.com/flowsynx/cli) | The FlowSynx CLI allows you to setup FlowSynx on your local dev machine, launches and manages FlowSynx instance.
+| [Docs](https://flowsynx.io/docs/overview) | The documentation for FlowSynx.
+| [Shared-Components](https://github.com/flowsynx/shared-components) | The purpose of components contrib is to provide open, community driven reusable components for building flowsynx applications.
+| [Dashboard ](https://github.com/flowsynx/dashboard) | General purpose dashboard for FlowSynx
+| [C# SDK](https://github.com/flowsynx/csharp-sdk) | FlowSynx SDK for .NET
