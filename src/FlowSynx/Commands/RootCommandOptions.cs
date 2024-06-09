@@ -9,4 +9,5 @@ public class RootCommandOptions
     public bool EnableLog { get; set; }
     public LoggingLevel LogLevel { get; set; }
     public string? LogFile { get; set; }
+    public bool OpenApi { get; set; }
 }
