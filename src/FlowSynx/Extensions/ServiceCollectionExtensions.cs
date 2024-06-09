@@ -76,8 +76,7 @@ public static class ServiceCollectionExtensions
             {
                 Version = "flowsynx",
                 Title = "Service Invocation",
-                Description = "Using the service invocation API, your microservice can find and reliably communicate with " +
-                              "other microservices in your system using standard protocols (gRPC or HTTP are currently supported).",
+                Description = "Using the service invocation API to find out how to communicate with FlowSynx API.",
                 License = new OpenApiLicense
                 {
                     Name = "MIT License",
