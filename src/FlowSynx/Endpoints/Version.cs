@@ -14,7 +14,8 @@ public class Version : EndpointGroupBase
             .MapGet(GetVersion);
     }
 
-    public async Task<IResult> GetVersion([AsParameters] VersionRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetVersion([AsParameters] VersionRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Version(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);

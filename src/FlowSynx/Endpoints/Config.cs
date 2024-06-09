@@ -20,25 +20,29 @@ public class Config : EndpointGroupBase
             .MapDelete(DeleteConfig, "/delete");
     }
 
-    public async Task<IResult> ConfigList([FromBody] ConfigListRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> ConfigList([FromBody] ConfigListRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.ConfigList(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> ConfigDetails([AsParameters] ConfigDetailsRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> ConfigDetails([AsParameters] ConfigDetailsRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.ConfigDetails(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> AddConfig([FromBody] AddConfigRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> AddConfig([FromBody] AddConfigRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.AddConfig(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeleteConfig([FromBody] DeleteConfigRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> DeleteConfig([FromBody] DeleteConfigRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.DeleteConfig(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);

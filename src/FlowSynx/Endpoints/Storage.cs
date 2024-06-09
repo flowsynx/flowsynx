@@ -24,41 +24,45 @@ public class Storage : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         app.MapGroup(this)
-            .MapPost(GetAbout, "/about")
-            .MapPost(GetList, "/list")
-            .MapPost(GetSize, "/size")
-            .MapPost(DoRead, "/read")
-            .MapPost(DoWrite, "/write")
-            .MapDelete(DoDelete, "/delete")
-            .MapDelete(DoDeleteFile, "/deleteFile")
-            .MapPost(DoCheckExistence, "/exist")
-            .MapPost(DoMakeDirectory, "/mkdir")
-            .MapDelete(DoPurgeDirectory, "/purge")
-            .MapPost(DoCopy, "/copy")
-            .MapPost(DoMove, "/move")
-            .MapPost(DoCheck, "/check")
-            .MapPost(DoCompress, "/compress");
+            .MapPost(About, "/about")
+            .MapPost(List, "/list")
+            .MapPost(Size, "/size")
+            .MapPost(Read, "/read")
+            .MapPost(Write, "/write")
+            .MapDelete(Delete, "/delete")
+            .MapDelete(DeleteFile, "/deleteFile")
+            .MapPost(CheckExistence, "/exist")
+            .MapPost(MakeDirectory, "/mkdir")
+            .MapDelete(PurgeDirectory, "/purge")
+            .MapPost(Copy, "/copy")
+            .MapPost(Move, "/move")
+            .MapPost(Check, "/check")
+            .MapPost(Compress, "/compress");
     }
 
-    public async Task<IResult> GetAbout([FromBody] AboutRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> About([FromBody] AboutRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.About(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetList([FromBody] ListRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> List([FromBody] ListRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.List(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetSize([FromBody] SizeRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> Size([FromBody] SizeRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Size(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoRead([FromBody] ReadRequest request, [FromServices] IMediator mediator, HttpContext http, CancellationToken cancellationToken)
+    public async Task<IResult> Read([FromBody] ReadRequest request, 
+        [FromServices] IMediator mediator, HttpContext http, CancellationToken cancellationToken)
     {
         var result = await mediator.Read(request, cancellationToken);
         if (!result.Succeeded) return Results.NotFound(result);
@@ -72,61 +76,71 @@ public class Storage : EndpointGroupBase
 
     }
 
-    public async Task<IResult> DoWrite([FromBody] WriteRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> Write([FromBody] WriteRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Write(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoDelete([FromBody] DeleteRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> Delete([FromBody] DeleteRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Delete(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoDeleteFile([FromBody] DeleteFileRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> DeleteFile([FromBody] DeleteFileRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.DeleteFile(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoCheckExistence([FromBody] ExistRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> CheckExistence([FromBody] ExistRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Exist(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoMakeDirectory([FromBody] MakeDirectoryRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> MakeDirectory([FromBody] MakeDirectoryRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.MakeDirectory(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoPurgeDirectory([FromBody] PurgeDirectoryRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> PurgeDirectory([FromBody] PurgeDirectoryRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.PurgeDirectory(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoCopy([FromBody] CopyRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> Copy([FromBody] CopyRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Copy(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoMove([FromBody] MoveRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> Move([FromBody] MoveRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Move(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoCheck([FromBody] CheckRequest request, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> Check([FromBody] CheckRequest request, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Check(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DoCompress([FromBody] CompressRequest request, [FromServices] IMediator mediator, 
+    public async Task<IResult> Compress([FromBody] CompressRequest request, 
+        [FromServices] IMediator mediator, 
         HttpContext http, CancellationToken cancellationToken)
     {
         var result = await mediator.Compress(request, cancellationToken);
