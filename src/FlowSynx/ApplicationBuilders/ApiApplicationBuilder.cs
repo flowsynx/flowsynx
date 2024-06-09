@@ -25,6 +25,9 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
         if (rootCommandOptions.EnableHealthCheck)
             builder.Services.AddHealthChecker();
 
+        if (rootCommandOptions.OpenApi)
+            builder.Services.AddOpenApi();
+        
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
@@ -32,6 +35,9 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
             app.UseDeveloperExceptionPage();
         }
 
+        if (rootCommandOptions.OpenApi)
+            app.UseOpenApi();
+        
         app.UseCustomHeaders();
 
         app.UseExceptionHandler(exceptionHandlerApp
@@ -44,7 +50,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
 
         if (rootCommandOptions.EnableHealthCheck)
             app.UseHealthCheck();
-
+        
         app.MapEndpoints();
 
         await app.RunAsync();
