@@ -11,7 +11,6 @@ public static class WebApplicationExtensions
 
         return app
             .MapGroup($"/{groupName}")
-            .WithGroupName(groupName)
             .WithTags(groupName);
     }
 
