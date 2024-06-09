@@ -3,6 +3,7 @@ using FlowSynx.Services;
 using FlowSynx.Core.Services;
 using FlowSynx.Environment;
 using FlowSynx.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace FlowSynx.Extensions;
 
@@ -65,5 +66,38 @@ public static class ServiceCollectionExtensions
             .AddCheck<ConfigurationManagerHealthCheck>(name: Resources.AddHealthCheckerConfigurationRegistry)
             .AddCheck<PluginsManagerHealthCheck>(name: Resources.AddHealthCheckerPluginsRegistry);
         return services;
+    }
+
+    public static void AddOpenApi(this IServiceCollection services)
+    {
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("flowsynx", new OpenApiInfo
+            {
+                Version = "flowsynx",
+                Title = "Service Invocation",
+                Description = "Using the service invocation API, your microservice can find and reliably communicate with " +
+                              "other microservices in your system using standard protocols (gRPC or HTTP are currently supported).",
+                License = new OpenApiLicense
+                {
+                    Name = "MIT License",
+                    Url = new Uri("https://opensource.org/licenses/MIT")
+                }
+            });
+        });
+    }
+
+    public static void UseOpenApi(this IApplicationBuilder app)
+    {
+        app.UseSwagger(options =>
+        {
+            options.RouteTemplate = $"open-api/{{documentName}}/specifications.json";
+        });
+
+        app.UseSwaggerUI(options =>
+        {
+            options.RoutePrefix = "open-api";
+            options.SwaggerEndpoint($"flowsynx/specifications.json", $"flowsynx");
+        });
     }
 }
