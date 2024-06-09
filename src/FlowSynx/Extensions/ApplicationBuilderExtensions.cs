@@ -66,4 +66,20 @@ public static class ApplicationBuilderExtensions
         });
         return app;
     }
+
+    public static IApplicationBuilder UseOpenApi(this IApplicationBuilder app)
+    {
+        app.UseSwagger(options =>
+        {
+            options.RouteTemplate = $"open-api/{{documentName}}/specifications.json";
+        });
+
+        app.UseSwaggerUI(options =>
+        {
+            options.RoutePrefix = "open-api";
+            options.SwaggerEndpoint($"flowsynx/specifications.json", $"flowsynx");
+        });
+
+        return app;
+    }
 }

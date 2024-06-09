@@ -68,7 +68,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static void AddOpenApi(this IServiceCollection services)
+    public static IServiceCollection AddOpenApi(this IServiceCollection services)
     {
         services.AddSwaggerGen(c =>
         {
@@ -85,19 +85,7 @@ public static class ServiceCollectionExtensions
                 }
             });
         });
-    }
 
-    public static void UseOpenApi(this IApplicationBuilder app)
-    {
-        app.UseSwagger(options =>
-        {
-            options.RouteTemplate = $"open-api/{{documentName}}/specifications.json";
-        });
-
-        app.UseSwaggerUI(options =>
-        {
-            options.RoutePrefix = "open-api";
-            options.SwaggerEndpoint($"flowsynx/specifications.json", $"flowsynx");
-        });
+        return services;
     }
 }
