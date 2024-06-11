@@ -40,17 +40,23 @@ public class SpecificationsParser : ISpecificationsParser
             }
 
             var value = convertedSpecifications[property.Name.ToLower()];
-            switch (((JsonElement?)value)?.ValueKind)
+            var valid = true;
+
+            switch (value)
             {
                 case null:
-                case JsonValueKind.Null:
-                case JsonValueKind.String when string.IsNullOrEmpty(value.ToString()):
-                    return new SpecificationsResult
-                    {
-                        Valid = false,
-                        Message = string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, property.Name)
-                    };
+                case string when string.IsNullOrEmpty(value.ToString()):
+                    valid = false;
+                    break;
             }
+
+            if (valid) continue;
+
+            return new SpecificationsResult
+            {
+                Valid = false,
+                Message = string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, property.Name)
+            };
         }
 
         return new SpecificationsResult { Valid = true };
