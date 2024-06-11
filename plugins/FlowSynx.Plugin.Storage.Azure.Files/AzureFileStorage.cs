@@ -119,7 +119,7 @@ public class AzureFileStorage : IStoragePlugin
                     }
                     catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
                     {
-                        _logger.LogError($"Share Item '{item.Name}' bot found");
+                        _logger.LogError($"Share Item '{item.Name}' not found");
                     }
                 }
             }
