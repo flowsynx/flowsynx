@@ -1,0 +1,158 @@
+### About
+GET {{FlowSynxAddress}}/storage/about
+Content-Type: application/json
+
+
+### Copy
+DELETE {{FlowSynxAddress}}/storage/copy
+Content-Type: application/json
+
+{
+  "sourcePath": "D:/Test/",
+  "destinationPath": "E:/testCopy/",
+  "include": "",
+  "exclude": "",
+  "minAge": "",
+  "maxAge": "",
+  "minSize": "",
+  "maxSize": "",
+  "caseSensitive": false,
+  "recurse": true,
+  "clearDestinationPath": false,
+  "overWriteData": true
+}
+
+
+### Delete
+DELETE {{FlowSynxAddress}}/storage/delete
+Content-Type: application/json
+
+{
+  "path": "D:\\Test",
+  "include": ".bak",
+  "exclude": "",
+  "minAge": "",
+  "maxAge": "",
+  "minSize": "",
+  "maxSize": "",
+  "caseSensitive": false,
+  "recurse": true
+}
+
+
+### DeleteFile
+DELETE {{FlowSynxAddress}}/storage/deletefile
+Content-Type: application/json
+
+{
+  "path": "D:\\Test\\CurrentDataflow.xml"
+}
+
+
+### Exist
+POST {{FlowSynxAddress}}/storage/exist
+Content-Type: application/json
+
+{
+  "path": "D:\\Test\\CurrentDataflow.xml"
+}
+
+
+### List
+POST {{FlowSynxAddress}}/storage/list
+Content-Type: application/json
+
+{
+  "path": "azblob::amin",
+  "kind": "",
+  "include": "",
+  "exclude": "",
+  "minAge": "",
+  "maxAge": "",
+  "minSize": "",
+  "maxSize": "",
+  "full": true,
+  "caseSensitive": false,
+  "recurse": true,
+  "sorting": "kind asc",
+  "hashing": false,
+  "maxResults": 0,
+  "showMetadata": true
+}
+
+
+### MkDir
+POST {{FlowSynxAddress}}/storage/mkdir
+Content-Type: application/json
+
+{
+  "path": "D:\\Test\\49978326986_fb04dea44c_o"
+}
+
+
+### Move
+POST {{FlowSynxAddress}}/storage/move
+Content-Type: application/json
+
+{
+  "sourcePath": "E:/testCopy/",
+  "destinationPath": "E:/testMove/",
+  "include": "",
+  "exclude": "",
+  "minAge": "",
+  "maxAge": "",
+  "minSize": "",
+  "maxSize": "",
+  "caseSensitive": false,
+  "recurse": true,
+  "clearDestinationPath": false,
+  "createEmptyDirectories": true
+}
+
+
+### Purge
+POST {{FlowSynxAddress}}/storage/purge
+Content-Type: application/json
+
+{
+  "path": "D:\\Test\\49978326986_fb04dea44c_o"
+}
+
+
+### Read
+POST {{FlowSynxAddress}}/storage/read
+Content-Type: application/json
+
+{
+  "path": "D:\\49978326986_fb04dea44c_o.jpg"
+}
+
+
+### Size
+POST {{FlowSynxAddress}}/storage/size
+Content-Type: application/json
+
+{
+  "path": "D:/",
+  "kind": "file",
+  "include": "",
+  "exclude": "",
+  "minAge": "",
+  "maxAge": "",
+  "minSize": "",
+  "maxSize": "",
+  "formatSize": true,
+  "caseSensitive": false,
+  "recurse": true,
+  "maxResults": 0
+}
+
+
+### Write
+POST {{FlowSynxAddress}}/storage/write
+Content-Type: application/json
+
+{
+  "path": "D:\\Test\\README.txt",
+  "data": "Test FlowSynx"
+}
