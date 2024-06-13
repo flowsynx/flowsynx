@@ -29,7 +29,7 @@ public class AzureFileStorage : IStoragePlugin
     public Guid Id => Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d");
     public string Name => "Azure.Files";
     public PluginNamespace Namespace => PluginNamespace.Storage;
-    public string? Description => "Plugin for managing Microsoft Azure File storage system.";
+    public string? Description => Resources.PluginDescription;
     public Dictionary<string, string?>? Specifications
     {
         get => _specifications;
@@ -46,14 +46,13 @@ public class AzureFileStorage : IStoragePlugin
     private ShareClient CreateClient(AzureFilesSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.ShareName))
-            throw new StorageException("The ShareName value in azure file specifications should be not empty.");
+            throw new StorageException(Resources.ShareNameInSpecificationShouldBeNotEmpty);
         
         if (!string.IsNullOrEmpty(specifications.ConnectionString))
             return new ShareClient(specifications.ConnectionString, specifications.ShareName);
 
         if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName)) 
-            throw new StorageException("One of the ConnectionString or both AccountKey and AccountName " +
-                                       "properties in the azure file specifications should have value.");
+            throw new StorageException(Resources.OnePropertyShouldHaveValue);
         
         var uri = new Uri($"https://{specifications.AccountName}.file.core.windows.net/{specifications.ShareName}");
         var credential = new StorageSharedKeyCredential(specifications.AccountName, specifications.AccountKey);
@@ -119,13 +118,13 @@ public class AzureFileStorage : IStoragePlugin
                     }
                     catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
                     {
-                        _logger.LogError($"Share Item '{item.Name}' not found");
+                        _logger.LogError(string.Format(Resources.ShareItemNotFound, item.Name));
                     }
                 }
             }
             catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
             {
-                throw new StorageException($"Resource '{dir.Name}' not exist!");
+                throw new StorageException(string.Format(Resources.ResourceNotExist, dir.Name));
             }
         }
 
@@ -141,7 +140,7 @@ public class AzureFileStorage : IStoragePlugin
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path must be not empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         try
         {
@@ -150,7 +149,7 @@ public class AzureFileStorage : IStoragePlugin
 
             if (isExist && writeOptions.Overwrite is false)
             {
-                throw new StorageException($"File '{path}' is already exist and can't be overwritten!");
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
             }
 
             await fileClient.CreateAsync(maxSize: storageStream.Length, cancellationToken: cancellationToken);
@@ -158,23 +157,23 @@ public class AzureFileStorage : IStoragePlugin
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
-            throw new StorageException($"Resource '{path}' not exist!");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            _logger.LogError($"Share Item '{path}' bot found");
+            _logger.LogError(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidResourceName)
         {
-            throw new StorageException($"The specified resource name contains invalid characters.");
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
@@ -182,7 +181,7 @@ public class AzureFileStorage : IStoragePlugin
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path must be not empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         try
         {
@@ -190,7 +189,7 @@ public class AzureFileStorage : IStoragePlugin
             var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
 
             if (!isExist)
-                throw new StorageException($"The specified path '{path}' is not exist.");
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
             var stream = await fileClient.OpenReadAsync(cancellationToken: cancellationToken);
             var fileProperties = await fileClient.GetPropertiesAsync(cancellationToken);
@@ -208,19 +207,19 @@ public class AzureFileStorage : IStoragePlugin
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
-            throw new StorageException($"Resource '{path}' not exist!");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            throw new StorageException($"Share item '{path}' not found!");
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
@@ -229,7 +228,7 @@ public class AzureFileStorage : IStoragePlugin
         try
         {
             if (string.IsNullOrWhiteSpace(path))
-                throw new StorageException("The path must be a file. Please specified a file path.");
+                throw new StorageException(Resources.ThePathMustBeFile);
             
             ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
             return await fileClient.ExistsAsync(cancellationToken: cancellationToken);
@@ -240,15 +239,15 @@ public class AzureFileStorage : IStoragePlugin
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            throw new StorageException($"Share item '{path}' not found!");
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
@@ -259,7 +258,7 @@ public class AzureFileStorage : IStoragePlugin
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
-            throw new StorageException("No files found with the given filter");
+            throw new StorageException(Resources.NoFilesFoundWithTheGivenFilter);
 
         foreach (var entity in storageEntities)
         {
@@ -270,7 +269,7 @@ public class AzureFileStorage : IStoragePlugin
     public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path must not be empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         try
         {
@@ -278,32 +277,32 @@ public class AzureFileStorage : IStoragePlugin
             var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
 
             if (!isExist)
-                throw new StorageException($"The specified path '{path}' is not a file.");
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
 
             await fileClient.DeleteAsync(cancellationToken: cancellationToken);
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
-            throw new StorageException($"Resource '{path}' not exist!");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            throw new StorageException($"Share item '{path}' not found!");
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
     public async Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path must be not empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         try
         {
@@ -312,26 +311,26 @@ public class AzureFileStorage : IStoragePlugin
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
-            throw new StorageException($"Resource '{path}' not exist!");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            throw new StorageException($"Share item '{path}' not found!");
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
     public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path must be not empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         try
         {
@@ -339,33 +338,33 @@ public class AzureFileStorage : IStoragePlugin
             var isExist = await directoryClient.ExistsAsync(cancellationToken: cancellationToken);
 
             if (!isExist)
-                throw new StorageException($"The specified directory path '{path}' is not a file.");
+                throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotFile, path));
 
             await DeleteAsync(path, new StorageSearchOptions(), cancellationToken);
             await directoryClient.DeleteAsync(cancellationToken: cancellationToken);
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
-            throw new StorageException($"Resource '{path}' not exist!");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            throw new StorageException($"Share item '{path}' not found!");
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
     public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path must be not empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         try
         {
@@ -374,19 +373,19 @@ public class AzureFileStorage : IStoragePlugin
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
-            throw new StorageException($"Resource '{path}' not exist!");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            throw new StorageException($"Share item '{path}' not found!");
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
-            throw new StorageException("Invalid path entered.");
+            throw new StorageException(Resources.InvalidPathEntered);
         }
         catch (RequestFailedException)
         {
-            throw new StorageException($"Something wrong happened during processing existing file on Azure file share!");
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
         }
     }
 
