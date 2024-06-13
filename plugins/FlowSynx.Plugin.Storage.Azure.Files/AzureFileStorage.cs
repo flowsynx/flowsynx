@@ -338,7 +338,7 @@ public class AzureFileStorage : IStoragePlugin
             var isExist = await directoryClient.ExistsAsync(cancellationToken: cancellationToken);
 
             if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotFile, path));
+                throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path));
 
             await DeleteAsync(path, new StorageSearchOptions(), cancellationToken);
             await directoryClient.DeleteAsync(cancellationToken: cancellationToken);

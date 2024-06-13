@@ -147,8 +147,8 @@
   <data name="ThePathMustBeFile" xml:space="preserve">
     <value>The path must be a file. Please specified a file path.</value>
   </data>
-  <data name="TheSpecifiedDirectoryPathIsNotFile" xml:space="preserve">
-    <value>The specified directory path '{0}' is not a file.</value>
+  <data name="TheSpecifiedDirectoryPathIsNotDirectory" xml:space="preserve">
+    <value>The specified directory path '{0}' is not a directory.</value>
   </data>
   <data name="TheSpecifiedPathIsNotExist" xml:space="preserve">
     <value>The specified path '{0}' is not exist.</value>

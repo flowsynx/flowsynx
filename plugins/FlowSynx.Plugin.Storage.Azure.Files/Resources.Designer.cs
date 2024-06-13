@@ -151,11 +151,11 @@ namespace FlowSynx.Plugin.Storage.Azure.Files {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specified directory path &apos;{0}&apos; is not a file..
+        ///   Looks up a localized string similar to The specified directory path &apos;{0}&apos; is not a directory..
         /// </summary>
-        internal static string TheSpecifiedDirectoryPathIsNotFile {
+        internal static string TheSpecifiedDirectoryPathIsNotDirectory {
             get {
-                return ResourceManager.GetString("TheSpecifiedDirectoryPathIsNotFile", resourceCulture);
+                return ResourceManager.GetString("TheSpecifiedDirectoryPathIsNotDirectory", resourceCulture);
             }
         }
         
