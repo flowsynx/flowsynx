@@ -26,7 +26,7 @@ public class LocalFileSystemStorage : IStoragePlugin
     
     public PluginNamespace Namespace => PluginNamespace.Storage;
     
-    public string? Description => "Plugin for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever";
+    public string? Description => Resources.PluginDescription;
     
     public Dictionary<string, string?>? Specifications { get; set; }
 
@@ -61,12 +61,12 @@ public class LocalFileSystemStorage : IStoragePlugin
         try
         {
             if (string.IsNullOrEmpty(path))
-                throw new StorageException("The specified path should not be empty!");
+                throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
             path = GetPhysicalPath(path);
 
             if (!Directory.Exists(path))
-                throw new StorageException($"The specified path '{path}' is not exist.");
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
             var result = new List<StorageEntity>();
             var directoryInfo = new DirectoryInfo(path);
@@ -103,7 +103,7 @@ public class LocalFileSystemStorage : IStoragePlugin
         path = GetPhysicalPath(path);
 
         if (File.Exists(path) && writeOptions.Overwrite is false)
-            throw new StorageException($"File '{path}' is already exist and can't be overwritten!");
+            throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
         
         if (File.Exists(path) && writeOptions.Overwrite is true)
         {
@@ -120,7 +120,7 @@ public class LocalFileSystemStorage : IStoragePlugin
         path = GetPhysicalPath(path);
 
         if (!File.Exists(path))
-            throw new StorageException($"The specified path '{path}' is not a file.");
+            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
 
         var file = new FileInfo(path);
         var fileExtension = file.Extension;
@@ -138,7 +138,7 @@ public class LocalFileSystemStorage : IStoragePlugin
     public Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
         
         var fileInfo = new FileInfo(path);
         return Task.FromResult(fileInfo.Exists);
@@ -151,7 +151,7 @@ public class LocalFileSystemStorage : IStoragePlugin
 
         var storageEntities = entities.ToList();
         if (storageEntities == null || !storageEntities.Any())
-            throw new StorageException("No files found with the given filter");
+            throw new StorageException(Resources.NoFilesFoundWithTheGivenFilter);
 
         foreach (var entity in storageEntities)
         {
@@ -164,7 +164,7 @@ public class LocalFileSystemStorage : IStoragePlugin
         path = GetPhysicalPath(path);
 
         if (!File.Exists(path))
-            throw new StorageException($"The specified path '{path}' is not a file.");
+            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
         
         File.Delete(path);
         return Task.CompletedTask;
@@ -181,7 +181,7 @@ public class LocalFileSystemStorage : IStoragePlugin
     {
         var directoryInfo = new DirectoryInfo(path);
         if (!directoryInfo.Exists)
-            throw new StorageException("The specified directory path is not exist.");
+            throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path));
         
         Directory.Delete(path, true);
         return Task.CompletedTask;
@@ -190,7 +190,7 @@ public class LocalFileSystemStorage : IStoragePlugin
     public Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(path))
-            throw new StorageException("The specified path should not be empty!");
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
         
         var fileInfo = new DirectoryInfo(path);
         return Task.FromResult(fileInfo.Exists);
