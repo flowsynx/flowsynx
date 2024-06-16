@@ -150,8 +150,8 @@ public class LocalFileSystemStorage : IStoragePlugin
             new StorageListOptions {Kind = StorageFilterItemKind.File}, new StorageHashOptions(), cancellationToken);
 
         var storageEntities = entities.ToList();
-        if (storageEntities == null || !storageEntities.Any())
-            throw new StorageException(Resources.NoFilesFoundWithTheGivenFilter);
+        if (!storageEntities.Any())
+            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         foreach (var entity in storageEntities)
         {
