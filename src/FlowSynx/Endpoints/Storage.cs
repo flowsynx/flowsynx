@@ -72,8 +72,9 @@ public class Storage : EndpointGroupBase
         if (!string.IsNullOrEmpty(result.Data.Md5))
             http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
 
-        return Results.Stream(result.Data.Content);
-
+        return result.Data.ContentType != null ? 
+            Results.Stream(result.Data.Content, result.Data.ContentType) : 
+            Results.Stream(result.Data.Content);
     }
 
     public async Task<IResult> Write([FromBody] WriteRequest request, 
