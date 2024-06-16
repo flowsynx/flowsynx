@@ -135,15 +135,15 @@ jobs:
         include:
           - os: ubuntu-latest
             version: alpine3.18
-            file: /docker/Dockerfile.linux
+            file: /docker/Dockerfile.Linux
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-linux-amd64
           - os: windows-2019
             version: nanoserver-1809
-            file: /docker/Dockerfile.windows
+            file: /docker/Dockerfile.Windows
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-windows-1809-amd64
           - os: windows-2022
             version: nanoserver-ltsc2022
-            file: /docker/Dockerfile.windows
+            file: /docker/Dockerfile.Windows
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-windows-ltsc2022-amd64
     runs-on: ${{ matrix.os }}
     needs: [compute, build, release]
