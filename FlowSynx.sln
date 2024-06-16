@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Mem
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{2055D7A4-DACB-49D7-988F-E3424935388A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Plugin.Storage.Http", "plugins\FlowSynx.Plugin.Storage.Http\FlowSynx.Plugin.Storage.Http.csproj", "{3A843EA5-72EA-4AAA-A128-6BFC0095D752}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Http", "plugins\FlowSynx.Plugin.Storage.Http\FlowSynx.Plugin.Storage.Http.csproj", "{3A843EA5-72EA-4AAA-A128-6BFC0095D752}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
