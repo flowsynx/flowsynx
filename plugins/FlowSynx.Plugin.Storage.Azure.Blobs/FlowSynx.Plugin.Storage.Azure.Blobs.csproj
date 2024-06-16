@@ -14,6 +14,22 @@
   <ItemGroup>
 	<PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
 	<PackageReference Include="FlowSynx.Plugin.Storage" Version="0.8.1" />
+	<PackageReference Include="FlowSynx.Reflections" Version="0.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

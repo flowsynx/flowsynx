@@ -21,6 +21,7 @@ using FlowSynx.Core.Storage.Check;
 using FlowSynx.Core.Storage.Compress;
 using FlowSynx.Core.Storage.Copy;
 using FlowSynx.Core.Storage.Move;
+using FlowSynx.Plugin.Storage.Azure.Blobs;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -85,6 +86,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IPlugin, LocalFileSystemStorage>();
         services.AddScoped<IPlugin, AzureFileStorage>();
+        services.AddScoped<IPlugin, AzureBlobStorage>();
         return services;
     }
 }
