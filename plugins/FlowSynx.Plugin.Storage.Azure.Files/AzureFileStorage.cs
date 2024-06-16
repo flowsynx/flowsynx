@@ -258,7 +258,7 @@ public class AzureFileStorage : IStoragePlugin
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
-            throw new StorageException(Resources.NoFilesFoundWithTheGivenFilter);
+            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         foreach (var entity in storageEntities)
         {

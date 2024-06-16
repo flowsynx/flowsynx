@@ -79,7 +79,7 @@ namespace FlowSynx.Plugin.Storage.Azure.Files {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No files found with the given filter..
+        ///   Looks up a localized string similar to No files found with the given filter in &apos;{0}&apos;..
         /// </summary>
         internal static string NoFilesFoundWithTheGivenFilter {
             get {

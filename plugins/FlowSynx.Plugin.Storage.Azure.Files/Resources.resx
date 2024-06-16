@@ -124,7 +124,7 @@
     <value>Invalid path entered.</value>
   </data>
   <data name="NoFilesFoundWithTheGivenFilter" xml:space="preserve">
-    <value>No files found with the given filter.</value>
+    <value>No files found with the given filter in '{0}'.</value>
   </data>
   <data name="OnePropertyShouldHaveValue" xml:space="preserve">
     <value>One of the ConnectionString or both AccountKey and AccountName properties in the azure file specifications should have value.</value>
