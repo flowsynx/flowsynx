@@ -27,22 +27,23 @@ public class EntityMover : IEntityMover
             throw new StorageException(Resources.MoveDestinationPathIsDifferentThanSourcePath);
 
         if (isFile)
-            MoveFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, cancellationToken);
+            await MoveFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, cancellationToken);
         else
-            MoveDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, searchOptions, cancellationToken);
+            await MoveDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path, destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path, searchOptions, cancellationToken);
 
         if (!PathHelper.IsRootPath(sourceStorageNormsInfo.Path))
             await sourceStorageNormsInfo.Plugin.DeleteAsync(sourceStorageNormsInfo.Path, searchOptions, cancellationToken);
     }
 
-    private async void MoveFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, CancellationToken cancellationToken = default)
+    private async Task MoveFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin, string destinationFile, CancellationToken cancellationToken = default)
     {
         var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
         await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, new StorageWriteOptions() { Overwrite = true }, cancellationToken);
         _logger.LogInformation($"Move operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
+        sourceStream.Stream.Close();
     }
 
-    private async void MoveDirectory(IStoragePlugin sourcePlugin, string sourceDirectory, IStoragePlugin destinationPlugin, string destinationDirectory, StorageSearchOptions searchOptions, CancellationToken cancellationToken = default)
+    private async Task MoveDirectory(IStoragePlugin sourcePlugin, string sourceDirectory, IStoragePlugin destinationPlugin, string destinationDirectory, StorageSearchOptions searchOptions, CancellationToken cancellationToken = default)
     {
         if (!PathHelper.IsRootPath(destinationDirectory))
             await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
@@ -55,13 +56,19 @@ public class EntityMover : IEntityMover
         {
             var destinationDir = dirPath.Replace(sourceDirectory, destinationDirectory);
             await destinationPlugin.MakeDirectoryAsync(destinationDir, cancellationToken);
-            _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for directory '{dirPath}'");
+            _logger.LogInformation($"Move operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for directory '{dirPath}'");
         }
 
-        foreach (string file in storageEntities.Where(x => x.Kind == StorageEntityItemKind.File))
+        var files = storageEntities.Where(x => x.Kind == StorageEntityItemKind.File).ToList();
+        if (!files.Any())
+        {
+            throw new StorageException($"No files found in the path '{sourceDirectory}'");
+        }
+
+        foreach (string file in files)
         {
             var destinationFile = file.Replace(sourceDirectory, destinationDirectory);
-            MoveFile(sourcePlugin, file, destinationPlugin, destinationFile, cancellationToken);
+            await MoveFile(sourcePlugin, file, destinationPlugin, destinationFile, cancellationToken);
         }
     }
 }
