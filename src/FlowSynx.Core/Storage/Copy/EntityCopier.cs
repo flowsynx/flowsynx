@@ -30,19 +30,19 @@ public class EntityCopier : IEntityCopier
 
         if (isFile)
         {
-            CopyFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
+            await CopyFile(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
                 destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path,
                 copyOptions.OverWriteData, cancellationToken);
         }
         else
         {
-            CopyDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
+            await CopyDirectory(sourceStorageNormsInfo.Plugin, sourceStorageNormsInfo.Path,
                 destinationStorageNormsInfo.Plugin, destinationStorageNormsInfo.Path,
                 searchOptions, copyOptions.OverWriteData, cancellationToken);
         }
     }
 
-    private async void CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin,
+    private async Task CopyFile(IStoragePlugin sourcePlugin, string sourceFile, IStoragePlugin destinationPlugin,
     string destinationFile, bool? overWrite, CancellationToken cancellationToken = default)
     {
         var fileExist = await sourcePlugin.FileExistAsync(destinationFile, cancellationToken);
@@ -55,9 +55,10 @@ public class EntityCopier : IEntityCopier
         var sourceStream = await sourcePlugin.ReadAsync(sourceFile, new StorageHashOptions(), cancellationToken);
         await destinationPlugin.WriteAsync(destinationFile, sourceStream.Stream, new StorageWriteOptions() { Overwrite = overWrite }, cancellationToken);
         _logger.LogInformation($"Copy operation - From '{sourcePlugin.Name}' to '{destinationPlugin.Name}' for file '{sourceFile}'");
+        sourceStream.Stream.Close();
     }
 
-    private async void CopyDirectory(IStoragePlugin sourcePlugin, string sourceDirectory,
+    private async Task CopyDirectory(IStoragePlugin sourcePlugin, string sourceDirectory,
         IStoragePlugin destinationPlugin, string destinationDirectory,
         StorageSearchOptions searchOptions, bool? overWrite, CancellationToken cancellationToken = default)
     {
@@ -78,7 +79,7 @@ public class EntityCopier : IEntityCopier
         foreach (string file in storageEntities.Where(x => x.Kind == StorageEntityItemKind.File))
         {
             var destinationFile = file.Replace(sourceDirectory, destinationDirectory);
-            CopyFile(sourcePlugin, file, destinationPlugin, destinationFile, overWrite, cancellationToken);
+            await CopyFile(sourcePlugin, file, destinationPlugin, destinationFile, overWrite, cancellationToken);
         }
     }
 }
