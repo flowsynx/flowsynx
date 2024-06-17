@@ -16,8 +16,9 @@ WORKDIR /code
 
 COPY ["src/FlowSynx/FlowSynx.csproj", "src/FlowSynx/"]
 COPY ["src/FlowSynx.Core/FlowSynx.Core.csproj", "src/FlowSynx.Core/"]
-COPY ["plugins/FlowSynx.Plugin.Storage.Azure.Files/FlowSynx.Plugin.Storage.Azure.Files.csproj", "plugins/FlowSynx.Plugin.Storage.Azure.Files/"]
 COPY ["plugins/FlowSynx.Plugin.Storage.LocalFileSystem/FlowSynx.Plugin.Storage.LocalFileSystem.csproj", "plugins/FlowSynx.Plugin.Storage.LocalFileSystem/"]
+COPY ["plugins/FlowSynx.Plugin.Storage.Azure.Files/FlowSynx.Plugin.Storage.Azure.Files.csproj", "plugins/FlowSynx.Plugin.Storage.Azure.Files/"]
+COPY ["plugins/FlowSynx.Plugin.Storage.Azure.Blobs/FlowSynx.Plugin.Storage.Azure.Blobs.csproj", "plugins/FlowSynx.Plugin.Storage.Azure.Blobs/"]
 
 ENV NUGET_URL="https://nuget.pkg.github.com/$NUGET_ORGANIZATION/index.json"
 RUN dotnet nuget add source --username $NUGET_USERNAME --password $NUGET_PASSWORD --store-password-in-clear-text --name github $NUGET_URL
