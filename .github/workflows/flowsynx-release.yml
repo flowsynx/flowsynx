@@ -155,7 +155,7 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
     - name: Docker Build
       run: |
-        docker build -f ${{ matrix.file }} --build-arg OS_VERSION=${{ matrix.version }} --build-arg NUGET_ORGANIZATION=${{ github.repository_owner }} --build-arg NUGET_USERNAME=${{ secrets.GH_USERNAME }} --build-arg NUGET_PASSWORD=${{ secrets.GH_TOKEN }} --build-arg APP_VERSION='${{ inputs.rel_version }}' -t ${{ matrix.tag }} .        
+        docker build -f ${{ matrix.file }} --build-arg OS_VERSION=${{ matrix.version }} --build-arg NUGET_ORGANIZATION=${{ github.repository_owner }} --build-arg NUGET_USERNAME=${{ secrets.GH_USERNAME }} --build-arg NUGET_PASSWORD=${{ secrets.GH_TOKEN }} --build-arg APP_VERSION=${{ inputs.rel_version }} -t ${{ matrix.tag }} .        
     - name: Docker Push
       run: |
         docker push ${{ matrix.tag }}
