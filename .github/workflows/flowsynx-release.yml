@@ -76,10 +76,7 @@ jobs:
             tar czvf "${{ github.workspace }}/dist/${release_name}.tar.gz" *
           fi
           cd "${{github.workspace}}"
-
-          # Delete output directory
-          # rm -r "${{ env.ARCHIVE_OUTDIR }}/$release_name"
-
+          
     - name: Upload bineries
       uses: actions/upload-artifact@v2
       with:
