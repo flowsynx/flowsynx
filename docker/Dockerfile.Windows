@@ -5,7 +5,7 @@ ARG NUGET_USERNAME
 ARG NUGET_PASSWORD
 ARG APP_VERSION="0.1.0"
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-%OS_VERSION% AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-${OS_VERSION} AS build
 ARG BUILD_CONFIGURATION
 ARG NUGET_ORGANIZATION
 ARG NUGET_USERNAME
@@ -33,7 +33,7 @@ ARG BUILD_CONFIGURATION
 ARG APP_VERSION
 RUN dotnet publish "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:UseAppHost=false /property:Version=%APP_VERSION% --runtime 'win-x64'
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-%OS_VERSION%
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-${OS_VERSION}
 WORKDIR /app
 EXPOSE 5860
 COPY --from=publish /app/publish .
