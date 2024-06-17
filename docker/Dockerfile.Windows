@@ -31,7 +31,7 @@ RUN dotnet build "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/build
 FROM build AS publish
 ARG BUILD_CONFIGURATION
 ARG APP_VERSION
-RUN dotnet publish "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:UseAppHost=false /property:Version=%APP_VERSION% --runtime 'win-x64'
+RUN dotnet publish "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:UseAppHost=false /p:Version=${APP_VERSION} --runtime 'win-x64'
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-${OS_VERSION}
 WORKDIR /app
