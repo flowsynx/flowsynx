@@ -10,7 +10,7 @@ on:
 
 env:
   DOCKER_USER_NAME: ${{ github.repository_owner }}
-  DOCKER_IMAGE_NAME: ${{ github.repository }} 
+  DOCKER_IMAGE_NAME: ${{ github.event.repository.name }} 
 
 jobs:
   build:
