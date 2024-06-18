@@ -67,11 +67,11 @@ public class EntityChecker : IEntityChecker
                     _ => state = CheckState.Match,
                 };
             }
-            result.Add(new CheckResult { Entity = sourceEntity.Source, State = state });
+            result.Add(new CheckResult(sourceEntity.Source, state));
         }
 
-        result.AddRange(missedOnDestination.Select(sourceEntity => new CheckResult { Entity = sourceEntity, State = CheckState.MissedOnDestination }));
-        result.AddRange(missedOnSource.Select(sourceEntity => new CheckResult { Entity = sourceEntity, State = CheckState.MissedOnSource }));
+        result.AddRange(missedOnDestination.Select(sourceEntity => new CheckResult (sourceEntity, CheckState.MissedOnDestination)));
+        result.AddRange(missedOnSource.Select(sourceEntity => new CheckResult (sourceEntity, CheckState.MissedOnSource)));
 
         return result;
     }

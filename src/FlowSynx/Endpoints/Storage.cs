@@ -70,7 +70,7 @@ public class Storage : EndpointGroupBase
         if (result.Data.Content == null) return Results.BadRequest();
 
         if (!string.IsNullOrEmpty(result.Data.Md5))
-            http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
+            http.Response.Headers.Append("flowsynx-md5", result.Data.Md5);
 
         return result.Data.ContentType != null ? 
             Results.Stream(result.Data.Content, result.Data.ContentType) : 
@@ -150,7 +150,7 @@ public class Storage : EndpointGroupBase
         if (result.Data.Content == null) return Results.BadRequest();
 
         if (!string.IsNullOrEmpty(result.Data.Md5))
-            http.Response.Headers.Add("flowsynx-md5", result.Data.Md5);
+            http.Response.Headers.Append("flowsynx-md5", result.Data.Md5);
 
         return Results.Stream(result.Data.Content);
     }
