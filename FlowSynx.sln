@@ -17,11 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azure.Files", "plugins\FlowSynx.Plugin.Storage.Azure.Files\FlowSynx.Plugin.Storage.Azure.Files.csproj", "{7B41A66B-26F1-4428-9426-FDFFF1D58F75}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Memory", "plugins\FlowSynx.Plugin.Storage.Memory\FlowSynx.Plugin.Storage.Memory.csproj", "{1115CD39-7774-48F2-A21B-B01FCD9D1515}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{2055D7A4-DACB-49D7-988F-E3424935388A}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Http", "plugins\FlowSynx.Plugin.Storage.Http\FlowSynx.Plugin.Storage.Http.csproj", "{3A843EA5-72EA-4AAA-A128-6BFC0095D752}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,14 +45,6 @@ Global
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1115CD39-7774-48F2-A21B-B01FCD9D1515}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1115CD39-7774-48F2-A21B-B01FCD9D1515}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1115CD39-7774-48F2-A21B-B01FCD9D1515}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1115CD39-7774-48F2-A21B-B01FCD9D1515}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3A843EA5-72EA-4AAA-A128-6BFC0095D752}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A843EA5-72EA-4AAA-A128-6BFC0095D752}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A843EA5-72EA-4AAA-A128-6BFC0095D752}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A843EA5-72EA-4AAA-A128-6BFC0095D752}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,9 +55,7 @@ Global
 		{EE1A893C-E84D-4D7D-93C8-0646EC729685} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{60854C55-D120-4359-BEDF-883A825B603F} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75} = {2055D7A4-DACB-49D7-988F-E3424935388A}
-		{1115CD39-7774-48F2-A21B-B01FCD9D1515} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{2055D7A4-DACB-49D7-988F-E3424935388A} = {F0C26331-6C4A-4389-80E3-7580C3977871}
-		{3A843EA5-72EA-4AAA-A128-6BFC0095D752} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}
