@@ -46,38 +46,75 @@ static class AzureBlobConverter
 
     private static void AddProperties(StorageEntity entity, BlobItemProperties properties)
     {
-        entity.TryAddMetadata(
-            "CustomerProvidedKeySha256", properties.CustomerProvidedKeySha256,
-            "IncrementalCopy", properties.IncrementalCopy,
-            "ServerEncrypted", properties.ServerEncrypted,
-            "DeletedOn", properties.DeletedOn,
-            "RemainingRetentionDays", properties.RemainingRetentionDays,
-            "AccessTier", properties.AccessTier,
-            "AccessTierChangedOn", properties.AccessTierChangedOn,
-            "AccessTierInferred", properties.AccessTierInferred,
-            "ArchiveStatus", properties.ArchiveStatus,
-            "BlobSequenceNumber", properties.BlobSequenceNumber,
-            "BlobType", properties.BlobType,
-            "CacheControl", properties.CacheControl,
-            "ContentDisposition", properties.ContentDisposition,
-            "ContentEncoding", properties.ContentEncoding,
-            "ContentHash", properties.ContentHash.ToHexString(),
-            "ContentLanguage", properties.ContentLanguage,
-            "ContentLength", properties.ContentLength,
-            "ContentType", properties.ContentType,
-            "CopyCompletedOn", properties.CopyCompletedOn,
-            "CopyId", properties.CopyId,
-            "CopyProgress", properties.CopyProgress,
-            "CopySource", properties.CopySource,
-            "CopyStatus", properties.CopyStatus,
-            "CopyStatusDescription", properties.CopyStatusDescription,
-            "CreatedOn", properties.CreatedOn,
-            "DestinationSnapshot", properties.DestinationSnapshot,
-            "ETag", properties.ETag,
-            "LastModified", properties.LastModified,
-            "LeaseDuration", properties.LeaseDuration,
-            "LeaseState", properties.LeaseState,
-            "LeaseStatus", properties.LeaseStatus);
+        if (properties.AccessTier.HasValue)
+            entity.Metadata.Add("AccessTier", properties.AccessTier);
+
+        if (properties.AccessTierChangedOn.HasValue)
+            entity.Metadata.Add("AccessTierChangedOn", properties.AccessTierChangedOn);
+
+        entity.Metadata.Add("AccessTierInferred", properties.AccessTierInferred);
+
+        if (properties.BlobSequenceNumber.HasValue)
+            entity.Metadata.Add("BlobSequenceNumber", properties.BlobSequenceNumber);
+
+        if (properties.BlobType.HasValue)
+            entity.Metadata.Add("BlobType", properties.BlobType);
+
+        entity.Metadata.Add("CacheControl", properties.CacheControl);
+        entity.Metadata.Add("ContentDisposition", properties.ContentDisposition);
+        entity.Metadata.Add("ContentEncoding", properties.ContentEncoding);
+        entity.Metadata.Add("ContentHash", properties.ContentHash.ToHexString());
+        entity.Metadata.Add("ContentLanguage", properties.ContentLanguage);
+        entity.Metadata.Add("CustomerProvidedKeySha256", properties.CustomerProvidedKeySha256);
+        
+        if (properties.ContentLength.HasValue)
+            entity.Metadata.Add("ContentLength", properties.ContentLength);
+
+        entity.Metadata.Add("ContentType", properties.ContentType);
+
+        if (properties.CopyCompletedOn.HasValue)
+            entity.Metadata.Add("CopyCompletedOn", properties.CopyCompletedOn);
+
+        entity.Metadata.Add("CopyId", properties.CopyId);
+        entity.Metadata.Add("CopyProgress", properties.CopyProgress);
+        entity.Metadata.Add("CopySource", properties.CopySource);
+
+        if (properties.CopyStatus.HasValue)
+            entity.Metadata.Add("CopyStatus", properties.CopyStatus);
+
+        entity.Metadata.Add("CopyStatusDescription", properties.CopyStatusDescription);
+
+        if (properties.CreatedOn.HasValue)
+            entity.Metadata.Add("CreatedOn", properties.CreatedOn);
+
+        if (properties.DeletedOn.HasValue)
+            entity.Metadata.Add("DeletedOn", properties.DeletedOn);
+
+        entity.Metadata.Add("DestinationSnapshot", properties.DestinationSnapshot);
+
+        if (properties.ETag.HasValue)
+            entity.Metadata.Add("ETag", properties.ETag);
+
+        if (properties.IncrementalCopy.HasValue)
+            entity.Metadata.Add("IncrementalCopy", properties.IncrementalCopy);
+
+        if (properties.LastModified.HasValue)
+            entity.Metadata.Add("LastModified", properties.LastModified);
+
+        if (properties.LeaseDuration.HasValue)
+            entity.Metadata.Add("LeaseDuration", properties.LeaseDuration);
+
+        if (properties.LeaseState.HasValue)
+            entity.Metadata.Add("LeaseState", properties.LeaseState);
+
+        if (properties.LeaseStatus.HasValue)
+            entity.Metadata.Add("LeaseStatus", properties.LeaseStatus);
+        
+        if (properties.RemainingRetentionDays.HasValue)
+            entity.Metadata.Add("RemainingRetentionDays", properties.RemainingRetentionDays);
+
+        if (properties.ServerEncrypted.HasValue)
+            entity.Metadata.Add("ServerEncrypted", properties.ServerEncrypted);
     }
     
     public static string ToHexString(this byte[]? bytes)

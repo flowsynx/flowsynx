@@ -94,7 +94,7 @@ internal class AzureContainerBrowser : IDisposable
         return result;
     }
 
-    private string FormatFolderPrefix(string folderPath)
+    private string? FormatFolderPrefix(string folderPath)
     {
         folderPath = PathHelper.Normalize(folderPath);
 
