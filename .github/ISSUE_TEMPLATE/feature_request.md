@@ -7,10 +7,8 @@ assignees: ''
 
 ---
 
-**In what area(s)?**
-
-**Describe the feature**
+## Describe the feature
 A clear and concise description of what the feature is?
 
-**Release Note**
-Add any other context or release note about the feature request here.
+## Release Note
+RELEASE NOTE: Add any other context or release note about the feature request here.
