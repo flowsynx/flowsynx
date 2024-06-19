@@ -116,9 +116,4 @@ static class AzureBlobConverter
         if (properties.ServerEncrypted.HasValue)
             entity.Metadata.Add("ServerEncrypted", properties.ServerEncrypted);
     }
-    
-    public static string ToHexString(this byte[]? bytes)
-    {
-        return bytes == null ? string.Empty : System.Convert.ToHexString(bytes);
-    }
 }
