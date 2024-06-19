@@ -46,7 +46,7 @@ public class EntityCompress : IEntityCompress
 
         if (hashOptions.Hashing is true)
         {
-            md5Hash = HashHelper.GetMd5Hash(compressResult.Stream);
+            md5Hash = HashHelper.Md5.GetHash(compressResult.Stream);
         }
 
         return new CompressResult { Stream = compressResult.Stream, ContentType = compressResult.ContentType, Md5 = md5Hash };

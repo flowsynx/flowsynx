@@ -129,7 +129,7 @@ public class LocalFileSystemStorage : IStoragePlugin
             Stream = new StorageStream(File.OpenRead(path)),
             ContentType = fileExtension.GetContentType(),
             Extension = fileExtension,
-            Md5 = HashHelper.GetMd5Hash(file)
+            Md5 = HashHelper.Md5.GetHash(file)
         };
 
         return Task.FromResult(result);

@@ -26,7 +26,7 @@ static class LocalFileSystemConverter
             CreatedTime = file.CreationTimeUtc,
             ModifiedTime = file.LastWriteTimeUtc,
             Size = file.Length,
-            Md5 = hashing is true ? HashHelper.GetMd5Hash(fileInfo) : null
+            Md5 = hashing is true ? HashHelper.Md5.GetHash(fileInfo) : null
         };
         
         entity.TryAddMetadata("Attributes", file.Attributes.ToString());
