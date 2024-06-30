@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Azu
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{2055D7A4-DACB-49D7-988F-E3424935388A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Plugin.Storage.Google.Cloud", "plugins\FlowSynx.Plugin.Storage.Google.Cloud\FlowSynx.Plugin.Storage.Google.Cloud.csproj", "{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -56,6 +62,7 @@ Global
 		{60854C55-D120-4359-BEDF-883A825B603F} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{7B41A66B-26F1-4428-9426-FDFFF1D58F75} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{2055D7A4-DACB-49D7-988F-E3424935388A} = {F0C26331-6C4A-4389-80E3-7580C3977871}
+		{1FC203CA-B2DD-4162-8266-F2427F9DF8A1} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}
