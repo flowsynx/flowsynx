@@ -18,7 +18,7 @@ internal class StorageNormsParser : IStorageNormsParser
     private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
     private readonly IStorageFilter _storageFilter;
     private readonly INamespaceParser _namespaceParser;
-    private const string ParserSeparator = "::";
+    private const string ParserSeparator = ":";
 
     public StorageNormsParser(ILogger<StorageNormsParser> logger, IConfigurationManager configurationManager,
         IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
