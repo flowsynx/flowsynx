@@ -27,18 +27,29 @@ internal class GoogleBucketBrowser : IDisposable
         {
             var request = _client.Service.Objects.List(_bucketName);
             request.Prefix = FormatFolderPrefix(path);
-            request.Delimiter = "/";
+            request.Delimiter = searchOptions.Recurse ? null : "/";
             
             do
             {
                 var serviceObjects = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-
                 if (serviceObjects.Items != null)
                 {
-                    var entity = GoogleCloudStorageConverter.ToEntity(serviceObjects.Items);
+                    foreach (var item in serviceObjects.Items)
+                    {
+                        if (item == null)
+                            continue;
 
-                    if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
-                        result.AddRange(entity);
+                        if (item.Name.EndsWith("/"))
+                        {
+                            if ((listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory))
+                                result.Add(GoogleCloudStorageConverter.ToEntity(item, true));
+                        }
+                        else
+                        {
+                            if ((listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory))
+                                result.Add(GoogleCloudStorageConverter.ToEntity(item, false));
+                        }
+                    }
                 }
 
                 if (serviceObjects.Prefixes != null)
