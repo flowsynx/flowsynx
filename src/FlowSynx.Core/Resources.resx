@@ -171,9 +171,6 @@
   <data name="StorageNormsParserInvalidStorageType" xml:space="preserve">
     <value>The selected plugin type '{0}' is not valid storage plugin type.</value>
   </data>
-  <data name="StorageNormsParserStorageNotFoumd" xml:space="preserve">
-    <value>'{0}' storage not found!</value>
-  </data>
   <data name="CopyHandlerSuccessfullyCopy" xml:space="preserve">
     <value>The copy was done successfully.</value>
   </data>

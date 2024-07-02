@@ -50,8 +50,8 @@ internal class StorageNormsParser : IStorageNormsParser
 
             var fileSystemExist = _configurationManager.IsExist(segments[0]);
             if (!fileSystemExist)
-                throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserStorageNotFoumd, segments[0]));
-
+                return new StorageNormsInfo(new LocalFileSystemStorage(_localStorageLogger, _storageFilter), null, path);
+            
             var fileSystem = _configurationManager.GetSetting(segments[0]);
 
             if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)

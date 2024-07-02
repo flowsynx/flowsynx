@@ -457,15 +457,6 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{0}&apos; storage not found!.
-        /// </summary>
-        internal static string StorageNormsParserStorageNotFoumd {
-            get {
-                return ResourceManager.GetString("StorageNormsParserStorageNotFoumd", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The file was writen successfully..
         /// </summary>
         internal static string WriteHandlerSuccessfullyWriten {
