@@ -17,26 +17,37 @@ static class GoogleCloudStorageConverter
         return entity;
     }
 
-    public static StorageEntity ToEntity(Object googleObject)
+    public static StorageEntity ToEntity(Object googleObject, bool isDirectory)
     {
+        StorageEntity entity;
         var fullPath = PathHelper.Combine(googleObject.Bucket, googleObject.Name);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
-        {
-            ModifiedTime = googleObject.UpdatedDateTimeOffset,
-            Md5 = googleObject.Md5Hash,
-            Size = (long?)googleObject.Size
-        };
 
-        AddProperties(entity, googleObject);
+        if (isDirectory)
+        {
+            entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
+            {
+                ModifiedTime = googleObject.UpdatedDateTimeOffset,
+                Metadata =
+                {
+                    ["IsDirectory"] = true
+                }
+            };
+        }
+        else
+        {
+            entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
+            {
+                ModifiedTime = googleObject.UpdatedDateTimeOffset,
+                Md5 = googleObject.Md5Hash,
+                Size = (long?)googleObject.Size
+            };
+
+            AddProperties(entity, googleObject);
+        }
 
         return entity;
     }
     
-    public static IEnumerable<StorageEntity> ToEntity(IEnumerable<Object> objects)
-    {
-        return objects.Select(ToEntity);
-    }
-
     private static void AddProperties(StorageEntity entity, Object googleObject)
     {
         entity.Metadata.Add("ContentType", googleObject.ContentType);
