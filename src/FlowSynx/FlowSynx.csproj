@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	<AssemblyName>flowsynxe</AssemblyName>
+	<AssemblyName>flowsynx</AssemblyName>
     <UserSecretsId>ee556b65-5e94-4153-88d3-9256fb61d188</UserSecretsId>
 	<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 	<Title>FlowSynx</Title>
