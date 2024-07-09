@@ -32,7 +32,7 @@ public class GoogleCloudStorage : IStoragePlugin
     }
 
     public Guid Id => Guid.Parse("d3c52770-f001-4ea3-93b7-f113a956a091");
-    public string Name => "Google.Cloud.Storage";
+    public string Name => "Google.Cloud";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
     public Dictionary<string, string?>? Specifications
