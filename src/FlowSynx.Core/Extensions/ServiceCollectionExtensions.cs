@@ -21,6 +21,7 @@ using FlowSynx.Core.Storage.Check;
 using FlowSynx.Core.Storage.Compress;
 using FlowSynx.Core.Storage.Copy;
 using FlowSynx.Core.Storage.Move;
+using FlowSynx.Plugin.Storage.Amazon.S3;
 using FlowSynx.Plugin.Storage.Azure.Blobs;
 using FlowSynx.Plugin.Storage.Google.Cloud;
 
@@ -89,6 +90,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPlugin, AzureFileStorage>();
         services.AddScoped<IPlugin, AzureBlobStorage>();
         services.AddScoped<IPlugin, GoogleCloudStorage>();
+        services.AddScoped<IPlugin, AmazonS3Storage>();
         return services;
     }
 }

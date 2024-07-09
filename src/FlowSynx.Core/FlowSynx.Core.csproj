@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Amazon.S3\FlowSynx.Plugin.Storage.Amazon.S3.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Azure.Blobs\FlowSynx.Plugin.Storage.Azure.Blobs.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Azure.Files\FlowSynx.Plugin.Storage.Azure.Files.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Google.Cloud\FlowSynx.Plugin.Storage.Google.Cloud.csproj" />
