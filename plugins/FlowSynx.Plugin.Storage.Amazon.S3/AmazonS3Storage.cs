@@ -24,7 +24,7 @@ public class AmazonS3Storage : IStoragePlugin
     }
 
     public Guid Id => Guid.Parse("b961131b-04cb-48df-9554-4252dc66c04c");
-    public string Name => "Amazon.S3.Storage";
+    public string Name => "Amazon.S3";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
     public Dictionary<string, string?>? Specifications
