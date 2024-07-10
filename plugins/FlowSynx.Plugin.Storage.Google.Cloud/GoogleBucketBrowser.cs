@@ -39,27 +39,15 @@ internal class GoogleBucketBrowser : IDisposable
                         if (item == null)
                             continue;
 
-                        if (item.Name.EndsWith("/"))
-                        {
-                            if ((listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory))
-                                result.Add(GoogleCloudStorageConverter.ToEntity(item, true));
-                        }
-                        else
-                        {
-                            if ((listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory))
-                                result.Add(GoogleCloudStorageConverter.ToEntity(item, false));
-                        }
+                        result.Add(item.Name.EndsWith("/")
+                            ? GoogleCloudStorageConverter.ToEntity(item, true)
+                            : GoogleCloudStorageConverter.ToEntity(item, false));
                     }
                 }
 
                 if (serviceObjects.Prefixes != null)
-                {
-                    if ((listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory))
-                    {
-                        result.AddRange(serviceObjects.Prefixes.Select(p => new StorageEntity(p, StorageEntityItemKind.Directory)));
-                    }
-                }
-
+                    result.AddRange(serviceObjects.Prefixes.Select(p => new StorageEntity(p, StorageEntityItemKind.Directory)));
+                
                 request.PageToken = serviceObjects.NextPageToken;
             }
             while (request.PageToken != null);
