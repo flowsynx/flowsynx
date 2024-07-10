@@ -34,6 +34,19 @@ internal class StorageFilter: IStorageFilter
     {
         var predicate = PredicateBuilder.True<StorageEntity>();
 
+        switch (listOptions.Kind)
+        {
+            case StorageFilterItemKind.File:
+                predicate = predicate.And(p => p.Kind == StorageEntityItemKind.File);
+                break;
+            case StorageFilterItemKind.Directory:
+                predicate = predicate.And(p => p.Kind == StorageEntityItemKind.Directory);
+                break;
+            case StorageFilterItemKind.FileAndDirectory:
+            default:
+                break;
+        }
+
         if (!string.IsNullOrEmpty(storageSearchOptions.Include))
         {
             var myRegex = new Regex(storageSearchOptions.Include, storageSearchOptions.CaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase);
