@@ -21,7 +21,6 @@ internal class AzureContainerBrowser : IDisposable
         CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
-        var tempResult = new List<StorageEntity>();
 
         try
         {
@@ -37,19 +36,10 @@ internal class AzureContainerBrowser : IDisposable
                 try
                 {
                     if (item.IsBlob)
-                    {
-                        var entity = AzureBlobConverter.ToEntity(containerName: _client.Name, item: item);
-
-                        if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
-                            result.Add(entity);
-
-                        tempResult.Add(entity);
-                    }
-
-                    if ((listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory) && item.IsPrefix)
-                    {
+                        result.Add(AzureBlobConverter.ToEntity(containerName: _client.Name, item: item));
+                    
+                    if (item.IsPrefix)
                         result.Add(AzureBlobConverter.ToEntity(containerName: _client.Name, prefix: item.Prefix));
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -61,7 +51,7 @@ internal class AzureContainerBrowser : IDisposable
             {
                 var implicitPrefixes = AssumeImplicitPrefixes(
                     PathHelper.Combine(_client.Name, path),
-                    tempResult);
+                    result);
 
                 if (implicitPrefixes.Count > 0)
                 {
