@@ -99,16 +99,11 @@ public class AzureFileStorage : IStoragePlugin
                 {
                     try
                     {
-                        if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory && !item.IsDirectory)
-                        {
-                            result.Add(await AzureFileConverter.ToEntity(dir.Path, item, dir.GetFileClient(item.Name), cancellationToken));
-                        }
-
-                        if (listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory && item.IsDirectory)
-                        {
+                        if (item.IsDirectory)
                             result.Add(await AzureFileConverter.ToEntity(dir.Path, item, dir, cancellationToken));
-                        }
-
+                        else
+                            result.Add(await AzureFileConverter.ToEntity(dir.Path, item, dir.GetFileClient(item.Name), cancellationToken));
+                        
                         if (!searchOptions.Recurse) continue;
 
                         if (item.IsDirectory)
