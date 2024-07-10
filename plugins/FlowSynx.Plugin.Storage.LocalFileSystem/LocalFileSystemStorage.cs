@@ -71,17 +71,11 @@ public class LocalFileSystemStorage : IStoragePlugin
             var result = new List<StorageEntity>();
             var directoryInfo = new DirectoryInfo(path);
 
-            if (listOptions.Kind is StorageFilterItemKind.File or StorageFilterItemKind.FileAndDirectory)
-            {
-                result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse)
+            result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse)
                       .Select(file => LocalFileSystemConverter.ToEntity(file, hashOptions.Hashing)));
-            }
 
-            if (listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory)
-            {
-                result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse)
+            result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse)
                       .Select(LocalFileSystemConverter.ToEntity));
-            }
 
             var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
 
