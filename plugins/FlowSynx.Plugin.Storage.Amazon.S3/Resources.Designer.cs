@@ -61,11 +61,56 @@ namespace FlowSynx.Plugin.Storage.Amazon.S3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
+        /// </summary>
+        internal static string FileIsAlreadyExistAndCannotBeOverwritten {
+            get {
+                return ResourceManager.GetString("FileIsAlreadyExistAndCannotBeOverwritten", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No files found with the given filter in &apos;{0}&apos;..
+        /// </summary>
+        internal static string NoFilesFoundWithTheGivenFilter {
+            get {
+                return ResourceManager.GetString("NoFilesFoundWithTheGivenFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin for managing Amazon Web Service S3 Storage system..
         /// </summary>
         internal static string PluginDescription {
             get {
                 return ResourceManager.GetString("PluginDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resource &apos;{0}&apos; not exist!.
+        /// </summary>
+        internal static string ResourceNotExist {
+            get {
+                return ResourceManager.GetString("ResourceNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path &apos;{0}&apos; is not exist..
+        /// </summary>
+        internal static string TheSpecifiedPathIsNotExist {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathIsNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path must be not empty!.
+        /// </summary>
+        internal static string TheSpecifiedPathMustBeNotEmpty {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathMustBeNotEmpty", resourceCulture);
             }
         }
     }
