@@ -38,7 +38,7 @@ static class GoogleCloudStorageConverter
             entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
             {
                 ModifiedTime = googleObject.UpdatedDateTimeOffset,
-                Md5 = googleObject.Md5Hash,
+                Md5 = Convert.FromBase64String(googleObject.Md5Hash).ToHexString(),
                 Size = (long?)googleObject.Size
             };
 

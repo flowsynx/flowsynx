@@ -159,7 +159,7 @@ public class GoogleCloudStorage : IStoragePlugin
                 Stream = new StorageStream(ms),
                 ContentType = response.ContentType,
                 Extension = fileExtension,
-                Md5 = response.Md5Hash,
+                Md5 = Convert.FromBase64String(response.Md5Hash).ToHexString(),
             };
         }
         catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
