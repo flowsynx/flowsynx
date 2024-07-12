@@ -8,6 +8,7 @@ using EnsureThat;
 using Azure.Storage;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
+using System.IO;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
@@ -333,6 +334,11 @@ public class AzureBlobStorage : IStoragePlugin
             var pathParts = GetPartsAsync(path);
             var container = _client.GetBlobContainerClient(pathParts.ContainerName);
             await container.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(pathParts.RelativePath))
+            {
+                _logger.LogWarning($"The Azure Blob storage doesn't support create empty directory.");
+            }
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
@@ -373,7 +379,20 @@ public class AzureBlobStorage : IStoragePlugin
 
             var searchOptions = new StorageSearchOptions();
             await DeleteAsync(path, searchOptions, cancellationToken);
-            await container.DeleteAsync(cancellationToken: cancellationToken);
+
+            var directory = pathParts.RelativePath;
+            if (!string.IsNullOrEmpty(directory))
+            {
+                if (!directory.EndsWith("/"))
+                    directory += "/";
+
+                BlockBlobClient blockBlobClient = container.GetBlockBlobClient(directory);
+                await blockBlobClient.DeleteAsync(cancellationToken: cancellationToken);
+            }
+            else
+            {
+                await container.DeleteAsync(cancellationToken: cancellationToken);
+            }
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
@@ -406,7 +425,18 @@ public class AzureBlobStorage : IStoragePlugin
         {
             var pathParts = GetPartsAsync(path);
             var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
-            return await container.ExistsAsync(cancellationToken);
+
+            var directory = pathParts.RelativePath;
+
+            if (string.IsNullOrEmpty(directory)) 
+                return await container.ExistsAsync(cancellationToken);
+
+            if (!directory.EndsWith("/"))
+                directory += "/";
+
+            BlockBlobClient blockBlobClient = container.GetBlockBlobClient(directory);
+            return await blockBlobClient.ExistsAsync(cancellationToken);
+
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
