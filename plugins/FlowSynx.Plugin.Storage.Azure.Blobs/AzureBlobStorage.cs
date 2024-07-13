@@ -61,7 +61,8 @@ public class AzureBlobStorage : IStoragePlugin
     }
 
     public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+        CancellationToken cancellationToken = default)
     {
         var result = new List<StorageEntity>();
         var containers = new List<BlobContainerClient>();
@@ -70,7 +71,7 @@ public class AzureBlobStorage : IStoragePlugin
         {
             // list all of the containers
             containers.AddRange(await ListContainersAsync(cancellationToken).ConfigureAwait(false));
-            result.AddRange(containers.Select(AzureBlobConverter.ToEntity));
+            result.AddRange(containers.Select(c => c.ToEntity(metadataOptions.IncludeMetadata)));
 
             if (!searchOptions.Recurse)
                 return result;
@@ -85,7 +86,7 @@ public class AzureBlobStorage : IStoragePlugin
         }
 
         await Task.WhenAll(containers.Select(c => 
-            ListAsync(c, result, path, searchOptions, listOptions, cancellationToken))
+            ListAsync(c, result, path, searchOptions, listOptions, metadataOptions, cancellationToken))
         ).ConfigureAwait(false);
 
         var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
@@ -97,11 +98,12 @@ public class AzureBlobStorage : IStoragePlugin
     }
     
     private async Task ListAsync(BlobContainerClient containerClient, List<StorageEntity> result, string path, 
-        StorageSearchOptions searchOptions, StorageListOptions listOptions, CancellationToken cancellationToken)
+        StorageSearchOptions searchOptions, StorageListOptions listOptions, 
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         using var browser = new AzureContainerBrowser(_logger, containerClient);
         IReadOnlyCollection<StorageEntity> containerBlobs = 
-            await browser.ListFolderAsync(path, searchOptions, listOptions, cancellationToken).ConfigureAwait(false);
+            await browser.ListFolderAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
 
         if (containerBlobs.Count > 0)
         {
@@ -271,8 +273,11 @@ public class AzureBlobStorage : IStoragePlugin
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
         var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
         var entities = 
-            await ListAsync(path, storageSearches, listOptions, new StorageHashOptions(), cancellationToken);
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())

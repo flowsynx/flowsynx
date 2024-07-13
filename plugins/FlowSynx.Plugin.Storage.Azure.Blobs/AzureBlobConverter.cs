@@ -6,23 +6,23 @@ namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
 static class AzureBlobConverter
 {
-    public static StorageEntity ToEntity(BlobContainerClient client)
+    public static StorageEntity ToEntity(this BlobContainerClient client, bool? includeMetadata)
     {
-        var entity = new StorageEntity(client.Name, StorageEntityItemKind.Directory)
+        var entity = new StorageEntity(client.Name, StorageEntityItemKind.Directory);
+
+        if (includeMetadata is true)
         {
-            Metadata =
+            entity.Metadata["IsContainer"] = true;
+            if (client.Name == "$logs")
             {
-                ["IsContainer"] = true
+                entity.Metadata["IsLogsContainer"] = true;
             }
-        };
-        if (client.Name == "$logs")
-        {
-            entity.Metadata["IsLogsContainer"] = true;
         }
+
         return entity;
     }
 
-    public static StorageEntity ToEntity(string containerName, BlobHierarchyItem item)
+    public static StorageEntity ToEntity(this BlobHierarchyItem item, string containerName, bool? includeMetadata)
     {
         var fullPath = PathHelper.Combine(containerName, item.Blob.Name);
         var entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
@@ -32,14 +32,15 @@ static class AzureBlobConverter
             ModifiedTime = item.Blob.Properties.LastModified
         };
 
-        AddProperties(entity, item.Blob.Properties);
+        if (includeMetadata is true)
+            AddProperties(entity, item.Blob.Properties);
 
         return entity;
     }
 
-    public static StorageEntity ToEntity(string containerName, string prefix)
+    public static StorageEntity ToEntity(this BlobHierarchyItem item, string containerName)
     {
-        var fullPath = PathHelper.Combine(containerName, prefix);
+        var fullPath = PathHelper.Combine(containerName, item.Prefix);
         var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory);
         return entity;
     }

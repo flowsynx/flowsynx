@@ -18,7 +18,7 @@ internal class AzureContainerBrowser : IDisposable
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path, 
         StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        CancellationToken cancellationToken)
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
 
@@ -36,10 +36,10 @@ internal class AzureContainerBrowser : IDisposable
                 try
                 {
                     if (item.IsBlob)
-                        result.Add(AzureBlobConverter.ToEntity(containerName: _client.Name, item: item));
+                        result.Add(item.ToEntity(_client.Name, metadataOptions.IncludeMetadata));
                     
                     if (item.IsPrefix)
-                        result.Add(AzureBlobConverter.ToEntity(containerName: _client.Name, prefix: item.Prefix));
+                        result.Add(item.ToEntity(_client.Name));
                 }
                 catch (Exception ex)
                 {
