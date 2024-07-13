@@ -76,7 +76,8 @@ public class GoogleCloudStorage : IStoragePlugin
     }
 
     public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+        CancellationToken cancellationToken = default)
     {
         var result = new List<StorageEntity>();
         var buckets = new List<string>();
@@ -85,7 +86,7 @@ public class GoogleCloudStorage : IStoragePlugin
         {
             // list all of the containers
             buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
-            result.AddRange(buckets.Select(GoogleCloudStorageConverter.ToEntity));
+            result.AddRange(buckets.Select(b=> b.ToEntity(metadataOptions.IncludeMetadata)));
 
             if (!searchOptions.Recurse)
                 return result;
@@ -98,7 +99,7 @@ public class GoogleCloudStorage : IStoragePlugin
         }
 
         await Task.WhenAll(buckets.Select(b =>
-            ListAsync(b, result, path, searchOptions, listOptions, cancellationToken))
+            ListAsync(b, result, path, searchOptions, listOptions, metadataOptions, cancellationToken))
         ).ConfigureAwait(false);
 
         var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
@@ -187,8 +188,11 @@ public class GoogleCloudStorage : IStoragePlugin
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
         var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
         var entities =
-            await ListAsync(path, storageSearches, listOptions, new StorageHashOptions(), cancellationToken);
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -310,11 +314,13 @@ public class GoogleCloudStorage : IStoragePlugin
     }
 
     private async Task ListAsync(string bucketName, List<StorageEntity> result, string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions, CancellationToken cancellationToken)
+        StorageSearchOptions searchOptions, StorageListOptions listOptions, 
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         using var browser = new GoogleBucketBrowser(_logger, _client, bucketName);
         IReadOnlyCollection<StorageEntity> objects =
-            await browser.ListFolderAsync(path, searchOptions, listOptions, cancellationToken).ConfigureAwait(false);
+            await browser.ListFolderAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken
+        ).ConfigureAwait(false);
 
         if (objects.Count > 0)
         {

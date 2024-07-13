@@ -5,19 +5,20 @@ namespace FlowSynx.Plugin.Storage.Google.Cloud;
 
 static class GoogleCloudStorageConverter
 {
-    public static StorageEntity ToEntity(string bucketName)
+    public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
     {
-        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory)
+        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory);
+
+        if (includeMetadata is true)
         {
-            Metadata =
-            {
-                ["IsBucket"] = true
-            }
-        };
+            entity.Metadata["IsBucket"] = true;
+        }
+
         return entity;
     }
 
-    public static StorageEntity ToEntity(Object googleObject, bool isDirectory)
+    public static StorageEntity ToEntity(this Object googleObject, bool isDirectory, 
+        bool? includeMetadata)
     {
         StorageEntity entity;
         var fullPath = PathHelper.Combine(googleObject.Bucket, googleObject.Name);
@@ -27,11 +28,12 @@ static class GoogleCloudStorageConverter
             entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
             {
                 ModifiedTime = googleObject.UpdatedDateTimeOffset,
-                Metadata =
-                {
-                    ["IsDirectory"] = true
-                }
             };
+
+            if (includeMetadata is true)
+            {
+                entity.Metadata["IsDirectory"] = true;
+            }
         }
         else
         {
@@ -42,7 +44,9 @@ static class GoogleCloudStorageConverter
                 Size = (long?)googleObject.Size
             };
 
-            AddProperties(entity, googleObject);
+            if (includeMetadata is true) {
+                AddProperties(entity, googleObject);
+            }
         }
 
         return entity;

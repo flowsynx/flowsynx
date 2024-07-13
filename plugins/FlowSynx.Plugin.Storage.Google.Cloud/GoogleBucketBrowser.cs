@@ -19,7 +19,7 @@ internal class GoogleBucketBrowser : IDisposable
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path, 
         StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        CancellationToken cancellationToken)
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
 
@@ -40,8 +40,8 @@ internal class GoogleBucketBrowser : IDisposable
                             continue;
 
                         result.Add(item.Name.EndsWith("/")
-                            ? GoogleCloudStorageConverter.ToEntity(item, true)
-                            : GoogleCloudStorageConverter.ToEntity(item, false));
+                            ? item.ToEntity(true, metadataOptions.IncludeMetadata)
+                            : item.ToEntity(false, metadataOptions.IncludeMetadata));
                     }
                 }
 
