@@ -56,7 +56,8 @@ public class LocalFileSystemStorage : IStoragePlugin
     }
 
     public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, 
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -72,10 +73,10 @@ public class LocalFileSystemStorage : IStoragePlugin
             var directoryInfo = new DirectoryInfo(path);
 
             result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse)
-                      .Select(file => LocalFileSystemConverter.ToEntity(file, hashOptions.Hashing)));
+                      .Select(file => file.ToEntity(hashOptions.Hashing, metadataOptions.IncludeMetadata)));
 
             result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse)
-                      .Select(LocalFileSystemConverter.ToEntity));
+                      .Select(dir=> dir.ToEntity(metadataOptions.IncludeMetadata)));
 
             var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
 
@@ -140,8 +141,12 @@ public class LocalFileSystemStorage : IStoragePlugin
 
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(path, storageSearches,
-            new StorageListOptions {Kind = StorageFilterItemKind.File}, new StorageHashOptions(), cancellationToken);
+        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
+        var entities = 
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
