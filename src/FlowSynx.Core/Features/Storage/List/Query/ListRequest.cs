@@ -20,5 +20,5 @@ public class ListRequest : IRequest<Result<IEnumerable<ListResponse>>>
     public bool? Recurse { get; set; } = false;
     public bool? Hashing { get; set; } = false;
     public int? MaxResults { get; set; }
-    public bool? ShowMetadata { get; set; } = false;
+    public bool? IncludeMetadata { get; set; } = false;
 }

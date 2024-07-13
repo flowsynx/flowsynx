@@ -48,8 +48,12 @@ public class EntityMover : IEntityMover
         if (!PathHelper.IsRootPath(destinationDirectory))
             await destinationPlugin.MakeDirectoryAsync(destinationDirectory, cancellationToken);
 
+        var listOptions = new StorageListOptions { };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
         var entities = await sourcePlugin.ListAsync(sourceDirectory, searchOptions,
-            new StorageListOptions(), new StorageHashOptions(), cancellationToken);
+            listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageEntities = entities.ToList();
         foreach (string dirPath in storageEntities.Where(x => x.Kind == StorageEntityItemKind.Directory))

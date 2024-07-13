@@ -20,8 +20,10 @@ public class EntityCompress : IEntityCompress
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageCompressionOptions compressionOptions,
         CancellationToken cancellationToken = default)
     {
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
         var entities = await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions,
-                listOptions, new StorageHashOptions(), cancellationToken);
+                listOptions, new StorageHashOptions(), metadataOptions, cancellationToken);
 
         var storageEntities = entities.Where(x => x.IsFile).ToList();
         if (storageEntities == null || !storageEntities.Any())

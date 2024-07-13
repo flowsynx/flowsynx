@@ -9,18 +9,17 @@ public class EntityChecker : IEntityChecker
         StorageNormsInfo destinationStorageNormsInfo, StorageSearchOptions searchOptions, StorageCheckOptions checkOptions,
         CancellationToken cancellationToken = default)
     {
+        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = checkOptions.CheckHash };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
 
-        var sourceEntities = await sourceStorageNormsInfo.Plugin.ListAsync(sourceStorageNormsInfo.Path,
-            searchOptions,
-            new StorageListOptions { Kind = StorageFilterItemKind.File },
-            new StorageHashOptions { Hashing = checkOptions.CheckHash },
-            cancellationToken);
+        var sourceEntities = 
+            await sourceStorageNormsInfo.Plugin.ListAsync(sourceStorageNormsInfo.Path,
+            searchOptions, listOptions, hashOptions, metadataOptions, cancellationToken);
 
-        var destinationEntities = await destinationStorageNormsInfo.Plugin.ListAsync(destinationStorageNormsInfo.Path,
-            searchOptions,
-            new StorageListOptions { Kind = StorageFilterItemKind.File },
-            new StorageHashOptions { Hashing = checkOptions.CheckHash },
-            cancellationToken);
+        var destinationEntities = 
+            await destinationStorageNormsInfo.Plugin.ListAsync(destinationStorageNormsInfo.Path,
+            searchOptions, listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageSourceEntities = sourceEntities.ToList();
         var storageDestinationEntities = destinationEntities.ToList();

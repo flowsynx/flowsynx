@@ -56,8 +56,13 @@ internal class SizeHandler : IRequestHandler<SizeRequest, Result<SizeResponse>>
                 Hashing = false
             };
 
+            var metadataOptions = new StorageMetadataOptions()
+            {
+                IncludeMetadata = false
+            };
+
             var entities = await _storageService.List(storageNorms, searchOptions, 
-                listOptions, hashOptions, cancellationToken);
+                listOptions, hashOptions, metadataOptions, cancellationToken);
 
             var response = new SizeResponse()
             {

@@ -56,31 +56,30 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<Lis
                 Hashing = request.Hashing
             };
 
+            var metadataOptions = new StorageMetadataOptions()
+            {
+                IncludeMetadata = request.IncludeMetadata
+            };
+
             var entities = await _storageService.List(storageNorms, searchOptions, 
-                listOptions, hashOptions, cancellationToken);
+                listOptions, hashOptions, metadataOptions, cancellationToken);
 
             var storageEntities = entities.ToList();
             var result = new List<ListResponse>(storageEntities.Count());
-            foreach (var entity in storageEntities)
+
+            result.AddRange(storageEntities.Select(entity => new ListResponse
             {
-                var response = new ListResponse
-                {
-                    Id = entity.Id,
-                    Kind = entity.Kind.ToString().ToLower(),
-                    Name = entity.Name,
-                    Path = entity.FullPath,
-                    ModifiedTime = entity.ModifiedTime,
-                    Size = entity.Size.ToString(!request.Full),
-                    ContentType = entity.ContentType,
-                    Md5 = entity.Md5,
-                };
+                Id = entity.Id,
+                Kind = entity.Kind.ToString().ToLower(),
+                Name = entity.Name,
+                Path = entity.FullPath,
+                ModifiedTime = entity.ModifiedTime,
+                Size = entity.Size.ToString(!request.Full),
+                ContentType = entity.ContentType,
+                Md5 = entity.Md5,
+                Metadata = entity.Metadata
+            }));
 
-                if (request.ShowMetadata is true)
-                    response.Metadata = entity.Metadata;
-
-                result.Add(response);
-            }
-            
             return await Result<IEnumerable<ListResponse>>.SuccessAsync(result);
         }
         catch (Exception ex)

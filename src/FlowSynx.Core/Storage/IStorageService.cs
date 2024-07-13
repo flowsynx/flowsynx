@@ -1,5 +1,4 @@
-﻿using FlowSynx.Core.Features.Storage.Check.Command;
-using FlowSynx.Core.Parers.Norms.Storage;
+﻿using FlowSynx.Core.Parers.Norms.Storage;
 using FlowSynx.Core.Storage.Check;
 using FlowSynx.Core.Storage.Compress;
 using FlowSynx.Core.Storage.Copy;
@@ -13,7 +12,8 @@ internal interface IStorageService
     Task<StorageUsage> About(StorageNormsInfo storageNormsInfo, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<StorageEntity>> List(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions, 
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default);
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions, 
+        CancellationToken cancellationToken = default);
 
     Task WriteAsync(StorageNormsInfo storageNormsInfo, StorageStream storageStream, StorageWriteOptions writeOptions, 
         CancellationToken cancellationToken = default);

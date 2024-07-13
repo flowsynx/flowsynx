@@ -1,10 +1,7 @@
 ﻿using EnsureThat;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Parers.Norms.Storage;
-using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
-using FlowSynx.Security;
-using FlowSynx.IO.Compression;
 using FlowSynx.Core.Storage.Copy;
 using FlowSynx.Core.Storage.Move;
 using FlowSynx.Core.Storage.Check;
@@ -50,11 +47,13 @@ internal class StorageService : IStorageService
     }
 
     public async Task<IEnumerable<StorageEntity>> List(StorageNormsInfo storageNormsInfo, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+        CancellationToken cancellationToken = default)
     {
         try
         {
-            return await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions, listOptions, hashOptions, cancellationToken);
+            return await storageNormsInfo.Plugin.ListAsync(storageNormsInfo.Path, searchOptions, 
+                listOptions, hashOptions, metadataOptions, cancellationToken);
         }
         catch (Exception ex)
         {
