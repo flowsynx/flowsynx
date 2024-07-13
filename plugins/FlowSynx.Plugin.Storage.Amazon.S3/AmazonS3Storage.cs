@@ -82,7 +82,8 @@ public class AmazonS3Storage : IStoragePlugin
     }
 
     public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+        CancellationToken cancellationToken = default)
     {
         var result = new List<StorageEntity>();
         var buckets = new List<string>();
@@ -90,7 +91,7 @@ public class AmazonS3Storage : IStoragePlugin
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
             buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
-            result.AddRange(buckets.Select(AmazonS3StorageConverter.ToEntity));
+            result.AddRange(buckets.Select(b=> b.ToEntity(metadataOptions.IncludeMetadata)));
 
             if (!searchOptions.Recurse)
                 return result;
@@ -103,7 +104,7 @@ public class AmazonS3Storage : IStoragePlugin
         }
 
         await Task.WhenAll(buckets.Select(b =>
-            ListAsync(b, result, path, searchOptions, listOptions, cancellationToken))
+            ListAsync(b, result, path, searchOptions, listOptions, metadataOptions, cancellationToken))
         ).ConfigureAwait(false);
 
         var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
@@ -194,8 +195,11 @@ public class AmazonS3Storage : IStoragePlugin
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
         var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() {IncludeMetadata = false };
+
         var entities =
-            await ListAsync(path, storageSearches, listOptions, new StorageHashOptions(), cancellationToken);
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -332,11 +336,12 @@ public class AmazonS3Storage : IStoragePlugin
     }
 
     private async Task ListAsync(string bucketName, List<StorageEntity> result, string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions, CancellationToken cancellationToken)
+        StorageSearchOptions searchOptions, StorageListOptions listOptions, 
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         using var browser = new AmazonS3BucketBrowser(_logger, _client, bucketName);
         IReadOnlyCollection<StorageEntity> objects =
-            await browser.ListAsync(path, searchOptions, listOptions, cancellationToken).ConfigureAwait(false);
+            await browser.ListAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
 
         if (objects.Count > 0)
         {

@@ -3,8 +3,6 @@ using Amazon.S3.Model;
 using FlowSynx.IO;
 using FlowSynx.Plugin.Storage.Google.Cloud;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.IO;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
 
@@ -23,16 +21,19 @@ internal class AmazonS3BucketBrowser: IDisposable
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListAsync(string path,
         StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        CancellationToken cancellationToken)
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         var entities = new List<StorageEntity>();
-        await ListFolderAsync(entities, path, searchOptions, listOptions, cancellationToken).ConfigureAwait(false);
+
+        await ListFolderAsync(entities, path, searchOptions, listOptions, 
+            metadataOptions, cancellationToken).ConfigureAwait(false);
+
         return entities;
     }
 
     private async Task ListFolderAsync(List<StorageEntity> entities, string path, 
         StorageSearchOptions searchOptions, StorageListOptions listOptions, 
-        CancellationToken cancellationToken)
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         var request = new ListObjectsV2Request()
         {
@@ -45,7 +46,7 @@ internal class AmazonS3BucketBrowser: IDisposable
         do
         {
             var response = await _client.ListObjectsV2Async(request, cancellationToken).ConfigureAwait(false);
-            result.AddRange(response.ToEntity(_client, _bucketName, cancellationToken));
+            result.AddRange(response.ToEntity(_client, _bucketName, metadataOptions.IncludeMetadata, cancellationToken));
 
             if (response.NextContinuationToken == null)
                 break;
@@ -60,7 +61,7 @@ internal class AmazonS3BucketBrowser: IDisposable
         {
             var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory).ToList();
             await Task.WhenAll(directories.Select(f => ListFolderAsync(entities, GetRelativePath(f.FullPath),
-                searchOptions, listOptions, cancellationToken))).ConfigureAwait(false);
+                searchOptions, listOptions, metadataOptions, cancellationToken))).ConfigureAwait(false);
         }
     }
 
@@ -80,7 +81,6 @@ internal class AmazonS3BucketBrowser: IDisposable
     private string GetRelativePath(string fullPath)
     {
         fullPath = PathHelper.Normalize(fullPath);
-        string relativePath;
         string[] parts = PathHelper.Split(fullPath);
         return parts.Length == 1 ? string.Empty : PathHelper.Combine(parts.Skip(1));
     }

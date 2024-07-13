@@ -8,34 +8,35 @@ static class AmazonS3StorageConverter
 {
     private const string MetaDataHeaderPrefix = "x-amz-meta-";
 
-    public static StorageEntity ToEntity(this string bucketName)
+    public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
     {
-        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory)
+        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory);
+
+        if (includeMetadata is true)
         {
-            Metadata =
-            {
-                ["IsBucket"] = true
-            }
-        };
+            entity.Metadata["IsBucket"] = true;
+        }
+
         return entity;
     }
     
     public static IReadOnlyCollection<StorageEntity> ToEntity(this ListObjectsV2Response response, 
-        AmazonS3Client client, string bucketName, CancellationToken cancellationToken)
+        AmazonS3Client client, string bucketName, bool? includeMetadata, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
         result.AddRange((response.S3Objects
             .Where(obj => !obj.Key.EndsWith("/"))
-            .Select(obj => obj.ToEntity(client, bucketName, cancellationToken))));
+            .Select(obj => obj.ToEntity(client, bucketName, includeMetadata, cancellationToken))));
 
         result.AddRange(response.CommonPrefixes
             .Where(prefix => !PathHelper.IsRootPath(prefix))
-            .Select(prefix => prefix.ToEntity(bucketName)));
+            .Select(prefix => prefix.ToEntity(bucketName, includeMetadata)));
 
         return result;
     }
 
-    public static StorageEntity ToEntity(this S3Object s3Obj, AmazonS3Client client, string bucketName, CancellationToken cancellationToken)
+    public static StorageEntity ToEntity(this S3Object s3Obj, AmazonS3Client client, string bucketName, 
+        bool? includeMetadata, CancellationToken cancellationToken)
     {
         var fullPath = PathHelper.Combine(bucketName, s3Obj.Key);
         StorageEntity entity = s3Obj.Key.EndsWith("/")
@@ -45,24 +46,27 @@ static class AmazonS3StorageConverter
         entity.Size = s3Obj.Size;
         entity.Md5 = s3Obj.ETag.Trim('\"');
         entity.ModifiedTime = s3Obj.LastModified.ToUniversalTime();
-        entity.Metadata["StorageClass"] = s3Obj.StorageClass;
-        entity.Metadata["ETag"] = s3Obj.ETag;
 
-        AddProperties(client, s3Obj.BucketName, s3Obj.Key, entity, cancellationToken);
+        if (includeMetadata is true)
+        {
+            entity.Metadata["StorageClass"] = s3Obj.StorageClass;
+            entity.Metadata["ETag"] = s3Obj.ETag;
+            AddProperties(client, s3Obj.BucketName, s3Obj.Key, entity, cancellationToken);
+        }
 
         return entity;
     }
 
-    public static StorageEntity ToEntity(this string prefix, string bucketName)
+    public static StorageEntity ToEntity(this string prefix, string bucketName, bool? includeMetadata)
     {
         var fullPath = PathHelper.Combine(bucketName, prefix);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
+        var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory);
+
+        if (includeMetadata is true)
         {
-            Metadata =
-            {
-                ["IsDirectory"] = true
-            }
-        };
+            entity.Metadata["IsDirectory"] = true;
+        }
+
         return entity;
     }
 
