@@ -78,7 +78,8 @@ public class AzureFileStorage : IStoragePlugin
     }
 
     public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, CancellationToken cancellationToken = default)
+        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+        CancellationToken cancellationToken = default)
     {
         var result = new List<StorageEntity>();
         ShareDirectoryClient directoryClient;
@@ -100,9 +101,11 @@ public class AzureFileStorage : IStoragePlugin
                     try
                     {
                         if (item.IsDirectory)
-                            result.Add(await AzureFileConverter.ToEntity(dir.Path, item, dir, cancellationToken));
+                            result.Add(await dir.ToEntity(item, metadataOptions.IncludeMetadata, 
+                                cancellationToken));
                         else
-                            result.Add(await AzureFileConverter.ToEntity(dir.Path, item, dir.GetFileClient(item.Name), cancellationToken));
+                            result.Add(await dir.ToEntity(item, dir.GetFileClient(item.Name), 
+                                metadataOptions.IncludeMetadata, cancellationToken));
                         
                         if (!searchOptions.Recurse) continue;
 
@@ -248,8 +251,12 @@ public class AzureFileStorage : IStoragePlugin
 
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(path, storageSearches,
-            new StorageListOptions {Kind = StorageFilterItemKind.File}, new StorageHashOptions(), cancellationToken);
+        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
+        var entities = 
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
