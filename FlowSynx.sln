@@ -21,7 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{2055
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Google.Cloud", "plugins\FlowSynx.Plugin.Storage.Google.Cloud\FlowSynx.Plugin.Storage.Google.Cloud.csproj", "{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Plugin.Storage.Amazon.S3", "plugins\FlowSynx.Plugin.Storage.Amazon.S3\FlowSynx.Plugin.Storage.Amazon.S3.csproj", "{69176FFB-B44F-47CE-AE0A-1D89A956D312}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Amazon.S3", "plugins\FlowSynx.Plugin.Storage.Amazon.S3\FlowSynx.Plugin.Storage.Amazon.S3.csproj", "{69176FFB-B44F-47CE-AE0A-1D89A956D312}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Google.Drive", "plugins\FlowSynx.Plugin.Storage.Microsoft.OneDrive\FlowSynx.Plugin.Storage.Google.Drive.csproj", "{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +59,10 @@ Global
 		{69176FFB-B44F-47CE-AE0A-1D89A956D312}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69176FFB-B44F-47CE-AE0A-1D89A956D312}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69176FFB-B44F-47CE-AE0A-1D89A956D312}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -70,6 +76,7 @@ Global
 		{2055D7A4-DACB-49D7-988F-E3424935388A} = {F0C26331-6C4A-4389-80E3-7580C3977871}
 		{1FC203CA-B2DD-4162-8266-F2427F9DF8A1} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{69176FFB-B44F-47CE-AE0A-1D89A956D312} = {2055D7A4-DACB-49D7-988F-E3424935388A}
+		{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}
