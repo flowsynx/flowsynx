@@ -6,7 +6,7 @@
 
 [mit-badge]: https://img.shields.io/github/license/flowsynx/flowsynx?style=flat&label=License&logo=github
 [mit-url]: https://github.com/flowsynx/flowsynx/blob/master/LICENSE
-[actions-badge]: https://github.com/flowsynx/flowsynx/actions/workflows/flowsynx-release.yml/badge.svg?event=push&branch=master
+[actions-badge]: https://github.com/flowsynx/flowsynx/actions/workflows/flowsynx-release.yml/badge.svg?branch=master
 [actions-url]: https://github.com/flowsynx/flowsynx/actions?workflow=flowsynx
 [fossa-badge]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx.svg?type=shield&issueType=license
 [fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx?ref=badge_shield&issueType=license
