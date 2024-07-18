@@ -14,7 +14,6 @@ public class AzureFileStorage : IStoragePlugin
 {
     private readonly ILogger<AzureFileStorage> _logger;
     private readonly IStorageFilter _storageFilter;
-    private Dictionary<string, string?>? _specifications;
     private AzureFilesSpecifications? _azureFilesSpecifications;
     private ShareClient _client = null!;
 
@@ -30,21 +29,13 @@ public class AzureFileStorage : IStoragePlugin
     public string Name => "Azure.Files";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications
-    {
-        get => _specifications;
-        set
-        {
-            _specifications = value;
-            _azureFilesSpecifications = value.DictionaryToObject<AzureFilesSpecifications>();
-            _client = CreateClient(_azureFilesSpecifications);
-        }
-    }
-
+    public Dictionary<string, string?>? Specifications { get; set; }
     public Type SpecificationsType => typeof(AzureFilesSpecifications);
 
     public Task Initialize()
     {
+        _azureFilesSpecifications = Specifications.DictionaryToObject<AzureFilesSpecifications>();
+        _client = CreateClient(_azureFilesSpecifications);
         return Task.CompletedTask;
     }
 
