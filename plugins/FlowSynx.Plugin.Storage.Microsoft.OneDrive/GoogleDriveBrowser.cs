@@ -76,6 +76,24 @@ internal class GoogleDriveBrowser : IDisposable
         }
     }
 
+    //private string GetFolderId(string path)
+    //{
+    //    var pathParts = PathHelper.Split(path);
+
+    //    var request = _client.Files.List();
+    //    request.Q = $"mimeType = 'application/vnd.google-apps.folder' and name contains '{path}'";
+    //    request.Fields = "nextPageToken, files(id, name)";
+
+    //    IList<File> files = request.Execute().Files;
+    //    if (files is { Count: > 0 })
+    //    {
+    //        foreach (var file in files)
+    //        {   //My TextBlock(WPF)
+    //            ListedFiles.Text = $"{file.Name}, {file.Id} \n";
+    //        }
+    //    }
+    //}
+
     private string? FormatFolderPrefix(string folderPath)
     {
         folderPath = PathHelper.Normalize(folderPath);

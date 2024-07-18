@@ -48,6 +48,11 @@ public class GoogleCloudStorage : IStoragePlugin
 
     public Type SpecificationsType => typeof(GoogleCloudStorageSpecifications);
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     private StorageClient CreateClient(GoogleCloudStorageSpecifications specifications)
     {
         var jsonObject = new

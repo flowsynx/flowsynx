@@ -44,6 +44,11 @@ public class GoogleDriveStorage : IStoragePlugin
 
     public Type SpecificationsType => typeof(GoogleDriveSpecifications);
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     private DriveService CreateClient(GoogleDriveSpecifications specifications)
     {
         var jsonObject = new

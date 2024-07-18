@@ -55,6 +55,11 @@ public class AmazonS3Storage : IStoragePlugin
 
     public Type SpecificationsType => typeof(AmazonS3StorageSpecifications);
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     private AmazonS3Client CreateClient(AmazonS3StorageSpecifications specifications)
     {
         if (specifications.AccessKey == null)

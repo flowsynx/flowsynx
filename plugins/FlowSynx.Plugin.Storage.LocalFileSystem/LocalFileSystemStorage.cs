@@ -32,6 +32,11 @@ public class LocalFileSystemStorage : IStoragePlugin
 
     public Type SpecificationsType => typeof(LocalFileSystemSpecifications);
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     public Task<StorageUsage> About(CancellationToken cancellationToken = default)
     {
         long totalSpace = 0, freeSpace = 0;

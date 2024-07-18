@@ -43,6 +43,11 @@ public class AzureFileStorage : IStoragePlugin
 
     public Type SpecificationsType => typeof(AzureFilesSpecifications);
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     private ShareClient CreateClient(AzureFilesSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.ShareName))

@@ -45,6 +45,11 @@ public class AzureBlobStorage : IStoragePlugin
 
     public Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     private BlobServiceClient CreateClient(AzureBlobStorageSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName))

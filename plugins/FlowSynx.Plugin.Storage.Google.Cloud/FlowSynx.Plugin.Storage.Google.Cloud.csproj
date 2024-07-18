@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlowSynx.IO" Version="0.9.1" />
-    <PackageReference Include="FlowSynx.Plugin.Storage" Version="0.9.1" />
-    <PackageReference Include="FlowSynx.Reflections" Version="0.9.1" />
+    <PackageReference Include="FlowSynx.IO" Version="0.9.2" />
+    <PackageReference Include="FlowSynx.Plugin.Storage" Version="0.9.2" />
+    <PackageReference Include="FlowSynx.Reflections" Version="0.9.2" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.10.0" />
   </ItemGroup>
 
