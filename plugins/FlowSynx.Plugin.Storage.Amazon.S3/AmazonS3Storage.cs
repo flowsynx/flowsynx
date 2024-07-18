@@ -10,11 +10,7 @@ using FlowSynx.IO;
 using System.Net;
 using FlowSynx.Plugin.Storage.Google.Cloud;
 using Amazon.S3.Model;
-using System.Security.AccessControl;
 using Amazon.S3.Transfer;
-using Amazon.Runtime.Internal.Util;
-using System.IO;
-using System.Text;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
 
@@ -23,7 +19,6 @@ public class AmazonS3Storage : IStoragePlugin
     private readonly ILogger<AmazonS3Storage> _logger;
     private readonly IStorageFilter _storageFilter;
     private readonly ISerializer _serializer;
-    private Dictionary<string, string?>? _specifications;
     private AmazonS3StorageSpecifications? _s3StorageSpecifications;
     private AmazonS3Client _client = null!;
     private TransferUtility _fileTransferUtility = null!;
@@ -41,22 +36,14 @@ public class AmazonS3Storage : IStoragePlugin
     public string Name => "Amazon.S3";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications
-    {
-        get => _specifications;
-        set
-        {
-            _specifications = value;
-            _s3StorageSpecifications = value.DictionaryToObject<AmazonS3StorageSpecifications>();
-            _client = CreateClient(_s3StorageSpecifications);
-            _fileTransferUtility = CreateTransferUtility(_client);
-        }
-    }
-
+    public Dictionary<string, string?>? Specifications { get; set; }
     public Type SpecificationsType => typeof(AmazonS3StorageSpecifications);
 
     public Task Initialize()
     {
+        _s3StorageSpecifications = Specifications.DictionaryToObject<AmazonS3StorageSpecifications>();
+        _client = CreateClient(_s3StorageSpecifications);
+        _fileTransferUtility = CreateTransferUtility(_client);
         return Task.CompletedTask;
     }
 
@@ -314,7 +301,11 @@ public class AmazonS3Storage : IStoragePlugin
         }
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        _fileTransferUtility.Dispose();
+        _client.Dispose();
+    }
 
     #region private methods
     private AmazonS3StorageBucketPathPart GetPartsAsync(string fullPath)
