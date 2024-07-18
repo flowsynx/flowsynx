@@ -28,6 +28,7 @@
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Azure.Files\FlowSynx.Plugin.Storage.Azure.Files.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Google.Cloud\FlowSynx.Plugin.Storage.Google.Cloud.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj" />
+    <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Microsoft.OneDrive\FlowSynx.Plugin.Storage.Google.Drive.csproj" />
   </ItemGroup>
 
   <ItemGroup>
