@@ -9,7 +9,6 @@ using FlowSynx.IO;
 using Google;
 using System.Net;
 using System.Text;
-using static Google.Cloud.Storage.V1.UrlSigner;
 
 namespace FlowSynx.Plugin.Storage.Google.Cloud;
 
@@ -18,7 +17,6 @@ public class GoogleCloudStorage : IStoragePlugin
     private readonly ILogger<GoogleCloudStorage> _logger;
     private readonly IStorageFilter _storageFilter;
     private readonly ISerializer _serializer;
-    private Dictionary<string, string?>? _specifications;
     private GoogleCloudStorageSpecifications? _cloudStorageSpecifications;
     private StorageClient _client = null!;
 
@@ -35,21 +33,13 @@ public class GoogleCloudStorage : IStoragePlugin
     public string Name => "Google.Cloud";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications
-    {
-        get => _specifications;
-        set
-        {
-            _specifications = value;
-            _cloudStorageSpecifications = value.DictionaryToObject<GoogleCloudStorageSpecifications>();
-            _client = CreateClient(_cloudStorageSpecifications);
-        }
-    }
-
+    public Dictionary<string, string?>? Specifications { get; set; }
     public Type SpecificationsType => typeof(GoogleCloudStorageSpecifications);
 
     public Task Initialize()
     {
+        _cloudStorageSpecifications = Specifications.DictionaryToObject<GoogleCloudStorageSpecifications>();
+        _client = CreateClient(_cloudStorageSpecifications);
         return Task.CompletedTask;
     }
 
@@ -292,7 +282,10 @@ public class GoogleCloudStorage : IStoragePlugin
         }
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
 
     #region private methods
     private GoogleCloudStorageBucketPathPart GetPartsAsync(string fullPath)
