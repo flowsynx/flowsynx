@@ -27,6 +27,7 @@ public class AmazonS3Storage : IStoragePlugin
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
+        EnsureArg.IsNotNull(serializer, nameof(serializer));
         _logger = logger;
         _storageFilter = storageFilter;
         _serializer = serializer;
