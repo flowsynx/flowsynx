@@ -8,7 +8,6 @@ using EnsureThat;
 using Azure.Storage;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
-using System.IO;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
@@ -16,7 +15,6 @@ public class AzureBlobStorage : IStoragePlugin
 {
     private readonly ILogger<AzureBlobStorage> _logger;
     private readonly IStorageFilter _storageFilter;
-    private Dictionary<string, string?>? _specifications;
     private AzureBlobStorageSpecifications? _azureBlobSpecifications;
     private BlobServiceClient _client = null!;
 
@@ -32,21 +30,13 @@ public class AzureBlobStorage : IStoragePlugin
     public string Name => "Azure.Blobs";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications
-    {
-        get => _specifications;
-        set
-        {
-            _specifications = value;
-            _azureBlobSpecifications = value.DictionaryToObject<AzureBlobStorageSpecifications>();
-            _client = CreateClient(_azureBlobSpecifications);
-        }
-    }
-
+    public Dictionary<string, string?>? Specifications { get; set; }
     public Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
 
     public Task Initialize()
     {
+        _azureBlobSpecifications = Specifications.DictionaryToObject<AzureBlobStorageSpecifications>();
+        _client = CreateClient(_azureBlobSpecifications);
         return Task.CompletedTask;
     }
 
