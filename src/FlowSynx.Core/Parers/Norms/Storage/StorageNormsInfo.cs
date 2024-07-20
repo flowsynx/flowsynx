@@ -14,7 +14,7 @@ public class StorageNormsInfo
         Path = path;
     }
 
-    public string Path { get; }
+    public string Path { get; set; }
     public IStoragePlugin Plugin { get; }
     public Dictionary<string, string?>? Specifications { get; }
 

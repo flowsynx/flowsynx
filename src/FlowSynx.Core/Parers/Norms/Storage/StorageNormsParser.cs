@@ -98,6 +98,7 @@ internal class StorageNormsParser : IStorageNormsParser
         if (cachedStorageNormsInfo != null)
         {
             _logger.LogInformation($"{plugin.Name} is found in Cache.");
+            cachedStorageNormsInfo.Path = path;
             return cachedStorageNormsInfo;
         }
 
