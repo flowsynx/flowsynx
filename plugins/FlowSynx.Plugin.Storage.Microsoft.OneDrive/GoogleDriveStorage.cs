@@ -16,6 +16,7 @@ public class GoogleDriveStorage : IStoragePlugin
     private readonly ISerializer _serializer;
     private GoogleDriveSpecifications? _googleDriveSpecifications;
     private DriveService _client = null!;
+    private GoogleDriveBrowser? _browser;
 
     public GoogleDriveStorage(ILogger<GoogleDriveStorage> logger, IStorageFilter storageFilter, ISerializer serializer)
     {
@@ -140,10 +141,7 @@ public class GoogleDriveStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public void Dispose() { 
-        if (_client!= null)
-            _client.Dispose();
-    }
+    public void Dispose() { }
 
     #region private methods
     //private GoogleCloudStorageBucketPathPart GetPartsAsync(string fullPath)
@@ -174,9 +172,9 @@ public class GoogleDriveStorage : IStoragePlugin
         StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
-        using var browser = new GoogleDriveBrowser(_logger, _client);
+        _browser ??= new GoogleDriveBrowser(_logger, _client, folderId);
         IReadOnlyCollection<StorageEntity> objects =
-            await browser.ListAsync(folderId, path, searchOptions, listOptions, metadataOptions, cancellationToken
+            await _browser.ListAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken
         ).ConfigureAwait(false);
 
         if (objects.Count > 0)
