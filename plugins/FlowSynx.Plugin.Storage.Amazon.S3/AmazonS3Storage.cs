@@ -302,11 +302,7 @@ public class AmazonS3Storage : IStoragePlugin
         }
     }
 
-    public void Dispose()
-    {
-        _fileTransferUtility.Dispose();
-        _client.Dispose();
-    }
+    public void Dispose() { }
 
     #region private methods
     private AmazonS3StorageBucketPathPart GetPartsAsync(string fullPath)

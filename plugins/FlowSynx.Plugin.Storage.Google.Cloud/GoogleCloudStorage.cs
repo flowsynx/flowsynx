@@ -282,10 +282,7 @@ public class GoogleCloudStorage : IStoragePlugin
         }
     }
 
-    public void Dispose()
-    {
-        _client.Dispose();
-    }
+    public void Dispose() { }
 
     #region private methods
     private GoogleCloudStorageBucketPathPart GetPartsAsync(string fullPath)

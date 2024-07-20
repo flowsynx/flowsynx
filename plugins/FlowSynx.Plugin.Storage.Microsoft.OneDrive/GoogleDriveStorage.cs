@@ -14,7 +14,6 @@ public class GoogleDriveStorage : IStoragePlugin
     private readonly ILogger<GoogleDriveStorage> _logger;
     private readonly IStorageFilter _storageFilter;
     private readonly ISerializer _serializer;
-    private Dictionary<string, string?>? _specifications;
     private GoogleDriveSpecifications? _googleDriveSpecifications;
     private DriveService _client = null!;
 
@@ -31,21 +30,13 @@ public class GoogleDriveStorage : IStoragePlugin
     public string Name => "Google.Drive";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications
-    {
-        get => _specifications;
-        set
-        {
-            _specifications = value;
-            _googleDriveSpecifications = value.DictionaryToObject<GoogleDriveSpecifications>();
-            _client = CreateClient(_googleDriveSpecifications);
-        }
-    }
-
+    public Dictionary<string, string?>? Specifications { get; set; }
     public Type SpecificationsType => typeof(GoogleDriveSpecifications);
 
     public Task Initialize()
     {
+        _googleDriveSpecifications = Specifications.DictionaryToObject<GoogleDriveSpecifications>();
+        _client = CreateClient(_googleDriveSpecifications);
         return Task.CompletedTask;
     }
 
@@ -149,7 +140,10 @@ public class GoogleDriveStorage : IStoragePlugin
         throw new NotImplementedException();
     }
 
-    public void Dispose() { }
+    public void Dispose() { 
+        if (_client!= null)
+            _client.Dispose();
+    }
 
     #region private methods
     //private GoogleCloudStorageBucketPathPart GetPartsAsync(string fullPath)
