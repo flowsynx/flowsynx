@@ -25,6 +25,7 @@ using FlowSynx.Plugin.Storage.Amazon.S3;
 using FlowSynx.Plugin.Storage.Azure.Blobs;
 using FlowSynx.Plugin.Storage.Google.Cloud;
 using FlowSynx.Plugin.Storage.Google.Drive;
+using FlowSynx.Core.Services;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -50,6 +51,7 @@ public static class ServiceCollectionExtensions
             .AddParsers()
             .AddCompressions()
             .AddFlowSynxStorageServices()
+            .AddMultiKeyCache<string, string, StorageNormsInfo>()
             .AddScoped<IStorageNormsParser, StorageNormsParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>()
