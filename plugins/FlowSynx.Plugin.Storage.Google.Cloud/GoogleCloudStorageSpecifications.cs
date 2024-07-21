@@ -5,19 +5,19 @@ namespace FlowSynx.Plugin.Storage.Google.Cloud;
 internal class GoogleCloudStorageSpecifications
 {
     [RequiredMember]
-    public string? ProjectId { get; set; }
+    public string ProjectId { get; set; } = string.Empty;
 
     [RequiredMember]
-    public string? PrivateKeyId { get; set; }
+    public string PrivateKeyId { get; set; } = string.Empty;
 
     [RequiredMember]
-    public string? PrivateKey { get; set; }
+    public string PrivateKey { get; set; } = string.Empty;
 
     [RequiredMember]
-    public string? ClientEmail { get; set; }
+    public string ClientEmail { get; set; } = string.Empty;
 
     [RequiredMember]
-    public string? ClientId { get; set; }
+    public string ClientId { get; set; } = string.Empty;
 
     public string Type => "service_account";
 
