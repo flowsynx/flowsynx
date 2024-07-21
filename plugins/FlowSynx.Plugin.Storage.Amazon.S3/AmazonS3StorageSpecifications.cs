@@ -5,15 +5,13 @@ namespace FlowSynx.Plugin.Storage.Amazon.S3;
 internal class AmazonS3StorageSpecifications
 {
     [RequiredMember]
-    public string? AccessKey { get; set; }
+    public string AccessKey { get; set; } = string.Empty;
 
     [RequiredMember]
-    public string? SecretKey { get; set; }
+    public string SecretKey { get; set; } = string.Empty;
 
     [RequiredMember]
-    public string? Region { get; set; }
+    public string Region { get; set; } = string.Empty;
 
-    public string? SessionToken { get; set; }
-
-    //public string? Endpoint => string.IsNullOrEmpty(Region) ? null : $"s3.{Region.ToLower()}.amazonaws.com";
+    public string SessionToken { get; set; } = string.Empty;
 }
