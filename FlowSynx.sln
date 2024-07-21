@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Goo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Amazon.S3", "plugins\FlowSynx.Plugin.Storage.Amazon.S3\FlowSynx.Plugin.Storage.Amazon.S3.csproj", "{69176FFB-B44F-47CE-AE0A-1D89A956D312}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Google.Drive", "plugins\FlowSynx.Plugin.Storage.Microsoft.OneDrive\FlowSynx.Plugin.Storage.Google.Drive.csproj", "{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Google.Drive", "plugins\FlowSynx.Plugin.Storage.Google.Drive\FlowSynx.Plugin.Storage.Google.Drive.csproj", "{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

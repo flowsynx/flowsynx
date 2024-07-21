@@ -88,6 +88,9 @@ public class GoogleDriveStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        if (_googleDriveSpecifications == null)
+            throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
+
         var result = await ListAsync(_googleDriveSpecifications.FolderId, path, 
             searchOptions, listOptions, metadataOptions, cancellationToken);
 
