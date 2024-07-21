@@ -70,6 +70,15 @@ namespace FlowSynx.Plugin.Storage.Google.Drive {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error in creating connection to the Google Drive service!.
+        /// </summary>
+        internal static string ErrorInCreateDriveServiceCredential {
+            get {
+                return ResourceManager.GetString("ErrorInCreateDriveServiceCredential", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
         /// </summary>
         internal static string FileIsAlreadyExistAndCannotBeOverwritten {
@@ -111,6 +120,15 @@ namespace FlowSynx.Plugin.Storage.Google.Drive {
         internal static string SpecificationsCouldNotBeNullOrEmpty {
             get {
                 return ResourceManager.GetString("SpecificationsCouldNotBeNullOrEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered path &apos;{path}&apos; is not a file..
+        /// </summary>
+        internal static string TePathIsNotFile {
+            get {
+                return ResourceManager.GetString("TePathIsNotFile", resourceCulture);
             }
         }
         

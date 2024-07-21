@@ -120,6 +120,9 @@
   <data name="AboutOperrationNotSupported" xml:space="preserve">
     <value>About operation is not supported for Azure Blob storage!</value>
   </data>
+  <data name="ErrorInCreateDriveServiceCredential" xml:space="preserve">
+    <value>An error in creating connection to the Google Drive service!</value>
+  </data>
   <data name="FileIsAlreadyExistAndCannotBeOverwritten" xml:space="preserve">
     <value>File '{0}' is already exist and can't be overwritten!</value>
   </data>
@@ -134,6 +137,9 @@
   </data>
   <data name="SpecificationsCouldNotBeNullOrEmpty" xml:space="preserve">
     <value>Google Cloud Storage Specifications could not be null or empty!</value>
+  </data>
+  <data name="TePathIsNotFile" xml:space="preserve">
+    <value>The entered path '{path}' is not a file.</value>
   </data>
   <data name="TheSpecifiedPathIsNotExist" xml:space="preserve">
     <value>The specified path '{0}' is not exist.</value>

@@ -56,10 +56,10 @@ internal class GoogleDriveBrowser : IDisposable
     {
         var result = new List<StorageEntity>();
 
-        var folderId = _pathDictionary.ContainsKey(path) ? _pathDictionary[path] : GetFolderId(_rootFolderId,path);
+        var folderId = _pathDictionary.ContainsKey(path) ? _pathDictionary[path] : GetFolderId(path);
 
         var request = _client.Files.List();
-        request.Q = $"'{folderId}' in parents";
+        request.Q = $"'{folderId}' in parents and (trashed=false)";
         request.Fields = $"nextPageToken, files({string.Join(",", Fields)})";
 
         do
@@ -92,8 +92,9 @@ internal class GoogleDriveBrowser : IDisposable
         }
     }
     
-    private string GetFolderId(string folderId, string path)
+    public string GetFolderId(string path)
     {
+        string folderId = _rootFolderId;
         string route = string.Empty;
         var queue = new Queue<string>();
         var pathParts = PathHelper.Split(path);
@@ -106,8 +107,14 @@ internal class GoogleDriveBrowser : IDisposable
         {
             var enqueuePath = queue.Dequeue();
             var request = _client.Files.List();
-            request.Q = $"('{folderId}' in parents) and (mimeType = 'application/vnd.google-apps.folder') and (name = '{enqueuePath}')";
+
+            request.Q = $"('{folderId}' in parents) " +
+                        $"and (mimeType = 'application/vnd.google-apps.folder') " +
+                        $"and (name = '{enqueuePath}') " +
+                        $"and (trashed=false)";
+
             request.Fields = "nextPageToken, files(id, name)";
+
             var fileListResponse = request.Execute();
 
             if (fileListResponse is null || fileListResponse.Files.Count <= 0)

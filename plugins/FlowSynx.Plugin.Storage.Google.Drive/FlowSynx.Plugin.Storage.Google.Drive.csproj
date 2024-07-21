@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="FlowSynx.Commons" Version="1.0.0" />
     <PackageReference Include="FlowSynx.IO" Version="1.0.0" />
+    <PackageReference Include="FlowSynx.Net" Version="1.0.0" />
     <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.0.0" />
     <PackageReference Include="FlowSynx.Reflections" Version="1.0.0" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3466" />
