@@ -12,6 +12,7 @@ using FlowSynx.IO;
 using FlowSynx.Net;
 using Google.Apis.Upload;
 using DriveFile = Google.Apis.Drive.v3.Data.File;
+using System.IO;
 
 
 namespace FlowSynx.Plugin.Storage.Google.Drive;
@@ -99,7 +100,7 @@ public class GoogleDriveStorage : IStoragePlugin
             throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
 
         var result = await ListAsync(_googleDriveSpecifications.FolderId, path, 
-            searchOptions, listOptions, metadataOptions, cancellationToken);
+            searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
 
         var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
 
@@ -120,9 +121,8 @@ public class GoogleDriveStorage : IStoragePlugin
 
         try
         {
-            var isExist = await DriveFileExists(path, cancellationToken);
-
-            if (isExist && writeOptions.Overwrite is false)
+            var file = await GetDriveFile(path, cancellationToken);
+            if (file.Exist && writeOptions.Overwrite is false)
                 throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
             var fileName = Path.GetFileName(path) ?? "";
@@ -130,7 +130,7 @@ public class GoogleDriveStorage : IStoragePlugin
                 throw new StorageException(string.Format(Resources.TePathIsNotFile, path));
 
             var directoryPath = Path.GetDirectoryName(path) ?? "";
-            var folderId = GetFolderId(directoryPath);
+            var folderId = await GetFolderId(directoryPath, cancellationToken).ConfigureAwait(false);
 
             var fileMime = Path.GetExtension(fileName).GetContentType();
             var driveFile = new DriveFile
@@ -154,40 +154,120 @@ public class GoogleDriveStorage : IStoragePlugin
     public async Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var file = await GetDriveFile(path, cancellationToken);
+            if (!file.Exist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var ms = new MemoryStream();
+            var request = _client.Files.Get(file.Id);
+            request.Fields = "id, name, mimeType, md5Checksum";
+            var fileRequest = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            request.Download(ms);
+            var fileExtension = Path.GetExtension(path);
+
+            ms.Position = 0;
+
+            return new StorageRead()
+            {
+                Stream = new StorageStream(ms),
+                ContentType = fileRequest.MimeType,
+                Extension = fileExtension,
+                Md5 = fileRequest.Md5Checksum,
+            };
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public async Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var result = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
+            return result.Exist;
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
+        var entities =
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken)
+                .ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        foreach (var entity in storageEntities)
+        {
+            await DeleteFileAsync(entity.FullPath, cancellationToken);
+        }
     }
 
     public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var file = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
+            if (!file.Exist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var command = _client.Files.Delete(file.Id);
+            await command.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public async Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
-        /*
-         public string CreateFolder(string parent, string folderName)
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        var pathParts = PathHelper.Split(path);
+        var folderName = pathParts.Last();
+        var parentFolder = string.Join(PathHelper.PathSeparatorString, pathParts.SkipLast(1));
+        var folder = await GetDriveFolder(parentFolder, cancellationToken);
+        if (folder.Exist)
         {
-            var service = GetService();
-            var driveFolder = new Google.Apis.Drive.v3.Data.File();
-            driveFolder.Name = folderName;
-            driveFolder.MimeType = "application/vnd.google-apps.folder";
-            driveFolder.Parents = new string[] { parent };
-            var command = service.Files.Create(driveFolder);
-            var file = command.Execute();
-            return file.Id;
-         }
-         */
+            var driveFolder = new DriveFile
+            {
+                Name = folderName,
+                MimeType = "application/vnd.google-apps.folder",
+                Parents = new string[] { folder.Id }
+            };
+
+            var command = _client.Files.Create(driveFolder);
+            var file = await command.ExecuteAsync(cancellationToken);
+            _logger.LogInformation($"Directory '{folderName}' was created successfully.");
+        }
+        else
+        {
+            throw new StorageException($"The Entered path '{parentFolder}' is not exist.");
+        }
     }
 
     public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
@@ -197,7 +277,18 @@ public class GoogleDriveStorage : IStoragePlugin
 
     public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var result = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
+            return result.Exist;
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public void Dispose() { }
@@ -220,33 +311,48 @@ public class GoogleDriveStorage : IStoragePlugin
         return result;
     }
 
-    private async Task<bool> DriveFileExists(string filePath, CancellationToken cancellationToken)
+    private async Task<GoogleDrivePath> GetDriveFile(string filePath, CancellationToken cancellationToken)
     {
         try
         {
             var fileName = Path.GetFileName(filePath);
             if (string.IsNullOrEmpty(fileName))
                 throw new StorageException(string.Format(Resources.TePathIsNotFile, filePath));
-            
+
             var directoryPath = Path.GetDirectoryName(filePath) ?? "";
-            var folderId = GetFolderId(directoryPath);
-            
+            var folderId = await GetFolderId(directoryPath, cancellationToken).ConfigureAwait(false);
+
             var listRequest = _client.Files.List();
             listRequest.Q = $"('{folderId}' in parents) and (name='{fileName}') and (trashed=false)";
             var files = await listRequest.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            return files.Files.Any();
+            return !files.Files.Any()
+                ? new GoogleDrivePath(false, string.Empty)
+                : new GoogleDrivePath(true, files.Files.First().Id);
         }
         catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
         {
-            return false;
+            return new GoogleDrivePath(false, string.Empty);
         }
     }
 
-    private string GetFolderId(string folderPath)
+    private async Task<GoogleDrivePath> GetDriveFolder(string path, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var folderId = await GetFolderId(path, cancellationToken).ConfigureAwait(false);
+            return new GoogleDrivePath(!string.IsNullOrEmpty(folderId), folderId);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            return new GoogleDrivePath(false, string.Empty);
+        }
+    }
+
+    private async Task<string> GetFolderId(string folderPath, CancellationToken cancellationToken)
     {
         var rootFolderId = GetRootFolderId();
         _browser ??= new GoogleDriveBrowser(_logger, _client, rootFolderId);
-        return _browser.GetFolderId(folderPath);
+        return await _browser.GetFolderId(folderPath, cancellationToken).ConfigureAwait(false);
     }
 
     private string GetRootFolderId()

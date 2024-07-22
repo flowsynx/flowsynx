@@ -55,9 +55,7 @@ internal class GoogleDriveBrowser : IDisposable
         StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
-
-        var folderId = _pathDictionary.ContainsKey(path) ? _pathDictionary[path] : GetFolderId(path);
-
+        var folderId = await GetFolderId(path, cancellationToken);
         var request = _client.Files.List();
         request.Q = $"'{folderId}' in parents and (trashed=false)";
         request.Fields = $"nextPageToken, files({string.Join(",", Fields)})";
@@ -92,10 +90,13 @@ internal class GoogleDriveBrowser : IDisposable
         }
     }
     
-    public string GetFolderId(string path)
+    public async Task<string> GetFolderId(string path, CancellationToken cancellationToken)
     {
-        string folderId = _rootFolderId;
-        string route = string.Empty;
+        if (_pathDictionary.ContainsKey(path))
+            return _pathDictionary[path];
+
+        var folderId = _rootFolderId;
+        var route = string.Empty;
         var queue = new Queue<string>();
         var pathParts = PathHelper.Split(path);
         foreach (var subPath in pathParts)
@@ -115,12 +116,11 @@ internal class GoogleDriveBrowser : IDisposable
 
             request.Fields = "nextPageToken, files(id, name)";
 
-            var fileListResponse = request.Execute();
-
+            var fileListResponse = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
             if (fileListResponse is null || fileListResponse.Files.Count <= 0)
             {
                 _logger.LogWarning("The entered path could not be found!");
-                break;
+                return string.Empty;
             }
 
             var file = fileListResponse.Files.First();
