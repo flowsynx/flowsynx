@@ -87,9 +87,30 @@ public class GoogleDriveStorage : IStoragePlugin
 
     }
 
-    public Task<StorageUsage> About(CancellationToken cancellationToken = default)
+    public async Task<StorageUsage> About(CancellationToken cancellationToken = default)
     {
-        throw new StorageException(Resources.AboutOperrationNotSupported);
+        long totalSpace = 0, totalUsed = 0, totalFree = 0;
+        try
+        {
+            var request = _client.About.Get();
+            request.Fields = "storageQuota";
+            var response = await request.ExecuteAsync(cancellationToken);
+            totalUsed = response.StorageQuota.UsageInDrive ?? 0;
+            if (response.StorageQuota.Limit is > 0)
+            {
+                totalSpace = response.StorageQuota.Limit.Value;
+                totalFree = totalSpace - totalUsed;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            totalSpace = 0;
+            totalUsed = 0;
+            totalFree = 0;
+        }
+
+        return new StorageUsage { Total = totalSpace, Free = totalFree, Used = totalUsed };
     }
 
     public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
@@ -250,7 +271,7 @@ public class GoogleDriveStorage : IStoragePlugin
         var pathParts = PathHelper.Split(path);
         var folderName = pathParts.Last();
         var parentFolder = string.Join(PathHelper.PathSeparatorString, pathParts.SkipLast(1));
-        var folder = await GetDriveFolder(parentFolder, cancellationToken);
+        var folder = await GetDriveFolder(parentFolder, cancellationToken).ConfigureAwait(false);
         if (folder.Exist)
         {
             var driveFolder = new DriveFile
@@ -272,7 +293,28 @@ public class GoogleDriveStorage : IStoragePlugin
 
     public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var folder = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
+            if (!folder.Exist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var searchOptions = new StorageSearchOptions();
+            await DeleteAsync(path, searchOptions, cancellationToken);
+
+            if (PathHelper.IsRootPath(path))
+                throw new StorageException("Can't purge root directory");
+
+            var command = _client.Files.Delete(folder.Id);
+            await command.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
