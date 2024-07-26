@@ -8,9 +8,9 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.7.310.3" />
-    <PackageReference Include="FlowSynx.IO" Version="1.0.0" />
-    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.0.0" />
-    <PackageReference Include="FlowSynx.Reflections" Version="1.0.0" />
+    <PackageReference Include="FlowSynx.IO" Version="1.1.0" />
+    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.1.0" />
+    <PackageReference Include="FlowSynx.Reflections" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
