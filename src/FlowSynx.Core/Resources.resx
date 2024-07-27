@@ -252,4 +252,7 @@
   <data name="SpecificationsRequiredMemberMustHaveValue" xml:space="preserve">
     <value>The value of '{0}' in specifications is required and must have a value.</value>
   </data>
+  <data name="LogsValidatorKindValueMustBeValidMessage" xml:space="preserve">
+    <value>Level value must be [ Dbug | Info | Warn | Fail | Crit ]. By default it is Info.</value>
+  </data>
 </root>

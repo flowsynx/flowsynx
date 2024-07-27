@@ -15,6 +15,7 @@ using FlowSynx.Core.Features.Storage.Read.Query;
 using FlowSynx.Core.Features.Storage.Size.Query;
 using FlowSynx.Core.Features.Storage.Write.Command;
 using FlowSynx.Core.Features.Config.Command.Delete;
+using FlowSynx.Core.Features.Logs.Query;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Features.Storage.Check.Command;
@@ -134,6 +135,13 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<DeleteConfigResponse>> DeleteConfig(this IMediator mediator, DeleteConfigRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+    #endregion
+
+    #region Logs
+    public static Task<Result<IEnumerable<LogsResponse>>> Logs(this IMediator mediator, LogsRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

@@ -15,6 +15,7 @@
     <PackageReference Include="FlowSynx.Commons" Version="1.1.0" />
     <PackageReference Include="FlowSynx.Configuration" Version="1.1.0" />
     <PackageReference Include="FlowSynx.Environment" Version="1.1.0" />
+    <PackageReference Include="FlowSynx.Logging" Version="1.1.0" />
     <PackageReference Include="FlowSynx.Parsers" Version="1.1.0" />
     <PackageReference Include="FlowSynx.Plugin" Version="1.1.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />

@@ -56,6 +56,12 @@ public static class ServiceCollectionExtensions
             }));
         }
 
+        services.AddLogging(builder => builder.AddInMemoryLogger(config =>
+        {
+            config.OutputTemplate = template;
+            config.MinLevel = level;
+        }));
+
         return services;
     }
     

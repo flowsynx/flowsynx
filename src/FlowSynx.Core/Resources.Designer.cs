@@ -295,6 +295,15 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Level value must be [ Dbug | Info | Warn | Fail | Crit ]. By default it is Info..
+        /// </summary>
+        internal static string LogsValidatorKindValueMustBeValidMessage {
+            get {
+                return ResourceManager.GetString("LogsValidatorKindValueMustBeValidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The directory was created successfully..
         /// </summary>
         internal static string MakeDirectoryHandlerSuccessfullyDeleted {
