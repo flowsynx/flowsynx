@@ -64,7 +64,7 @@ internal class LogsHandler : IRequestHandler<LogsRequest, Result<IEnumerable<Log
 
             if (!string.IsNullOrEmpty(request.Level))
             {
-                var level = GetLogLevel(request.Level);
+                var level = request.Level.ToStandardLogLevel();
                 predicate = predicate.And(p => p.Level == level);
             }
 
@@ -75,7 +75,7 @@ internal class LogsHandler : IRequestHandler<LogsRequest, Result<IEnumerable<Log
                 Machine = x.Machine,
                 TimeStamp = x.TimeStamp,
                 Message = x.Message,
-                Level = x.Level,
+                Level = x.Level.ToFlowSynxLogLevel().ToString().ToUpper(),
             });
 
             return await Result<IEnumerable<LogsResponse>>.SuccessAsync(response);
@@ -84,24 +84,5 @@ internal class LogsHandler : IRequestHandler<LogsRequest, Result<IEnumerable<Log
         {
             return await Result<IEnumerable<LogsResponse>>.FailAsync(new List<string> { ex.Message });
         }
-    }
-
-    private LogLevel GetLogLevel(string logLevel)
-    {
-        var loggingLevel = string.IsNullOrEmpty(logLevel)
-            ? LoggingLevel.Info
-            : EnumUtils.GetEnumValueOrDefault<LoggingLevel>(logLevel)!.Value;
-
-        var level = loggingLevel switch
-        {
-            LoggingLevel.Dbug => LogLevel.Debug,
-            LoggingLevel.Info => LogLevel.Information,
-            LoggingLevel.Warn => LogLevel.Warning,
-            LoggingLevel.Fail => LogLevel.Error,
-            LoggingLevel.Crit => LogLevel.Critical,
-            _ => LogLevel.Information,
-        };
-
-        return level;
     }
 }

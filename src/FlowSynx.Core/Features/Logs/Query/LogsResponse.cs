@@ -8,5 +8,5 @@ public class LogsResponse
     public string? Machine { get; set; }
     public DateTime TimeStamp { get; set; }
     public required string Message { get; set; }
-    public required LogLevel Level { get; set; }
+    public required string Level { get; set; }
 }
