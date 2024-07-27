@@ -2,11 +2,11 @@
 using FlowSynx.Logging;
 using FluentValidation;
 
-namespace FlowSynx.Core.Features.Logs.Query;
+namespace FlowSynx.Core.Features.Logs.Query.List;
 
-public class LogsValidator : AbstractValidator<LogsRequest>
+public class LogsListValidator : AbstractValidator<LogsListRequest>
 {
-    public LogsValidator()
+    public LogsListValidator()
     {
         RuleFor(x => x.Level)
             .Must(x => string.IsNullOrEmpty(x) || EnumUtils.TryParseWithMemberName<LoggingLevel>(x, out _))

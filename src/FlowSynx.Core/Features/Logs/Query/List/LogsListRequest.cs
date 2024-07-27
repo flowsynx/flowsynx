@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Abstractions;
 using MediatR;
 
-namespace FlowSynx.Core.Features.Logs.Query;
+namespace FlowSynx.Core.Features.Logs.Query.List;
 
-public class LogsRequest : IRequest<Result<IEnumerable<LogsResponse>>>
+public class LogsListRequest : IRequest<Result<IEnumerable<LogsListResponse>>>
 {
     public string? MinAge { get; set; }
     public string? MaxAge { get; set; }

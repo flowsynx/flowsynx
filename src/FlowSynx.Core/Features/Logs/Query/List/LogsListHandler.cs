@@ -7,17 +7,16 @@ using FlowSynx.Logging.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 using FlowSynx.Logging;
 using FlowSynx.Parsers.Date;
-using FlowSynx.Commons;
 
-namespace FlowSynx.Core.Features.Logs.Query;
+namespace FlowSynx.Core.Features.Logs.Query.List;
 
-internal class LogsHandler : IRequestHandler<LogsRequest, Result<IEnumerable<LogsResponse>>>
+internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumerable<LogsListResponse>>>
 {
-    private readonly ILogger<LogsHandler> _logger;
+    private readonly ILogger<LogsListHandler> _logger;
     private readonly IDateParser _dateParser;
     private readonly InMemoryLoggerProvider? _inMemoryLogger;
 
-    public LogsHandler(ILogger<LogsHandler> logger, IDateParser dateParser, IServiceProvider serviceProvider)
+    public LogsListHandler(ILogger<LogsListHandler> logger, IDateParser dateParser, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(serviceProvider, nameof(serviceProvider));
@@ -41,35 +40,35 @@ internal class LogsHandler : IRequestHandler<LogsRequest, Result<IEnumerable<Log
         return null;
     }
 
-    public async Task<Result<IEnumerable<LogsResponse>>> Handle(LogsRequest request, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<LogsListResponse>>> Handle(LogsListRequest listRequest, CancellationToken cancellationToken)
     {
         try
         {
 
             EnsureArg.IsNotNull(_inMemoryLogger, nameof(_inMemoryLogger));
-            
+
             var predicate = PredicateBuilder.True<LogMessage>();
 
-            if (!string.IsNullOrEmpty(request.MinAge))
+            if (!string.IsNullOrEmpty(listRequest.MinAge))
             {
-                var parsedDateTime = _dateParser.Parse(request.MinAge);
+                var parsedDateTime = _dateParser.Parse(listRequest.MinAge);
                 predicate = predicate.And(p => p.TimeStamp >= parsedDateTime);
             }
 
-            if (!string.IsNullOrEmpty(request.MaxAge))
+            if (!string.IsNullOrEmpty(listRequest.MaxAge))
             {
-                var parsedDateTime = _dateParser.Parse(request.MaxAge);
+                var parsedDateTime = _dateParser.Parse(listRequest.MaxAge);
                 predicate = predicate.And(p => p.TimeStamp <= parsedDateTime);
             }
 
-            if (!string.IsNullOrEmpty(request.Level))
+            if (!string.IsNullOrEmpty(listRequest.Level))
             {
-                var level = request.Level.ToStandardLogLevel();
+                var level = listRequest.Level.ToStandardLogLevel();
                 predicate = predicate.And(p => p.Level == level);
             }
 
             var result = _inMemoryLogger.RecordedLogs.Where(predicate.Compile());
-            var response = result.Select(x => new LogsResponse()
+            var response = result.Select(x => new LogsListResponse()
             {
                 UserName = x.UserName,
                 Machine = x.Machine,
@@ -78,11 +77,11 @@ internal class LogsHandler : IRequestHandler<LogsRequest, Result<IEnumerable<Log
                 Level = x.Level.ToFlowSynxLogLevel().ToString().ToUpper(),
             });
 
-            return await Result<IEnumerable<LogsResponse>>.SuccessAsync(response);
+            return await Result<IEnumerable<LogsListResponse>>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
-            return await Result<IEnumerable<LogsResponse>>.FailAsync(new List<string> { ex.Message });
+            return await Result<IEnumerable<LogsListResponse>>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

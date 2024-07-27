@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿namespace FlowSynx.Core.Features.Logs.Query.List;
 
-namespace FlowSynx.Core.Features.Logs.Query;
-
-public class LogsResponse
+public class LogsListResponse
 {
     public string? UserName { get; set; }
     public string? Machine { get; set; }

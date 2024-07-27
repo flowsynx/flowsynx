@@ -15,13 +15,13 @@ using FlowSynx.Core.Features.Storage.Read.Query;
 using FlowSynx.Core.Features.Storage.Size.Query;
 using FlowSynx.Core.Features.Storage.Write.Command;
 using FlowSynx.Core.Features.Config.Command.Delete;
-using FlowSynx.Core.Features.Logs.Query;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Features.Storage.Check.Command;
 using FlowSynx.Core.Features.Storage.Exist.Query;
 using FlowSynx.Core.Features.Version.Query;
 using FlowSynx.Core.Features.Storage.Compress.Command;
+using FlowSynx.Core.Features.Logs.Query.List;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -141,9 +141,9 @@ public static class MediatorExtensions
     #endregion
 
     #region Logs
-    public static Task<Result<IEnumerable<LogsResponse>>> Logs(this IMediator mediator, LogsRequest request, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<LogsListResponse>>> Logs(this IMediator mediator, LogsListRequest listRequest, CancellationToken cancellationToken)
     {
-        return mediator.Send(request, cancellationToken);
+        return mediator.Send(listRequest, cancellationToken);
     }
     #endregion
 }

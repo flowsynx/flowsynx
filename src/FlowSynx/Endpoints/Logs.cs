@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Core.Extensions;
-using FlowSynx.Core.Features.Logs.Query;
+using FlowSynx.Core.Features.Logs.Query.List;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +14,10 @@ public class Logs : EndpointGroupBase
             .MapPost(GetLogs);
     }
 
-    public async Task<IResult> GetLogs([FromBody] LogsRequest request, 
+    public async Task<IResult> GetLogs([FromBody] LogsListRequest listRequest, 
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
-        var result = await mediator.Logs(request, cancellationToken);
+        var result = await mediator.Logs(listRequest, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }
