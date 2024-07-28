@@ -3,6 +3,9 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Reflections;
+using System.Security.Principal;
+using FlowSynx.Core.Extensions;
 
 namespace FlowSynx.Core.Features.Plugins.Query.Details;
 
@@ -31,11 +34,22 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
                 return await Result<PluginDetailsResponse>.FailAsync("The desired plugin are not found!");
             }
 
+            var specificationsType = plugin.SpecificationsType;
+            var properties = specificationsType.Properties().ToList();
+            var specifications = properties
+                .Select(property => new PluginDetailsSpecification
+                {
+                    Key = property.Name, 
+                    Type = property.PropertyType.GetPrimitiveType(), 
+                    IsRequired = Attribute.IsDefined(property, typeof(RequiredMemberAttribute))
+                }).ToList();
+
             var response = new PluginDetailsResponse
             {
                 Id = plugin.Id,
                 Type = plugin.Type,
-                Description = plugin.Description
+                Description = plugin.Description,
+                Specifications = specifications
             };
 
             return await Result<PluginDetailsResponse>.SuccessAsync(response);
