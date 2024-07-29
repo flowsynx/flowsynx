@@ -4,7 +4,6 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Reflections;
-using System.Security.Principal;
 using FlowSynx.Core.Extensions;
 
 namespace FlowSynx.Core.Features.Plugins.Query.Details;
@@ -26,16 +25,9 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
     {
         try
         {
-            var plugin = _pluginsManager.Plugins().FirstOrDefault(x=>x.Id.Equals(request.Id));
-
-            if (plugin == null)
-            {
-                _logger.LogError("The desired plugin are not found!");
-                return await Result<PluginDetailsResponse>.FailAsync("The desired plugin are not found!");
-            }
-
+            var plugin = _pluginsManager.GetPlugin(request.Type);
             var specificationsType = plugin.SpecificationsType;
-            var properties = specificationsType.Properties().ToList();
+            var properties = specificationsType.Properties().Where(x=>x.CanWrite).ToList();
             var specifications = properties
                 .Select(property => new PluginDetailsSpecification
                 {

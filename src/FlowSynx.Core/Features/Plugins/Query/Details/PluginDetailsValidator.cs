@@ -6,7 +6,7 @@ public class PluginDetailsValidator : AbstractValidator<PluginDetailsRequest>
 {
     public PluginDetailsValidator()
     {
-        RuleFor(x => x.Id)
+        RuleFor(x => x.Type)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.PluginValidatorPluginNamespaceValueMustBeValidMessage);

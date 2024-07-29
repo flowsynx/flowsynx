@@ -13,7 +13,7 @@ public class Plugins : EndpointGroupBase
     {
         app.MapGroup(this)
             .MapGet(GetPlugins, "/{Namespace?}")
-            .MapGet(GetPluginDetails, "/details/{id}");
+            .MapPost(GetPluginDetails, "/details");
     }
 
     public async Task<IResult> GetPlugins([AsParameters] PluginsListRequest request, 
@@ -23,7 +23,7 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetPluginDetails([AsParameters] PluginDetailsRequest request, 
+    public async Task<IResult> GetPluginDetails([FromBody] PluginDetailsRequest request, 
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.PluginDetails(request, cancellationToken);
