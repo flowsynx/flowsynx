@@ -33,7 +33,7 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
                 {
                     Key = property.Name, 
                     Type = property.PropertyType.GetPrimitiveType(), 
-                    IsRequired = Attribute.IsDefined(property, typeof(RequiredMemberAttribute))
+                    Required = Attribute.IsDefined(property, typeof(RequiredMemberAttribute))
                 }).ToList();
 
             var response = new PluginDetailsResponse
