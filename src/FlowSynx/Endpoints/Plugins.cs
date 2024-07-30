@@ -12,11 +12,11 @@ public class Plugins : EndpointGroupBase
     public override void Map(WebApplication app)
     {
         app.MapGroup(this)
-            .MapGet(GetPlugins, "/{Namespace?}")
+            .MapPost(GetPlugins)
             .MapPost(GetPluginDetails, "/details");
     }
 
-    public async Task<IResult> GetPlugins([AsParameters] PluginsListRequest request, 
+    public async Task<IResult> GetPlugins([FromBody] PluginsListRequest request, 
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.Plugins(request, cancellationToken);
