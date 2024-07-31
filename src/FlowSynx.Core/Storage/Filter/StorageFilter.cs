@@ -8,6 +8,7 @@ using FlowSynx.Parsers.Size;
 using FlowSynx.Parsers.Sort;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
+using FlowSynx.Parsers.Percent;
 
 namespace FlowSynx.Core.Storage.Filter;
 
@@ -17,21 +18,29 @@ internal class StorageFilter: IStorageFilter
     private readonly IDateParser _dateParser;
     private readonly ISizeParser _sizeParser;
     private readonly ISortParser _sortParser;
+    private readonly IPercentParser _percentParser;
 
-    public StorageFilter(ILogger<StorageFilter> logger, IDateParser dateParser, ISizeParser sizeParser, ISortParser sortParser)
+    public StorageFilter(ILogger<StorageFilter> logger, IDateParser dateParser, 
+        ISizeParser sizeParser, ISortParser sortParser, IPercentParser percentParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(dateParser, nameof(dateParser));
         EnsureArg.IsNotNull(sizeParser, nameof(sizeParser));
         EnsureArg.IsNotNull(sortParser, nameof(sortParser));
+        EnsureArg.IsNotNull(percentParser, nameof(percentParser));
         _logger = logger;
         _dateParser = dateParser;
         _sizeParser = sizeParser;
         _sortParser = sortParser;
+        _percentParser = percentParser;
     }
 
     public IEnumerable<StorageEntity> FilterEntitiesList(IEnumerable<StorageEntity> entities, StorageSearchOptions storageSearchOptions, StorageListOptions listOptions)
     {
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            return storageEntities;
+        
         var predicate = PredicateBuilder.True<StorageEntity>();
 
         switch (listOptions.Kind)
@@ -78,13 +87,17 @@ internal class StorageFilter: IStorageFilter
             predicate = predicate.And(p => p.Size <= parsedSize && p.Kind == StorageEntityItemKind.File);
         }
 
-        var result = entities.Where(predicate.Compile());
+        var result = storageEntities.Where(predicate.Compile());
 
         if (!string.IsNullOrEmpty(listOptions.Sorting))
         {
             var parsedSort = _sortParser.Parse(listOptions.Sorting, ObjectPropertiesList<StorageEntity>());
             result = result.Sorting(parsedSort);
         }
+
+        var maxResult = _percentParser.Parse(listOptions.MaxResult, storageEntities.Count());
+        if (maxResult > 0)
+            result = result.Take(maxResult);
         
         return result;
     }

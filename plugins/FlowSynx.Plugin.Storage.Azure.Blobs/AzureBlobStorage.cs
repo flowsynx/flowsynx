@@ -84,12 +84,7 @@ public class AzureBlobStorage : IStoragePlugin
             ListAsync(c, result, path, searchOptions, listOptions, metadataOptions, cancellationToken))
         ).ConfigureAwait(false);
 
-        var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-
-        if (listOptions.MaxResult is > 0)
-            filteredResult = filteredResult.Take(listOptions.MaxResult.Value);
-
-        return filteredResult;
+        return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
     }
     
     private async Task ListAsync(BlobContainerClient containerClient, List<StorageEntity> result, string path, 

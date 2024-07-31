@@ -123,12 +123,7 @@ public class GoogleDriveStorage : IStoragePlugin
         var result = await ListAsync(_googleDriveSpecifications.FolderId, path, 
             searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
 
-        var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-
-        if (listOptions.MaxResult is > 0)
-            filteredResult = filteredResult.Take(listOptions.MaxResult.Value);
-
-        return filteredResult;
+        return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
     }
     
     public async Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,

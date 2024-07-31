@@ -122,12 +122,7 @@ public class AzureFileStorage : IStoragePlugin
             }
         }
 
-        var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-
-        if (listOptions.MaxResult is > 0)
-            filteredResult = filteredResult.Take(listOptions.MaxResult.Value);
-
-        return filteredResult;
+        return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
     }
 
     public async Task WriteAsync(string path, StorageStream storageStream, StorageWriteOptions writeOptions, 

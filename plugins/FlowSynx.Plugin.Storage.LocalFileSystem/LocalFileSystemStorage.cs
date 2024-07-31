@@ -79,10 +79,6 @@ public class LocalFileSystemStorage : IStoragePlugin
                       .Select(dir=> dir.ToEntity(metadataOptions.IncludeMetadata)));
 
             var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-
-            if (listOptions.MaxResult is > 0)
-                filteredResult = filteredResult.Take(listOptions.MaxResult.Value);
-
             return Task.FromResult(filteredResult);
         }
         catch (Exception ex)
