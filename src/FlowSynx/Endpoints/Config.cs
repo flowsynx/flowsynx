@@ -15,7 +15,7 @@ public class Config : EndpointGroupBase
     {
         app.MapGroup(this)
             .MapPost(ConfigList)
-            .MapGet(ConfigDetails, "/details/{name}")
+            .MapPost(ConfigDetails, "/details")
             .MapPost(AddConfig, "/add")
             .MapDelete(DeleteConfig, "/delete");
     }
@@ -27,7 +27,7 @@ public class Config : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> ConfigDetails([AsParameters] ConfigDetailsRequest request, 
+    public async Task<IResult> ConfigDetails([FromBody] ConfigDetailsRequest request, 
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.ConfigDetails(request, cancellationToken);
