@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dropbox.Api" Version="7.0.0" />
+    <PackageReference Include="FlowSynx.IO" Version="1.2.2" />
+    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.2.2" />
+    <PackageReference Include="FlowSynx.Reflections" Version="1.2.2" />
+  </ItemGroup>
+
+</Project>
