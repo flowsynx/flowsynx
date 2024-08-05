@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Plugin.Storage.Memory;
+﻿using FlowSynx.IO;
+
+namespace FlowSynx.Plugin.Storage.Memory;
 
 static class MemoryStorageConverter
 {
@@ -14,9 +16,10 @@ static class MemoryStorageConverter
         return entity;
     }
 
-    public static StorageEntity ToEntity(this MemoryEntity memoryEntity, string name, bool? includeMetadata)
+    public static StorageEntity ToEntity(this MemoryEntity memoryEntity, string bucketName, string name, bool? includeMetadata)
     {
-        var entity = new StorageEntity(name, StorageEntityItemKind.File);
+        var fullPath = PathHelper.Combine(bucketName, name);
+        var entity = new StorageEntity(fullPath, StorageEntityItemKind.File);
         return entity;
     }
 }

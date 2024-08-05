@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
 using System.Diagnostics;
 using System.IO;
+using static System.Net.WebRequestMethods;
 
 namespace FlowSynx.Plugin.Storage.Memory;
 
@@ -14,7 +15,7 @@ public class MemoryStorage : IStoragePlugin
 {
     private readonly ILogger<MemoryStorage> _logger;
     private readonly IStorageFilter _storageFilter;
-    private IDictionary<string, IDictionary<string, MemoryEntity>> _entities;
+    private readonly Dictionary<string, Dictionary<string, MemoryEntity>> _entities;
 
     public MemoryStorage(ILogger<MemoryStorage> logger, IStorageFilter storageFilter)
     {
@@ -22,7 +23,7 @@ public class MemoryStorage : IStoragePlugin
         EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
         _logger = logger;
         _storageFilter = storageFilter;
-        _entities = new Dictionary<string, IDictionary<string, MemoryEntity>>();
+        _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
     }
 
     public Guid Id => Guid.Parse("ac220180-021e-4150-b0e1-c4d4bdbfb9f0");
@@ -64,9 +65,6 @@ public class MemoryStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
         var result = new List<StorageEntity>();
         var buckets = new List<string>();
 
@@ -89,57 +87,38 @@ public class MemoryStorage : IStoragePlugin
 
         return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
     }
-
-    private Task<List<string>> ListBucketsAsync(CancellationToken cancellationToken)
-    {
-        var buckets = _entities.Keys;
-        var result = buckets
-            .Where(bucket => !string.IsNullOrEmpty(bucket))
-            .Select(bucket => bucket).ToList();
-
-        return Task.FromResult(result);
-    }
-
-    private Task ListAsync(List<StorageEntity> result, string bucketName, string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
-    {
-        if (!_entities.ContainsKey(bucketName))
-            throw new Exception($"The bucket '{bucketName}' is not exist");
-
-        if (!path.EndsWith("/"))
-            path += "/";
-
-        var bucket = _entities[bucketName];
-
-        foreach (var (key, value) in bucket)
-        {
-            if (key.StartsWith(path))
-            {
-                var memEntity = bucket[key];
-                result.AddRange(bucket.Keys.Select(item => memEntity.ToEntity(item, false)));
-            }
-        }
-        
-        return Task.CompletedTask;
-    }
-
-    private (string, string) GetPartsAsync(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-            return ("", "");
-        
-        var symbolIndex = path.IndexOf('/');
-
-        return symbolIndex < 0 
-            ? (path, "") 
-            : (path[..(symbolIndex)], path[(symbolIndex)..]);
-    }
-
-    public Task WriteAsync(string path, StorageStream storageStream, StorageWriteOptions writeOptions,
+    
+    public Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (dataStream == null)
+            throw new ArgumentNullException(nameof(dataStream));
+
+        try
+        {
+            var (bucketName, directory) = GetPartsAsync(path);
+            var isBucketExist = BucketExists(bucketName);
+            if (!isBucketExist)
+            {
+                _entities.Add(bucketName, new Dictionary<string, MemoryEntity>());
+            }
+
+            var isExist = ObjectExists(bucketName, directory);
+            if (isExist && writeOptions.Overwrite is false)
+                throw new StorageException("Resources.FileIsAlreadyExistAndCannotBeOverwritten");
+
+            var bucket = _entities[bucketName];
+            bucket[directory] = new MemoryEntity(dataStream);
+            
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            throw new StorageException("ResourceNotExist");
+        }
     }
 
     public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
@@ -179,4 +158,80 @@ public class MemoryStorage : IStoragePlugin
     }
 
     public void Dispose() { }
+
+    #region private methods
+    private Task<List<string>> ListBucketsAsync(CancellationToken cancellationToken)
+    {
+        var buckets = _entities.Keys;
+        var result = buckets
+            .Where(bucket => !string.IsNullOrEmpty(bucket))
+            .Select(bucket => bucket).ToList();
+
+        return Task.FromResult(result);
+    }
+
+    private Task ListAsync(List<StorageEntity> result, string bucketName, string path,
+        StorageSearchOptions searchOptions, StorageListOptions listOptions,
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+    {
+        if (!_entities.ContainsKey(bucketName))
+            throw new Exception($"The bucket '{bucketName}' is not exist");
+
+        if (!path.EndsWith("/"))
+            path += "/";
+
+        var bucket = _entities[bucketName];
+
+        foreach (var (key, value) in bucket)
+        {
+            if (key.StartsWith(path))
+            {
+                var memEntity = bucket[key];
+                result.Add(memEntity.ToEntity(bucketName, key, false));
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private bool ObjectExists(string bucketName, string path)
+    {
+        try
+        {
+            if (!BucketExists(bucketName))
+                return false;
+
+            var bucket = _entities[bucketName];
+            return bucket.ContainsKey(path);
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+
+    private bool BucketExists(string bucketName)
+    {
+        try
+        {
+            return _entities.ContainsKey(bucketName);
+        }
+        catch (Exception ex)
+        {
+            return false;
+        }
+    }
+
+    private (string, string) GetPartsAsync(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return ("", "");
+
+        var symbolIndex = path.IndexOf('/');
+
+        return symbolIndex < 0
+            ? (path, "")
+            : (path[..(symbolIndex)], path[(symbolIndex)..]);
+    }
+    #endregion
 }

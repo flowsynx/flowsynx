@@ -2,13 +2,9 @@
 
 public class MemoryEntity
 {
-    public byte[] Content { get; set; }
+    public Stream Content { get; set; }
 
-    public MemoryEntity(): this(Array.Empty<byte>())
-    {
-    }
-
-    public MemoryEntity(byte[] content)
+    public MemoryEntity(Stream content)
     {
         Content = content;
     }
