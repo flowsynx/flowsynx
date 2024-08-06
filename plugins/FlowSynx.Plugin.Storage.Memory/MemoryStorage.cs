@@ -1,13 +1,7 @@
 ﻿using EnsureThat;
 using FlowSynx.IO;
-using FlowSynx.Net;
 using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Security;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic;
-using System.Diagnostics;
-using System.IO;
-using static System.Net.WebRequestMethods;
 
 namespace FlowSynx.Plugin.Storage.Memory;
 
@@ -65,6 +59,12 @@ public class MemoryStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+        
         var result = new List<StorageEntity>();
         var buckets = new List<string>();
 
@@ -72,7 +72,7 @@ public class MemoryStorage : IStoragePlugin
 
         if (bucket == "") {
             if (directory != "")
-                throw new Exception("ErrorListBucketRequired");
+                throw new StorageException(Resources.BucketNameIsRequired);
 
             buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
             result.AddRange(buckets.Select(b => b.ToEntity(metadataOptions.IncludeMetadata)));
@@ -97,6 +97,9 @@ public class MemoryStorage : IStoragePlugin
         if (dataStream == null)
             throw new ArgumentNullException(nameof(dataStream));
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var (bucketName, directory) = GetPartsAsync(path);
@@ -108,43 +111,153 @@ public class MemoryStorage : IStoragePlugin
 
             var isExist = ObjectExists(bucketName, directory);
             if (isExist && writeOptions.Overwrite is false)
-                throw new StorageException("Resources.FileIsAlreadyExistAndCannotBeOverwritten");
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
+            var name = Path.GetFileName(path);
+            var extension = Path.GetExtension(path);
             var bucket = _entities[bucketName];
-            bucket[directory] = new MemoryEntity(dataStream);
+            bucket[directory] = new MemoryEntity(name, dataStream);
             
             return Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            throw new StorageException("ResourceNotExist");
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
     }
 
     public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var (bucketName, directory) = GetPartsAsync(path);
+            var isExist = ObjectExists(bucketName, directory);
+
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var bucket = _entities[bucketName];
+            var memoryEntity = bucket[directory];
+            var extension = Path.GetExtension(path);
+            
+            var response = new StorageRead()
+            {
+                Stream = new StorageStream(memoryEntity.Content),
+                ContentType = memoryEntity.ContentType,
+                Extension = extension,
+                Md5 = memoryEntity.Md5,
+            };
+
+            return Task.FromResult(response);
+        }
+        catch (Exception ex)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var (bucketName, directory) = GetPartsAsync(path);
+            return Task.FromResult(ObjectExists(bucketName, directory));
+        }
+        catch (Exception ex)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
-    public Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+        var hashOptions = new StorageHashOptions() { Hashing = false };
+        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
+        var entities =
+            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        foreach (var entity in storageEntities)
+        {
+            await DeleteFileAsync(entity.FullPath, cancellationToken);
+        }
     }
 
     public Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var (bucketName, directory) = GetPartsAsync(path);
+            var isExist = ObjectExists(bucketName, directory);
+
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var bucket = _entities[bucketName];
+            var ms = bucket[directory];
+
+            bucket.Remove(directory);
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     public Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        var (bucketName, directory) = GetPartsAsync(path);
+        var isBucketExist = BucketExists(bucketName);
+        if (!isBucketExist)
+        {
+            _entities.Add(bucketName, new Dictionary<string, MemoryEntity>());
+            _logger.LogInformation($"Bucket '{bucketName}' was created successfully.");
+        }
+        
+        if (!string.IsNullOrEmpty(directory))
+        {
+            var isExist = ObjectExists(bucketName, directory);
+            if (!isExist)
+                AddFolder(bucketName, directory).ConfigureAwait(false);
+            else
+                _logger.LogInformation($"Directory '{directory}' is already exist.");
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
@@ -177,9 +290,6 @@ public class MemoryStorage : IStoragePlugin
         if (!_entities.ContainsKey(bucketName))
             throw new Exception($"The bucket '{bucketName}' is not exist");
 
-        if (!path.EndsWith("/"))
-            path += "/";
-
         var bucket = _entities[bucketName];
 
         foreach (var (key, value) in bucket)
@@ -187,7 +297,7 @@ public class MemoryStorage : IStoragePlugin
             if (key.StartsWith(path))
             {
                 var memEntity = bucket[key];
-                result.Add(memEntity.ToEntity(bucketName, key, false));
+                result.Add(memEntity.ToEntity(bucketName, metadataOptions.IncludeMetadata));
             }
         }
 
@@ -231,7 +341,19 @@ public class MemoryStorage : IStoragePlugin
 
         return symbolIndex < 0
             ? (path, "")
-            : (path[..(symbolIndex)], path[(symbolIndex)..]);
+            : (path[..(symbolIndex)], path[(symbolIndex+1)..]);
+    }
+
+    private Task AddFolder(string bucketName, string folderName)
+    {
+        if (!folderName.EndsWith("/"))
+            folderName += "/";
+        
+        var memoryEntity = new MemoryEntity(folderName);
+        var bucket = _entities[bucketName];
+        bucket[folderName] = memoryEntity;
+        _logger.LogInformation($"Folder '{folderName}' was created successfully.");
+        return Task.CompletedTask;
     }
     #endregion
 }

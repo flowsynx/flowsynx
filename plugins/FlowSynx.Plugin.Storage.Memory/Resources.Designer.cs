@@ -61,11 +61,74 @@ namespace FlowSynx.Plugin.Storage.Memory {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Bucket name is required..
+        /// </summary>
+        internal static string BucketNameIsRequired {
+            get {
+                return ResourceManager.GetString("BucketNameIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
+        /// </summary>
+        internal static string FileIsAlreadyExistAndCannotBeOverwritten {
+            get {
+                return ResourceManager.GetString("FileIsAlreadyExistAndCannotBeOverwritten", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No files found with the given filter in &apos;{0}&apos;..
+        /// </summary>
+        internal static string NoFilesFoundWithTheGivenFilter {
+            get {
+                return ResourceManager.GetString("NoFilesFoundWithTheGivenFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin for managing entities in memory.
         /// </summary>
         internal static string PluginDescription {
             get {
                 return ResourceManager.GetString("PluginDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Resource &apos;{0}&apos; not exist!.
+        /// </summary>
+        internal static string ResourceNotExist {
+            get {
+                return ResourceManager.GetString("ResourceNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a directory..
+        /// </summary>
+        internal static string ThePathIsNotDirectory {
+            get {
+                return ResourceManager.GetString("ThePathIsNotDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a file..
+        /// </summary>
+        internal static string ThePathIsNotFile {
+            get {
+                return ResourceManager.GetString("ThePathIsNotFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path &apos;{0}&apos; is not exist..
+        /// </summary>
+        internal static string TheSpecifiedPathIsNotExist {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathIsNotExist", resourceCulture);
             }
         }
         

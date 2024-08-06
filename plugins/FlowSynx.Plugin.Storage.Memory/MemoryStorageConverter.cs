@@ -16,10 +16,27 @@ static class MemoryStorageConverter
         return entity;
     }
 
-    public static StorageEntity ToEntity(this MemoryEntity memoryEntity, string bucketName, string name, bool? includeMetadata)
+    public static StorageEntity ToEntity(this MemoryEntity memoryEntity, string bucketName, bool? includeMetadata)
     {
-        var fullPath = PathHelper.Combine(bucketName, name);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.File);
+        var fullPath = PathHelper.Combine(bucketName, memoryEntity.Name);
+        var isDirectory = memoryEntity.Name.EndsWith("/") && memoryEntity.IsDirectory;
+        StorageEntity entity = new StorageEntity(fullPath, memoryEntity.Kind);
+
+        if (!isDirectory)
+        {
+            entity.Size = memoryEntity.Size;
+            entity.Md5 = memoryEntity.Md5;
+            entity.ModifiedTime = memoryEntity.ModifiedTime;
+        }
+
+        if (includeMetadata is true)
+        {
+            if (isDirectory)
+            {
+                entity.Metadata["IsDirectory"] = true;
+            }
+        }
+
         return entity;
     }
 }

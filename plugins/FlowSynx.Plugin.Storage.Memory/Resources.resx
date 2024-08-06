@@ -117,8 +117,29 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BucketNameIsRequired" xml:space="preserve">
+    <value>Bucket name is required.</value>
+  </data>
+  <data name="FileIsAlreadyExistAndCannotBeOverwritten" xml:space="preserve">
+    <value>File '{0}' is already exist and can't be overwritten!</value>
+  </data>
+  <data name="NoFilesFoundWithTheGivenFilter" xml:space="preserve">
+    <value>No files found with the given filter in '{0}'.</value>
+  </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for managing entities in memory</value>
+  </data>
+  <data name="ResourceNotExist" xml:space="preserve">
+    <value>Resource '{0}' not exist!</value>
+  </data>
+  <data name="ThePathIsNotDirectory" xml:space="preserve">
+    <value>The entered path is not a directory.</value>
+  </data>
+  <data name="ThePathIsNotFile" xml:space="preserve">
+    <value>The entered path is not a file.</value>
+  </data>
+  <data name="TheSpecifiedPathIsNotExist" xml:space="preserve">
+    <value>The specified path '{0}' is not exist.</value>
   </data>
   <data name="TheSpecifiedPathMustBeNotEmpty" xml:space="preserve">
     <value>The specified path must be not empty!</value>
