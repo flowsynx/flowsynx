@@ -97,6 +97,24 @@ namespace FlowSynx.Plugin.Storage.Amazon.S3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a directory..
+        /// </summary>
+        internal static string ThePathIsNotDirectory {
+            get {
+                return ResourceManager.GetString("ThePathIsNotDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a file..
+        /// </summary>
+        internal static string ThePathIsNotFile {
+            get {
+                return ResourceManager.GetString("ThePathIsNotFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The specified path &apos;{0}&apos; is not exist..
         /// </summary>
         internal static string TheSpecifiedPathIsNotExist {

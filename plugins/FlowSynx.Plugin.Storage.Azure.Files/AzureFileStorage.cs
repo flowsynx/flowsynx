@@ -77,6 +77,12 @@ public class AzureFileStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var result = new List<StorageEntity>();
         ShareDirectoryClient directoryClient;
 
@@ -131,6 +137,9 @@ public class AzureFileStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
@@ -171,6 +180,9 @@ public class AzureFileStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -214,11 +226,14 @@ public class AzureFileStorage : IStoragePlugin
 
     public async Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(path))
+            throw new StorageException(Resources.ThePathMustBeFile);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
-            if (string.IsNullOrWhiteSpace(path))
-                throw new StorageException(Resources.ThePathMustBeFile);
-            
             ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
             return await fileClient.ExistsAsync(cancellationToken: cancellationToken);
         }
@@ -264,6 +279,9 @@ public class AzureFileStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
@@ -297,6 +315,12 @@ public class AzureFileStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
             ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
@@ -324,6 +348,12 @@ public class AzureFileStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         try
         {
@@ -358,6 +388,12 @@ public class AzureFileStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         try
         {

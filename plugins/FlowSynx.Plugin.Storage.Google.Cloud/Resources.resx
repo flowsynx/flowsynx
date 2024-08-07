@@ -135,6 +135,12 @@
   <data name="SpecificationsCouldNotBeNullOrEmpty" xml:space="preserve">
     <value>Google Cloud Storage Specifications could not be null or empty!</value>
   </data>
+  <data name="ThePathIsNotDirectory" xml:space="preserve">
+    <value>The entered path is not a directory.</value>
+  </data>
+  <data name="ThePathIsNotFile" xml:space="preserve">
+    <value>The entered path is not a file.</value>
+  </data>
   <data name="TheSpecifiedPathIsNotExist" xml:space="preserve">
     <value>The specified path '{0}' is not exist.</value>
   </data>

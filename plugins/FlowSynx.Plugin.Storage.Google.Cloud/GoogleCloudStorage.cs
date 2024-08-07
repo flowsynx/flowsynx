@@ -74,6 +74,12 @@ public class GoogleCloudStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var result = new List<StorageEntity>();
         var buckets = new List<string>();
 
@@ -109,6 +115,9 @@ public class GoogleCloudStorage : IStoragePlugin
         if (dataStream == null)
             throw new ArgumentNullException(nameof(dataStream));
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -130,6 +139,9 @@ public class GoogleCloudStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -163,6 +175,9 @@ public class GoogleCloudStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -199,6 +214,9 @@ public class GoogleCloudStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -219,6 +237,12 @@ public class GoogleCloudStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         if (_cloudStorageSpecifications == null)
             throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
@@ -243,6 +267,12 @@ public class GoogleCloudStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -265,6 +295,12 @@ public class GoogleCloudStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         try
         {

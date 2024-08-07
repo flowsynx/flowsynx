@@ -120,6 +120,12 @@ public class GoogleDriveStorage : IStoragePlugin
         if (_googleDriveSpecifications == null)
             throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var result = await ListAsync(_googleDriveSpecifications.FolderId, path, 
             searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
 
@@ -134,6 +140,9 @@ public class GoogleDriveStorage : IStoragePlugin
 
         if (dataStream == null)
             throw new ArgumentNullException(nameof(dataStream));
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -173,6 +182,9 @@ public class GoogleDriveStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var file = await GetDriveFile(path, cancellationToken);
@@ -206,6 +218,9 @@ public class GoogleDriveStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -243,6 +258,9 @@ public class GoogleDriveStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var file = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
@@ -262,6 +280,12 @@ public class GoogleDriveStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         var pathParts = PathHelper.Split(path);
         var folderName = pathParts.Last();
@@ -291,6 +315,12 @@ public class GoogleDriveStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
             var folder = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
@@ -316,6 +346,12 @@ public class GoogleDriveStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         try
         {

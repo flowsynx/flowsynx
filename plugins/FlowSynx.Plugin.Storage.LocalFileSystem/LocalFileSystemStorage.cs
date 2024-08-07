@@ -59,13 +59,19 @@ public class LocalFileSystemStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        path = path.ToUnixPath();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
-            if (string.IsNullOrEmpty(path))
-                throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-            path = GetPhysicalPath(path);
-
             if (!Directory.Exists(path))
                 throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
@@ -91,8 +97,14 @@ public class LocalFileSystemStorage : IStoragePlugin
     public Task WriteAsync(string path, StorageStream storageStream, StorageWriteOptions writeOptions, 
         CancellationToken cancellationToken = default)
     {
-        path = GetPhysicalPath(path);
+        path = path.ToUnixPath();
 
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+        
         if (File.Exists(path) && writeOptions.Overwrite is false)
             throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
         
@@ -108,7 +120,13 @@ public class LocalFileSystemStorage : IStoragePlugin
     public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions, 
         CancellationToken cancellationToken = default)
     {
-        path = GetPhysicalPath(path);
+        path = path.ToUnixPath();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         if (!File.Exists(path))
             throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
@@ -130,7 +148,10 @@ public class LocalFileSystemStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-        
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         var fileInfo = new FileInfo(path);
         return Task.FromResult(fileInfo.Exists);
     }
@@ -140,6 +161,8 @@ public class LocalFileSystemStorage : IStoragePlugin
         var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
         var hashOptions = new StorageHashOptions() { Hashing = false };
         var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+
+        path = path.ToUnixPath();
 
         var entities = 
             await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
@@ -156,7 +179,13 @@ public class LocalFileSystemStorage : IStoragePlugin
 
     public Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
     {
-        path = GetPhysicalPath(path);
+        path = path.ToUnixPath();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         if (!File.Exists(path))
             throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
@@ -167,13 +196,34 @@ public class LocalFileSystemStorage : IStoragePlugin
 
     public Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
-        path = GetPhysicalPath(path);
+        path = path.ToUnixPath();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         Directory.CreateDirectory(path);
         return Task.CompletedTask;
     }
 
     public Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
     {
+        path = path.ToUnixPath();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var directoryInfo = new DirectoryInfo(path);
         if (!directoryInfo.Exists)
             throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path));
@@ -184,18 +234,20 @@ public class LocalFileSystemStorage : IStoragePlugin
 
     public Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
     {
+        path = path.ToUnixPath();
+
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-        
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var fileInfo = new DirectoryInfo(path);
         return Task.FromResult(fileInfo.Exists);
     }
 
     public void Dispose() { }
-
-    #region internal methods
-    private string GetPhysicalPath(string path) => IsWindows ? path.ToWindowsPath() : path;
-
-    private bool IsWindows => OperatingSystem.IsWindows();
-    #endregion
 }

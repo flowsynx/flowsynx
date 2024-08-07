@@ -59,6 +59,12 @@ public class AzureBlobStorage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var result = new List<StorageEntity>();
         var containers = new List<BlobContainerClient>();
 
@@ -87,49 +93,6 @@ public class AzureBlobStorage : IStoragePlugin
         return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
     }
     
-    private async Task ListAsync(BlobContainerClient containerClient, List<StorageEntity> result, string path, 
-        StorageSearchOptions searchOptions, StorageListOptions listOptions, 
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
-    {
-        using var browser = new AzureContainerBrowser(_logger, containerClient);
-        IReadOnlyCollection<StorageEntity> containerBlobs = 
-            await browser.ListFolderAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
-
-        if (containerBlobs.Count > 0)
-        {
-            result.AddRange(containerBlobs);
-        }
-    }
-    
-    private async Task<IReadOnlyCollection<BlobContainerClient>> ListContainersAsync(CancellationToken cancellationToken)
-    {
-        var result = new List<BlobContainerClient>();
-
-        //check that the special "$logs" container exists
-        BlobContainerClient logsContainerClient = _client.GetBlobContainerClient(blobContainerName: "$logs");
-        Task<Response<BlobContainerProperties>> logsProps = logsContainerClient.GetPropertiesAsync(cancellationToken: cancellationToken);
-
-        await foreach (BlobContainerItem container in _client.GetBlobContainersAsync(traits: BlobContainerTraits.Metadata).ConfigureAwait(false))
-        {
-            BlobContainerClient client = _client.GetBlobContainerClient(container.Name);
-
-            if (client != null)
-                result.Add(client);
-        }
-
-        try
-        {
-            await logsProps.ConfigureAwait(false);
-            result.Add(logsContainerClient);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ContainerNotFound")
-        {
-            _logger.LogError(string.Format(Resources.ContainerNotFound, logsContainerClient.Name));
-        }
-
-        return result;
-    }
-
     public async Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,
         CancellationToken cancellationToken = default)
     {
@@ -138,6 +101,9 @@ public class AzureBlobStorage : IStoragePlugin
 
         if (dataStream == null)
             throw new ArgumentNullException(nameof(dataStream));
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -179,6 +145,9 @@ public class AzureBlobStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -229,6 +198,9 @@ public class AzureBlobStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -284,6 +256,9 @@ public class AzureBlobStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -324,6 +299,12 @@ public class AzureBlobStorage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -361,6 +342,12 @@ public class AzureBlobStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         try
         {
@@ -415,6 +402,12 @@ public class AzureBlobStorage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         try
         {
@@ -479,6 +472,49 @@ public class AzureBlobStorage : IStoragePlugin
         }
 
         return new AzureContainerPathPart(containerName, relativePath);
+    }
+
+    private async Task ListAsync(BlobContainerClient containerClient, List<StorageEntity> result, string path,
+        StorageSearchOptions searchOptions, StorageListOptions listOptions,
+        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+    {
+        using var browser = new AzureContainerBrowser(_logger, containerClient);
+        IReadOnlyCollection<StorageEntity> containerBlobs =
+            await browser.ListFolderAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
+
+        if (containerBlobs.Count > 0)
+        {
+            result.AddRange(containerBlobs);
+        }
+    }
+
+    private async Task<IReadOnlyCollection<BlobContainerClient>> ListContainersAsync(CancellationToken cancellationToken)
+    {
+        var result = new List<BlobContainerClient>();
+
+        //check that the special "$logs" container exists
+        BlobContainerClient logsContainerClient = _client.GetBlobContainerClient(blobContainerName: "$logs");
+        Task<Response<BlobContainerProperties>> logsProps = logsContainerClient.GetPropertiesAsync(cancellationToken: cancellationToken);
+
+        await foreach (BlobContainerItem container in _client.GetBlobContainersAsync(traits: BlobContainerTraits.Metadata).ConfigureAwait(false))
+        {
+            BlobContainerClient client = _client.GetBlobContainerClient(container.Name);
+
+            if (client != null)
+                result.Add(client);
+        }
+
+        try
+        {
+            await logsProps.ConfigureAwait(false);
+            result.Add(logsContainerClient);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ContainerNotFound")
+        {
+            _logger.LogError(string.Format(Resources.ContainerNotFound, logsContainerClient.Name));
+        }
+
+        return result;
     }
 
     private async Task<BlobContainerClient> GetBlobContainerClient(string containerName)

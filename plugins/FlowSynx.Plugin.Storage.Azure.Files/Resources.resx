@@ -144,6 +144,12 @@
   <data name="SomethingWrongHappenedDuringProcessingExistingFile" xml:space="preserve">
     <value>Something wrong happened during processing existing file on Azure file share!</value>
   </data>
+  <data name="ThePathIsNotDirectory" xml:space="preserve">
+    <value>The entered path is not a directory.</value>
+  </data>
+  <data name="ThePathIsNotFile" xml:space="preserve">
+    <value>The entered path is not a file.</value>
+  </data>
   <data name="ThePathMustBeFile" xml:space="preserve">
     <value>The path must be a file. Please specified a file path.</value>
   </data>

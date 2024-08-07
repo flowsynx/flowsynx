@@ -78,6 +78,12 @@ public class AmazonS3Storage : IStoragePlugin
         StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
         CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         var result = new List<StorageEntity>();
         var buckets = new List<string>();
 
@@ -112,6 +118,9 @@ public class AmazonS3Storage : IStoragePlugin
         if (dataStream == null)
             throw new ArgumentNullException(nameof(dataStream));
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -134,6 +143,9 @@ public class AmazonS3Storage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -168,6 +180,9 @@ public class AmazonS3Storage : IStoragePlugin
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
 
         try
         {
@@ -204,6 +219,9 @@ public class AmazonS3Storage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
         try
         {
             var pathParts = GetPartsAsync(path);
@@ -225,8 +243,11 @@ public class AmazonS3Storage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!path.EndsWith("/"))
+        if (string.IsNullOrEmpty(path))
             path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
 
         var pathParts = GetPartsAsync(path);
         var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
@@ -249,11 +270,14 @@ public class AmazonS3Storage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
-            if (!path.EndsWith("/"))
-                path += "/";
-
             var pathParts = GetPartsAsync(path);
             var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
 
@@ -283,11 +307,14 @@ public class AmazonS3Storage : IStoragePlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        if (string.IsNullOrEmpty(path))
+            path += "/";
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
         try
         {
-            if (!path.EndsWith("/"))
-                path += "/";
-
             var pathParts = GetPartsAsync(path);
             return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
         }

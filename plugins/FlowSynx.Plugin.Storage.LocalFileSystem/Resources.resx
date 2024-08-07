@@ -126,6 +126,12 @@
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever</value>
   </data>
+  <data name="ThePathIsNotDirectory" xml:space="preserve">
+    <value>The entered path is not a directory.</value>
+  </data>
+  <data name="ThePathIsNotFile" xml:space="preserve">
+    <value>The entered path is not a file.</value>
+  </data>
   <data name="TheSpecifiedDirectoryPathIsNotDirectory" xml:space="preserve">
     <value>The specified directory path '{0}' is not a directory.</value>
   </data>
