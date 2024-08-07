@@ -70,6 +70,15 @@ namespace FlowSynx.Plugin.Storage.Memory {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The bucket &apos;{0}&apos; is not exist.
+        /// </summary>
+        internal static string BucketNotExist {
+            get {
+                return ResourceManager.GetString("BucketNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
         /// </summary>
         internal static string FileIsAlreadyExistAndCannotBeOverwritten {
@@ -93,15 +102,6 @@ namespace FlowSynx.Plugin.Storage.Memory {
         internal static string PluginDescription {
             get {
                 return ResourceManager.GetString("PluginDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Resource &apos;{0}&apos; not exist!.
-        /// </summary>
-        internal static string ResourceNotExist {
-            get {
-                return ResourceManager.GetString("ResourceNotExist", resourceCulture);
             }
         }
         

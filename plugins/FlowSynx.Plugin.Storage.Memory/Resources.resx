@@ -120,6 +120,9 @@
   <data name="BucketNameIsRequired" xml:space="preserve">
     <value>Bucket name is required.</value>
   </data>
+  <data name="BucketNotExist" xml:space="preserve">
+    <value>The bucket '{0}' is not exist</value>
+  </data>
   <data name="FileIsAlreadyExistAndCannotBeOverwritten" xml:space="preserve">
     <value>File '{0}' is already exist and can't be overwritten!</value>
   </data>
@@ -128,9 +131,6 @@
   </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for managing entities in memory</value>
-  </data>
-  <data name="ResourceNotExist" xml:space="preserve">
-    <value>Resource '{0}' not exist!</value>
   </data>
   <data name="ThePathIsNotDirectory" xml:space="preserve">
     <value>The entered path is not a directory.</value>

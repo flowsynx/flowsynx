@@ -2,9 +2,6 @@
 using FlowSynx.IO;
 using FlowSynx.Plugin.Abstractions;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
 
 namespace FlowSynx.Plugin.Storage.Memory;
 
@@ -304,7 +301,7 @@ public class MemoryStorage : IStoragePlugin
         StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
     {
         if (!_entities.ContainsKey(bucketName))
-            throw new Exception($"The bucket '{bucketName}' is not exist");
+            throw new Exception(string.Format(Resources.BucketNotExist, bucketName));
 
         var bucket = _entities[bucketName];
 
