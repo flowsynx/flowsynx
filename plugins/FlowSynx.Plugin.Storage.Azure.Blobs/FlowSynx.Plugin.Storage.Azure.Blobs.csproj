@@ -13,8 +13,8 @@
 
   <ItemGroup>
 	<PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
-	<PackageReference Include="FlowSynx.Plugin.Storage.Abstractions" Version="1.3.2" />
-	<PackageReference Include="FlowSynx.Reflections" Version="1.3.2" />
+	<PackageReference Include="FlowSynx.Plugin.Storage.Abstractions" Version="1.3.3" />
+	<PackageReference Include="FlowSynx.Reflections" Version="1.3.3" />
   </ItemGroup>
 
   <ItemGroup>
