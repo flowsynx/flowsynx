@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Commons;
-using FlowSynx.Plugin.Storage;
+using FlowSynx.Plugin.Storage.Abstractions;
 using FluentValidation;
 
 namespace FlowSynx.Core.Features.Storage.Size.Query;

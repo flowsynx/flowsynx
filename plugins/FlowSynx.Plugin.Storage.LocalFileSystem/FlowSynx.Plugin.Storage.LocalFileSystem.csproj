@@ -11,8 +11,8 @@
 	<DebugType>None</DebugType>
   </PropertyGroup>
 
-	<ItemGroup>
-    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.2.3" />
+  <ItemGroup>
+    <PackageReference Include="FlowSynx.Plugin.Storage.Abstractions" Version="1.3.2" />
   </ItemGroup>
 
 	<ItemGroup>

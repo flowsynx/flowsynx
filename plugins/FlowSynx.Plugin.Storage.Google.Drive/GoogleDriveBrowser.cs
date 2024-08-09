@@ -1,4 +1,6 @@
 ﻿using FlowSynx.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 using Google.Apis.Drive.v3;
 using Microsoft.Extensions.Logging;
 

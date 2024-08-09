@@ -3,32 +3,32 @@ using FlowSynx.Configuration;
 using FlowSynx.Core.Exceptions;
 using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Parers.Namespace;
-using FlowSynx.Core.Services;
 using FlowSynx.IO.Cache;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
+using FlowSynx.Plugin.Storage.Abstractions;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Core.Parers.Norms.Storage;
 
-internal class StorageNormsParser : IStorageNormsParser
+internal class StoragePluginNormsParser : IStoragePluginNormsParser
 {
-    private readonly ILogger<StorageNormsParser> _logger;
+    private readonly ILogger<StoragePluginNormsParser> _logger;
     private readonly IConfigurationManager _configurationManager;
     private readonly IPluginsManager _pluginsManager;
     private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
     private readonly IStorageFilter _storageFilter;
     private readonly INamespaceParser _namespaceParser;
-    private readonly IMultiKeyCache<string, string, StorageNormsInfo> _multiKeyCache;
+    private readonly IMultiKeyCache<string, string, StoragePluginNorms> _multiKeyCache;
     private readonly ISerializer _serializer;
     private const string ParserSeparator = ":";
 
-    public StorageNormsParser(ILogger<StorageNormsParser> logger, IConfigurationManager configurationManager,
+    public StoragePluginNormsParser(ILogger<StoragePluginNormsParser> logger, IConfigurationManager configurationManager,
         IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
         IStorageFilter storageFilter, INamespaceParser namespaceParser,
-        IMultiKeyCache<string, string, StorageNormsInfo> multiKeyCache, ISerializer serializer)
+        IMultiKeyCache<string, string, StoragePluginNorms> multiKeyCache, ISerializer serializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(configurationManager, nameof(configurationManager));
@@ -48,7 +48,7 @@ internal class StorageNormsParser : IStorageNormsParser
         _serializer = serializer;
     }
 
-    public StorageNormsInfo Parse(string path)
+    public StoragePluginNorms Parse(string path)
     {
         try
         {
@@ -89,7 +89,7 @@ internal class StorageNormsParser : IStorageNormsParser
         return new LocalFileSystemStorage(_localStorageLogger, _storageFilter);
     }
     
-    private StorageNormsInfo CreateStorageNormsInfoInstance(IPlugin plugin, string configName, Dictionary<string, string?>? specifications, string path)
+    private StoragePluginNorms CreateStorageNormsInfoInstance(IPlugin plugin, string configName, Dictionary<string, string?>? specifications, string path)
     {
         var primaryKey = plugin.Id.ToString();
         var secondaryKey = GenerateSecondaryKey(configName, null);
@@ -102,7 +102,7 @@ internal class StorageNormsParser : IStorageNormsParser
             return cachedStorageNormsInfo;
         }
 
-        var storageNormsInfo = new StorageNormsInfo(plugin.CastTo<IStoragePlugin>(), specifications, path);
+        var storageNormsInfo = new StoragePluginNorms(plugin.CastTo<IStoragePlugin>(), specifications, path);
         _multiKeyCache.Set(primaryKey, secondaryKey, storageNormsInfo);
         storageNormsInfo.Initialize();
         return storageNormsInfo;

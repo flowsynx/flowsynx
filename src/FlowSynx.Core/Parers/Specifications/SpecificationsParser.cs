@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Reflections;
-using System.Text.Json;
+using FlowSynx.Abstractions.Attributes;
 
 namespace FlowSynx.Core.Parers.Specifications;
 

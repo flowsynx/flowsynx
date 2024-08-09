@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
+using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.Azure.Files;
 

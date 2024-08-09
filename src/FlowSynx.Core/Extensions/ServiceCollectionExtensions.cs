@@ -7,8 +7,6 @@ using FlowSynx.Core.Behaviors;
 using FlowSynx.Core.Parers.Namespace;
 using FlowSynx.Core.Parers.Norms.Storage;
 using FlowSynx.Core.Parers.Specifications;
-using FlowSynx.Core.Storage;
-using FlowSynx.Core.Storage.Filter;
 using FlowSynx.Environment;
 using FlowSynx.IO;
 using FlowSynx.Parsers;
@@ -17,10 +15,6 @@ using FlowSynx.Plugin;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Plugin.Storage.Azure.Files;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
-using FlowSynx.Core.Storage.Check;
-using FlowSynx.Core.Storage.Compress;
-using FlowSynx.Core.Storage.Copy;
-using FlowSynx.Core.Storage.Move;
 using FlowSynx.Plugin.Storage.Amazon.S3;
 using FlowSynx.Plugin.Storage.Azure.Blobs;
 using FlowSynx.Plugin.Storage.Google.Cloud;
@@ -50,13 +44,11 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            .AddFlowSynxStorageServices()
-            .AddMultiKeyCache<string, string, StorageNormsInfo>()
-            .AddScoped<IStorageNormsParser, StorageNormsParser>()
+            .AddStorageService()
+            .AddMultiKeyCache<string, string, StoragePluginNorms>()
+            .AddScoped<IStoragePluginNormsParser, StoragePluginNormsParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
-            .AddScoped<ISpecificationsParser, SpecificationsParser>()
-            .AddScoped<IStorageFilter, StorageFilter>()
-            .AddScoped<IStorageService, StorageService>();
+            .AddScoped<ISpecificationsParser, SpecificationsParser>();
 
         return services;
     }
@@ -68,17 +60,7 @@ public static class ServiceCollectionExtensions
             .AddConfiguration();
         return services;
     }
-
-    public static IServiceCollection AddFlowSynxStorageServices(this IServiceCollection services)
-    {
-        services
-            .AddScoped<IEntityCopier, EntityCopier>()
-            .AddScoped<IEntityMover, EntityMover>()
-            .AddScoped<IEntityChecker, EntityChecker>()
-            .AddScoped<IEntityCompress, EntityCompress>();
-        return services;
-    }
-
+    
     public static IServiceCollection AddFlowSynxPlugins(this IServiceCollection services)
     {
         services

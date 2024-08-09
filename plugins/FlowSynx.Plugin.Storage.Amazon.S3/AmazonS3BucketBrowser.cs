@@ -1,7 +1,8 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
 using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Google.Cloud;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;

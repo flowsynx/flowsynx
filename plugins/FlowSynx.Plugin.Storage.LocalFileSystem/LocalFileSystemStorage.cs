@@ -3,6 +3,10 @@ using EnsureThat;
 using FlowSynx.IO;
 using FlowSynx.Net;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 using FlowSynx.Security;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;

@@ -1,6 +1,8 @@
 ﻿using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs;
 using FlowSynx.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;

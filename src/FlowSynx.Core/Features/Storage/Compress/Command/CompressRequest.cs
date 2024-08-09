@@ -2,6 +2,7 @@
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Core.Services;
+using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Core.Features.Storage.Compress.Command;
 

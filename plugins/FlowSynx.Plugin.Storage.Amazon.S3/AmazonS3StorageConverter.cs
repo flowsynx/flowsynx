@@ -1,8 +1,9 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
 using FlowSynx.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
 
-namespace FlowSynx.Plugin.Storage.Google.Cloud;
+namespace FlowSynx.Plugin.Storage.Amazon.S3;
 
 static class AmazonS3StorageConverter
 {

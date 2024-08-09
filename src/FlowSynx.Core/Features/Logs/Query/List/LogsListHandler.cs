@@ -7,6 +7,7 @@ using FlowSynx.Logging.InMemory;
 using Microsoft.Extensions.DependencyInjection;
 using FlowSynx.Logging;
 using FlowSynx.Parsers.Date;
+using FlowSynx.Parsers.Extensions;
 
 namespace FlowSynx.Core.Features.Logs.Query.List;
 

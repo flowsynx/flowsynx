@@ -9,6 +9,10 @@ using FlowSynx.IO;
 using Google;
 using System.Net;
 using System.Text;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 
 namespace FlowSynx.Plugin.Storage.Google.Cloud;
 

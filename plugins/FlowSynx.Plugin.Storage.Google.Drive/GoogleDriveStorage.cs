@@ -13,6 +13,10 @@ using FlowSynx.Net;
 using Google.Apis.Upload;
 using DriveFile = Google.Apis.Drive.v3.Data.File;
 using System.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 
 
 namespace FlowSynx.Plugin.Storage.Google.Drive;

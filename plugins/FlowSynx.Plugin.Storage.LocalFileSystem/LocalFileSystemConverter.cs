@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Security;
 using System.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 

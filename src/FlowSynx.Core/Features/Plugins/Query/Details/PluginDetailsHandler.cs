@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
+using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Reflections;
 using FlowSynx.Core.Extensions;

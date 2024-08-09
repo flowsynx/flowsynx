@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using FlowSynx.Abstractions;
-using FlowSynx.Plugin.Storage;
+using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Core.Features.Storage.Size.Query;
 

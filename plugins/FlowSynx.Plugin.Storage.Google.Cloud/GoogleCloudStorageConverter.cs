@@ -1,4 +1,5 @@
 ﻿using FlowSynx.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
 using Object = Google.Apis.Storage.v1.Data.Object;
 
 namespace FlowSynx.Plugin.Storage.Google.Cloud;

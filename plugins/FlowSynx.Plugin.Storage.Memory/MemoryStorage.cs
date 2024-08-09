@@ -1,6 +1,10 @@
 ﻿using EnsureThat;
 using FlowSynx.IO;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Memory;
@@ -327,7 +331,7 @@ public class MemoryStorage : IStoragePlugin
             var bucket = _entities[bucketName];
             return bucket.ContainsKey(path);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }
@@ -339,7 +343,7 @@ public class MemoryStorage : IStoragePlugin
         {
             return _entities.ContainsKey(bucketName);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }

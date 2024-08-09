@@ -8,9 +8,12 @@ using Amazon;
 using Amazon.Runtime;
 using FlowSynx.IO;
 using System.Net;
-using FlowSynx.Plugin.Storage.Google.Cloud;
 using Amazon.S3.Model;
 using Amazon.S3.Transfer;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
 

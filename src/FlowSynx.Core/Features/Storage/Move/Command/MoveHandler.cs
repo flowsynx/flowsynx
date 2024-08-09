@@ -4,9 +4,9 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Core.Features.Storage.List.Query;
 using FlowSynx.Core.Parers.Norms.Storage;
-using FlowSynx.Core.Storage;
-using FlowSynx.Core.Storage.Move;
-using FlowSynx.Plugin.Storage;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
+using FlowSynx.Plugin.Storage.Move;
+using FlowSynx.Plugin.Storage.Services;
 
 namespace FlowSynx.Core.Features.Storage.Move.Command;
 
@@ -14,23 +14,23 @@ internal class MoveHandler : IRequestHandler<MoveRequest, Result<MoveResponse>>
 {
     private readonly ILogger<ListHandler> _logger;
     private readonly IStorageService _storageService;
-    private readonly IStorageNormsParser _storageNormsParser;
+    private readonly IStoragePluginNormsParser _storagePluginNormsParser;
 
-    public MoveHandler(ILogger<ListHandler> logger, IStorageService storageService, IStorageNormsParser storageNormsParser)
+    public MoveHandler(ILogger<ListHandler> logger, IStorageService storageService, IStoragePluginNormsParser storagePluginNormsParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(storageService, nameof(storageService));
         _logger = logger;
         _storageService = storageService;
-        _storageNormsParser = storageNormsParser;
+        _storagePluginNormsParser = storagePluginNormsParser;
     }
 
     public async Task<Result<MoveResponse>> Handle(MoveRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var sourceStorageNorms = _storageNormsParser.Parse(request.SourcePath);
-            var destinationStorageNorms = _storageNormsParser.Parse(request.DestinationPath);
+            var sourceStorageNorms = _storagePluginNormsParser.Parse(request.SourcePath);
+            var destinationStorageNorms = _storagePluginNormsParser.Parse(request.DestinationPath);
 
             var searchOptions = new StorageSearchOptions()
             {

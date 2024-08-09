@@ -8,6 +8,10 @@ using EnsureThat;
 using Azure.Storage;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 

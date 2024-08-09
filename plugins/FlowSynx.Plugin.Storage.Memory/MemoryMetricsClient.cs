@@ -29,7 +29,8 @@ public class MemoryMetricsClient
 
         using (var process = Process.Start(info))
         {
-            output = process.StandardOutput.ReadToEnd();
+            if (process != null) 
+                output = process.StandardOutput.ReadToEnd();
         }
 
         var lines = output.Trim().Split("\n");
@@ -59,7 +60,8 @@ public class MemoryMetricsClient
 
         using (var process = Process.Start(info))
         {
-            output = process.StandardOutput.ReadToEnd();
+            if (process != null) 
+                output = process.StandardOutput.ReadToEnd();
         }
 
         var lines = output.Split("\n");

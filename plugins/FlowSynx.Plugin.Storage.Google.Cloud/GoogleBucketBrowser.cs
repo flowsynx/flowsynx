@@ -1,4 +1,6 @@
 ﻿using FlowSynx.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
 

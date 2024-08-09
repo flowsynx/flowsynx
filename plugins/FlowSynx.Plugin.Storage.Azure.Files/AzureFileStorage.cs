@@ -7,6 +7,10 @@ using Azure.Storage.Files.Shares;
 using FlowSynx.Reflections;
 using Azure.Storage.Files.Shares.Models;
 using FlowSynx.IO;
+using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
+using FlowSynx.Plugin.Storage.Abstractions.Models;
+using FlowSynx.Plugin.Storage.Abstractions.Options;
 
 namespace FlowSynx.Plugin.Storage.Azure.Files;
 
