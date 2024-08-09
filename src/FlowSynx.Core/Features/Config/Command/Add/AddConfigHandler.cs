@@ -29,16 +29,21 @@ internal class AddConfigHandler : IRequestHandler<AddConfigRequest, Result<AddCo
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 Type = request.Type,
+                CreatedTime = DateTimeOffset.Now,
+                ModifiedTime = DateTimeOffset.Now,
                 Specifications = request.Specifications,
             };
 
-            var addedStatus = _configurationManager.AddSetting(configItem);
-            if (addedStatus != ConfigurationStatus.Added) 
-                return await Result<AddConfigResponse>.FailAsync(Resources.AddConfigHandlerItemIsAlreadyExist);
+            var isExist = _configurationManager.IsExist(request.Name);
+            if (isExist)
+            {
+                return await Result<AddConfigResponse>.FailAsync(string.Format(Resources.AddConfigHandlerItemIsAlreadyExist, request.Name));
+            }
 
+            var result = _configurationManager.Add(configItem);
             var response = new AddConfigResponse
             {
-                Id = configItem.Id, 
+                Id = result.Id, 
                 Name = configItem.Name
             };
             return await Result<AddConfigResponse>.SuccessAsync(response, Resources.AddConfigHandlerSuccessfullyAdded);

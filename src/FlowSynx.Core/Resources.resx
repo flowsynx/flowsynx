@@ -226,7 +226,7 @@
     <value>The file was writen successfully.</value>
   </data>
   <data name="AddConfigHandlerItemIsAlreadyExist" xml:space="preserve">
-    <value>The given config name is already exist!</value>
+    <value>The given config name {0} is already exist!</value>
   </data>
   <data name="AddConfigHandlerSuccessfullyAdded" xml:space="preserve">
     <value>The configuration was added successfully.</value>

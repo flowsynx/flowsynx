@@ -65,7 +65,7 @@ internal class StoragePluginNormsParser : IStoragePluginNormsParser
                 return CreateStorageNormsInfoInstance(GetLocalFileSystemStoragePlugin(), "LocalFileSystem", null, path);
             }
 
-            var fileSystem = _configurationManager.GetSetting(segments[0]);
+            var fileSystem = _configurationManager.Get(segments[0]);
 
             if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)
                 throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserInvalidStorageType, fileSystem.Type));

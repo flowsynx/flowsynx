@@ -23,7 +23,7 @@ internal class ConfigDetailsHandler : IRequestHandler<ConfigDetailsRequest, Resu
     {
         try
         {
-            var result = _configurationManager.GetSetting(request.Name);
+            var result = _configurationManager.Get(request.Name);
 
             var response = new ConfigDetailsResponse
             {

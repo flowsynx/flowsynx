@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using FlowSynx.Abstractions;
 using FlowSynx.Configuration;
+using FlowSynx.Configuration.Options;
 
 namespace FlowSynx.Core.Features.Config.Query.List;
 
@@ -20,22 +21,28 @@ internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEn
     {
         try
         {
-            var result = _configurationManager.GetSettings();
-            if (!string.IsNullOrEmpty(request.Type))
-                result = result.Where(x => string.Equals(x.Type, request.Type, StringComparison.InvariantCultureIgnoreCase));
-
-            var configurationItems = result as ConfigurationItem[] ?? result.ToArray();
-            if (!configurationItems.Any())
+            var searchOptions = new ConfigurationSearchOptions()
             {
-                _logger.LogWarning("No config item found!");
-                return await Result<IEnumerable<ConfigListResponse>>.FailAsync("No config item found!");
-            }
+                Include = request.Include,
+                Exclude = request.Exclude,
+                MinimumAge = request.MinAge,
+                MaximumAge = request.MaxAge,
+                CaseSensitive = request.CaseSensitive ?? false
+            };
 
-            var response = configurationItems.Select(x => new ConfigListResponse
+            var listOptions = new ConfigurationListOptions()
+            {
+                Sorting = request.Sorting,
+                MaxResult = request.MaxResults
+            };
+
+            var result = _configurationManager.List(searchOptions, listOptions);
+            var response = result.Select(x => new ConfigListResponse
             {
                 Id = x.Id,
                 Name = x.Name,
-                Type = x.Type
+                Type = x.Type,
+                ModifiedTime = x.ModifiedTime,
             });
 
             return await Result<IEnumerable<ConfigListResponse>>.SuccessAsync(response);

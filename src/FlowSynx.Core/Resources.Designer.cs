@@ -61,7 +61,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given config name is already exist!.
+        ///   Looks up a localized string similar to The given config name {0} is already exist!.
         /// </summary>
         internal static string AddConfigHandlerItemIsAlreadyExist {
             get {

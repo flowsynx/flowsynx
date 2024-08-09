@@ -4,6 +4,8 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Configuration;
 using FlowSynx.Core.Features.Storage.List.Query;
+using Azure;
+using FlowSynx.Core.Features.Config.Command.Add;
 
 namespace FlowSynx.Core.Features.Config.Command.Delete;
 
@@ -24,8 +26,12 @@ internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result
     {
         try
         {
-            _configurationManager.DeleteSetting(request.Name);
-            return await Result<DeleteConfigResponse>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
+            var result = _configurationManager.Delete(request.Name);
+            var response = new DeleteConfigResponse
+            {
+                Id = result.Id
+            };
+            return await Result<DeleteConfigResponse>.SuccessAsync(response, Resources.DeleteConfigHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)
         {

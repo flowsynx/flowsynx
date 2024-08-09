@@ -1,4 +1,5 @@
 ﻿using EnsureThat;
+using FlowSynx.Configuration.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;
@@ -20,7 +21,9 @@ public class ConfigurationManagerHealthCheck : IHealthCheck
     {
         try
         {
-            _configurationManager.GetSettings();
+            var searchOptions = new ConfigurationSearchOptions();
+            var listOptions = new ConfigurationListOptions();
+            _configurationManager.List(searchOptions, listOptions);
             return Task.FromResult(HealthCheckResult.Healthy(Resources.ConfigurationManagerHealthCheckConfigurationRegistryAvailable));
         }
         catch (Exception ex)

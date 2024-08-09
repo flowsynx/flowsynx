@@ -2,5 +2,5 @@
 
 public class DeleteConfigResponse
 {
-
+    public Guid Id { get; set; }
 }
