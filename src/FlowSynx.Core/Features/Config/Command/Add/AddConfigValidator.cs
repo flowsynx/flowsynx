@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Plugin.Abstractions;
 using FluentValidation;
 using FlowSynx.Core.Parers.Specifications;
+using FlowSynx.Plugin;
 
 namespace FlowSynx.Core.Features.Config.Command.Add;
 

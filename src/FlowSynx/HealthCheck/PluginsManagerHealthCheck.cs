@@ -1,5 +1,7 @@
 ﻿using EnsureThat;
+using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Plugin.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;
@@ -21,7 +23,9 @@ public class PluginsManagerHealthCheck : IHealthCheck
     {
         try
         {
-            _pluginsManager.Plugins();
+            var searchOptions = new PluginSearchOptions();
+            var listOptions = new PluginListOptions();
+            _pluginsManager.List(searchOptions, listOptions);
             return Task.FromResult(HealthCheckResult.Healthy(Resources.PluginsManagerHealthCheckConfigurationRegistryAvailable));
         }
         catch (Exception ex)

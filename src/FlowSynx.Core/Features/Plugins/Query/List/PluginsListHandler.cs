@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Commons;
+using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Plugin.Options;
 
 namespace FlowSynx.Core.Features.Plugins.Query.List;
 
@@ -24,16 +26,21 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
     {
         try
         {
-            IEnumerable<IPlugin> plugins;
-            if (string.IsNullOrEmpty(request.Namespace))
-                plugins = _pluginsManager.Plugins();
-            else
+            var searchOptions = new PluginSearchOptions()
             {
-                var @namespace = EnumUtils.GetEnumValueOrDefault<PluginNamespace>(request.Namespace)!.Value;
-                plugins = _pluginsManager.Plugins(@namespace);
-            }
+                Include = request.Include,
+                Exclude = request.Exclude,
+                CaseSensitive = request.CaseSensitive ?? false
+            };
 
-            var response = plugins.Select(x => new PluginsListResponse
+            var listOptions = new PluginListOptions()
+            {
+                Sorting = request.Sorting,
+                MaxResult = request.MaxResults
+            };
+
+            var result = _pluginsManager.List(searchOptions, listOptions);
+            var response = result.Select(x => new PluginsListResponse
             {
                 Id = x.Id,
                 Type = x.Type,

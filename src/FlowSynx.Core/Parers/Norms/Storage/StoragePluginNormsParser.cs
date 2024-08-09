@@ -5,6 +5,7 @@ using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Parers.Namespace;
 using FlowSynx.IO.Cache;
 using FlowSynx.IO.Serialization;
+using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Storage;
 using FlowSynx.Plugin.Storage.Abstractions;
@@ -74,7 +75,7 @@ internal class StoragePluginNormsParser : IStoragePluginNormsParser
             if (fileSystem.Specifications != null)
                 specifications = fileSystem.Specifications;
 
-            var plugin = _pluginsManager.GetPlugin(fileSystem.Type);
+            var plugin = _pluginsManager.Get(fileSystem.Type);
             return CreateStorageNormsInfoInstance(plugin, segments[0], specifications, segments[1]);
         }
         catch (Exception ex)

@@ -3,9 +3,9 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Abstractions.Attributes;
-using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Reflections;
 using FlowSynx.Core.Extensions;
+using FlowSynx.Plugin;
+using FlowSynx.Reflections;
 
 namespace FlowSynx.Core.Features.Plugins.Query.Details;
 
@@ -26,7 +26,7 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
     {
         try
         {
-            var plugin = _pluginsManager.GetPlugin(request.Type);
+            var plugin = _pluginsManager.Get(request.Type);
             var specificationsType = plugin.SpecificationsType;
             var properties = specificationsType.Properties().Where(x=>x.CanWrite).ToList();
             var specifications = properties

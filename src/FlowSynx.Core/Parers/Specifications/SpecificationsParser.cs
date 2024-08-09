@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Reflections;
 using FlowSynx.Abstractions.Attributes;
+using FlowSynx.Plugin;
 
 namespace FlowSynx.Core.Parers.Specifications;
 
@@ -15,7 +16,7 @@ public class SpecificationsParser : ISpecificationsParser
 
     public SpecificationsResult Parse(string type, Dictionary<string, string?>? specifications)
     {
-        IPlugin plugin = _pluginsManager.GetPlugin(type);
+        IPlugin plugin = _pluginsManager.Get(type);
         var specificationsType = plugin.SpecificationsType;
         var requiredProperties = specificationsType
             .Properties()
