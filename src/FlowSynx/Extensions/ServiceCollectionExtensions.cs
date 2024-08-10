@@ -3,6 +3,7 @@ using FlowSynx.Services;
 using FlowSynx.Core.Services;
 using FlowSynx.Environment;
 using FlowSynx.Logging;
+using FlowSynx.Logging.Extensions;
 using Microsoft.OpenApi.Models;
 
 namespace FlowSynx.Extensions;
@@ -61,6 +62,8 @@ public static class ServiceCollectionExtensions
             config.OutputTemplate = template;
             config.MinLevel = level;
         }));
+
+        services.AddLoggerFilter();
 
         return services;
     }

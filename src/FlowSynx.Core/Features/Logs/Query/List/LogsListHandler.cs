@@ -2,28 +2,27 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Extensions;
+using FlowSynx.Logging.Extensions;
 using FlowSynx.Logging.InMemory;
 using Microsoft.Extensions.DependencyInjection;
-using FlowSynx.Logging;
-using FlowSynx.Parsers.Date;
-using FlowSynx.Parsers.Extensions;
+using FlowSynx.Logging.Filters;
+using FlowSynx.Logging.Options;
 
 namespace FlowSynx.Core.Features.Logs.Query.List;
 
 internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumerable<LogsListResponse>>>
 {
     private readonly ILogger<LogsListHandler> _logger;
-    private readonly IDateParser _dateParser;
+    private readonly ILogFilter _logFilter;
     private readonly InMemoryLoggerProvider? _inMemoryLogger;
 
-    public LogsListHandler(ILogger<LogsListHandler> logger, IDateParser dateParser, IServiceProvider serviceProvider)
+    public LogsListHandler(ILogger<LogsListHandler> logger, ILogFilter logFilter, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(logFilter, nameof(logFilter));
         EnsureArg.IsNotNull(serviceProvider, nameof(serviceProvider));
-        EnsureArg.IsNotNull(dateParser, nameof(dateParser));
         _logger = logger;
-        _dateParser = dateParser;
+        _logFilter = logFilter;
         var loggerProviders = serviceProvider.GetServices<ILoggerProvider>();
         _inMemoryLogger = GeInMemoryLoggerProvider(loggerProviders);
     }
@@ -41,34 +40,29 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
         return null;
     }
 
-    public async Task<Result<IEnumerable<LogsListResponse>>> Handle(LogsListRequest listRequest, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<LogsListResponse>>> Handle(LogsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-
             EnsureArg.IsNotNull(_inMemoryLogger, nameof(_inMemoryLogger));
 
-            var predicate = PredicateBuilder.True<LogMessage>();
-
-            if (!string.IsNullOrEmpty(listRequest.MinAge))
+            var searchOptions = new LogSearchOptions()
             {
-                var parsedDateTime = _dateParser.Parse(listRequest.MinAge);
-                predicate = predicate.And(p => p.TimeStamp >= parsedDateTime);
-            }
+                Include = request.Include,
+                Exclude = request.Exclude,
+                MinimumAge = request.MinAge,
+                MaximumAge = request.MaxAge,
+                CaseSensitive = request.CaseSensitive ?? false,
+                Level = request.Level,
+            };
 
-            if (!string.IsNullOrEmpty(listRequest.MaxAge))
+            var listOptions = new LogListOptions()
             {
-                var parsedDateTime = _dateParser.Parse(listRequest.MaxAge);
-                predicate = predicate.And(p => p.TimeStamp <= parsedDateTime);
-            }
+                Sorting = request.Sorting,
+                MaxResult = request.MaxResults
+            };
 
-            if (!string.IsNullOrEmpty(listRequest.Level))
-            {
-                var level = listRequest.Level.ToStandardLogLevel();
-                predicate = predicate.And(p => p.Level == level);
-            }
-
-            var result = _inMemoryLogger.RecordedLogs.Where(predicate.Compile());
+            var result = _logFilter.FilterLogsList(_inMemoryLogger.RecordedLogs, searchOptions, listOptions);
             var response = result.Select(x => new LogsListResponse()
             {
                 UserName = x.UserName,
