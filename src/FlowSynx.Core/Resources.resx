@@ -241,7 +241,7 @@
     <value>Type should be not empty.</value>
   </data>
   <data name="DeleteConfigHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The given config name is deleted.</value>
+    <value>The given configs are deleted.</value>
   </data>
   <data name="DeleteConfigValidatorNameValueMustNotNullOrEmptyMessage" xml:space="preserve">
     <value>Name should be not empty.</value>

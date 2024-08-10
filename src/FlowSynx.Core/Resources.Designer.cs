@@ -142,7 +142,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given config name is deleted..
+        ///   Looks up a localized string similar to The given configs are deleted..
         /// </summary>
         internal static string DeleteConfigHandlerSuccessfullyDeleted {
             get {

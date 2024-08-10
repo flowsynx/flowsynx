@@ -5,11 +5,12 @@ using FlowSynx.Abstractions;
 using FlowSynx.Configuration;
 using FlowSynx.Core.Features.Storage.List.Query;
 using Azure;
+using FlowSynx.Configuration.Options;
 using FlowSynx.Core.Features.Config.Command.Add;
 
 namespace FlowSynx.Core.Features.Config.Command.Delete;
 
-internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result<DeleteConfigResponse>>
+internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result<IEnumerable<DeleteConfigResponse>>>
 {
     private readonly ILogger<ListHandler> _logger;
     private readonly IConfigurationManager _configurationManager;
@@ -22,20 +23,30 @@ internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result
         _configurationManager = configurationManager;
     }
 
-    public async Task<Result<DeleteConfigResponse>> Handle(DeleteConfigRequest request, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<DeleteConfigResponse>>> Handle(DeleteConfigRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var result = _configurationManager.Delete(request.Name);
-            var response = new DeleteConfigResponse
+            var searchOptions = new ConfigurationSearchOptions
             {
-                Id = result.Id
+                Include = request.Include,
+                Exclude = request.Exclude,
+                CaseSensitive = request.CaseSensitive,
+                MinimumAge = request.MinimumAge,
+                MaximumAge = request.MaximumAge,
             };
-            return await Result<DeleteConfigResponse>.SuccessAsync(response, Resources.DeleteConfigHandlerSuccessfullyDeleted);
+
+            var result = _configurationManager.Delete(searchOptions);
+            var response = result.Select(c=> new DeleteConfigResponse
+            {
+                Id = c.Id
+            });
+
+            return await Result<IEnumerable<DeleteConfigResponse>>.SuccessAsync(response, Resources.DeleteConfigHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)
         {
-            return await Result<DeleteConfigResponse>.FailAsync(new List<string> { ex.Message });
+            return await Result<IEnumerable<DeleteConfigResponse>>.FailAsync(new List<string> { ex.Message });
         }
     }
 }
