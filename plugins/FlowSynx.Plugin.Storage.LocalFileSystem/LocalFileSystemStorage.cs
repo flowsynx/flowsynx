@@ -69,7 +69,7 @@ public class LocalFileSystemStorage : IPlugin
     public Task<object> CreateAsync(string entity, PluginFilters? filters, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = entity.ToUnixPath();
+        var path = PathHelper.ToUnixPath(entity);
         var createFilters = filters.ToObject<CreateFilters>();
 
         if (string.IsNullOrEmpty(path))
@@ -89,7 +89,7 @@ public class LocalFileSystemStorage : IPlugin
     public Task<object> WriteAsync(string entity, PluginFilters? filters, 
         object dataOptions, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = entity.ToUnixPath();
+        var path = PathHelper.ToUnixPath(entity);
         var writeFilters = filters.ToObject<WriteFilters>();
 
         if (string.IsNullOrEmpty(path))
@@ -116,7 +116,7 @@ public class LocalFileSystemStorage : IPlugin
     public Task<object> ReadAsync(string entity, PluginFilters? filters, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = entity.ToUnixPath();
+        var path = PathHelper.ToUnixPath(entity);
         var readFilters = filters.ToObject<ReadFilters>();
 
         if (string.IsNullOrEmpty(path))
@@ -156,7 +156,7 @@ public class LocalFileSystemStorage : IPlugin
     public Task<bool> ExistAsync(string entity, PluginFilters? filters,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = entity.ToUnixPath();
+        var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -170,7 +170,7 @@ public class LocalFileSystemStorage : IPlugin
     public Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = entity.ToUnixPath();
+        var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 

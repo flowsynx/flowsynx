@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Security;
 using System.IO;
+using FlowSynx.IO;
 using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
@@ -8,7 +9,7 @@ static class LocalFileSystemConverter
 {
     public static StorageEntity ToEntity(this DirectoryInfo directory, bool? includeMetadata)
     {
-        var entity = new StorageEntity(directory.FullName.ToUnixPath(), StorageEntityItemKind.Directory)
+        var entity = new StorageEntity(PathHelper.ToUnixPath(directory.FullName), StorageEntityItemKind.Directory)
         {
             CreatedTime = directory.CreationTime,
             ModifiedTime = directory.LastWriteTime,
@@ -26,7 +27,7 @@ static class LocalFileSystemConverter
     public static StorageEntity ToEntity(this FileInfo file, bool? hashing, bool? includeMetadata)
     {
         var fileInfo = new FileInfo(file.FullName);
-        var entity = new StorageEntity(file.FullName.ToUnixPath(), StorageEntityItemKind.File)
+        var entity = new StorageEntity(PathHelper.ToUnixPath(file.FullName), StorageEntityItemKind.File)
         {
             CreatedTime = file.CreationTimeUtc,
             ModifiedTime = file.LastWriteTimeUtc,
