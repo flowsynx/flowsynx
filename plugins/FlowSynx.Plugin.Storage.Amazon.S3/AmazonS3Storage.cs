@@ -2,37 +2,31 @@
 using EnsureThat;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Reflections;
 using Microsoft.Extensions.Logging;
 using Amazon;
 using Amazon.Runtime;
-using FlowSynx.IO;
-using System.Net;
-using Amazon.S3.Model;
 using Amazon.S3.Transfer;
-using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Abstractions.Models;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
 
-public class AmazonS3Storage : IStoragePlugin
+public class AmazonS3Storage : IPlugin
 {
     private readonly ILogger<AmazonS3Storage> _logger;
-    private readonly IStorageFilter _storageFilter;
+    //private readonly IStorageFilter _storageFilter;
     private readonly ISerializer _serializer;
     private AmazonS3StorageSpecifications? _s3StorageSpecifications;
     private AmazonS3Client _client = null!;
     private TransferUtility _fileTransferUtility = null!;
 
-    public AmazonS3Storage(ILogger<AmazonS3Storage> logger, IStorageFilter storageFilter, ISerializer serializer)
+    public AmazonS3Storage(ILogger<AmazonS3Storage> logger, ISerializer serializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
+        //EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
         EnsureArg.IsNotNull(serializer, nameof(serializer));
         _logger = logger;
-        _storageFilter = storageFilter;
+        //_storageFilter = storageFilter;
         _serializer = serializer;
     }
 
@@ -40,12 +34,12 @@ public class AmazonS3Storage : IStoragePlugin
     public string Name => "Amazon.S3";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications { get; set; }
+    public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(AmazonS3StorageSpecifications);
 
     public Task Initialize()
     {
-        _s3StorageSpecifications = Specifications.DictionaryToObject<AmazonS3StorageSpecifications>();
+        _s3StorageSpecifications = Specifications.ToObject<AmazonS3StorageSpecifications>();
         _client = CreateClient(_s3StorageSpecifications);
         _fileTransferUtility = CreateTransferUtility(_client);
         return Task.CompletedTask;
@@ -58,7 +52,7 @@ public class AmazonS3Storage : IStoragePlugin
 
         if (specifications.SecretKey == null)
             throw new ArgumentNullException(nameof(specifications.SecretKey));
-        
+
         var awsCredentials = (string.IsNullOrEmpty(specifications.SessionToken))
             ? (AWSCredentials)new BasicAWSCredentials(specifications.AccessKey, specifications.SecretKey)
             : new SessionAWSCredentials(specifications.AccessKey, specifications.SecretKey, specifications.SessionToken);
@@ -67,357 +61,398 @@ public class AmazonS3Storage : IStoragePlugin
         return new AmazonS3Client(awsCredentials, config);
     }
 
+    public Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new StorageException(Resources.AboutOperrationNotSupported);
+    }
+
+    public Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
     private TransferUtility CreateTransferUtility(AmazonS3Client client)
     {
         return new TransferUtility(client, new TransferUtilityConfig());
     }
 
-    public Task<StorageUsage> About(CancellationToken cancellationToken = default)
+    public Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
-        CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            path += "/";
+    //public Task<StorageUsage> About(CancellationToken cancellationToken = default)
+    //{
+    //    throw new NotImplementedException();
+    //}
 
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
+    //public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
+    //    StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
+    //    CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        path += "/";
 
-        var result = new List<StorageEntity>();
-        var buckets = new List<string>();
+    //    if (!PathHelper.IsDirectory(path))
+    //        throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
-        {
-            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
-            result.AddRange(buckets.Select(b=> b.ToEntity(metadataOptions.IncludeMetadata)));
+    //    var result = new List<StorageEntity>();
+    //    var buckets = new List<string>();
 
-            if (!searchOptions.Recurse)
-                return result;
-        }
-        else
-        {
-            var pathParts = GetPartsAsync(path);
-            path = pathParts.RelativePath;
-            buckets.Add(pathParts.BucketName);
-        }
+    //    if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
+    //    {
+    //        buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
+    //        result.AddRange(buckets.Select(b=> b.ToEntity(metadataOptions.IncludeMetadata)));
 
-        await Task.WhenAll(buckets.Select(b =>
-            ListAsync(b, result, path, searchOptions, listOptions, metadataOptions, cancellationToken))
-        ).ConfigureAwait(false);
+    //        if (!searchOptions.Recurse)
+    //            return result;
+    //    }
+    //    else
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        path = pathParts.RelativePath;
+    //        buckets.Add(pathParts.BucketName);
+    //    }
 
-        return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-    }
+    //    await Task.WhenAll(buckets.Select(b =>
+    //        ListAsync(b, result, path, searchOptions, listOptions, metadataOptions, cancellationToken))
+    //    ).ConfigureAwait(false);
 
-    public async Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,
-        CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //    return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
+    //}
 
-        if (dataStream == null)
-            throw new ArgumentNullException(nameof(dataStream));
+    //public async Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,
+    //    CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
+    //    if (dataStream == null)
+    //        throw new ArgumentNullException(nameof(dataStream));
 
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+    //    if (!PathHelper.IsFile(path))
+    //        throw new StorageException(Resources.ThePathIsNotFile);
 
-            if (isExist && writeOptions.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+    //    try
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
-            await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName, 
-                pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-    }
+    //        if (isExist && writeOptions.Overwrite is false)
+    //            throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
-    public async Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
-        CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //        await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName, 
+    //            pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+    //    }
+    //}
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
+    //public async Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
+    //    CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+    //    if (!PathHelper.IsFile(path))
+    //        throw new StorageException(Resources.ThePathIsNotFile);
 
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+    //    try
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
-            var ms = new MemoryStream();
-            var request = new GetObjectRequest { BucketName = pathParts.BucketName, Key = pathParts.RelativePath };
-            var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-            var fileExtension = Path.GetExtension(path);
+    //        if (!isExist)
+    //            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-            ms.Position = 0;
+    //        var ms = new MemoryStream();
+    //        var request = new GetObjectRequest { BucketName = pathParts.BucketName, Key = pathParts.RelativePath };
+    //        var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+    //        var fileExtension = Path.GetExtension(path);
 
-            return new StorageRead()
-            {
-                Stream = new StorageStream(response.ResponseStream),
-                ContentType = response.Headers.ContentType,
-                Extension = fileExtension,
-                Md5 = response.ETag.Trim('\"'),
-            };
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-    }
+    //        ms.Position = 0;
 
-    public async Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //        return new StorageRead()
+    //        {
+    //            Stream = new StorageStream(response.ResponseStream),
+    //            ContentType = response.Headers.ContentType,
+    //            Extension = fileExtension,
+    //            Md5 = response.ETag.Trim('\"'),
+    //        };
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+    //    }
+    //}
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
+    //public async Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-    }
+    //    if (!PathHelper.IsFile(path))
+    //        throw new StorageException(Resources.ThePathIsNotFile);
 
-    public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
-    {
-        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
-        var hashOptions = new StorageHashOptions() { Hashing = false };
-        var metadataOptions = new StorageMetadataOptions() {IncludeMetadata = false };
+    //    try
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+    //    }
+    //}
 
-        var entities =
-            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
+    //public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
+    //{
+    //    var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
+    //    var hashOptions = new StorageHashOptions() { Hashing = false };
+    //    var metadataOptions = new StorageMetadataOptions() {IncludeMetadata = false };
 
-        var storageEntities = entities.ToList();
-        if (!storageEntities.Any())
-            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+    //    var entities =
+    //        await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
 
-        foreach (var entity in storageEntities)
-        {
-            await DeleteFileAsync(entity.FullPath, cancellationToken);
-        }
-    }
+    //    var storageEntities = entities.ToList();
+    //    if (!storageEntities.Any())
+    //        _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
-    public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //    foreach (var entity in storageEntities)
+    //    {
+    //        await DeleteFileAsync(entity.FullPath, cancellationToken);
+    //    }
+    //}
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
+    //public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+    //    if (!PathHelper.IsFile(path))
+    //        throw new StorageException(Resources.ThePathIsNotFile);
 
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+    //    try
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
-            await _client.DeleteObjectAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-    }
+    //        if (!isExist)
+    //            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-    public async Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //        await _client.DeleteObjectAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken).ConfigureAwait(false);
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+    //    }
+    //}
 
-        if (string.IsNullOrEmpty(path))
-            path += "/";
+    //public async Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
+    //    if (string.IsNullOrEmpty(path))
+    //        path += "/";
 
-        var pathParts = GetPartsAsync(path);
-        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
-        if (!isExist)
-        {
-            await _client.PutBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
-        }
+    //    if (!PathHelper.IsDirectory(path))
+    //        throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            var isFolderExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-            if (!isFolderExist)
-                await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
-    }
+    //    var pathParts = GetPartsAsync(path);
+    //    var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
+    //    if (!isExist)
+    //    {
+    //        await _client.PutBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
+    //        _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
+    //    }
 
-    public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //    if (!string.IsNullOrEmpty(pathParts.RelativePath))
+    //    {
+    //        var isFolderExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+    //        if (!isFolderExist)
+    //            await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+    //    }
+    //}
 
-        if (string.IsNullOrEmpty(path))
-            path += "/";
+    //public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
+    //    if (string.IsNullOrEmpty(path))
+    //        path += "/";
 
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
+    //    if (!PathHelper.IsDirectory(path))
+    //        throw new StorageException(Resources.ThePathIsNotDirectory);
 
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+    //    try
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
 
-            var searchOptions = new StorageSearchOptions();
-            await DeleteAsync(path, searchOptions, cancellationToken);
+    //        if (!isExist)
+    //            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-            var directory = pathParts.RelativePath;
-            if (!directory.EndsWith("/"))
-                directory += "/";
+    //        var searchOptions = new StorageSearchOptions();
+    //        await DeleteAsync(path, searchOptions, cancellationToken);
 
-            await _client.DeleteObjectAsync(pathParts.BucketName, directory, cancellationToken);
+    //        var directory = pathParts.RelativePath;
+    //        if (!directory.EndsWith("/"))
+    //            directory += "/";
 
-            if (string.IsNullOrEmpty(pathParts.RelativePath))
-                await _client.DeleteBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-    }
+    //        await _client.DeleteObjectAsync(pathParts.BucketName, directory, cancellationToken);
 
-    public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //        if (string.IsNullOrEmpty(pathParts.RelativePath))
+    //            await _client.DeleteBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken);
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+    //    }
+    //}
 
-        if (string.IsNullOrEmpty(path))
-            path += "/";
+    //public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
+    //{
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
+    //    if (string.IsNullOrEmpty(path))
+    //        path += "/";
 
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-    }
+    //    if (!PathHelper.IsDirectory(path))
+    //        throw new StorageException(Resources.ThePathIsNotDirectory);
 
-    public void Dispose() { }
+    //    try
+    //    {
+    //        var pathParts = GetPartsAsync(path);
+    //        return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+    //    }
+    //}
 
-    #region private methods
-    private AmazonS3StorageBucketPathPart GetPartsAsync(string fullPath)
-    {
-        fullPath = PathHelper.Normalize(fullPath);
-        if (fullPath == null)
-            throw new ArgumentNullException(nameof(fullPath));
+    //public void Dispose() { }
 
-        string bucketName, relativePath;
-        string[] parts = PathHelper.Split(fullPath);
+    //#region private methods
+    //private AmazonS3StorageBucketPathPart GetPartsAsync(string fullPath)
+    //{
+    //    fullPath = PathHelper.Normalize(fullPath);
+    //    if (fullPath == null)
+    //        throw new ArgumentNullException(nameof(fullPath));
 
-        if (parts.Length == 1)
-        {
-            bucketName = parts[0];
-            relativePath = string.Empty;
-        }
-        else
-        {
-            bucketName = parts[0];
-            relativePath = PathHelper.Combine(parts.Skip(1));
-        }
+    //    string bucketName, relativePath;
+    //    string[] parts = PathHelper.Split(fullPath);
 
-        return new AmazonS3StorageBucketPathPart(bucketName, relativePath);
-    }
+    //    if (parts.Length == 1)
+    //    {
+    //        bucketName = parts[0];
+    //        relativePath = string.Empty;
+    //    }
+    //    else
+    //    {
+    //        bucketName = parts[0];
+    //        relativePath = PathHelper.Combine(parts.Skip(1));
+    //    }
 
-    private async Task ListAsync(string bucketName, List<StorageEntity> result, string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions, 
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
-    {
-        using var browser = new AmazonS3BucketBrowser(_logger, _client, bucketName);
-        IReadOnlyCollection<StorageEntity> objects =
-            await browser.ListAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
+    //    return new AmazonS3StorageBucketPathPart(bucketName, relativePath);
+    //}
 
-        if (objects.Count > 0)
-        {
-            result.AddRange(objects);
-        }
-    }
+    //private async Task ListAsync(string bucketName, List<StorageEntity> result, string path,
+    //    StorageSearchOptions searchOptions, StorageListOptions listOptions, 
+    //    StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+    //{
+    //    using var browser = new AmazonS3BucketBrowser(_logger, _client, bucketName);
+    //    IReadOnlyCollection<StorageEntity> objects =
+    //        await browser.ListAsync(path, searchOptions, listOptions, metadataOptions, cancellationToken).ConfigureAwait(false);
 
-    private async Task<IReadOnlyCollection<string>> ListBucketsAsync(CancellationToken cancellationToken)
-    {
-        var buckets = await _client.ListBucketsAsync(cancellationToken).ConfigureAwait(false);
-        return buckets.Buckets
-            .Where(bucket => !string.IsNullOrEmpty(bucket.BucketName))
-            .Select(bucket => bucket.BucketName).ToList();
-    }
-    
-    private async Task<bool> ObjectExists(string bucketName, string key, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var request = new GetObjectRequest { BucketName = bucketName, Key = key };
-            await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-            return true;
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return false;
-        }
-    }
+    //    if (objects.Count > 0)
+    //    {
+    //        result.AddRange(objects);
+    //    }
+    //}
 
-    private async Task<bool> BucketExists(string bucketName, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var bucketsResponse = await _client.ListBucketsAsync(cancellationToken);
-            return (bucketsResponse.Buckets.Any(x => x.BucketName == bucketName)) ;
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            return false;
-        }
-    }
+    //private async Task<IReadOnlyCollection<string>> ListBucketsAsync(CancellationToken cancellationToken)
+    //{
+    //    var buckets = await _client.ListBucketsAsync(cancellationToken).ConfigureAwait(false);
+    //    return buckets.Buckets
+    //        .Where(bucket => !string.IsNullOrEmpty(bucket.BucketName))
+    //        .Select(bucket => bucket.BucketName).ToList();
+    //}
 
-    private async Task AddFolder(string bucketName, string folderName, CancellationToken cancellationToken)
-    {
-        if (!folderName.EndsWith("/"))
-            folderName += "/";
+    //private async Task<bool> ObjectExists(string bucketName, string key, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        var request = new GetObjectRequest { BucketName = bucketName, Key = key };
+    //        await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+    //        return true;
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        return false;
+    //    }
+    //}
 
-        var request = new PutObjectRequest()
-        {
-            BucketName = bucketName,
-            StorageClass = S3StorageClass.Standard,
-            ServerSideEncryptionMethod = ServerSideEncryptionMethod.None,
-            Key = folderName,
-            ContentBody = string.Empty
-        };
-        await _client.PutObjectAsync(request, cancellationToken);
-        _logger.LogInformation($"Folder '{folderName}' was created successfully.");
-    }
+    //private async Task<bool> BucketExists(string bucketName, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        var bucketsResponse = await _client.ListBucketsAsync(cancellationToken);
+    //        return (bucketsResponse.Buckets.Any(x => x.BucketName == bucketName)) ;
+    //    }
+    //    catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+    //    {
+    //        return false;
+    //    }
+    //}
+
+    //private async Task AddFolder(string bucketName, string folderName, CancellationToken cancellationToken)
+    //{
+    //    if (!folderName.EndsWith("/"))
+    //        folderName += "/";
+
+    //    var request = new PutObjectRequest()
+    //    {
+    //        BucketName = bucketName,
+    //        StorageClass = S3StorageClass.Standard,
+    //        ServerSideEncryptionMethod = ServerSideEncryptionMethod.None,
+    //        Key = folderName,
+    //        ContentBody = string.Empty
+    //    };
+    //    await _client.PutObjectAsync(request, cancellationToken);
+    //    _logger.LogInformation($"Folder '{folderName}' was created successfully.");
+    //}
 
     private AmazonS3Config CreateConfig(string? region)
     {
@@ -438,5 +473,9 @@ public class AmazonS3Storage : IStoragePlugin
 
         return RegionEndpoint.GetBySystemName(region);
     }
-    #endregion
+    //#endregion
+    public void Dispose()
+    {
+        //throw new NotImplementedException();
+    }
 }

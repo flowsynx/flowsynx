@@ -3,10 +3,8 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Configuration;
-using FlowSynx.Core.Features.Storage.List.Query;
-using Azure;
 using FlowSynx.Configuration.Options;
-using FlowSynx.Core.Features.Config.Command.Add;
+using FlowSynx.Core.Features.List.Query;
 
 namespace FlowSynx.Core.Features.Config.Command.Delete;
 

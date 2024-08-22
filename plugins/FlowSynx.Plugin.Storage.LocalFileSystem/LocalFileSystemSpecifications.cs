@@ -1,6 +1,8 @@
-﻿namespace FlowSynx.Plugin.Storage.LocalFileSystem;
+﻿using FlowSynx.Plugin.Abstractions;
 
-public class LocalFileSystemSpecifications
+namespace FlowSynx.Plugin.Storage.LocalFileSystem;
+
+public class LocalFileSystemSpecifications: PluginSpecifications
 {
 
 }

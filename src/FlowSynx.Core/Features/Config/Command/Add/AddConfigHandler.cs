@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Configuration;
-using FlowSynx.Core.Features.Storage.List.Query;
+using FlowSynx.Core.Features.List.Query;
 
 namespace FlowSynx.Core.Features.Config.Command.Add;
 

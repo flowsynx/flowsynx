@@ -2,10 +2,8 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Commons;
-using FlowSynx.Plugin;
-using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin.Options;
+using FlowSynx.Plugin.Manager;
+using FlowSynx.Plugin.Manager.Options;
 
 namespace FlowSynx.Core.Features.Plugins.Query.List;
 
@@ -35,8 +33,8 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
 
             var listOptions = new PluginListOptions()
             {
-                Sorting = request.Sorting,
-                MaxResult = request.MaxResults
+                Sort = request.Sorting,
+                Limit = request.MaxResults
             };
 
             var result = _pluginsManager.List(searchOptions, listOptions);

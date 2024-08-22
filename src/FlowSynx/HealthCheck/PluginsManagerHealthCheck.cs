@@ -1,7 +1,6 @@
 ﻿using EnsureThat;
-using FlowSynx.Plugin;
-using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin.Options;
+using FlowSynx.Plugin.Manager;
+using FlowSynx.Plugin.Manager.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;

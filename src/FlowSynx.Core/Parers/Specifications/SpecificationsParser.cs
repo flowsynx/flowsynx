@@ -2,6 +2,7 @@
 using FlowSynx.Reflections;
 using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Plugin;
+using FlowSynx.Plugin.Manager;
 
 namespace FlowSynx.Core.Parers.Specifications;
 

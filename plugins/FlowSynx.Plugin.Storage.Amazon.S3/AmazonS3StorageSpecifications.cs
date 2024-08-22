@@ -3,7 +3,7 @@ using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
 
-internal class AmazonS3StorageSpecifications
+internal class AmazonS3StorageSpecifications: PluginSpecifications
 {
     [RequiredMember]
     public string AccessKey { get; set; } = string.Empty;

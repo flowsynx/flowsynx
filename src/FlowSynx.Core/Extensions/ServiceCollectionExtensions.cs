@@ -5,21 +5,19 @@ using System.Reflection;
 using FlowSynx.Configuration;
 using FlowSynx.Core.Behaviors;
 using FlowSynx.Core.Parers.Namespace;
-using FlowSynx.Core.Parers.Norms.Storage;
 using FlowSynx.Core.Parers.Specifications;
 using FlowSynx.Environment;
 using FlowSynx.IO;
 using FlowSynx.Parsers;
 using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin;
-using FlowSynx.Plugin.Storage;
-using FlowSynx.Plugin.Storage.Azure.Files;
-using FlowSynx.Plugin.Storage.LocalFileSystem;
+using FlowSynx.Plugin.Extensions;
+using FlowSynx.Plugin.Services;
 using FlowSynx.Plugin.Storage.Amazon.S3;
-using FlowSynx.Plugin.Storage.Azure.Blobs;
-using FlowSynx.Plugin.Storage.Google.Cloud;
-using FlowSynx.Plugin.Storage.Google.Drive;
-using FlowSynx.Plugin.Storage.Memory;
+using FlowSynx.Plugin.Storage.LocalFileSystem;
+using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Plugin.Manager.Filters;
+using FlowSynx.Plugin.Storage;
+using FlowSynx.Plugin.Storage.Extensions;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -44,9 +42,10 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            .AddStorageService()
-            .AddMultiKeyCache<string, string, StoragePluginNorms>()
-            .AddScoped<IStoragePluginNormsParser, StoragePluginNormsParser>()
+            .AddPluginService()
+            .AddStorageFilter()
+            .AddMultiKeyCache<string, string, PluginInstance>()
+            .AddScoped<IPluginInstanceParser, PluginInstanceParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>();
 
@@ -72,12 +71,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection RegisterPlugins(this IServiceCollection services)
     {
         services.AddScoped<IPlugin, LocalFileSystemStorage>();
-        services.AddScoped<IPlugin, MemoryStorage>();
-        services.AddScoped<IPlugin, AzureFileStorage>();
-        services.AddScoped<IPlugin, AzureBlobStorage>();
-        services.AddScoped<IPlugin, GoogleCloudStorage>();
+        //services.AddScoped<IPlugin, MemoryStorage>();
+        //services.AddScoped<IPlugin, AzureFileStorage>();
+        //services.AddScoped<IPlugin, AzureBlobStorage>();
+        //services.AddScoped<IPlugin, GoogleCloudStorage>();
         services.AddScoped<IPlugin, AmazonS3Storage>();
-        services.AddScoped<IPlugin, GoogleDriveStorage>();
+        //services.AddScoped<IPlugin, GoogleDriveStorage>();
         return services;
     }
 }

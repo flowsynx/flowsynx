@@ -4,7 +4,7 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Core.Extensions;
-using FlowSynx.Plugin;
+using FlowSynx.Plugin.Manager;
 using FlowSynx.Reflections;
 
 namespace FlowSynx.Core.Features.Plugins.Query.Details;

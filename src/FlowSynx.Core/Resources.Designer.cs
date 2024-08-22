@@ -178,7 +178,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Path should be not empty..
+        ///   Looks up a localized string similar to Entity should be not empty..
         /// </summary>
         internal static string DeleteValidatorPathValueMustNotNullOrEmptyMessage {
             get {
@@ -313,7 +313,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Path should be not empty..
+        ///   Looks up a localized string similar to Entity should be not empty..
         /// </summary>
         internal static string MakeDirectoryValidatorPathValueMustNotNullOrEmptyMessage {
             get {
@@ -403,7 +403,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Path should be not empty..
+        ///   Looks up a localized string similar to Entity should be not empty..
         /// </summary>
         internal static string PurgeDirectoryValidatorPathValueMustNotNullOrEmptyMessage {
             get {

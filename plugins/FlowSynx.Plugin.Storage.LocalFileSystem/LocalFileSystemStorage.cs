@@ -1,17 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
 using EnsureThat;
-using FlowSynx.IO;
-using FlowSynx.Net;
 using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Net;
+using FlowSynx.IO;
+using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Abstractions.Models;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
 using FlowSynx.Security;
+using FlowSynx.Commons;
+using FlowSynx.Plugin.Storage.Filters;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
-public class LocalFileSystemStorage : IStoragePlugin
+public class LocalFileSystemStorage : IPlugin
 {
     private readonly ILogger<LocalFileSystemStorage> _logger;
     private readonly IStorageFilter _storageFilter;
@@ -19,7 +19,6 @@ public class LocalFileSystemStorage : IStoragePlugin
     public LocalFileSystemStorage(ILogger<LocalFileSystemStorage> logger, IStorageFilter storageFilter)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
         _logger = logger;
         _storageFilter = storageFilter;
     }
@@ -28,16 +27,18 @@ public class LocalFileSystemStorage : IStoragePlugin
     public string Name => "LocalFileSystem";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications { get; set; }
+    public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(LocalFileSystemSpecifications);
 
     public Task Initialize()
     {
         return Task.CompletedTask;
     }
-
-    public Task<StorageUsage> About(CancellationToken cancellationToken = default)
+    
+    public Task<object> About(PluginFilters? filters, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
+        var aboutFilters = filters.ToObject<AboutFilters>();
         long totalSpace = 0, freeSpace = 0;
         try
         {
@@ -56,75 +57,67 @@ public class LocalFileSystemStorage : IStoragePlugin
             freeSpace = 0;
         }
 
-        return Task.FromResult(new StorageUsage { Total = totalSpace, Free = freeSpace, Used = totalSpace - freeSpace});
+        var result = new StorageUsage
+        {
+            Total = totalSpace.ToString(!aboutFilters.Full),
+            Free = freeSpace.ToString(!aboutFilters.Full),
+            Used = (totalSpace - freeSpace).ToString(!aboutFilters.Full)
+        };
+        return Task.FromResult<object>(result);
     }
 
-    public Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions, 
-        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
-        CancellationToken cancellationToken = default)
+    public Task<object> CreateAsync(string entity, PluginFilters? filters, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
-        path = path.ToUnixPath();
+        var path = entity.ToUnixPath();
+        var createFilters = filters.ToObject<CreateFilters>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        try
-        {
-            if (!Directory.Exists(path))
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+        var directory = Directory.CreateDirectory(path);
+        if (createFilters.Hidden is true)
+            directory.Attributes = FileAttributes.Directory | FileAttributes.Hidden;
 
-            var result = new List<StorageEntity>();
-            var directoryInfo = new DirectoryInfo(path);
-
-            result.AddRange(directoryInfo.FindFiles("*", searchOptions.Recurse)
-                      .Select(file => file.ToEntity(hashOptions.Hashing, metadataOptions.IncludeMetadata)));
-
-            result.AddRange(directoryInfo.FindDirectories("*", searchOptions.Recurse)
-                      .Select(dir=> dir.ToEntity(metadataOptions.IncludeMetadata)));
-
-            var filteredResult = _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-            return Task.FromResult(filteredResult);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.Message);
-            throw new StorageException(ex.Message);
-        }
+        var result = new StorageEntity(path, StorageEntityItemKind.Directory);
+        return Task.FromResult<object>(new { result.Id });
     }
 
-    public Task WriteAsync(string path, StorageStream storageStream, StorageWriteOptions writeOptions, 
-        CancellationToken cancellationToken = default)
+    public Task<object> WriteAsync(string entity, PluginFilters? filters, 
+        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
     {
-        path = path.ToUnixPath();
+        var path = entity.ToUnixPath();
+        var writeFilters = filters.ToObject<WriteFilters>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         if (!PathHelper.IsFile(path))
             throw new StorageException(Resources.ThePathIsNotFile);
-        
-        if (File.Exists(path) && writeOptions.Overwrite is false)
+
+        if (File.Exists(path) && writeFilters.Overwrite is false)
             throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+        if (dataOptions is not Stream dataStream)
+            throw new StorageException(nameof(dataStream));
+
+        if (File.Exists(path) && writeFilters.Overwrite is true)
+            DeleteEntityAsync(path);
         
-        if (File.Exists(path) && writeOptions.Overwrite is true)
-        {
-            DeleteFileAsync(path, cancellationToken);
-        }
         using var fileStream = File.Create(path);
-        storageStream.CopyTo(fileStream);
-        return Task.CompletedTask;
+        dataStream.CopyTo(fileStream);
+        var result = new StorageEntity(path, StorageEntityItemKind.File);
+        return Task.FromResult<object>(new { result.Id });
     }
 
-    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions, 
-        CancellationToken cancellationToken = default)
+    public Task<object> ReadAsync(string entity, PluginFilters? filters, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
-        path = path.ToUnixPath();
+        var path = entity.ToUnixPath();
+        var readFilters = filters.ToObject<ReadFilters>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -145,11 +138,25 @@ public class LocalFileSystemStorage : IStoragePlugin
             Md5 = HashHelper.Md5.GetHash(file)
         };
 
-        return Task.FromResult(result);
+        return Task.FromResult<object>(result);
     }
 
-    public Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
+    public Task<object> UpdateAsync(string entity, PluginFilters? filters, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, 
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<bool> ExistAsync(string entity, PluginFilters? filters,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = entity.ToUnixPath();
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -157,34 +164,59 @@ public class LocalFileSystemStorage : IStoragePlugin
             throw new StorageException(Resources.ThePathIsNotFile);
 
         var fileInfo = new FileInfo(path);
-        return Task.FromResult(fileInfo.Exists);
+        return Task.FromResult<bool>(fileInfo.Exists);
     }
 
-    public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
+    public Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
-        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
-        var hashOptions = new StorageHashOptions() { Hashing = false };
-        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
+        var path = entity.ToUnixPath();
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        path = path.ToUnixPath();
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+        
+        if (!Directory.Exists(path))
+            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-        var entities = 
-            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
+        var listFilters = filters.ToObject<ListFilters>();
 
-        var storageEntities = entities.ToList();
-        if (!storageEntities.Any())
-            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+        if (!string.IsNullOrEmpty(listFilters.Kind) && !EnumUtils.TryParseWithMemberName<StorageEntityItemKind>(listFilters.Kind, out _))
+            throw new StorageException(Resources.ListValidatorKindValueMustBeValidMessage);
+        
+        var storageEntities = new List<StorageEntity>();
+        var directoryInfo = new DirectoryInfo(path);
 
-        foreach (var entity in storageEntities)
+        storageEntities.AddRange(directoryInfo.FindFiles("*", listFilters.Recurse)
+            .Select(file => file.ToEntity(listFilters.Hashing, listFilters.IncludeMetadata)));
+
+        storageEntities.AddRange(directoryInfo.FindDirectories("*", listFilters.Recurse)
+            .Select(dir => dir.ToEntity(listFilters.IncludeMetadata)));
+
+        var filteredEntities = _storageFilter.Filter(storageEntities, filters).ToList();
+
+        var result = new List<StorageList>(filteredEntities.Count());
+        result.AddRange(filteredEntities.Select(storageEntity => new StorageList
         {
-            await DeleteFileAsync(entity.FullPath, cancellationToken);
-        }
+            Id = storageEntity.Id,
+            Kind = storageEntity.Kind.ToString().ToLower(),
+            Name = storageEntity.Name,
+            Path = storageEntity.FullPath,
+            ModifiedTime = storageEntity.ModifiedTime,
+            Size = storageEntity.Size.ToString(!listFilters.Full),
+            ContentType = storageEntity.ContentType,
+            Md5 = storageEntity.Md5,
+            Metadata = storageEntity.Metadata
+        }));
+
+        return Task.FromResult<IEnumerable<object>>(result);
     }
 
-    public Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
-    {
-        path = path.ToUnixPath();
+    #region internal methods
 
+    private void DeleteEntityAsync(string path)
+    {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -193,65 +225,10 @@ public class LocalFileSystemStorage : IStoragePlugin
 
         if (!File.Exists(path))
             throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
-        
+
         File.Delete(path);
-        return Task.CompletedTask;
     }
 
-    public Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        path = path.ToUnixPath();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        Directory.CreateDirectory(path);
-        return Task.CompletedTask;
-    }
-
-    public Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        path = path.ToUnixPath();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var directoryInfo = new DirectoryInfo(path);
-        if (!directoryInfo.Exists)
-            throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path));
-        
-        Directory.Delete(path, true);
-        return Task.CompletedTask;
-    }
-
-    public Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
-    {
-        path = path.ToUnixPath();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var fileInfo = new DirectoryInfo(path);
-        return Task.FromResult(fileInfo.Exists);
-    }
-
+    #endregion
     public void Dispose() { }
 }

@@ -196,13 +196,13 @@
     <value>The file(s) were deleted successfully.</value>
   </data>
   <data name="DeleteValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Path should be not empty.</value>
+    <value>Entity should be not empty.</value>
   </data>
   <data name="MakeDirectoryHandlerSuccessfullyDeleted" xml:space="preserve">
     <value>The directory was created successfully.</value>
   </data>
   <data name="MakeDirectoryValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Path should be not empty.</value>
+    <value>Entity should be not empty.</value>
   </data>
   <data name="MoveHandlerSuccessfullyMoved" xml:space="preserve">
     <value>The move was done successfully.</value>
@@ -220,7 +220,7 @@
     <value>The directory was purged successfully.</value>
   </data>
   <data name="PurgeDirectoryValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Path should be not empty.</value>
+    <value>Entity should be not empty.</value>
   </data>
   <data name="WriteHandlerSuccessfullyWriten" xml:space="preserve">
     <value>The file was writen successfully.</value>

@@ -2,6 +2,7 @@
 using FluentValidation;
 using FlowSynx.Core.Parers.Specifications;
 using FlowSynx.Plugin;
+using FlowSynx.Plugin.Manager;
 
 namespace FlowSynx.Core.Features.Config.Command.Add;
 

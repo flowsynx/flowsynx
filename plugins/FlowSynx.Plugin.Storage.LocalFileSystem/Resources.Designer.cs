@@ -70,6 +70,15 @@ namespace FlowSynx.Plugin.Storage.LocalFileSystem {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Kind value must be [ File | Directory ]. By default it is include both Files and Directories..
+        /// </summary>
+        internal static string ListValidatorKindValueMustBeValidMessage {
+            get {
+                return ResourceManager.GetString("ListValidatorKindValueMustBeValidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No files found with the given filter in &apos;{0}&apos;..
         /// </summary>
         internal static string NoFilesFoundWithTheGivenFilter {

@@ -120,6 +120,9 @@
   <data name="FileIsAlreadyExistAndCannotBeOverwritten" xml:space="preserve">
     <value>File '{0}' is already exist and can't be overwritten!</value>
   </data>
+  <data name="ListValidatorKindValueMustBeValidMessage" xml:space="preserve">
+    <value>Kind value must be [ File | Directory ]. By default it is include both Files and Directories.</value>
+  </data>
   <data name="NoFilesFoundWithTheGivenFilter" xml:space="preserve">
     <value>No files found with the given filter in '{0}'.</value>
   </data>
