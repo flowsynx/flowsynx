@@ -63,7 +63,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<ExistResponse>> Exist(this IMediator mediator, ExistRequest request, CancellationToken cancellationToken)
+    public static Task<Result<object>> Exist(this IMediator mediator, ExistRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

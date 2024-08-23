@@ -1,9 +1,11 @@
 ﻿using MediatR;
 using FlowSynx.Abstractions;
+using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Core.Features.Exist.Query;
 
-public class ExistRequest : IRequest<Result<ExistResponse>>
+public class ExistRequest : IRequest<Result<object>>
 {
-    public string Path { get; set; } = string.Empty;
+    public required string Entity { get; set; }
+    public PluginFilters? Filters { get; set; } = new PluginFilters();
 }

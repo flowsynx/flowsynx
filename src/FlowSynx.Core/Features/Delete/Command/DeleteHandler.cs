@@ -5,6 +5,7 @@ using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Services;
 using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Plugin.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Delete.Command;
 
@@ -27,25 +28,9 @@ internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<IEnumerable
     {
         try
         {
-            var storageNorms = _pluginInstanceParser.Parse(request.Path);
-            var options = new PluginFilters()
-            {
-
-            };
-
-            //var filters = new StorageSearchOptions()
-            //{
-            //    Include = request.Include,
-            //    Exclude = request.Exclude,
-            //    MinimumAge = request.MinAge,
-            //    MaximumAge = request.MaxAge,
-            //    MinimumSize = request.MinSize,
-            //    MaximumSize = request.MaxSize,
-            //    CaseSensitive = request.CaseSensitive ?? false,
-            //    Recurse = request.Recurse ?? false
-            //};
-
-            var response = await _pluginService.DeleteAsync(storageNorms, options, cancellationToken);
+            var storageNorms = _pluginInstanceParser.Parse(request.Entity);
+            var filters = request.Filters.ToPluginFilters();
+            var response = await _pluginService.DeleteAsync(storageNorms, filters, cancellationToken);
             return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.DeleteHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

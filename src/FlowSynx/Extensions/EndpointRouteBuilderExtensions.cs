@@ -20,7 +20,7 @@ public static class EndpointRouteBuilderExtensions
         return builder;
     }
 
-    public static IEndpointRouteBuilder MapPut(this IEndpointRouteBuilder builder, Delegate handler, string pattern)
+    public static IEndpointRouteBuilder MapPut(this IEndpointRouteBuilder builder, Delegate handler, string pattern = "")
     {
         builder.MapPut(pattern, handler)
             .WithName(handler.Method.Name)
@@ -29,7 +29,7 @@ public static class EndpointRouteBuilderExtensions
         return builder;
     }
 
-    public static IEndpointRouteBuilder MapDelete(this IEndpointRouteBuilder builder, Delegate handler, string pattern)
+    public static IEndpointRouteBuilder MapDelete(this IEndpointRouteBuilder builder, Delegate handler, string pattern = "")
     {
         builder.MapDelete(pattern, handler)
             .WithName(handler.Method.Name)
