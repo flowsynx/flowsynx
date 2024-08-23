@@ -126,7 +126,7 @@ public class LocalFileSystemStorage : IPlugin
             throw new StorageException(Resources.ThePathIsNotFile);
 
         if (!File.Exists(path))
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
+            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
         var file = new FileInfo(path);
         var fileExtension = file.Extension;
@@ -147,10 +147,39 @@ public class LocalFileSystemStorage : IPlugin
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, 
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var deleteFilters = filters.ToObject<DeleteFilters>();
+        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var result = new List<string>();
+        foreach (var entityItem in storageEntities)
+        {
+            if (entityItem is not StorageList list) 
+                continue;
+
+            if (DeleteEntityAsync(list.Path))
+            {
+                result.Add(list.Id);
+            }
+        }
+
+        if (deleteFilters.Purge is true)
+        {
+            var directoryInfo = new DirectoryInfo(path);
+            if (!directoryInfo.Exists)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            Directory.Delete(path, true);
+        }
+
+        return result;
     }
 
     public Task<bool> ExistAsync(string entity, PluginFilters? filters,
@@ -160,11 +189,7 @@ public class LocalFileSystemStorage : IPlugin
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var fileInfo = new FileInfo(path);
-        return Task.FromResult<bool>(fileInfo.Exists);
+        return Task.FromResult<bool>(PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path));
     }
 
     public Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, 
@@ -214,21 +239,42 @@ public class LocalFileSystemStorage : IPlugin
     }
 
     #region internal methods
-
-    private void DeleteEntityAsync(string path)
+    private bool DeleteEntityAsync(string path)
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
+        if (PathHelper.IsDirectory(path))
+        {
+            if (!Directory.Exists(path)) 
+                return false;
 
-        if (!File.Exists(path))
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
-
-        File.Delete(path);
+            DeleteAllEntities(path);
+            Directory.Delete(path);
+        }
+        else
+        {
+            if (!File.Exists(path))
+                return false;
+            
+            File.Delete(path);
+        }
+        return true;
     }
 
+    private void DeleteAllEntities(string path)
+    {
+        var di = new DirectoryInfo(path);
+        foreach (FileInfo file in di.GetFiles())
+        {
+            file.Delete();
+        }
+        foreach (DirectoryInfo dir in di.GetDirectories())
+        {
+            dir.Delete(true);
+        }
+    }
     #endregion
+
     public void Dispose() { }
 }
