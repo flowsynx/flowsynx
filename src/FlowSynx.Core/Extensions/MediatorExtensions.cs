@@ -13,12 +13,9 @@ using FlowSynx.Core.Features.List.Query;
 using FlowSynx.Core.Features.Write.Command;
 using FlowSynx.Core.Features.Delete.Command;
 using FlowSynx.Core.Features.Exist.Query;
-using FlowSynx.Core.Features.PurgeDirectory.Command;
-using FlowSynx.Core.Features.DeleteFile.Command;
 using FlowSynx.Core.Features.Compress.Command;
 using FlowSynx.Core.Features.Check.Command;
 using FlowSynx.Core.Features.Read.Query;
-using FlowSynx.Core.Features.Size.Query;
 using FlowSynx.Core.Features.About.Query;
 using FlowSynx.Core.Features.Move.Command;
 using FlowSynx.Core.Features.Create.Command;
@@ -38,11 +35,6 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<SizeResponse>> Size(this IMediator mediator, SizeRequest request, CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-
     public static Task<Result<object>> Write(this IMediator mediator, WriteRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -58,22 +50,12 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<DeleteFileResponse>> DeleteFile(this IMediator mediator, DeleteFileRequest request, CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-
     public static Task<Result<object>> Exist(this IMediator mediator, ExistRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
     public static Task<Result<object>> Create(this IMediator mediator, CreateRequest request, CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-
-    public static Task<Result<PurgeDirectoryResponse>> PurgeDirectory(this IMediator mediator, PurgeDirectoryRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
