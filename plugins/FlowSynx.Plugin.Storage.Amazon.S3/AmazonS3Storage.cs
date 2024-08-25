@@ -44,7 +44,7 @@ public class AmazonS3Storage : IPlugin
         _fileTransferUtility = CreateTransferUtility(_client);
         return Task.CompletedTask;
     }
-    
+
     public Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new StorageException(Resources.AboutOperrationNotSupported);
@@ -77,7 +77,7 @@ public class AmazonS3Storage : IPlugin
         }
 
         var result = new StorageEntity(path, StorageEntityItemKind.Directory);
-        return Task.FromResult<object>(new { result.Id });
+        return new { result.Id };
     }
 
     public async Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
@@ -107,7 +107,7 @@ public class AmazonS3Storage : IPlugin
                 pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
 
             var result = new StorageEntity(path, StorageEntityItemKind.File);
-            return Task.FromResult<object>(new { result.Id });
+            return new { result.Id };
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -211,7 +211,7 @@ public class AmazonS3Storage : IPlugin
             throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
     }
-    
+
     public async Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -279,7 +279,7 @@ public class AmazonS3Storage : IPlugin
 
         return result;
     }
-    
+
     #region private methods
     private AmazonS3Client CreateClient(AmazonS3StorageSpecifications specifications)
     {
@@ -415,7 +415,7 @@ public class AmazonS3Storage : IPlugin
         }
     }
 
-        private AmazonS3Config CreateConfig(string? region)
+    private AmazonS3Config CreateConfig(string? region)
     {
         if (region == null)
             return new AmazonS3Config();
