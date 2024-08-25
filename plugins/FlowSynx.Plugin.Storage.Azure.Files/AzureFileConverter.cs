@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
+using FlowSynx.IO;
 using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.Azure.Files;
@@ -13,9 +14,10 @@ static class AzureFileConverter
         var fileProperties = await client.GetPropertiesAsync(cancellationToken);
         var entity = new StorageEntity(shareDirectoryClient.Path, fileItem.Name, StorageEntityItemKind.File)
         {
+            CreatedTime = fileItem.Properties.CreatedOn,
             ModifiedTime = fileProperties.Value.LastModified,
             Size = fileItem.FileSize,
-            Md5 = fileProperties.Value.ContentHash!=null ? System.Text.Encoding.UTF8.GetString(fileProperties.Value.ContentHash) : null,
+            Md5 = fileProperties.Value.ContentHash?.ToHexString(),
         };
 
         if (includeMetadata is true)
@@ -38,6 +40,7 @@ static class AzureFileConverter
         var fileProperties = await shareDirectoryClient.GetPropertiesAsync(cancellationToken);
         var entity = new StorageEntity(shareDirectoryClient.Path, fileItem.Name, StorageEntityItemKind.Directory)
         {
+            CreatedTime = fileItem.Properties.CreatedOn,
             ModifiedTime = fileProperties.Value.LastModified
         };
 

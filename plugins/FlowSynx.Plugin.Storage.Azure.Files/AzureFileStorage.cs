@@ -4,17 +4,15 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Plugin.Abstractions;
 using Azure.Storage.Files.Shares;
-using FlowSynx.Reflections;
 using Azure.Storage.Files.Shares.Models;
 using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Abstractions.Models;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
+using FlowSynx.Plugin.Storage.Filters;
 
 namespace FlowSynx.Plugin.Storage.Azure.Files;
 
-public class AzureFileStorage : IStoragePlugin
+public class AzureFileStorage : IPlugin
 {
     private readonly ILogger<AzureFileStorage> _logger;
     private readonly IStorageFilter _storageFilter;
@@ -28,40 +26,25 @@ public class AzureFileStorage : IStoragePlugin
         _logger = logger;
         _storageFilter = storageFilter;
     }
-
+    
     public Guid Id => Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d");
     public string Name => "Azure.Files";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications { get; set; }
+    public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(AzureFilesSpecifications);
 
     public Task Initialize()
     {
-        _azureFilesSpecifications = Specifications.DictionaryToObject<AzureFilesSpecifications>();
+        _azureFilesSpecifications = Specifications.ToObject<AzureFilesSpecifications>();
         _client = CreateClient(_azureFilesSpecifications);
         return Task.CompletedTask;
     }
 
-    private ShareClient CreateClient(AzureFilesSpecifications specifications)
-    {
-        if (string.IsNullOrEmpty(specifications.ShareName))
-            throw new StorageException(Resources.ShareNameInSpecificationShouldBeNotEmpty);
-        
-        if (!string.IsNullOrEmpty(specifications.ConnectionString))
-            return new ShareClient(specifications.ConnectionString, specifications.ShareName);
-
-        if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName)) 
-            throw new StorageException(Resources.OnePropertyShouldHaveValue);
-        
-        var uri = new Uri($"https://{specifications.AccountName}.file.core.windows.net/{specifications.ShareName}");
-        var credential = new StorageSharedKeyCredential(specifications.AccountName, specifications.AccountKey);
-        return new ShareClient(shareUri: uri, credential: credential);
-    }
-
-    public async Task<StorageUsage> About(CancellationToken cancellationToken = default)
+    public async Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
         long totalUsed;
+        var aboutFilters = filters.ToObject<AboutFilters>();
 
         try
         {
@@ -74,21 +57,258 @@ public class AzureFileStorage : IStoragePlugin
             totalUsed = 0;
         }
 
-        return new StorageUsage { Used = totalUsed };
+        return new
+        {
+            Total = totalUsed.ToString(!aboutFilters.Full)
+        };
     }
 
-    public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
-        CancellationToken cancellationToken = default)
+    public async Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
+        var path = PathHelper.ToUnixPath(entity);
+        var createFilters = filters.ToObject<CreateFilters>();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        try
+        {
+            var pathParts = PathHelper.Split(path);
+            string proceedPath = string.Empty;
+            foreach (var part in pathParts)
+            {
+                proceedPath = PathHelper.Combine(proceedPath, part);
+                ShareDirectoryClient directoryClient = _client.GetDirectoryClient(proceedPath);
+                await directoryClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+            }
+            
+            var result = new StorageEntity(path, StorageEntityItemKind.Directory);
+            return new { result.Id };
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    public async Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var writeFilters = filters.ToObject<WriteFilters>();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        if (dataOptions is not Stream dataStream)
+            throw new StorageException(nameof(dataStream));
+
+        try
+        {
+            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
+
+            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
+            if (isExist && writeFilters.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            var parentPath = PathHelper.GetParent(path) + PathHelper.PathSeparatorString;
+            await CreateAsync(parentPath, null, cancellationToken);
+
+            await fileClient.CreateAsync(maxSize: dataStream.Length, cancellationToken: cancellationToken);
+            await fileClient.UploadRangeAsync(new HttpRange(0, dataStream.Length), dataStream, cancellationToken: cancellationToken);
+
+            var result = new StorageEntity(path, StorageEntityItemKind.File);
+            return new { result.Id };
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidResourceName)
+        {
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    public async Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var readFilters = filters.ToObject<ReadFilters>();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
+
+            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var stream = await fileClient.OpenReadAsync(cancellationToken: cancellationToken);
+            var fileProperties = await fileClient.GetPropertiesAsync(cancellationToken);
+            var fileExtension = Path.GetExtension(path);
+
+            return new StorageRead()
+            {
+                Stream = new StorageStream(stream),
+                ContentType = fileProperties.Value.ContentType,
+                Extension = fileExtension,
+                Md5 = fileProperties.Value.ContentHash?.ToHexString(),
+            };
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var deleteFilters = filters.ToObject<DeleteFilters>();
+        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var result = new List<string>();
+        foreach (var entityItem in storageEntities)
+        {
+            if (entityItem is not StorageList list)
+                continue;
+
+            if (await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(list.Id);
+            }
+        }
+
+        if (deleteFilters.Purge is true)
+        {
+            ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
+            await directoryClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+        }
+
+        return result;
+    }
+
+    public async Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrWhiteSpace(path))
+            throw new StorageException(Resources.ThePathMustBeFile);
+
+        try
+        {
+            if (PathHelper.IsDirectory(path))
+            {
+                ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
+                return await directoryClient.ExistsAsync(cancellationToken: cancellationToken);
+            }
+
+            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
+            return await fileClient.ExistsAsync(cancellationToken: cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
         if (string.IsNullOrEmpty(path))
             path += "/";
 
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        var result = new List<StorageEntity>();
+        var storageEntities = new List<StorageEntity>();
         ShareDirectoryClient directoryClient;
+        var listFilters = filters.ToObject<ListFilters>();
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
             directoryClient = _client.GetRootDirectoryClient();
@@ -107,13 +327,13 @@ public class AzureFileStorage : IStoragePlugin
                     try
                     {
                         if (item.IsDirectory)
-                            result.Add(await dir.ToEntity(item, metadataOptions.IncludeMetadata, 
+                            storageEntities.Add(await dir.ToEntity(item, listFilters.IncludeMetadata,
                                 cancellationToken));
                         else
-                            result.Add(await dir.ToEntity(item, dir.GetFileClient(item.Name), 
-                                metadataOptions.IncludeMetadata, cancellationToken));
-                        
-                        if (!searchOptions.Recurse) continue;
+                            storageEntities.Add(await dir.ToEntity(item, dir.GetFileClient(item.Name),
+                                listFilters.IncludeMetadata, cancellationToken));
+
+                        if (!listFilters.Recurse) continue;
 
                         if (item.IsDirectory)
                         {
@@ -132,30 +352,59 @@ public class AzureFileStorage : IStoragePlugin
             }
         }
 
-        return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
+        var filteredEntities = _storageFilter.Filter(storageEntities, filters).ToList();
+
+        var result = new List<StorageList>(filteredEntities.Count());
+        result.AddRange(filteredEntities.Select(storageEntity => new StorageList
+        {
+            Id = storageEntity.Id,
+            Kind = storageEntity.Kind.ToString().ToLower(),
+            Name = storageEntity.Name,
+            Path = storageEntity.FullPath,
+            CreatedTime = storageEntity.CreatedTime,
+            ModifiedTime = storageEntity.ModifiedTime,
+            Size = storageEntity.Size.ToString(!listFilters.Full),
+            ContentType = storageEntity.ContentType,
+            Md5 = storageEntity.Md5,
+            Metadata = storageEntity.Metadata
+        }));
+
+        return result;
+    }
+    
+    #region internal methods
+    private ShareClient CreateClient(AzureFilesSpecifications specifications)
+    {
+        if (string.IsNullOrEmpty(specifications.ShareName))
+            throw new StorageException(Resources.ShareNameInSpecificationShouldBeNotEmpty);
+
+        if (!string.IsNullOrEmpty(specifications.ConnectionString))
+            return new ShareClient(specifications.ConnectionString, specifications.ShareName);
+
+        if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName))
+            throw new StorageException(Resources.OnePropertyShouldHaveValue);
+
+        var uri = new Uri($"https://{specifications.AccountName}.file.core.windows.net/{specifications.ShareName}");
+        var credential = new StorageSharedKeyCredential(specifications.AccountName, specifications.AccountKey);
+        return new ShareClient(shareUri: uri, credential: credential);
     }
 
-    public async Task WriteAsync(string path, StorageStream storageStream, StorageWriteOptions writeOptions, 
-        CancellationToken cancellationToken = default)
+    private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
         try
         {
-            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-
-            if (isExist && writeOptions.Overwrite is false)
+            if (PathHelper.IsFile(path))
             {
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+                ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
+                return await fileClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
             }
 
-            await fileClient.CreateAsync(maxSize: storageStream.Length, cancellationToken: cancellationToken);
-            await fileClient.UploadRangeAsync(new HttpRange(0, storageStream.Length), storageStream, cancellationToken: cancellationToken);
+            ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
+            await DeleteAllAsync(directoryClient, cancellationToken: cancellationToken);
+            return true;
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
@@ -163,15 +412,15 @@ public class AzureFileStorage : IStoragePlugin
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
         {
-            _logger.LogError(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidResourceName)
-        {
-            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
         {
             throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
         }
         catch (RequestFailedException)
         {
@@ -179,248 +428,25 @@ public class AzureFileStorage : IStoragePlugin
         }
     }
 
-    public async Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
-        CancellationToken cancellationToken = default)
+    private async Task DeleteAllAsync(ShareDirectoryClient dirClient, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
+        await foreach (ShareFileItem item in dirClient.GetFilesAndDirectoriesAsync())
         {
-            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var stream = await fileClient.OpenReadAsync(cancellationToken: cancellationToken);
-            var fileProperties = await fileClient.GetPropertiesAsync(cancellationToken);
-            var fileExtension = Path.GetExtension(path);
-
-            return new StorageRead()
+            if (item.IsDirectory)
             {
-                Stream = new StorageStream(stream),
-                ContentType = fileProperties.Value.ContentType,
-                Extension = fileExtension,
-                Md5 = fileProperties.Value.ContentHash != null
-                    ? System.Text.Encoding.UTF8.GetString(fileProperties.Value.ContentHash) 
-                    : null,
-            };
+                var subDir = dirClient.GetSubdirectoryClient(item.Name);
+                await DeleteAllAsync(subDir, cancellationToken: cancellationToken);
+            }
+            else
+            {
+                await dirClient.DeleteFileAsync(item.Name, cancellationToken: cancellationToken);
+            }
         }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
+
+        await dirClient.DeleteAsync(cancellationToken);
     }
-
-    public async Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new StorageException(Resources.ThePathMustBeFile);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-            return await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            return false;
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
-    }
-
-    public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
-    {
-        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
-        var hashOptions = new StorageHashOptions() { Hashing = false };
-        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
-
-        var entities = 
-            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
-
-        var storageEntities = entities.ToList();
-        if (!storageEntities.Any())
-            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        foreach (var entity in storageEntities)
-        {
-            await DeleteFileAsync(entity.FullPath, cancellationToken);
-        }
-    }
-
-    public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
-
-            await fileClient.DeleteAsync(cancellationToken: cancellationToken);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
-    }
-
-    public async Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        try
-        {
-            ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
-            await directoryClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
-    }
-
-    public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        try
-        {
-            ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
-            var isExist = await directoryClient.ExistsAsync(cancellationToken: cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path));
-
-            await DeleteAsync(path, new StorageSearchOptions(), cancellationToken);
-            await directoryClient.DeleteAsync(cancellationToken: cancellationToken);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
-    }
-
-    public async Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        try
-        {
-            ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
-            return await directoryClient.ExistsAsync(cancellationToken: cancellationToken);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
-    }
+    #endregion
 
     public void Dispose() { }
 }

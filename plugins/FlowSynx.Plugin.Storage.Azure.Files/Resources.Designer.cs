@@ -97,6 +97,15 @@ namespace FlowSynx.Plugin.Storage.Azure.Files {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The specified parent path does not exist..
+        /// </summary>
+        internal static string ParentNotFound {
+            get {
+                return ResourceManager.GetString("ParentNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin for managing Microsoft Azure File storage system..
         /// </summary>
         internal static string PluginDescription {

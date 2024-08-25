@@ -129,6 +129,9 @@
   <data name="OnePropertyShouldHaveValue" xml:space="preserve">
     <value>One of the ConnectionString or both AccountKey and AccountName properties in the azure file specifications should have value.</value>
   </data>
+  <data name="ParentNotFound" xml:space="preserve">
+    <value>The specified parent path does not exist.</value>
+  </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for managing Microsoft Azure File storage system.</value>
   </data>
