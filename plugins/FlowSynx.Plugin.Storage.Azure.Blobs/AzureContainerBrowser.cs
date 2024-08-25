@@ -1,9 +1,8 @@
 ﻿using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs;
 using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
 using Microsoft.Extensions.Logging;
+using FlowSynx.Plugin.Storage.Filters;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
@@ -18,16 +17,15 @@ internal class AzureContainerBrowser : IDisposable
         _client = client ?? throw new ArgumentNullException(nameof(client));
     }
 
-    public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path, 
-        StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path,
+       ListFilters listFilters, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
 
         try
         {
             var blobs = _client.GetBlobsByHierarchyAsync(
-                delimiter: searchOptions.Recurse ? null : "/",
+                delimiter: listFilters.Recurse ? null : "/",
                 prefix: FormatFolderPrefix(path),
                 traits: BlobTraits.Metadata,
                 states: BlobStates.None
@@ -38,8 +36,8 @@ internal class AzureContainerBrowser : IDisposable
                 try
                 {
                     if (item.IsBlob)
-                        result.Add(item.ToEntity(_client.Name, metadataOptions.IncludeMetadata));
-                    
+                        result.Add(item.ToEntity(_client.Name, listFilters.IncludeMetadata));
+
                     if (item.IsPrefix)
                         result.Add(item.ToEntity(_client.Name));
                 }
@@ -49,7 +47,7 @@ internal class AzureContainerBrowser : IDisposable
                 }
             }
 
-            if (searchOptions.Recurse && (listOptions.Kind is StorageFilterItemKind.Directory or StorageFilterItemKind.FileAndDirectory))
+            if (listFilters.Recurse && (string.IsNullOrEmpty(listFilters.Kind) || string.Equals(listFilters.Kind, "directory", StringComparison.CurrentCultureIgnoreCase)))
             {
                 var implicitPrefixes = AssumeImplicitPrefixes(
                     PathHelper.Combine(_client.Name, path),
@@ -65,7 +63,7 @@ internal class AzureContainerBrowser : IDisposable
         {
             _logger.LogError(ex.Message);
         }
-        
+
         return result;
     }
 
