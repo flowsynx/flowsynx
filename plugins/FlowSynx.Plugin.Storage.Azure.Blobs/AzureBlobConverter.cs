@@ -30,6 +30,7 @@ static class AzureBlobConverter
         {
             Md5 = item.Blob.Properties.ContentHash.ToHexString(),
             Size = item.Blob.Properties.ContentLength,
+            CreatedTime = item.Blob.Properties.CreatedOn,
             ModifiedTime = item.Blob.Properties.LastModified
         };
 

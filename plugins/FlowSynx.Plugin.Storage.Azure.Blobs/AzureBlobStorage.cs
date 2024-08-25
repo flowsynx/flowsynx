@@ -10,7 +10,6 @@ using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.IO;
 using FlowSynx.Plugin.Storage.Filters;
-using SharpCompress;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
@@ -87,6 +86,10 @@ public class AzureBlobStorage : IPlugin
         {
             throw new StorageException(Resources.OperationNotAllowedInCurrentState);
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
         catch (RequestFailedException)
         {
             throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
@@ -140,6 +143,10 @@ public class AzureBlobStorage : IPlugin
         {
             throw new StorageException(Resources.OperationNotAllowedInCurrentState);
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
         catch (RequestFailedException)
         {
             throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
@@ -169,15 +176,15 @@ public class AzureBlobStorage : IPlugin
                 throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
             var response = await blockBlobClient.OpenReadAsync(cancellationToken: cancellationToken);
-            var fileProperties = await blockBlobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
+            var blobProperties = await blockBlobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
             var fileExtension = Path.GetExtension(path);
 
             return new StorageRead()
             {
                 Stream = new StorageStream(response),
-                ContentType = fileProperties.Value.ContentType,
+                ContentType = blobProperties.Value.ContentType,
                 Extension = fileExtension,
-                Md5 = fileProperties.Value.ContentHash?.ToHexString(),
+                Md5 = blobProperties.Value.ContentHash?.ToHexString(),
             };
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
@@ -195,6 +202,10 @@ public class AzureBlobStorage : IPlugin
         catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
         {
             throw new StorageException(Resources.OperationNotAllowedInCurrentState);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
         }
         catch (RequestFailedException)
         {
@@ -292,6 +303,10 @@ public class AzureBlobStorage : IPlugin
         {
             throw new StorageException(Resources.OperationNotAllowedInCurrentState);
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
         catch (RequestFailedException)
         {
             throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
@@ -328,6 +343,7 @@ public class AzureBlobStorage : IPlugin
                     Kind = storageEntity.Kind.ToString().ToLower(),
                     Name = storageEntity.Name,
                     Path = storageEntity.FullPath,
+                    CreatedTime = storageEntity.CreatedTime,
                     ModifiedTime = storageEntity.ModifiedTime,
                     Size = storageEntity.Size.ToString(!listFilters.Full),
                     ContentType = storageEntity.ContentType,
@@ -360,6 +376,7 @@ public class AzureBlobStorage : IPlugin
             Kind = storageEntity.Kind.ToString().ToLower(),
             Name = storageEntity.Name,
             Path = storageEntity.FullPath,
+            CreatedTime = storageEntity.CreatedTime,
             ModifiedTime = storageEntity.ModifiedTime,
             Size = storageEntity.Size.ToString(!listFilters.Full),
             ContentType = storageEntity.ContentType,
@@ -504,6 +521,10 @@ public class AzureBlobStorage : IPlugin
         catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
         {
             throw new StorageException(Resources.OperationNotAllowedInCurrentState);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
         }
         catch (RequestFailedException)
         {

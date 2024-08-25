@@ -138,6 +138,9 @@
   <data name="OperationNotAllowedInCurrentState" xml:space="preserve">
     <value>Operation not allowed in current state</value>
   </data>
+  <data name="ParentNotFound" xml:space="preserve">
+    <value>The specified parent path does not exist.</value>
+  </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for managing Microsoft Azure Blob storage system.</value>
   </data>
