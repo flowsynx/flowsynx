@@ -57,7 +57,7 @@ public class LocalFileSystemStorage : IPlugin
             freeSpace = 0;
         }
 
-        var result = new StorageUsage
+        var result = new
         {
             Total = totalSpace.ToString(!aboutFilters.Full),
             Free = freeSpace.ToString(!aboutFilters.Full),
@@ -228,6 +228,7 @@ public class LocalFileSystemStorage : IPlugin
             Kind = storageEntity.Kind.ToString().ToLower(),
             Name = storageEntity.Name,
             Path = storageEntity.FullPath,
+            CreatedTime = storageEntity.CreatedTime,
             ModifiedTime = storageEntity.ModifiedTime,
             Size = storageEntity.Size.ToString(!listFilters.Full),
             ContentType = storageEntity.ContentType,
