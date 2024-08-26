@@ -162,9 +162,35 @@ public class GoogleCloudStorage : IPlugin
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var deleteFilters = filters.ToObject<DeleteFilters>();
+        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var result = new List<string>();
+        foreach (var entityItem in storageEntities)
+        {
+            if (entityItem is not StorageList list)
+                continue;
+
+            if (await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(list.Id);
+            }
+        }
+
+        if (deleteFilters.Purge is true)
+        {
+            var pathParts = GetPartsAsync(path);
+            await DeleteAllAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        }
+
+        return result;
     }
 
     public async Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
@@ -393,6 +419,59 @@ public class GoogleCloudStorage : IPlugin
         await _client.UploadObjectAsync(bucketName, folderName, "application/x-directory", 
             new MemoryStream(content), cancellationToken: cancellationToken);
         _logger.LogInformation($"Folder '{folderName}' was created successfully.");
+    }
+
+    private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            if (PathHelper.IsFile(path))
+            {
+                var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+                if (!isExist)
+                    return false;
+
+                await _client.DeleteObjectAsync(pathParts.BucketName, pathParts.RelativePath,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+            
+            await DeleteAllAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken);
+            return true;
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task DeleteAllAsync(string bucketName, string folderName, CancellationToken cancellationToken)
+    {
+        var request = _client.Service.Objects.List(bucketName);
+        request.Prefix = folderName;
+        request.Delimiter = null;
+
+        do
+        {
+            var serviceObjects = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            if (serviceObjects.Items != null)
+            {
+                foreach (var item in serviceObjects.Items)
+                {
+                    if (item == null)
+                        continue;
+
+                    await _client.DeleteObjectAsync(bucketName, item.Name, 
+                        cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+            }
+            request.PageToken = serviceObjects.NextPageToken;
+        }
+        while (request.PageToken != null);
     }
     #endregion
 }
