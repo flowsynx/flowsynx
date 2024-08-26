@@ -26,7 +26,7 @@ static class AmazonS3StorageConverter
     {
         var result = new List<StorageEntity>();
         result.AddRange((response.S3Objects
-            .Where(obj => !obj.Key.EndsWith("/"))
+            .Where(obj => !obj.Key.EndsWith(PathHelper.PathSeparator))
             .Select(obj => obj.ToEntity(client, bucketName, includeMetadata, cancellationToken))));
 
         result.AddRange(response.CommonPrefixes
@@ -40,7 +40,7 @@ static class AmazonS3StorageConverter
         bool? includeMetadata, CancellationToken cancellationToken)
     {
         var fullPath = PathHelper.Combine(bucketName, s3Obj.Key);
-        StorageEntity entity = s3Obj.Key.EndsWith("/")
+        StorageEntity entity = s3Obj.Key.EndsWith(PathHelper.PathSeparator)
             ? new StorageEntity(fullPath, StorageEntityItemKind.Directory)
             : new StorageEntity(fullPath, StorageEntityItemKind.File);
 

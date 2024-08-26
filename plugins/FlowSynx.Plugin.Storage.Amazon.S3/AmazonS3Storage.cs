@@ -186,8 +186,8 @@ public class AmazonS3Storage : IPlugin
         {
             var pathParts = GetPartsAsync(path);
             var folder = pathParts.RelativePath;
-            if (!folder.EndsWith("/"))
-                folder += "/";
+            if (!folder.EndsWith(PathHelper.PathSeparator))
+                folder += PathHelper.PathSeparator;
 
             await _client.DeleteObjectAsync(pathParts.BucketName, folder, cancellationToken);
         }
@@ -217,7 +217,7 @@ public class AmazonS3Storage : IPlugin
         var path = PathHelper.ToUnixPath(entity);
 
         if (string.IsNullOrEmpty(path))
-            path += "/";
+            path += PathHelper.PathSeparator;
 
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
@@ -377,8 +377,8 @@ public class AmazonS3Storage : IPlugin
 
     private async Task AddFolder(string bucketName, string folderName, CancellationToken cancellationToken)
     {
-        if (!folderName.EndsWith("/"))
-            folderName += "/";
+        if (!folderName.EndsWith(PathHelper.PathSeparator))
+            folderName += PathHelper.PathSeparator;
 
         var request = new PutObjectRequest()
         {

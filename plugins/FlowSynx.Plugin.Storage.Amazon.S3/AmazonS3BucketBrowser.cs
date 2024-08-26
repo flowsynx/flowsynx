@@ -34,7 +34,7 @@ internal class AmazonS3BucketBrowser : IDisposable
         {
             BucketName = _bucketName,
             Prefix = FormatFolderPrefix(path),
-            Delimiter = "/"
+            Delimiter = PathHelper.PathSeparatorString
         };
 
         var result = new List<StorageEntity>();
@@ -67,8 +67,8 @@ internal class AmazonS3BucketBrowser : IDisposable
         if (PathHelper.IsRootPath(folderPath))
             return null;
 
-        if (!folderPath.EndsWith("/"))
-            folderPath += "/";
+        if (!folderPath.EndsWith(PathHelper.PathSeparator))
+            folderPath += PathHelper.PathSeparator;
 
         return folderPath;
     }
