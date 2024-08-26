@@ -301,7 +301,7 @@ public class AzureFileStorage : IPlugin
         var path = PathHelper.ToUnixPath(entity);
 
         if (string.IsNullOrEmpty(path))
-            path += "/";
+            path += PathHelper.PathSeparator;
 
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
