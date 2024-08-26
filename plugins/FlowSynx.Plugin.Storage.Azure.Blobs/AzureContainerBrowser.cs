@@ -25,7 +25,7 @@ internal class AzureContainerBrowser : IDisposable
         try
         {
             var blobs = _client.GetBlobsByHierarchyAsync(
-                delimiter: listFilters.Recurse ? null : "/",
+                delimiter: listFilters.Recurse ? null : PathHelper.PathSeparatorString,
                 prefix: FormatFolderPrefix(path),
                 traits: BlobTraits.Metadata,
                 states: BlobStates.None
@@ -91,8 +91,8 @@ internal class AzureContainerBrowser : IDisposable
         if (PathHelper.IsRootPath(folderPath))
             return null;
 
-        if (!folderPath.EndsWith("/"))
-            folderPath += "/";
+        if (!folderPath.EndsWith(PathHelper.PathSeparator))
+            folderPath += PathHelper.PathSeparator;
 
         return folderPath;
     }

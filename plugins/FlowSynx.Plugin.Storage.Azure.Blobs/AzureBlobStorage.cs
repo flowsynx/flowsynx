@@ -252,8 +252,8 @@ public class AzureBlobStorage : IPlugin
 
             if (!string.IsNullOrEmpty(directory))
             {
-                if (!directory.EndsWith("/"))
-                    directory += "/";
+                if (!directory.EndsWith(PathHelper.PathSeparator))
+                    directory += PathHelper.PathSeparator;
 
                 BlockBlobClient blockBlobClient = container.GetBlockBlobClient(directory);
                 await blockBlobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
@@ -319,7 +319,7 @@ public class AzureBlobStorage : IPlugin
         var path = PathHelper.ToUnixPath(entity);
 
         if (string.IsNullOrEmpty(path))
-            path += "/";
+            path += PathHelper.PathSeparator;
 
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
