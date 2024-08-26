@@ -61,7 +61,7 @@ namespace FlowSynx.Plugin.Storage.Google.Cloud {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to About operation is not supported for Azure Blob storage!.
+        ///   Looks up a localized string similar to About operation is not supported for Google Cloud storage!.
         /// </summary>
         internal static string AboutOperrationNotSupported {
             get {

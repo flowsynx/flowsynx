@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AboutOperrationNotSupported" xml:space="preserve">
-    <value>About operation is not supported for Azure Blob storage!</value>
+    <value>About operation is not supported for Google Cloud storage!</value>
   </data>
   <data name="FileIsAlreadyExistAndCannotBeOverwritten" xml:space="preserve">
     <value>File '{0}' is already exist and can't be overwritten!</value>

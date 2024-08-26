@@ -1,6 +1,5 @@
 ﻿using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
+using FlowSynx.Plugin.Storage.Filters;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
 
@@ -19,9 +18,8 @@ internal class GoogleBucketBrowser : IDisposable
         _bucketName = bucketName;
     }
 
-    public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path, 
-        StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path,
+        ListFilters listFilters, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
 
@@ -29,7 +27,7 @@ internal class GoogleBucketBrowser : IDisposable
         {
             var request = _client.Service.Objects.List(_bucketName);
             request.Prefix = FormatFolderPrefix(path);
-            request.Delimiter = searchOptions.Recurse ? null : "/";
+            request.Delimiter = listFilters.Recurse ? null : PathHelper.PathSeparatorString;
             
             do
             {
@@ -41,9 +39,9 @@ internal class GoogleBucketBrowser : IDisposable
                         if (item == null)
                             continue;
 
-                        result.Add(item.Name.EndsWith("/")
-                            ? item.ToEntity(true, metadataOptions.IncludeMetadata)
-                            : item.ToEntity(false, metadataOptions.IncludeMetadata));
+                        result.Add(item.Name.EndsWith(PathHelper.PathSeparator)
+                            ? item.ToEntity(true, listFilters.IncludeMetadata)
+                            : item.ToEntity(false, listFilters.IncludeMetadata));
                     }
                 }
 
@@ -69,8 +67,8 @@ internal class GoogleBucketBrowser : IDisposable
         if (PathHelper.IsRootPath(folderPath))
             return null;
 
-        if (!folderPath.EndsWith("/"))
-            folderPath += "/";
+        if (!folderPath.EndsWith(PathHelper.PathSeparator))
+            folderPath += PathHelper.PathSeparator;
 
         return folderPath;
     }
