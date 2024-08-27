@@ -96,6 +96,7 @@ public class GoogleCloudStorage : IPlugin
 
         if (dataOptions is not Stream dataStream)
             throw new StorageException(nameof(dataStream));
+
         try
         {
             var pathParts = GetPartsAsync(path);
