@@ -97,6 +97,15 @@ namespace FlowSynx.Plugin.Storage.Google.Drive {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The Entered path &apos;{0}&apos; is not exist..
+        /// </summary>
+        internal static string ParentPathIsNotExist {
+            get {
+                return ResourceManager.GetString("ParentPathIsNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin for managing Google Drive system..
         /// </summary>
         internal static string PluginDescription {

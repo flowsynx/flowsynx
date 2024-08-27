@@ -129,6 +129,9 @@
   <data name="NoFilesFoundWithTheGivenFilter" xml:space="preserve">
     <value>No files found with the given filter in '{0}'.</value>
   </data>
+  <data name="ParentPathIsNotExist" xml:space="preserve">
+    <value>The Entered path '{0}' is not exist.</value>
+  </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for managing Google Drive system.</value>
   </data>

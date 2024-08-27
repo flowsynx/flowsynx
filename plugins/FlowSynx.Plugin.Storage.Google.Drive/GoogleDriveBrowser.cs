@@ -2,6 +2,7 @@
 using FlowSynx.Plugin.Storage.Filters;
 using Google.Apis.Drive.v3;
 using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace FlowSynx.Plugin.Storage.Google.Drive;
 
@@ -17,7 +18,7 @@ internal class GoogleDriveBrowser : IDisposable
         _logger = logger;
         _client = client;
         _rootFolderId = rootFolderId;
-        _pathDictionary = new Dictionary<string, string> { { "/", rootFolderId }, { "", rootFolderId } };
+        _pathDictionary = new Dictionary<string, string> { { PathHelper.PathSeparatorString, rootFolderId }, { "", rootFolderId } };
     }
 
     private IEnumerable<string> Fields => new List<string>()
@@ -139,8 +140,8 @@ internal class GoogleDriveBrowser : IDisposable
         if (PathHelper.IsRootPath(folderPath))
             return null;
 
-        if (!folderPath.EndsWith("/"))
-            folderPath += "/";
+        if (!folderPath.EndsWith(PathHelper.PathSeparator))
+            folderPath += PathHelper.PathSeparator;
 
         return folderPath;
     }
