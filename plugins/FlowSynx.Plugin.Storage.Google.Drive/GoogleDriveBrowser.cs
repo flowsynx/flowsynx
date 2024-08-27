@@ -1,6 +1,5 @@
 ﻿using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
+using FlowSynx.Plugin.Storage.Filters;
 using Google.Apis.Drive.v3;
 using Microsoft.Extensions.Logging;
 
@@ -41,20 +40,17 @@ internal class GoogleDriveBrowser : IDisposable
     };
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListAsync(string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+        ListFilters listFilters, CancellationToken cancellationToken)
     {
         var entities = new List<StorageEntity>();
 
-        await ListFolderAsync(entities, path, searchOptions, listOptions,
-            metadataOptions, cancellationToken).ConfigureAwait(false);
+        await ListFolderAsync(entities, path, listFilters, cancellationToken).ConfigureAwait(false);
 
         return entities;
     }
     
     private async Task ListFolderAsync(List<StorageEntity> entities, string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+        ListFilters listFilters, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
         var folderId = await GetFolderId(path, cancellationToken);
@@ -73,8 +69,8 @@ internal class GoogleDriveBrowser : IDisposable
                         continue;
 
                     result.Add(item.MimeType == "application/vnd.google-apps.folder"
-                        ? item.ToEntity(path, true, metadataOptions.IncludeMetadata)
-                        : item.ToEntity(path, false, metadataOptions.IncludeMetadata));
+                        ? item.ToEntity(path, true, listFilters.IncludeMetadata)
+                        : item.ToEntity(path, false, listFilters.IncludeMetadata));
                 }
             }
 
@@ -84,11 +80,11 @@ internal class GoogleDriveBrowser : IDisposable
 
         entities.AddRange(result);
 
-        if (searchOptions.Recurse)
+        if (listFilters.Recurse)
         {
             var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory).ToList();
             await Task.WhenAll(directories.Select(dir => ListFolderAsync(entities, dir.FullPath,
-                searchOptions, listOptions, metadataOptions, cancellationToken))).ConfigureAwait(false);
+                listFilters, cancellationToken))).ConfigureAwait(false);
         }
     }
     
