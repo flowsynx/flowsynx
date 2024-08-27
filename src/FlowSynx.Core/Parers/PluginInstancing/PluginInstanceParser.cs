@@ -29,7 +29,7 @@ internal class PluginInstanceParser : IPluginInstanceParser
     private readonly INamespaceParser _namespaceParser;
     private readonly IMultiKeyCache<string, string, PluginInstance> _multiKeyCache;
     private readonly ISerializer _serializer;
-    private const string ParserSeparator = ":";
+    private const string ParserSeparator = "://";
 
     public PluginInstanceParser(ILogger<PluginInstanceParser> logger, IConfigurationManager configurationManager,
         IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
