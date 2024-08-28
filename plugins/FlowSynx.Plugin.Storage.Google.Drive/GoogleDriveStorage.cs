@@ -204,9 +204,50 @@ public class GoogleDriveStorage : IPlugin
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var deleteFilters = filters.ToObject<DeleteFilters>();
+        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var result = new List<string>();
+        foreach (var entityItem in storageEntities)
+        {
+            if (entityItem is not StorageList list)
+                continue;
+
+            if (await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false))
+            {
+                result.Add(list.Id);
+            }
+        }
+
+        if (deleteFilters.Purge is true)
+        {
+            var folder = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
+            if (folder.Exist)
+            {
+                if (!PathHelper.IsRootPath(path))
+                {
+                    await _client.Files.Delete(folder.Id).ExecuteAsync(cancellationToken);
+                    _browser?.DeleteFolderId(path);
+                }
+                else
+                {
+                    _logger.LogWarning($"The path {path} is root path and can't be purged!");
+                }
+            }
+            else
+            {
+                _logger.LogWarning($"The path {path} is not exist!");
+            }
+        }
+
+        return result;
     }
 
     public async Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
@@ -271,81 +312,6 @@ public class GoogleDriveStorage : IPlugin
         return result;
     }
     
-    //public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
-    //{
-    //    var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
-    //    var hashOptions = new StorageHashOptions() { Hashing = false };
-    //    var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
-
-    //    var entities =
-    //        await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken)
-    //            .ConfigureAwait(false);
-
-    //    var storageEntities = entities.ToList();
-    //    if (!storageEntities.Any())
-    //        _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-    //    foreach (var entity in storageEntities)
-    //    {
-    //        await DeleteFileAsync(entity.FullPath, cancellationToken);
-    //    }
-    //}
-
-    //public async Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
-    //{
-    //    if (string.IsNullOrEmpty(path))
-    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-    //    if (!PathHelper.IsFile(path))
-    //        throw new StorageException(Resources.ThePathIsNotFile);
-
-    //    try
-    //    {
-    //        var file = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
-    //        if (!file.Exist)
-    //            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-    //        var command = _client.Files.Delete(file.Id);
-    //        await command.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-    //    }
-    //    catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-    //    {
-    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-    //    }
-    //}
-
-    //public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    //{
-    //    if (string.IsNullOrEmpty(path))
-    //        throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-    //    if (string.IsNullOrEmpty(path))
-    //        path += "/";
-
-    //    if (!PathHelper.IsDirectory(path))
-    //        throw new StorageException(Resources.ThePathIsNotDirectory);
-
-    //    try
-    //    {
-    //        var folder = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
-    //        if (!folder.Exist)
-    //            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-    //        var searchOptions = new StorageSearchOptions();
-    //        await DeleteAsync(path, searchOptions, cancellationToken);
-
-    //        if (PathHelper.IsRootPath(path))
-    //            throw new StorageException("Can't purge root directory");
-
-    //        var command = _client.Files.Delete(folder.Id);
-    //        await command.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-    //    }
-    //    catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-    //    {
-    //        throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-    //    }
-    //}
-
     public void Dispose() { }
 
     #region private methods
@@ -374,7 +340,11 @@ public class GoogleDriveStorage : IPlugin
 
         if (credential.IsCreateScopedRequired)
         {
-            string[] scopes = { DriveService.Scope.Drive, DriveService.Scope.DriveMetadataReadonly };
+            string[] scopes = { 
+                DriveService.Scope.Drive, 
+                DriveService.Scope.DriveMetadataReadonly,
+                DriveService.Scope.DriveFile,
+            };
             credential = credential.CreateScoped(scopes);
         }
 
@@ -410,7 +380,7 @@ public class GoogleDriveStorage : IPlugin
             if (string.IsNullOrEmpty(fileName))
                 throw new StorageException(string.Format(Resources.TePathIsNotFile, filePath));
 
-            var directoryPath = PathHelper.GetParent(filePath) ?? "";
+            var directoryPath = PathHelper.GetParent(filePath) + PathHelper.PathSeparatorString ?? "";
             var folderId = await GetFolderId(directoryPath, cancellationToken).ConfigureAwait(false);
 
             var listRequest = _client.Files.List();
@@ -452,6 +422,42 @@ public class GoogleDriveStorage : IPlugin
             throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
 
         return _googleDriveSpecifications.FolderId;
+    }
+
+    private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            if (PathHelper.IsFile(path))
+            {
+                var file = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
+                if (!file.Exist)
+                    return false;
+
+                var command = _client.Files.Delete(file.Id);
+                await command.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+                return true;
+            }
+
+            var folder = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
+            if (!folder.Exist)
+                return false;
+
+            if (PathHelper.IsRootPath(path))
+                throw new StorageException("Can't purge root directory");
+
+            await _client.Files.Delete(folder.Id).ExecuteAsync(cancellationToken);
+            _browser?.DeleteFolderId(path);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return false;
+        }
     }
     #endregion
 }

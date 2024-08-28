@@ -126,11 +126,20 @@ internal class GoogleDriveBrowser : IDisposable
             folderId = file.Id;
             route = PathHelper.Combine(route, file.Name);
 
+            if (!route.EndsWith(PathHelper.PathSeparator))
+                route += PathHelper.PathSeparator;
+
             if (!_pathDictionary.ContainsKey(route))
                 _pathDictionary.Add(route, file.Id);
         }
 
         return folderId;
+    }
+
+    public void DeleteFolderId(string path)
+    {
+        if (_pathDictionary.ContainsKey(path))
+            _pathDictionary.Remove(path);
     }
 
     private string? FormatFolderPrefix(string folderPath)
