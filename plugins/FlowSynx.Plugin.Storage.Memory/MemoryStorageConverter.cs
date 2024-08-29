@@ -20,7 +20,7 @@ static class MemoryStorageConverter
     public static StorageEntity ToEntity(this MemoryEntity memoryEntity, string bucketName, bool? includeMetadata)
     {
         var fullPath = PathHelper.Combine(bucketName, memoryEntity.Name);
-        var isDirectory = memoryEntity.Name.EndsWith("/") && memoryEntity.IsDirectory;
+        var isDirectory = memoryEntity.Name.EndsWith(PathHelper.PathSeparator) && memoryEntity.IsDirectory;
         StorageEntity entity = new StorageEntity(fullPath, memoryEntity.Kind);
 
         if (!isDirectory)

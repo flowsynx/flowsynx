@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Google.Cloud\FlowSynx.Plugin.Storage.Google.Cloud.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Google.Drive\FlowSynx.Plugin.Storage.Google.Drive.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj" />
+    <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Memory\FlowSynx.Plugin.Storage.Memory.csproj" />
   </ItemGroup>
 
   <ItemGroup>

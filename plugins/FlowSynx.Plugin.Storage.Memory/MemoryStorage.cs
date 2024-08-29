@@ -1,15 +1,14 @@
 ﻿using EnsureThat;
 using FlowSynx.IO;
 using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin.Storage.Abstractions;
+using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Abstractions.Models;
-using FlowSynx.Plugin.Storage.Abstractions.Options;
+using FlowSynx.Plugin.Storage.Filters;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Memory;
 
-public class MemoryStorage : IStoragePlugin
+public class MemoryStorage : IPlugin
 {
     private readonly ILogger<MemoryStorage> _logger;
     private readonly IStorageFilter _storageFilter;
@@ -23,12 +22,12 @@ public class MemoryStorage : IStoragePlugin
         _storageFilter = storageFilter;
         _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
     }
-
+    
     public Guid Id => Guid.Parse("ac220180-021e-4150-b0e1-c4d4bdbfb9f0");
     public string Name => "Memory";
     public PluginNamespace Namespace => PluginNamespace.Storage;
     public string? Description => Resources.PluginDescription;
-    public Dictionary<string, string?>? Specifications { get; set; }
+    public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(MemoryStorageSpecifications);
 
     public Task Initialize()
@@ -36,8 +35,9 @@ public class MemoryStorage : IStoragePlugin
         return Task.CompletedTask;
     }
 
-    public Task<StorageUsage> About(CancellationToken cancellationToken = default)
+    public Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
+        var aboutFilters = filters.ToObject<AboutFilters>();
         long totalSpace = 0, usedSpace = 0, freeSpace = 0;
         try
         {
@@ -56,53 +56,68 @@ public class MemoryStorage : IStoragePlugin
             freeSpace = 0;
         }
 
-        return Task.FromResult(new StorageUsage { Total = totalSpace, Free = freeSpace, Used = usedSpace });
+        return Task.FromResult<object>(new
+        {
+            Total = totalSpace.ToString(!aboutFilters.Full), 
+            Free = freeSpace.ToString(!aboutFilters.Full), 
+            Used = usedSpace.ToString(!aboutFilters.Full)
+        });
     }
 
-    public async Task<IEnumerable<StorageEntity>> ListAsync(string path, StorageSearchOptions searchOptions,
-        StorageListOptions listOptions, StorageHashOptions hashOptions, StorageMetadataOptions metadataOptions,
-        CancellationToken cancellationToken = default)
+    public async Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        if (string.IsNullOrEmpty(path))
-            path += "/";
+        var path = PathHelper.ToUnixPath(entity);
 
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-        
-        var result = new List<StorageEntity>();
-        var buckets = new List<string>();
-
-        var pathParts = GetPartsAsync(path);
-
-        if (pathParts.BucketName == "") {
-            if (pathParts.RelativePath != "")
-                throw new StorageException(Resources.BucketNameIsRequired);
-
-            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
-            result.AddRange(buckets.Select(b => b.ToEntity(metadataOptions.IncludeMetadata)));
-            return result;
-        }
-        
-        buckets.Add(pathParts.BucketName);
-
-        await Task.WhenAll(buckets.Select(b =>
-            ListAsync(result, b, pathParts.RelativePath, searchOptions, listOptions, metadataOptions, cancellationToken))
-        ).ConfigureAwait(false);
-
-        return _storageFilter.FilterEntitiesList(result, searchOptions, listOptions);
-    }
-    
-    public Task WriteAsync(string path, StorageStream dataStream, StorageWriteOptions writeOptions,
-        CancellationToken cancellationToken = default)
-    {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (dataStream == null)
-            throw new ArgumentNullException(nameof(dataStream));
+        if (string.IsNullOrEmpty(path))
+            path += PathHelper.PathSeparator;
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        var pathParts = GetPartsAsync(path);
+        var isBucketExist = BucketExists(pathParts.BucketName);
+        if (!isBucketExist)
+        {
+            _entities.Add(pathParts.BucketName, new Dictionary<string, MemoryEntity>());
+            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
+        }
+
+        var entityId = string.Empty;
+        if (!string.IsNullOrEmpty(pathParts.RelativePath))
+        {
+            var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
+            if (!isExist)
+            {
+                entityId = await AddFolder(pathParts.BucketName, pathParts.RelativePath).ConfigureAwait(false);
+            }
+            else
+            {
+                _logger.LogInformation($"Directory '{pathParts.RelativePath}' is already exist.");
+                var bucket = _entities[pathParts.BucketName];
+                entityId = bucket[pathParts.RelativePath].Id;
+            }
+        }
+        
+        return new { entityId };
+    }
+
+    public Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var writeFilters = filters.ToObject<WriteFilters>();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         if (!PathHelper.IsFile(path))
             throw new StorageException(Resources.ThePathIsNotFile);
+
+        if (dataOptions is not Stream dataStream)
+            throw new StorageException(nameof(dataStream));
 
         var pathParts = GetPartsAsync(path);
         var isBucketExist = BucketExists(pathParts.BucketName);
@@ -112,20 +127,23 @@ public class MemoryStorage : IStoragePlugin
         }
 
         var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-        if (isExist && writeOptions.Overwrite is false)
+        if (isExist && writeFilters.Overwrite is false)
             throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
         var name = Path.GetFileName(path);
         var extension = Path.GetExtension(path);
         var bucket = _entities[pathParts.BucketName];
-        bucket[pathParts.RelativePath] = new MemoryEntity(name, dataStream);
-
-        return Task.CompletedTask;
+        var memoryEntity = new MemoryEntity(name, dataStream);
+        bucket[pathParts.RelativePath] = memoryEntity;
+        
+        return Task.FromResult<object>(new { memoryEntity.Id });
     }
 
-    public Task<StorageRead> ReadAsync(string path, StorageHashOptions hashOptions,
-        CancellationToken cancellationToken = default)
+    public Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
+        var path = PathHelper.ToUnixPath(entity);
+        var readFilters = filters.ToObject<ReadFilters>();
+
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -142,7 +160,7 @@ public class MemoryStorage : IStoragePlugin
         var memoryEntity = bucket[pathParts.RelativePath];
         var extension = Path.GetExtension(path);
 
-        var response = new StorageRead()
+        var result = new StorageRead
         {
             Stream = new StorageStream(memoryEntity.Content),
             ContentType = memoryEntity.ContentType,
@@ -150,143 +168,131 @@ public class MemoryStorage : IStoragePlugin
             Md5 = memoryEntity.Md5,
         };
 
-        return Task.FromResult(response);
+        return Task.FromResult<object>(result);
     }
 
-    public Task<bool> FileExistAsync(string path, CancellationToken cancellationToken = default)
+    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var pathParts = GetPartsAsync(path);
-        return Task.FromResult(ObjectExists(pathParts.BucketName, pathParts.RelativePath));
+        throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(string path, StorageSearchOptions storageSearches, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        var listOptions = new StorageListOptions { Kind = StorageFilterItemKind.File };
-        var hashOptions = new StorageHashOptions() { Hashing = false };
-        var metadataOptions = new StorageMetadataOptions() { IncludeMetadata = false };
-
-        var entities =
-            await ListAsync(path, storageSearches, listOptions, hashOptions, metadataOptions, cancellationToken);
+        var path = PathHelper.ToUnixPath(entity);
+        var deleteFilters = filters.ToObject<DeleteFilters>();
+        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
-            _logger.LogWarning(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
-        foreach (var entity in storageEntities)
+        var result = new List<string>();
+        foreach (var entityItem in storageEntities)
         {
-            await DeleteFileAsync(entity.FullPath, cancellationToken);
+            if (entityItem is not StorageList list)
+                continue;
+
+            if (DeleteEntityAsync(list.Path))
+            {
+                result.Add(list.Id);
+            }
         }
-    }
 
-    public Task DeleteFileAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var pathParts = GetPartsAsync(path);
-        var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-
-        if (!isExist)
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-        var bucket = _entities[pathParts.BucketName];
-        var ms = bucket[pathParts.RelativePath];
-
-        bucket.Remove(pathParts.RelativePath);
-        return Task.CompletedTask;
-    }
-
-    public Task MakeDirectoryAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var pathParts = GetPartsAsync(path);
-        var isBucketExist = BucketExists(pathParts.BucketName);
-        if (!isBucketExist)
+        if (deleteFilters.Purge is true)
         {
-            _entities.Add(pathParts.BucketName, new Dictionary<string, MemoryEntity>());
-            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
-        }
-        
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-            if (!isExist)
-                AddFolder(pathParts.BucketName, pathParts.RelativePath).ConfigureAwait(false);
+            var pathParts = GetPartsAsync(path);
+            if (!string.IsNullOrEmpty(pathParts.RelativePath))
+            {
+                var bucket = _entities[pathParts.BucketName];
+                var itemToDelete = bucket.Keys.Where(x => x.StartsWith(pathParts.RelativePath)).Select(p => p);
+
+                var toDelete = itemToDelete.ToList();
+                if (toDelete.Any())
+                {
+                    foreach (var item in toDelete)
+                    {
+                        bucket.Remove(item);
+                    }
+                }
+            }
             else
-                _logger.LogInformation($"Directory '{pathParts.RelativePath}' is already exist.");
+            {
+                if (string.IsNullOrEmpty(pathParts.RelativePath) || PathHelper.IsRootPath(pathParts.RelativePath))
+                    _entities.Remove(pathParts.BucketName);
+            }
         }
 
-        return Task.CompletedTask;
+        return result;
     }
 
-    public async Task PurgeDirectoryAsync(string path, CancellationToken cancellationToken = default)
+    public Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
+        var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
+        var pathParts = GetPartsAsync(path);
+        if (PathHelper.IsFile(path))
+        {
+            return Task.FromResult(ObjectExists(pathParts.BucketName, pathParts.RelativePath));
+        }
+
+        var folderExist = FolderExistAsync(pathParts.BucketName, pathParts.RelativePath);
+        return Task.FromResult(folderExist);
+    }
+
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
         if (string.IsNullOrEmpty(path))
-            path += "/";
+            path += PathHelper.PathSeparator;
 
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        var pathParts = GetPartsAsync(path);
-        var isBucketExist = BucketExists(pathParts.BucketName);
-        if (!isBucketExist)
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            var isMemoryEntityExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-            if (!isMemoryEntityExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var searchOptions = new StorageSearchOptions();
-            await DeleteAsync(path, searchOptions, cancellationToken);
-
-            var bucket = _entities[pathParts.BucketName];
-            bucket.Remove(pathParts.RelativePath);
-        }
-        else
-        {
-            if (string.IsNullOrEmpty(pathParts.RelativePath) || pathParts.RelativePath == "/")
-                _entities.Remove(pathParts.BucketName);
-        }
-    }
-
-    public Task<bool> DirectoryExistAsync(string path, CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += "/";
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
+        var storageEntities = new List<StorageEntity>();
+        var buckets = new List<string>();
+        var listFilters = filters.ToObject<ListFilters>();
 
         var pathParts = GetPartsAsync(path);
-        var exist =  ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-        return Task.FromResult(exist);
-    }
 
+        if (pathParts.BucketName == "")
+        {
+            if (pathParts.RelativePath != "")
+                throw new StorageException(Resources.BucketNameIsRequired);
+
+            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
+            storageEntities.AddRange(buckets.Select(b => b.ToEntity(listFilters.IncludeMetadata)));
+            return storageEntities;
+        }
+
+        buckets.Add(pathParts.BucketName);
+
+        await Task.WhenAll(buckets.Select(b =>
+            ListAsync(storageEntities, b, pathParts.RelativePath, listFilters, cancellationToken))
+        ).ConfigureAwait(false);
+
+        var filteredEntities = _storageFilter.Filter(storageEntities, filters).ToList();
+
+        var result = new List<StorageList>(filteredEntities.Count());
+        result.AddRange(filteredEntities.Select(storageEntity => new StorageList
+        {
+            Id = storageEntity.Id,
+            Kind = storageEntity.Kind.ToString().ToLower(),
+            Name = storageEntity.Name,
+            Path = storageEntity.FullPath,
+            CreatedTime = storageEntity.CreatedTime,
+            ModifiedTime = storageEntity.ModifiedTime,
+            Size = storageEntity.Size.ToString(!listFilters.Full),
+            ContentType = storageEntity.ContentType,
+            Md5 = storageEntity.Md5,
+            Metadata = storageEntity.Metadata
+        }));
+
+        return result;
+    }
+    
     public void Dispose() { }
 
     #region private methods
@@ -301,8 +307,7 @@ public class MemoryStorage : IStoragePlugin
     }
 
     private Task ListAsync(List<StorageEntity> result, string bucketName, string path,
-        StorageSearchOptions searchOptions, StorageListOptions listOptions,
-        StorageMetadataOptions metadataOptions, CancellationToken cancellationToken)
+        ListFilters listFilters, CancellationToken cancellationToken)
     {
         if (!_entities.ContainsKey(bucketName))
             throw new Exception(string.Format(Resources.BucketNotExist, bucketName));
@@ -314,7 +319,7 @@ public class MemoryStorage : IStoragePlugin
             if (key.StartsWith(path))
             {
                 var memEntity = bucket[key];
-                result.Add(memEntity.ToEntity(bucketName, metadataOptions.IncludeMetadata));
+                result.Add(memEntity.ToEntity(bucketName, listFilters.IncludeMetadata));
             }
         }
 
@@ -335,6 +340,16 @@ public class MemoryStorage : IStoragePlugin
         {
             return false;
         }
+    }
+
+    private bool FolderExistAsync(string bucketName, string path)
+    {
+        if (!BucketExists(bucketName))
+            return false;
+
+        var bucket = _entities[bucketName];
+        var folderPrefix = path + PathHelper.PathSeparator;
+        return bucket.Keys.Any(x=>x.StartsWith(folderPrefix));
     }
 
     private bool BucketExists(string bucketName)
@@ -373,16 +388,54 @@ public class MemoryStorage : IStoragePlugin
     }
 
 
-    private Task AddFolder(string bucketName, string folderName)
+    private Task<string> AddFolder(string bucketName, string folderName)
     {
-        if (!folderName.EndsWith("/"))
-            folderName += "/";
-        
         var memoryEntity = new MemoryEntity(folderName);
         var bucket = _entities[bucketName];
+
+        if (!folderName.EndsWith(PathHelper.PathSeparator))
+            folderName += PathHelper.PathSeparator;
+
         bucket[folderName] = memoryEntity;
         _logger.LogInformation($"Folder '{folderName}' was created successfully.");
-        return Task.CompletedTask;
+        return Task.FromResult<string>(memoryEntity.Id);
+    }
+
+    private bool DeleteEntityAsync(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        var pathParts = GetPartsAsync(path);
+        var bucket = _entities[pathParts.BucketName];
+
+        if (PathHelper.IsFile(path))
+        {
+            var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
+            if (!isExist)
+                return false;
+
+            var ms = bucket[pathParts.RelativePath];
+
+            bucket.Remove(pathParts.RelativePath);
+            return true;
+        }
+
+        var folderPrefix = !pathParts.RelativePath.EndsWith(PathHelper.PathSeparator) 
+            ? pathParts.RelativePath + PathHelper.PathSeparator 
+            : pathParts.RelativePath;
+
+        var folderExist = bucket.Keys.Any(x => x.StartsWith(folderPrefix));
+
+        if (!folderExist)
+            return false;
+
+        var itemToDelete = bucket.Keys.Where(x => x.StartsWith(folderPrefix)).Select(p=>p);
+        foreach (var item in itemToDelete)
+        {
+            bucket.Remove(item);
+        }
+        return true;
     }
     #endregion
 }
