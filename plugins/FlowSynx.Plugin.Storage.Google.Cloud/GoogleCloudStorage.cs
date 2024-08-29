@@ -406,9 +406,9 @@ public class GoogleCloudStorage : IPlugin
             return false;
 
         if (serviceObjects.Items is { Count: > 0 })
-            return serviceObjects.Items?.Any(x => x.Name.Contains(folderPrefix)) ?? false;
+            return serviceObjects.Items?.Any(x => x.Name.StartsWith(folderPrefix)) ?? false;
         
-        return serviceObjects.Prefixes?.Any(x => x.Contains(folderPrefix)) ?? false;
+        return serviceObjects.Prefixes?.Any(x => x.StartsWith(folderPrefix)) ?? false;
     }
 
     private async Task AddFolder(string bucketName, string folderName, CancellationToken cancellationToken)
