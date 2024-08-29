@@ -51,6 +51,7 @@ public class GoogleDriveStorage : IPlugin
 
     public async Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
+        var aboutFilters = filters.ToObject<AboutFilters>();
         long totalSpace = 0, totalUsed = 0, totalFree = 0;
         try
         {
@@ -72,7 +73,11 @@ public class GoogleDriveStorage : IPlugin
             totalFree = 0;
         }
 
-        return new { Total = totalSpace, Free = totalFree, Used = totalUsed };
+        return new { 
+            Total = totalSpace.ToString(!aboutFilters.Full), 
+            Free = totalFree.ToString(!aboutFilters.Full), 
+            Used = totalUsed.ToString(!aboutFilters.Full)
+        };
     }
 
     public async Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
