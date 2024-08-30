@@ -255,4 +255,13 @@
   <data name="LogsValidatorKindValueMustBeValidMessage" xml:space="preserve">
     <value>Level value must be [ Dbug | Info | Warn | Fail | Crit ]. By default it is Info.</value>
   </data>
+  <data name="CompressTypeValueMustBeValidMessage" xml:space="preserve">
+    <value>Compress type value must be [ Zip | GZip | Tar ]. By default it is Zip.</value>
+  </data>
+  <data name="ErrorDuringCompressData" xml:space="preserve">
+    <value>There is something wrong happened during compress data.</value>
+  </data>
+  <data name="NoDataToCompress" xml:space="preserve">
+    <value>There is no data found for compress.</value>
+  </data>
 </root>

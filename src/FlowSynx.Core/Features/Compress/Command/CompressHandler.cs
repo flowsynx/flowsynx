@@ -1,85 +1,61 @@
-﻿//using MediatR;
-//using Microsoft.Extensions.Logging;
-//using EnsureThat;
-//using FlowSynx.Abstractions;
-//using FlowSynx.Core.Parers.Norms.Storage;
-//using FlowSynx.Commons;
-//using FlowSynx.IO.Compression;
-//using FlowSynx.Plugin.Storage.Abstractions;
-//using FlowSynx.Plugin.Storage.Abstractions.Options;
-//using FlowSynx.Plugin.Storage.Compress;
-//using FlowSynx.Plugin.Storage.Services;
+﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using EnsureThat;
+using FlowSynx.Abstractions;
+using FlowSynx.Commons;
+using FlowSynx.Plugin.Services;
+using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Plugin.Abstractions.Extensions;
+using FlowSynx.IO.Compression;
+using FlowSynx.Plugin;
 
-//namespace FlowSynx.Core.Features.Storage.Compress.Command;
+namespace FlowSynx.Core.Features.Compress.Command;
 
-//internal class CompressHandler : IRequestHandler<CompressRequest, Result<CompressResponse>>
-//{
-//    private readonly ILogger<CompressHandler> _logger;
-//    private readonly IStorageService _storageService;
-//    private readonly IPluginInstanceParser _pluginInstanceParser;
+internal class CompressHandler : IRequestHandler<CompressRequest, Result<object>>
+{
+    private readonly ILogger<CompressHandler> _logger;
+    private readonly IPluginService _storageService;
+    private readonly IPluginInstanceParser _pluginInstanceParser;
+    private readonly Func<CompressType, ICompression> _compressionFactory;
 
-//    public CompressHandler(ILogger<CompressHandler> logger, IStorageService storageService, IPluginInstanceParser pluginInstanceParser)
-//    {
-//        EnsureArg.IsNotNull(logger, nameof(logger));
-//        EnsureArg.IsNotNull(storageService, nameof(storageService));
-//        _logger = logger;
-//        _storageService = storageService;
-//        _pluginInstanceParser = pluginInstanceParser;
-//    }
+    public CompressHandler(ILogger<CompressHandler> logger, IPluginService storageService, 
+        IPluginInstanceParser pluginInstanceParser, Func<CompressType, ICompression> compressionFactory)
+    {
+        EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(storageService, nameof(storageService));
+        _logger = logger;
+        _storageService = storageService;
+        _pluginInstanceParser = pluginInstanceParser;
+        _compressionFactory = compressionFactory;
+    }
 
-//    public async Task<Result<CompressResponse>> Handle(CompressRequest request, CancellationToken cancellationToken)
-//    {
-//        try
-//        {
-//            var storageNorms = _pluginInstanceParser.Parse(request.Entity);
+    public async Task<Result<object>> Handle(CompressRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
+            var filters = request.Filters.ToPluginFilters();
 
-//            var searchOptions = new StorageSearchOptions()
-//            {
-//                Include = request.Include,
-//                Exclude = request.Exclude,
-//                MinimumAge = request.MinAge,
-//                MaximumAge = request.MaxAge,
-//                MinimumSize = request.MinSize,
-//                MaximumSize = request.MaxSize,
-//                CaseSensitive = request.CaseSensitive ?? false,
-//                Recurse = request.Recurse ?? false
-//            };
+            var compressType = string.IsNullOrEmpty(request.CompressType)
+                ? CompressType.Zip
+                : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-//            var listOptions = new StorageListOptions()
-//            {
-//                Kind = string.IsNullOrEmpty(request.Kind) 
-//                    ? StorageFilterItemKind.FileAndDirectory 
-//                    : EnumUtils.GetEnumValueOrDefault<StorageFilterItemKind>(request.Kind)!.Value,
-//                MaxResult = request.MaxResults
-//            };
+            var compressEntries = await _storageService.CompressAsync(pluginInstance, filters, cancellationToken);
 
-//            var hashOptions = new StorageHashOptions()
-//            {
-//                Hashing = request.Hashing
-//            };
+            if (compressEntries is not List<CompressEntry> entries)
+                throw new Exception(Resources.ErrorDuringCompressData);
 
-//            var compressionOptions = new StorageCompressionOptions()
-//            {
-//                CompressType = string.IsNullOrEmpty(request.CompressType)
-//                    ? CompressType.Zip
-//                    : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value
-//            };
+            if (!entries.Any())
+                throw new Exception(Resources.NoDataToCompress);
 
-//            var result = await _storageService.Compress(storageNorms, searchOptions, listOptions, 
-//                hashOptions, compressionOptions, cancellationToken);
+            var compressResult = await _compressionFactory(compressType).Compress(entries);
+            var response = new CompressResult { Content = compressResult.Stream, ContentType = compressResult.ContentType };
 
-//            var response = new CompressResponse()
-//            {
-//                Content = result.Stream,
-//                ContentType = result.ContentType,
-//                Md5 = result.Md5
-//            };
-            
-//            return await Result<CompressResponse>.SuccessAsync(response);
-//        }
-//        catch (Exception ex)
-//        {
-//            return await Result<CompressResponse>.FailAsync(new List<string> { ex.Message });
-//        }
-//    }
-//}
+            return await Result<object>.SuccessAsync(response, Resources.WriteHandlerSuccessfullyWriten);
+        }
+        catch (Exception ex)
+        {
+            return await Result<object>.FailAsync(new List<string> { ex.Message });
+        }
+    }
+}

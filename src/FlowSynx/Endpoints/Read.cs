@@ -23,7 +23,7 @@ public class Read : EndpointGroupBase
 
         var resultData = result.Data;
         if (resultData is not StorageRead read)
-            return Results.Ok(result);
+            return Results.BadRequest(result);
 
         if (!string.IsNullOrEmpty(read.Md5))
             http.Response.Headers.Append("flowsynx-md5", read.Md5);

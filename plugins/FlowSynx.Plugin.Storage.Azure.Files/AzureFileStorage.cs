@@ -6,6 +6,7 @@ using FlowSynx.Plugin.Abstractions;
 using Azure.Storage.Files.Shares;
 using Azure.Storage.Files.Shares.Models;
 using FlowSynx.IO;
+using FlowSynx.IO.Compression;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
 using FlowSynx.Plugin.Storage.Filters;
@@ -371,7 +372,50 @@ public class AzureFileStorage : IPlugin
 
         return result;
     }
-    
+
+    public async Task<object> CompressAsync(string entity, PluginFilters? filters,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var compressEntries = new List<CompressEntry>();
+        foreach (var entityItem in storageEntities)
+        {
+            if (entityItem is not StorageList entry)
+            {
+                _logger.LogWarning("The item is not valid object type. It should be StorageEntity type.");
+                continue;
+            }
+
+            if (!string.Equals(entry.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning($"The item '{entry.Name}' is not a file.");
+                continue;
+            }
+
+            var stream = await ReadAsync(entry.Path, filters, cancellationToken);
+            if (stream is not StorageRead storageRead)
+            {
+                _logger.LogWarning($"The item '{entry.Name}' could be not read.");
+                continue;
+            }
+
+            compressEntries.Add(new CompressEntry
+            {
+                Name = entry.Name,
+                ContentType = entry.ContentType,
+                Stream = storageRead.Stream
+            });
+        }
+
+        return compressEntries;
+    }
+
     #region internal methods
     private ShareClient CreateClient(AzureFilesSpecifications specifications)
     {

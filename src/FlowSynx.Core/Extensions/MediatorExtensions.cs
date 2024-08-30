@@ -75,7 +75,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<CompressResponse>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
+    public static Task<Result<object>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

@@ -106,6 +106,15 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Compress type value must be [ Zip | GZip | Tar ]. By default it is Zip..
+        /// </summary>
+        internal static string CompressTypeValueMustBeValidMessage {
+            get {
+                return ResourceManager.GetString("CompressTypeValueMustBeValidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The specified destination-path is of a different type than the source-path..
         /// </summary>
         internal static string CopyDestinationPathIsDifferentThanSourcePath {
@@ -183,6 +192,15 @@ namespace FlowSynx.Core {
         internal static string DeleteValidatorPathValueMustNotNullOrEmptyMessage {
             get {
                 return ResourceManager.GetString("DeleteValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There is something wrong happened during compress data..
+        /// </summary>
+        internal static string ErrorDuringCompressData {
+            get {
+                return ResourceManager.GetString("ErrorDuringCompressData", resourceCulture);
             }
         }
         
@@ -372,6 +390,15 @@ namespace FlowSynx.Core {
         internal static string NamespaceParserInvalidType {
             get {
                 return ResourceManager.GetString("NamespaceParserInvalidType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There is no data found for compress..
+        /// </summary>
+        internal static string NoDataToCompress {
+            get {
+                return ResourceManager.GetString("NoDataToCompress", resourceCulture);
             }
         }
         
