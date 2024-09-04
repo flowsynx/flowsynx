@@ -19,6 +19,8 @@ using FlowSynx.Core.Features.Read.Query;
 using FlowSynx.Core.Features.About.Query;
 using FlowSynx.Core.Features.Move.Command;
 using FlowSynx.Core.Features.Create.Command;
+using FlowSynx.Plugin;
+using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -60,12 +62,12 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<CopyResponse>> Copy(this IMediator mediator, CopyRequest request, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<object>>> Copy(this IMediator mediator, CopyRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<MoveResponse>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<object>>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -75,7 +77,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<object>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
+    public static Task<Result<CompressResult>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
