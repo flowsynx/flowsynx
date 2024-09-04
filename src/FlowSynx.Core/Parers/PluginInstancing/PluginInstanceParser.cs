@@ -1,20 +1,15 @@
-﻿using System.Reflection;
-using EnsureThat;
+﻿using EnsureThat;
 using FlowSynx.Configuration;
 using FlowSynx.Core.Exceptions;
-using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Parers.Namespace;
 using FlowSynx.IO.Cache;
 using FlowSynx.IO.Serialization;
-using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Manager;
 using FlowSynx.Plugin.Services;
 using FlowSynx.Plugin.Storage;
-using FlowSynx.Plugin.Storage.Abstractions;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
-using FlowSynx.Reflections;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Core.Parers.PluginInstancing;
@@ -76,10 +71,6 @@ internal class PluginInstanceParser : IPluginInstanceParser
             if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)
                 throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserInvalidStorageType, fileSystem.Type));
 
-            //var specifications = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-            //if (fileSystem.Specifications != null)
-            //    specifications = fileSystem.Specifications;
-
             var plugin = _pluginsManager.Get(fileSystem.Type);
             return CreateStorageNormsInfoInstance(plugin, segments[0], fileSystem.Specifications.ToSpecifications(), segments[1]);
         }
@@ -98,7 +89,7 @@ internal class PluginInstanceParser : IPluginInstanceParser
     private PluginInstance CreateStorageNormsInfoInstance(IPlugin plugin, string configName, PluginSpecifications? specifications, string entity)
     {
         var primaryKey = plugin.Id.ToString();
-        var secondaryKey = GenerateSecondaryKey(configName, null);
+        var secondaryKey = GenerateSecondaryKey(configName, specifications, entity);
         var cachedStorageNormsInfo = _multiKeyCache.Get(primaryKey, secondaryKey);
 
         if (cachedStorageNormsInfo != null)
@@ -108,15 +99,15 @@ internal class PluginInstanceParser : IPluginInstanceParser
             return cachedStorageNormsInfo;
         }
 
-        var storageNormsInfo = new PluginInstance(plugin.CastTo<IPlugin>(), entity, specifications);
+        var storageNormsInfo = new PluginInstance(plugin, entity, specifications);
         _multiKeyCache.Set(primaryKey, secondaryKey, storageNormsInfo);
         storageNormsInfo.Initialize();
         return storageNormsInfo;
     }
 
-    private string GenerateSecondaryKey(string configName, object? specifications)
+    private string GenerateSecondaryKey(string configName, object? specifications, string entity)
     {
-        var specificationsValue = specifications == null ? $"{configName}" : $"{configName}-{_serializer.Serialize(specifications)}";
+        var specificationsValue = specifications == null ? $"{configName}-{entity}" : $"{configName}-{entity}-{_serializer.Serialize(specifications)}";
         return Security.HashHelper.Md5.GetHash(specificationsValue);
     }
 
