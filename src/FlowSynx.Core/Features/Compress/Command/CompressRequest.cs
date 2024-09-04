@@ -2,10 +2,11 @@
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.IO.Compression;
+using FlowSynx.Plugin;
 
 namespace FlowSynx.Core.Features.Compress.Command;
 
-public class CompressRequest : IRequest<Result<object>>
+public class CompressRequest : IRequest<Result<CompressResult>>
 {
     public required string Entity { get; set; }
     public PluginFilters? Filters { get; set; } = new PluginFilters();
