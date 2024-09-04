@@ -1,61 +1,42 @@
-﻿//using MediatR;
-//using Microsoft.Extensions.Logging;
-//using EnsureThat;
-//using FlowSynx.Abstractions;
-//using FlowSynx.Core.Features.Storage.List.Query;
-//using FlowSynx.Core.Parers.Norms.Storage;
-//using FlowSynx.Plugin.Storage.Abstractions.Options;
-//using FlowSynx.Plugin.Storage.Copy;
-//using FlowSynx.Plugin.Storage.Services;
+﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using EnsureThat;
+using FlowSynx.Abstractions;
+using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Plugin.Services;
 
-//namespace FlowSynx.Core.Features.Storage.Copy.Command;
+namespace FlowSynx.Core.Features.Copy.Command;
 
-//internal class CopyHandler : IRequestHandler<CopyRequest, Result<CopyResponse>>
-//{
-//    private readonly ILogger<ListHandler> _logger;
-//    private readonly IStorageService _storageService;
-//    private readonly IPluginInstanceParser _pluginInstanceParser;
+internal class CopyHandler : IRequestHandler<CopyRequest, Result<IEnumerable<object>>>
+{
+    private readonly ILogger<CopyHandler> _logger;
+    private readonly IPluginService _pluginService;
+    private readonly IPluginInstanceParser _pluginInstanceParser;
 
-//    public CopyHandler(ILogger<ListHandler> logger, IStorageService storageService, IPluginInstanceParser pluginInstanceParser)
-//    {
-//        EnsureArg.IsNotNull(logger, nameof(logger));
-//        EnsureArg.IsNotNull(storageService, nameof(storageService));
-//        _logger = logger;
-//        _storageService = storageService;
-//        _pluginInstanceParser = pluginInstanceParser;
-//    }
+    public CopyHandler(ILogger<CopyHandler> logger, IPluginService pluginService, 
+        IPluginInstanceParser pluginInstanceParser)
+    {
+        EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(pluginService, nameof(pluginService));
+        EnsureArg.IsNotNull(pluginInstanceParser, nameof(pluginInstanceParser));
+        _logger = logger;
+        _pluginService = pluginService;
+        _pluginInstanceParser = pluginInstanceParser;
+    }
 
-//    public async Task<Result<CopyResponse>> Handle(CopyRequest request, CancellationToken cancellationToken)
-//    {
-//        try
-//        {
-//            var sourceStorageNorms = _pluginInstanceParser.Parse(request.SourcePath);
-//            var destinationStorageNorms = _pluginInstanceParser.Parse(request.DestinationPath);
-
-//            var searchOptions = new StorageSearchOptions()
-//            {
-//                Include = request.Include,
-//                Exclude = request.Exclude,
-//                MinimumAge = request.MinAge,
-//                MaximumAge = request.MaxAge,
-//                MinimumSize = request.MinSize,
-//                MaximumSize = request.MaxSize,
-//                CaseSensitive = request.CaseSensitive ?? false,
-//                Recurse = request.Recurse ?? false
-//            };
-
-//            var copyOptions = new StorageCopyOptions()
-//            {
-//                ClearDestinationPath = request.ClearDestinationPath,
-//                OverWriteData = request.OverWriteData
-//            };
-
-//            await _storageService.Copy(sourceStorageNorms, destinationStorageNorms, searchOptions, copyOptions, cancellationToken);
-//            return await Result<CopyResponse>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
-//        }
-//        catch (Exception ex)
-//        {
-//            return await Result<CopyResponse>.FailAsync(new List<string> { ex.Message });
-//        }
-//    }
-//}
+    public async Task<Result<IEnumerable<object>>> Handle(CopyRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var sourcePluginInstance = _pluginInstanceParser.Parse(request.SourceEntity);
+            var destinationPluginInstance = _pluginInstanceParser.Parse(request.DestinationEntity);
+            var response = await _pluginService.CopyAsync(sourcePluginInstance, destinationPluginInstance, 
+                request.Filters, cancellationToken);
+            return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.CopyHandlerSuccessfullyCopy);
+        }
+        catch (Exception ex)
+        {
+            return await Result<IEnumerable<object>>.FailAsync(new List<string> { ex.Message });
+        }
+    }
+}
