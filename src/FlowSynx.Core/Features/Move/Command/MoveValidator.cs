@@ -6,12 +6,12 @@ public class MoveValidator : AbstractValidator<MoveRequest>
 {
     public MoveValidator()
     {
-        RuleFor(request => request.SourcePath)
+        RuleFor(request => request.SourceEntity)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.MoveValidatorSourcePathValueMustNotNullOrEmptyMessage);
 
-        RuleFor(request => request.DestinationPath)
+        RuleFor(request => request.DestinationEntity)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.MoveValidatorDestinationPathValueMustNotNullOrEmptyMessage);
