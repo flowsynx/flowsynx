@@ -12,14 +12,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlowSynx.Commons" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Configuration" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Environment" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Logging" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Parsers" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Plugin" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.3.19" />
-    <PackageReference Include="FlowSynx.Reflections" Version="1.3.19" />
+    <PackageReference Include="FlowSynx.Commons" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Configuration" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Environment" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Logging" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Parsers" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Plugin" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.3.20" />
+    <PackageReference Include="FlowSynx.Reflections" Version="1.3.20" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />
     <PackageReference Include="MediatR" Version="12.2.0" />
     <PackageReference Include="SharpCompress" Version="0.36.0" />
