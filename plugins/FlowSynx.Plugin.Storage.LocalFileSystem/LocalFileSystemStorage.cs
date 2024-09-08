@@ -347,19 +347,27 @@ public class LocalFileSystemStorage : IPlugin
                 continue;
             }
 
-            var stream = await ReadAsync(entry.Path, filters, cancellationToken);
-            if (stream is not StorageRead storageRead)
+            try
             {
-                _logger.LogWarning($"The item '{entry.Name}' could be not read.");
+                var stream = await ReadAsync(entry.Path, filters, cancellationToken);
+                if (stream is not StorageRead storageRead)
+                {
+                    _logger.LogWarning($"The item '{entry.Name}' could be not read.");
+                    continue;
+                }
+
+                compressEntries.Add(new CompressEntry
+                {
+                    Name = entry.Name,
+                    ContentType = entry.ContentType,
+                    Stream = storageRead.Stream,
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
                 continue;
             }
-
-            compressEntries.Add(new CompressEntry
-            {
-                Name = entry.Name,
-                ContentType = entry.ContentType,
-                Stream = storageRead.Stream,
-            });
         }
 
         return compressEntries;
