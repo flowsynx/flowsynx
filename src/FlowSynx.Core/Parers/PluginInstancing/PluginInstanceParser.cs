@@ -68,8 +68,9 @@ internal class PluginInstanceParser : IPluginInstanceParser
 
             var fileSystem = _configurationManager.Get(segments[0]);
 
-            if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage)
-                throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserInvalidStorageType, fileSystem.Type));
+            //if (_namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Storage 
+            //    || _namespaceParser.Parse(fileSystem.Type) != PluginNamespace.Stream)
+            //    throw new StorageNormsParserException(string.Format(Resources.StorageNormsParserInvalidStorageType, fileSystem.Type));
 
             var plugin = _pluginsManager.Get(fileSystem.Type);
             return CreateStorageNormsInfoInstance(plugin, segments[0], fileSystem.Specifications.ToSpecifications(), segments[1]);

@@ -27,6 +27,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Goo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugin.Storage.Memory", "plugins\FlowSynx.Plugin.Storage.Memory\FlowSynx.Plugin.Storage.Memory.csproj", "{3C553BFA-E965-42D1-805F-3DEC8C8FFA62}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Streams", "Streams", "{5FED1243-9767-427C-886B-D2070468FA3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Plugin.Stream.Csv", "plugins\FlowSynx.Plugin.Stream.Csv\FlowSynx.Plugin.Stream.Csv.csproj", "{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +73,10 @@ Global
 		{3C553BFA-E965-42D1-805F-3DEC8C8FFA62}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3C553BFA-E965-42D1-805F-3DEC8C8FFA62}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3C553BFA-E965-42D1-805F-3DEC8C8FFA62}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,6 +92,8 @@ Global
 		{69176FFB-B44F-47CE-AE0A-1D89A956D312} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F} = {2055D7A4-DACB-49D7-988F-E3424935388A}
 		{3C553BFA-E965-42D1-805F-3DEC8C8FFA62} = {2055D7A4-DACB-49D7-988F-E3424935388A}
+		{5FED1243-9767-427C-886B-D2070468FA3B} = {F0C26331-6C4A-4389-80E3-7580C3977871}
+		{D1100A18-09CB-4EF2-AEC7-77B5D77F0918} = {5FED1243-9767-427C-886B-D2070468FA3B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}
