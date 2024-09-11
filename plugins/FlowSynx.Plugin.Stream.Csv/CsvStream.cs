@@ -4,7 +4,6 @@ using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
-using SharpCompress.Common;
 using System.Data;
 
 namespace FlowSynx.Plugin.Stream.Csv;
