@@ -1,20 +1,34 @@
-﻿using FlowSynx.IO.Compression;
+﻿using FlowSynx.IO;
+using FlowSynx.IO.Compression;
+using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Plugin.Abstractions.Extensions;
+using Microsoft.Extensions.Logging;
+using SharpCompress.Common;
 using System.Data;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
-public class CsvStream: IPlugin
+public class CsvStream : IPlugin
 {
+    private CsvStreamSpecifications? _csvStreamSpecifications;
+    private readonly IDeserializer _deserializer;
+
+    public CsvStream(ILogger<CsvStream> logger, IDeserializer deserializer)
+    {
+        _deserializer = deserializer;
+    }
+
     public Guid Id => Guid.Parse("ce2fc15b-cd5e-4eb0-a5b4-22fa714e5cc9");
     public string Name => "CSV";
     public PluginNamespace Namespace => PluginNamespace.Stream;
-    public string? Description { get; }
+    public string? Description => Resources.PluginDescription;
     public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(CsvStreamSpecifications);
 
     public Task Initialize()
     {
+        _csvStreamSpecifications = Specifications.ToObject<CsvStreamSpecifications>();
         return Task.CompletedTask;
     }
 
@@ -25,7 +39,24 @@ public class CsvStream: IPlugin
 
     public Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var createFilters = filters.ToObject<CreateFilters>();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (File.Exists(path) && createFilters.Overwrite is false)
+            throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+        string delimiter = GetDelimiter(createFilters.Delimiter);
+        var headers = _deserializer.Deserialize<string[]>(createFilters.Headers);
+        var data = string.Join(delimiter, headers);
+        File.WriteAllText(path, data);
+
+        return Task.FromResult<object>(new { });
     }
 
     public Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
@@ -56,7 +87,10 @@ public class CsvStream: IPlugin
 
     public Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
     {
-        DataTable dt = ImportCsv(entity, ",");
+        var listFilters = filters.ToObject<ListFilters>();
+        string delimiter = GetDelimiter(listFilters.Delimiter);
+
+        DataTable dt = ImportCsv(entity, delimiter);
         var result = new List<object>();
 
         var colCount = dt.Columns.Count;
@@ -91,7 +125,6 @@ public class CsvStream: IPlugin
         {
             foreach (var header in headers)
             {
-                //create column headers
                 dt.Columns.Add(header);
             }
 
@@ -152,4 +185,19 @@ public class CsvStream: IPlugin
     {
         //throw new NotImplementedException();
     }
+
+    #region internal methods
+    private string GetDelimiter(string delimiter)
+    {
+        var defaultDelimiter = ",";
+        if (_csvStreamSpecifications is null)
+            return defaultDelimiter;
+
+        var configDelimiter = string.IsNullOrEmpty(_csvStreamSpecifications.Delimiter) 
+            ? defaultDelimiter 
+            : _csvStreamSpecifications.Delimiter;
+
+        return string.IsNullOrEmpty(delimiter) ? configDelimiter : delimiter;
+    }
+    #endregion
 }
