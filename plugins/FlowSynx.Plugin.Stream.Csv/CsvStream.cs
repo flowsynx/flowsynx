@@ -182,7 +182,6 @@ public class CsvStream : IPlugin
     
     public void Dispose()
     {
-        //throw new NotImplementedException();
     }
 
     #region internal methods
