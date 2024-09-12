@@ -7,5 +7,5 @@ namespace FlowSynx.Core.Features.Read.Query;
 public class ReadRequest : IRequest<Result<object>>
 {
     public required string Entity { get; set; }
-    public PluginFilters? Filters { get; set; } = new PluginFilters();
+    public PluginOptions? Options { get; set; } = new PluginOptions();
 }

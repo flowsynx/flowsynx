@@ -4,7 +4,7 @@ using FlowSynx.IO.Compression;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Memory;
@@ -36,9 +36,9 @@ public class MemoryStorage : IPlugin
         return Task.CompletedTask;
     }
 
-    public Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var aboutFilters = filters.ToObject<AboutFilters>();
+        var aboutOptions = options.ToObject<AboutOptions>();
         long totalSpace = 0, usedSpace = 0, freeSpace = 0;
         try
         {
@@ -59,13 +59,13 @@ public class MemoryStorage : IPlugin
 
         return Task.FromResult<object>(new
         {
-            Total = totalSpace.ToString(!aboutFilters.Full), 
-            Free = freeSpace.ToString(!aboutFilters.Full), 
-            Used = usedSpace.ToString(!aboutFilters.Full)
+            Total = totalSpace.ToString(!aboutOptions.Full), 
+            Free = freeSpace.ToString(!aboutOptions.Full), 
+            Used = usedSpace.ToString(!aboutOptions.Full)
         });
     }
 
-    public async Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -105,11 +105,11 @@ public class MemoryStorage : IPlugin
         return new { entityId };
     }
 
-    public Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+    public Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var writeFilters = filters.ToObject<WriteFilters>();
+        var writeOptions = options.ToObject<WriteOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -131,7 +131,7 @@ public class MemoryStorage : IPlugin
         }
 
         var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-        if (isExist && writeFilters.Overwrite is false)
+        if (isExist && writeOptions.Overwrite is false)
             throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
         var name = Path.GetFileName(path);
@@ -143,10 +143,10 @@ public class MemoryStorage : IPlugin
         return Task.FromResult<object>(new { memoryEntity.Id });
     }
 
-    public Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var readFilters = filters.ToObject<ReadFilters>();
+        var readOptions = options.ToObject<ReadOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -175,16 +175,16 @@ public class MemoryStorage : IPlugin
         return Task.FromResult<object>(result);
     }
 
-    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var deleteFilters = filters.ToObject<DeleteFilters>();
-        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+        var deleteOptions = options.ToObject<DeleteOptions>();
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -202,7 +202,7 @@ public class MemoryStorage : IPlugin
             }
         }
 
-        if (deleteFilters.Purge is true)
+        if (deleteOptions.Purge is true)
         {
             var pathParts = GetPartsAsync(path);
             if (!string.IsNullOrEmpty(pathParts.RelativePath))
@@ -229,7 +229,7 @@ public class MemoryStorage : IPlugin
         return result;
     }
 
-    public Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -245,7 +245,7 @@ public class MemoryStorage : IPlugin
         return Task.FromResult(folderExist);
     }
 
-    public async Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -257,7 +257,7 @@ public class MemoryStorage : IPlugin
 
         var storageEntities = new List<StorageEntity>();
         var buckets = new List<string>();
-        var listFilters = filters.ToObject<ListFilters>();
+        var listOptions = options.ToObject<ListOptions>();
 
         var pathParts = GetPartsAsync(path);
 
@@ -267,17 +267,17 @@ public class MemoryStorage : IPlugin
                 throw new StorageException(Resources.BucketNameIsRequired);
 
             buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
-            storageEntities.AddRange(buckets.Select(b => b.ToEntity(listFilters.IncludeMetadata)));
+            storageEntities.AddRange(buckets.Select(b => b.ToEntity(listOptions.IncludeMetadata)));
             return storageEntities;
         }
 
         buckets.Add(pathParts.BucketName);
 
         await Task.WhenAll(buckets.Select(b =>
-            ListAsync(storageEntities, b, pathParts.RelativePath, listFilters, cancellationToken))
+            ListAsync(storageEntities, b, pathParts.RelativePath, listOptions, cancellationToken))
         ).ConfigureAwait(false);
 
-        var filteredEntities = _storageFilter.Filter(storageEntities, filters).ToList();
+        var filteredEntities = _storageFilter.Filter(storageEntities, options).ToList();
 
         var result = new List<StorageList>(filteredEntities.Count());
         result.AddRange(filteredEntities.Select(storageEntity => new StorageList
@@ -288,7 +288,7 @@ public class MemoryStorage : IPlugin
             Path = storageEntity.FullPath,
             CreatedTime = storageEntity.CreatedTime,
             ModifiedTime = storageEntity.ModifiedTime,
-            Size = storageEntity.Size.ToString(!listFilters.Full),
+            Size = storageEntity.Size.ToString(!listOptions.Full),
             ContentType = storageEntity.ContentType,
             Md5 = storageEntity.Md5,
             Metadata = storageEntity.Metadata
@@ -297,7 +297,7 @@ public class MemoryStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginFilters? filters,
+    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
             CancellationToken cancellationToken = new CancellationToken())
     {
         if (PathHelper.IsFile(entity))
@@ -306,7 +306,7 @@ public class MemoryStorage : IPlugin
             return new List<TransmissionData>() { copyFile };
         }
 
-        return await PrepareCopyDirectory(entity, filters, cancellationToken);
+        return await PrepareCopyDirectory(entity, options, cancellationToken);
     }
 
     private async Task<TransmissionData> PrepareCopyFile(string entity, CancellationToken cancellationToken = default)
@@ -319,10 +319,10 @@ public class MemoryStorage : IPlugin
         return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
     }
 
-    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginFilters? filters,
+    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginOptions? options,
         CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(entity, filters, cancellationToken).ConfigureAwait(false);
+        var entities = await ListAsync(entity, options, cancellationToken).ConfigureAwait(false);
         var storageEntities = entities.ToList().ConvertAll(item => (StorageList)item);
 
         var result = new List<TransmissionData>(storageEntities.Count);
@@ -351,7 +351,7 @@ public class MemoryStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginFilters? filters, IEnumerable<TransmissionData> transmissionData,
+    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, IEnumerable<TransmissionData> transmissionData,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -361,15 +361,15 @@ public class MemoryStorage : IPlugin
             switch (item.Content)
             {
                 case null:
-                    result.Add(await CreateAsync(item.Key, filters, cancellationToken));
+                    result.Add(await CreateAsync(item.Key, options, cancellationToken));
                     _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     break;
                 case StorageStream stream:
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await CreateAsync(parentPath, filters, cancellationToken);
-                        result.Add(await WriteAsync(item.Key, filters, stream, cancellationToken));
+                        await CreateAsync(parentPath, options, cancellationToken);
+                        result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                     break;
@@ -379,11 +379,11 @@ public class MemoryStorage : IPlugin
         return result;
     }
     
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginFilters? filters,
+    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -406,7 +406,7 @@ public class MemoryStorage : IPlugin
 
             try
             {
-                var stream = await ReadAsync(entry.Path, filters, cancellationToken);
+                var stream = await ReadAsync(entry.Path, options, cancellationToken);
                 if (stream is not StorageRead storageRead)
                 {
                     _logger.LogWarning($"The item '{entry.Name}' could be not read.");
@@ -444,7 +444,7 @@ public class MemoryStorage : IPlugin
     }
 
     private Task ListAsync(List<StorageEntity> result, string bucketName, string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         if (!_entities.ContainsKey(bucketName))
             throw new Exception(string.Format(Resources.BucketNotExist, bucketName));
@@ -456,7 +456,7 @@ public class MemoryStorage : IPlugin
             if (key.StartsWith(path))
             {
                 var memEntity = bucket[key];
-                result.Add(memEntity.ToEntity(bucketName, listFilters.IncludeMetadata));
+                result.Add(memEntity.ToEntity(bucketName, listOptions.IncludeMetadata));
             }
         }
 

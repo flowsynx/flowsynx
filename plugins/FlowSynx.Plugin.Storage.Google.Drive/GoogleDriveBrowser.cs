@@ -1,5 +1,5 @@
 ﻿using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 using Google.Apis.Drive.v3;
 using Microsoft.Extensions.Logging;
 using System.IO;
@@ -41,17 +41,17 @@ internal class GoogleDriveBrowser : IDisposable
     };
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListAsync(string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         var entities = new List<StorageEntity>();
 
-        await ListFolderAsync(entities, path, listFilters, cancellationToken).ConfigureAwait(false);
+        await ListFolderAsync(entities, path, listOptions, cancellationToken).ConfigureAwait(false);
 
         return entities;
     }
     
     private async Task ListFolderAsync(List<StorageEntity> entities, string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
         var folderId = await GetFolderId(path, cancellationToken);
@@ -70,8 +70,8 @@ internal class GoogleDriveBrowser : IDisposable
                         continue;
 
                     result.Add(item.MimeType == "application/vnd.google-apps.folder"
-                        ? item.ToEntity(path, true, listFilters.IncludeMetadata)
-                        : item.ToEntity(path, false, listFilters.IncludeMetadata));
+                        ? item.ToEntity(path, true, listOptions.IncludeMetadata)
+                        : item.ToEntity(path, false, listOptions.IncludeMetadata));
                 }
             }
 
@@ -81,11 +81,11 @@ internal class GoogleDriveBrowser : IDisposable
 
         entities.AddRange(result);
 
-        if (listFilters.Recurse)
+        if (listOptions.Recurse)
         {
             var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory).ToList();
             await Task.WhenAll(directories.Select(dir => ListFolderAsync(entities, dir.FullPath,
-                listFilters, cancellationToken))).ConfigureAwait(false);
+                listOptions, cancellationToken))).ConfigureAwait(false);
         }
     }
     

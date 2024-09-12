@@ -28,8 +28,8 @@ internal class AboutHandler : IRequestHandler<AboutRequest, Result<object>>
         try
         {
             var storageNorms = _pluginInstanceParser.Parse(request.Entity);
-            var filters = request.Filters.ToPluginFilters();
-            var response = await _pluginService.About(storageNorms, filters, cancellationToken);
+            var options = request.Options.ToPluginFilters();
+            var response = await _pluginService.About(storageNorms, options, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

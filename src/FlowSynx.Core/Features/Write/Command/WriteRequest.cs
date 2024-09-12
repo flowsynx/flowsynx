@@ -8,5 +8,5 @@ public class WriteRequest : IRequest<Result<object>>
 {
     public required string Entity { get; set; }
     public required object Data { get; set; }
-    public PluginFilters? Filters { get; set; } = new PluginFilters();
+    public PluginOptions? Options { get; set; } = new PluginOptions();
 }

@@ -29,8 +29,8 @@ internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<IEnumerable
         try
         {
             var storageNorms = _pluginInstanceParser.Parse(request.Entity);
-            var filters = request.Filters.ToPluginFilters();
-            var response = await _pluginService.DeleteAsync(storageNorms, filters, cancellationToken);
+            var options = request.Options.ToPluginFilters();
+            var response = await _pluginService.DeleteAsync(storageNorms, options, cancellationToken);
             return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.DeleteHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

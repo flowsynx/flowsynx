@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Plugin.Stream.Csv;
 
-public class WriteFilters
+public class WriteOptions
 {
     public string Delimiter { get; set; } = ",";
 }

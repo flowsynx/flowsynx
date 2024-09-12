@@ -31,7 +31,7 @@ internal class MoveHandler : IRequestHandler<MoveRequest, Result<IEnumerable<obj
             var sourcePluginInstance = _pluginInstanceParser.Parse(request.SourceEntity);
             var destinationPluginInstance = _pluginInstanceParser.Parse(request.DestinationEntity);
             var response = await _pluginService.MoveAsync(sourcePluginInstance, destinationPluginInstance,
-                request.Filters, cancellationToken);
+                request.Options, cancellationToken);
             return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.MoveHandlerSuccessfullyMoved);
         }
         catch (Exception ex)

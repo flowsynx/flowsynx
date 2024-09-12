@@ -34,13 +34,13 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
         try
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
-            var filters = request.Filters.ToPluginFilters();
+            var options = request.Options.ToPluginFilters();
 
             var compressType = string.IsNullOrEmpty(request.CompressType)
                 ? CompressType.Zip
                 : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-            var compressEntries = await _storageService.CompressAsync(pluginInstance, filters, cancellationToken);
+            var compressEntries = await _storageService.CompressAsync(pluginInstance, options, cancellationToken);
 
             var enumerable = compressEntries.ToList();
             if (!enumerable.Any())

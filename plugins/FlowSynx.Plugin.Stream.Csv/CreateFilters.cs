@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Plugin.Stream.Csv;
 
-public class CreateFilters
+public class CreateOptions
 {
     public string Delimiter { get; set; } = ",";
     public string Headers { get; set; } = string.Empty;

@@ -1,5 +1,5 @@
 ﻿using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Logging;
 
@@ -19,7 +19,7 @@ internal class GoogleBucketBrowser : IDisposable
     }
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
 
@@ -27,7 +27,7 @@ internal class GoogleBucketBrowser : IDisposable
         {
             var request = _client.Service.Objects.List(_bucketName);
             request.Prefix = FormatFolderPrefix(path);
-            request.Delimiter = listFilters.Recurse ? null : PathHelper.PathSeparatorString;
+            request.Delimiter = listOptions.Recurse ? null : PathHelper.PathSeparatorString;
             
             do
             {
@@ -40,8 +40,8 @@ internal class GoogleBucketBrowser : IDisposable
                             continue;
 
                         result.Add(item.Name.EndsWith(PathHelper.PathSeparator)
-                            ? item.ToEntity(true, listFilters.IncludeMetadata)
-                            : item.ToEntity(false, listFilters.IncludeMetadata));
+                            ? item.ToEntity(true, listOptions.IncludeMetadata)
+                            : item.ToEntity(false, listOptions.IncludeMetadata));
                     }
                 }
 

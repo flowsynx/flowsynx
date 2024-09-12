@@ -28,8 +28,8 @@ internal class CreateHandler : IRequestHandler<CreateRequest, Result<object>>
         try
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
-            var filters = request.Filters.ToPluginFilters();
-            var response = await _pluginService.CreateAsync(pluginInstance, filters, cancellationToken);
+            var options = request.Options.ToPluginFilters();
+            var response = await _pluginService.CreateAsync(pluginInstance, options, cancellationToken);
             return await Result<object>.SuccessAsync(response, Resources.MakeDirectoryHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

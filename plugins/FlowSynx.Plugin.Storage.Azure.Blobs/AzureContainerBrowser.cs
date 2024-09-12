@@ -2,7 +2,7 @@
 using Azure.Storage.Blobs;
 using FlowSynx.IO;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
@@ -18,14 +18,14 @@ internal class AzureContainerBrowser : IDisposable
     }
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string path,
-       ListFilters listFilters, CancellationToken cancellationToken)
+       ListOptions listOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
 
         try
         {
             var blobs = _client.GetBlobsByHierarchyAsync(
-                delimiter: listFilters.Recurse ? null : PathHelper.PathSeparatorString,
+                delimiter: listOptions.Recurse ? null : PathHelper.PathSeparatorString,
                 prefix: FormatFolderPrefix(path),
                 traits: BlobTraits.Metadata,
                 states: BlobStates.None
@@ -36,7 +36,7 @@ internal class AzureContainerBrowser : IDisposable
                 try
                 {
                     if (item.IsBlob)
-                        result.Add(item.ToEntity(_client.Name, listFilters.IncludeMetadata));
+                        result.Add(item.ToEntity(_client.Name, listOptions.IncludeMetadata));
 
                     if (item.IsPrefix)
                         result.Add(item.ToEntity(_client.Name));
@@ -47,7 +47,7 @@ internal class AzureContainerBrowser : IDisposable
                 }
             }
 
-            if (listFilters.Recurse && (string.IsNullOrEmpty(listFilters.Kind) || string.Equals(listFilters.Kind, "directory", StringComparison.CurrentCultureIgnoreCase)))
+            if (listOptions.Recurse && (string.IsNullOrEmpty(listOptions.Kind) || string.Equals(listOptions.Kind, "directory", StringComparison.CurrentCultureIgnoreCase)))
             {
                 var implicitPrefixes = AssumeImplicitPrefixes(
                     PathHelper.Combine(_client.Name, path),

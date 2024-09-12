@@ -14,7 +14,7 @@ using FlowSynx.Plugin.Abstractions.Extensions;
 using Google.Apis.Upload;
 using DriveFile = Google.Apis.Drive.v3.Data.File;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 
 namespace FlowSynx.Plugin.Storage.Google.Drive;
 
@@ -50,9 +50,9 @@ public class GoogleDriveStorage : IPlugin
         return Task.CompletedTask;
     }
 
-    public async Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var aboutFilters = filters.ToObject<AboutFilters>();
+        var aboutOptions = options.ToObject<AboutOptions>();
         long totalSpace = 0, totalUsed = 0, totalFree = 0;
         try
         {
@@ -75,16 +75,16 @@ public class GoogleDriveStorage : IPlugin
         }
 
         return new { 
-            Total = totalSpace.ToString(!aboutFilters.Full), 
-            Free = totalFree.ToString(!aboutFilters.Full), 
-            Used = totalUsed.ToString(!aboutFilters.Full)
+            Total = totalSpace.ToString(!aboutOptions.Full), 
+            Free = totalFree.ToString(!aboutOptions.Full), 
+            Used = totalUsed.ToString(!aboutOptions.Full)
         };
     }
 
-    public async Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var createFilters = filters.ToObject<CreateFilters>();
+        var createOptions = options.ToObject<CreateOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -115,11 +115,11 @@ public class GoogleDriveStorage : IPlugin
         return new { result.Id };
     }
 
-    public async Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+    public async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var writeFilters = filters.ToObject<WriteFilters>();
+        var writeOptions = options.ToObject<WriteOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -136,7 +136,7 @@ public class GoogleDriveStorage : IPlugin
         try
         {
             var file = await GetDriveFile(path, cancellationToken);
-            if (file.Exist && writeFilters.Overwrite is false)
+            if (file.Exist && writeOptions.Overwrite is false)
                 throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
             var fileName = Path.GetFileName(path) ?? "";
@@ -168,10 +168,10 @@ public class GoogleDriveStorage : IPlugin
         }
     }
 
-    public async Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var readFilters = filters.ToObject<ReadFilters>();
+        var readOptions = options.ToObject<ReadOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -208,16 +208,16 @@ public class GoogleDriveStorage : IPlugin
         }
     }
 
-    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var deleteFilters = filters.ToObject<DeleteFilters>();
-        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+        var deleteOptions = options.ToObject<DeleteOptions>();
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -235,7 +235,7 @@ public class GoogleDriveStorage : IPlugin
             }
         }
 
-        if (deleteFilters.Purge is true)
+        if (deleteOptions.Purge is true)
         {
             var folder = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
             if (folder.Exist)
@@ -259,7 +259,7 @@ public class GoogleDriveStorage : IPlugin
         return result;
     }
 
-    public async Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -283,7 +283,7 @@ public class GoogleDriveStorage : IPlugin
         }
     }
 
-    public async Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -296,12 +296,12 @@ public class GoogleDriveStorage : IPlugin
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        var listFilters = filters.ToObject<ListFilters>();
+        var listOptions = options.ToObject<ListOptions>();
 
         var storageEntities = await ListAsync(_googleDriveSpecifications.FolderId, path,
-            listFilters, cancellationToken).ConfigureAwait(false);
+            listOptions, cancellationToken).ConfigureAwait(false);
 
-        var filteredEntities = _storageFilter.Filter(storageEntities, filters).ToList();
+        var filteredEntities = _storageFilter.Filter(storageEntities, options).ToList();
 
         var result = new List<StorageList>(filteredEntities.Count());
         result.AddRange(filteredEntities.Select(storageEntity => new StorageList
@@ -312,7 +312,7 @@ public class GoogleDriveStorage : IPlugin
             Path = storageEntity.FullPath,
             CreatedTime = storageEntity.CreatedTime,
             ModifiedTime = storageEntity.ModifiedTime,
-            Size = storageEntity.Size.ToString(!listFilters.Full),
+            Size = storageEntity.Size.ToString(!listOptions.Full),
             ContentType = storageEntity.ContentType,
             Md5 = storageEntity.Md5,
             Metadata = storageEntity.Metadata
@@ -321,7 +321,7 @@ public class GoogleDriveStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginFilters? filters,
+    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
             CancellationToken cancellationToken = new CancellationToken())
     {
         if (PathHelper.IsFile(entity))
@@ -330,7 +330,7 @@ public class GoogleDriveStorage : IPlugin
             return new List<TransmissionData>() { copyFile };
         }
 
-        return await PrepareCopyDirectory(entity, filters, cancellationToken);
+        return await PrepareCopyDirectory(entity, options, cancellationToken);
     }
 
     private async Task<TransmissionData> PrepareCopyFile(string entity, CancellationToken cancellationToken = default)
@@ -343,10 +343,10 @@ public class GoogleDriveStorage : IPlugin
         return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
     }
 
-    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginFilters? filters,
+    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginOptions? options,
         CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(entity, filters, cancellationToken).ConfigureAwait(false);
+        var entities = await ListAsync(entity, options, cancellationToken).ConfigureAwait(false);
         var storageEntities = entities.ToList().ConvertAll(item => (StorageList)item);
 
         var result = new List<TransmissionData>(storageEntities.Count);
@@ -375,7 +375,7 @@ public class GoogleDriveStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginFilters? filters, IEnumerable<TransmissionData> transmissionData,
+    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, IEnumerable<TransmissionData> transmissionData,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -385,15 +385,15 @@ public class GoogleDriveStorage : IPlugin
             switch (item.Content)
             {
                 case null:
-                    result.Add(await CreateAsync(item.Key, filters, cancellationToken));
+                    result.Add(await CreateAsync(item.Key, options, cancellationToken));
                     _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     break;
                 case StorageStream stream:
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await CreateAsync(parentPath, filters, cancellationToken);
-                        result.Add(await WriteAsync(item.Key, filters, stream, cancellationToken));
+                        await CreateAsync(parentPath, options, cancellationToken);
+                        result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                     break;
@@ -403,11 +403,11 @@ public class GoogleDriveStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginFilters? filters,
+    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -430,7 +430,7 @@ public class GoogleDriveStorage : IPlugin
 
             try
             {
-                var stream = await ReadAsync(entry.Path, filters, cancellationToken);
+                var stream = await ReadAsync(entry.Path, options, cancellationToken);
                 if (stream is not StorageRead storageRead)
                 {
                     _logger.LogWarning($"The item '{entry.Name}' could be not read.");
@@ -499,12 +499,12 @@ public class GoogleDriveStorage : IPlugin
     }
 
     private async Task<List<StorageEntity>> ListAsync(string folderId, string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
         _browser ??= new GoogleDriveBrowser(_logger, _client, folderId);
         IReadOnlyCollection<StorageEntity> objects =
-            await _browser.ListAsync(path, listFilters, cancellationToken
+            await _browser.ListAsync(path, listOptions, cancellationToken
         ).ConfigureAwait(false);
 
         if (objects.Count > 0)

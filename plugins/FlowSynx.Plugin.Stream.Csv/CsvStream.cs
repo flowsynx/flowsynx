@@ -32,15 +32,15 @@ public class CsvStream : IPlugin
         return Task.CompletedTask;
     }
 
-    public Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var createFilters = filters.ToObject<CreateFilters>();
+        var createOptions = options.ToObject<CreateOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -48,11 +48,11 @@ public class CsvStream : IPlugin
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (File.Exists(path) && createFilters.Overwrite is false)
+        if (File.Exists(path) && createOptions.Overwrite is false)
             throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
-        var delimiter = GetDelimiter(createFilters.Delimiter);
-        var headers = _deserializer.Deserialize<string[]>(createFilters.Headers);
+        var delimiter = GetDelimiter(createOptions.Delimiter);
+        var headers = _deserializer.Deserialize<string[]>(createOptions.Headers);
         var data = string.Join(delimiter, headers);
         using (var writer = File.AppendText(path))
         {
@@ -62,11 +62,11 @@ public class CsvStream : IPlugin
         return Task.FromResult<object>(new { });
     }
 
-    public Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+    public Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var writeFilters = filters.ToObject<WriteFilters>();
+        var writeOptions = options.ToObject<WriteOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -82,7 +82,7 @@ public class CsvStream : IPlugin
         if (dataValue is not string)
             throw new StreamException("Data is not in valid format.");
 
-        var delimiter = GetDelimiter(writeFilters.Delimiter);
+        var delimiter = GetDelimiter(writeOptions.Delimiter);
         var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
         using (var writer = File.AppendText(path))
         {
@@ -95,30 +95,30 @@ public class CsvStream : IPlugin
         return Task.FromResult<object>(new { });
     }
 
-    public Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var listFilters = filters.ToObject<ListFilters>();
-        string delimiter = GetDelimiter(listFilters.Delimiter);
+        var listOptions = options.ToObject<ListOptions>();
+        string delimiter = GetDelimiter(listOptions.Delimiter);
 
         DataTable dt = ImportCsv(entity, delimiter);
         var result = new List<object>();
@@ -193,19 +193,19 @@ public class CsvStream : IPlugin
         return dt;
     }
 
-    public Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginFilters? filters,
+    public Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginFilters? filters, IEnumerable<TransmissionData> transmissionData,
+    public Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, IEnumerable<TransmissionData> transmissionData,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginFilters? filters,
+    public Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();

@@ -28,8 +28,8 @@ internal class ExistHandler : IRequestHandler<ExistRequest, Result<object>>
         try
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
-            var filters = request.Filters.ToPluginFilters();
-            var response = await _pluginService.ExistAsync(pluginInstance, filters, cancellationToken);
+            var options = request.Options.ToPluginFilters();
+            var response = await _pluginService.ExistAsync(pluginInstance, options, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

@@ -1,7 +1,7 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
 using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
@@ -20,15 +20,15 @@ internal class AmazonS3BucketBrowser : IDisposable
     }
 
     public async Task<IReadOnlyCollection<StorageEntity>> ListAsync(string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         var entities = new List<StorageEntity>();
-        await ListFolderAsync(entities, path, listFilters, cancellationToken).ConfigureAwait(false);
+        await ListFolderAsync(entities, path, listOptions, cancellationToken).ConfigureAwait(false);
         return entities;
     }
 
     private async Task ListFolderAsync(List<StorageEntity> entities, string path,
-        ListFilters listFilters, CancellationToken cancellationToken)
+        ListOptions listOptions, CancellationToken cancellationToken)
     {
         var request = new ListObjectsV2Request()
         {
@@ -41,7 +41,7 @@ internal class AmazonS3BucketBrowser : IDisposable
         do
         {
             var response = await _client.ListObjectsV2Async(request, cancellationToken).ConfigureAwait(false);
-            result.AddRange(response.ToEntity(_client, _bucketName, listFilters.IncludeMetadata, cancellationToken));
+            result.AddRange(response.ToEntity(_client, _bucketName, listOptions.IncludeMetadata, cancellationToken));
 
             if (response.NextContinuationToken == null)
                 break;
@@ -52,11 +52,11 @@ internal class AmazonS3BucketBrowser : IDisposable
 
         entities.AddRange(result);
 
-        if (listFilters.Recurse)
+        if (listOptions.Recurse)
         {
             var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory).ToList();
             await Task.WhenAll(directories.Select(f => ListFolderAsync(entities, GetRelativePath(f.FullPath),
-                listFilters, cancellationToken))).ConfigureAwait(false);
+                listOptions, cancellationToken))).ConfigureAwait(false);
         }
     }
 

@@ -7,6 +7,6 @@ namespace FlowSynx.Core.Features.List.Query;
 public class ListRequest : IRequest<Result<IEnumerable<object>>>
 {
     public required string Entity { get; set; }
-    public PluginFilters? Filters { get; set; } = new PluginFilters();
+    public PluginOptions? Options { get; set; } = new PluginOptions();
 
 }

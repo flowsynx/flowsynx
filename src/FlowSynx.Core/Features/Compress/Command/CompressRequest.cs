@@ -9,6 +9,6 @@ namespace FlowSynx.Core.Features.Compress.Command;
 public class CompressRequest : IRequest<Result<CompressResult>>
 {
     public required string Entity { get; set; }
-    public PluginFilters? Filters { get; set; } = new PluginFilters();
+    public PluginOptions? Options { get; set; } = new PluginOptions();
     public string? CompressType { get; set; } = IO.Compression.CompressType.Zip.ToString();
 }

@@ -2,10 +2,7 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.IO;
-using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Services;
-using FlowSynx.Plugin.Storage;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Core.Parers.PluginInstancing;
 
@@ -31,11 +28,8 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<object>>
         try
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
-            var filters = request.Filters.ToPluginFilters();
-            //if (request.Data is string){}
-            //var dataStream = request.Data.IsBase64String() ? request.Data.Base64ToStream() : request.Data.ToStream();
-            //var stream = new StorageStream(dataStream);
-            var response = await _storageService.WriteAsync(pluginInstance, filters, request.Data, cancellationToken);
+            var options = request.Options.ToPluginFilters();
+            var response = await _storageService.WriteAsync(pluginInstance, options, request.Data, cancellationToken);
             return await Result<object>.SuccessAsync(response, Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)

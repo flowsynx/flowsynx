@@ -9,7 +9,7 @@ using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
-using FlowSynx.Plugin.Storage.Filters;
+using FlowSynx.Plugin.Storage.Options;
 
 namespace FlowSynx.Plugin.Storage.Azure.Files;
 
@@ -42,10 +42,10 @@ public class AzureFileStorage : IPlugin
         return Task.CompletedTask;
     }
 
-    public async Task<object> About(PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         long totalUsed;
-        var aboutFilters = filters.ToObject<AboutFilters>();
+        var aboutOptions = options.ToObject<AboutOptions>();
 
         try
         {
@@ -60,14 +60,14 @@ public class AzureFileStorage : IPlugin
 
         return new
         {
-            Total = totalUsed.ToString(!aboutFilters.Full)
+            Total = totalUsed.ToString(!aboutOptions.Full)
         };
     }
 
-    public async Task<object> CreateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var createFilters = filters.ToObject<CreateFilters>();
+        var createOptions = options.ToObject<CreateOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -111,11 +111,11 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public async Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
+    public async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var writeFilters = filters.ToObject<WriteFilters>();
+        var writeOptions = options.ToObject<WriteOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -134,7 +134,7 @@ public class AzureFileStorage : IPlugin
             ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
 
             var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-            if (isExist && writeFilters.Overwrite is false)
+            if (isExist && writeOptions.Overwrite is false)
                 throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
             var parentPath = PathHelper.GetParent(path) + PathHelper.PathSeparatorString;
@@ -172,10 +172,10 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public async Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var readFilters = filters.ToObject<ReadFilters>();
+        var readOptions = options.ToObject<ReadOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -225,16 +225,16 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public Task<object> UpdateAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var deleteFilters = filters.ToObject<DeleteFilters>();
-        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+        var deleteOptions = options.ToObject<DeleteOptions>();
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -252,7 +252,7 @@ public class AzureFileStorage : IPlugin
             }
         }
 
-        if (deleteFilters.Purge is true)
+        if (deleteOptions.Purge is true)
         {
             ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
             await directoryClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
@@ -261,7 +261,7 @@ public class AzureFileStorage : IPlugin
         return result;
     }
 
-    public async Task<bool> ExistAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrWhiteSpace(path))
@@ -300,7 +300,7 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public async Task<IEnumerable<object>> ListAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -312,7 +312,7 @@ public class AzureFileStorage : IPlugin
 
         var storageEntities = new List<StorageEntity>();
         ShareDirectoryClient directoryClient;
-        var listFilters = filters.ToObject<ListFilters>();
+        var listOptions = options.ToObject<ListOptions>();
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
             directoryClient = _client.GetRootDirectoryClient();
@@ -331,13 +331,13 @@ public class AzureFileStorage : IPlugin
                     try
                     {
                         if (item.IsDirectory)
-                            storageEntities.Add(await dir.ToEntity(item, listFilters.IncludeMetadata,
+                            storageEntities.Add(await dir.ToEntity(item, listOptions.IncludeMetadata,
                                 cancellationToken));
                         else
                             storageEntities.Add(await dir.ToEntity(item, dir.GetFileClient(item.Name),
-                                listFilters.IncludeMetadata, cancellationToken));
+                                listOptions.IncludeMetadata, cancellationToken));
 
-                        if (!listFilters.Recurse) continue;
+                        if (!listOptions.Recurse) continue;
 
                         if (item.IsDirectory)
                         {
@@ -356,7 +356,7 @@ public class AzureFileStorage : IPlugin
             }
         }
 
-        var filteredEntities = _storageFilter.Filter(storageEntities, filters).ToList();
+        var filteredEntities = _storageFilter.Filter(storageEntities, options).ToList();
 
         var result = new List<StorageList>(filteredEntities.Count());
         result.AddRange(filteredEntities.Select(storageEntity => new StorageList
@@ -367,7 +367,7 @@ public class AzureFileStorage : IPlugin
             Path = storageEntity.FullPath,
             CreatedTime = storageEntity.CreatedTime,
             ModifiedTime = storageEntity.ModifiedTime,
-            Size = storageEntity.Size.ToString(!listFilters.Full),
+            Size = storageEntity.Size.ToString(!listOptions.Full),
             ContentType = storageEntity.ContentType,
             Md5 = storageEntity.Md5,
             Metadata = storageEntity.Metadata
@@ -376,7 +376,7 @@ public class AzureFileStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginFilters? filters,
+    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
             CancellationToken cancellationToken = new CancellationToken())
     {
         if (PathHelper.IsFile(entity))
@@ -385,7 +385,7 @@ public class AzureFileStorage : IPlugin
             return new List<TransmissionData>() { copyFile };
         }
 
-        return await PrepareCopyDirectory(entity, filters, cancellationToken);
+        return await PrepareCopyDirectory(entity, options, cancellationToken);
     }
 
     private async Task<TransmissionData> PrepareCopyFile(string entity, CancellationToken cancellationToken = default)
@@ -398,10 +398,10 @@ public class AzureFileStorage : IPlugin
         return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
     }
 
-    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginFilters? filters,
+    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginOptions? options,
         CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(entity, filters, cancellationToken).ConfigureAwait(false);
+        var entities = await ListAsync(entity, options, cancellationToken).ConfigureAwait(false);
         var storageEntities = entities.ToList().ConvertAll(item => (StorageList)item);
 
         var result = new List<TransmissionData>(storageEntities.Count);
@@ -430,7 +430,7 @@ public class AzureFileStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginFilters? filters, IEnumerable<TransmissionData> transmissionData,
+    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, IEnumerable<TransmissionData> transmissionData,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -440,15 +440,15 @@ public class AzureFileStorage : IPlugin
             switch (item.Content)
             {
                 case null:
-                    result.Add(await CreateAsync(item.Key, filters, cancellationToken));
+                    result.Add(await CreateAsync(item.Key, options, cancellationToken));
                     _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     break;
                 case StorageStream stream:
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await CreateAsync(parentPath, filters, cancellationToken);
-                        result.Add(await WriteAsync(item.Key, filters, stream, cancellationToken));
+                        await CreateAsync(parentPath, options, cancellationToken);
+                        result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                     break;
@@ -458,11 +458,11 @@ public class AzureFileStorage : IPlugin
         return result;
     }
     
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginFilters? filters,
+    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, filters, cancellationToken).ConfigureAwait(false);
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -485,7 +485,7 @@ public class AzureFileStorage : IPlugin
 
             try
             {
-                var stream = await ReadAsync(entry.Path, filters, cancellationToken);
+                var stream = await ReadAsync(entry.Path, options, cancellationToken);
                 if (stream is not StorageRead storageRead)
                 {
                     _logger.LogWarning($"The item '{entry.Name}' could be not read.");
