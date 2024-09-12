@@ -32,9 +32,10 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<object>>
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
             var filters = request.Filters.ToPluginFilters();
-            var dataStream = request.Data.IsBase64String() ? request.Data.Base64ToStream() : request.Data.ToStream();
-            var stream = new StorageStream(dataStream);
-            var response = await _storageService.WriteAsync(pluginInstance, filters, stream, cancellationToken);
+            //if (request.Data is string){}
+            //var dataStream = request.Data.IsBase64String() ? request.Data.Base64ToStream() : request.Data.ToStream();
+            //var stream = new StorageStream(dataStream);
+            var response = await _storageService.WriteAsync(pluginInstance, filters, request.Data, cancellationToken);
             return await Result<object>.SuccessAsync(response, Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)
