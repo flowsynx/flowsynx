@@ -109,8 +109,11 @@ public class AzureBlobStorage : IPlugin
         if (!PathHelper.IsFile(path))
             throw new StorageException(Resources.ThePathIsNotFile);
 
-        if (dataOptions is not Stream dataStream)
-            throw new StorageException(nameof(dataStream));
+        var dataValue = dataOptions.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException("Entered data is not valid. The data should be in string or Base64 format.");
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
 
         try
         {
