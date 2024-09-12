@@ -5,6 +5,7 @@ using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Data;
+using System.Text.Json;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
@@ -50,10 +51,13 @@ public class CsvStream : IPlugin
         if (File.Exists(path) && createFilters.Overwrite is false)
             throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
-        string delimiter = GetDelimiter(createFilters.Delimiter);
+        var delimiter = GetDelimiter(createFilters.Delimiter);
         var headers = _deserializer.Deserialize<string[]>(createFilters.Headers);
         var data = string.Join(delimiter, headers);
-        File.WriteAllText(path, data);
+        using (var writer = File.AppendText(path))
+        {
+            writer.WriteLine(data);
+        }
 
         return Task.FromResult<object>(new { });
     }
@@ -61,7 +65,34 @@ public class CsvStream : IPlugin
     public Task<object> WriteAsync(string entity, PluginFilters? filters, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var writeFilters = filters.ToObject<WriteFilters>();
+
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+
+        if (dataValue is null)
+            throw new StreamException("Data must have value.");
+
+        if (dataValue is not string)
+            throw new StreamException("Data is not in valid format.");
+
+        var delimiter = GetDelimiter(writeFilters.Delimiter);
+        var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
+        using (var writer = File.AppendText(path))
+        {
+            foreach (var rowData in dataList)
+            {
+                writer.WriteLine(string.Join(delimiter, rowData));
+            }
+        }
+        
+        return Task.FromResult<object>(new { });
     }
 
     public Task<object> ReadAsync(string entity, PluginFilters? filters, CancellationToken cancellationToken = new CancellationToken())
