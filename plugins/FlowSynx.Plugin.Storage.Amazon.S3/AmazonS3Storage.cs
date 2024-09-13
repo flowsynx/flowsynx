@@ -46,12 +46,14 @@ public class AmazonS3Storage : IPlugin
         return Task.CompletedTask;
     }
 
-    public Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> About(PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public async Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> CreateAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var createFilters = options.ToObject<CreateOptions>();
@@ -119,7 +121,8 @@ public class AmazonS3Storage : IPlugin
         }
     }
 
-    public async Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> ReadAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var readFilters = options.ToObject<ReadOptions>();
@@ -160,12 +163,14 @@ public class AmazonS3Storage : IPlugin
         }
     }
 
-    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var deleteFilters = options.ToObject<DeleteOptions>();
@@ -200,7 +205,8 @@ public class AmazonS3Storage : IPlugin
         return result;
     }
 
-    public async Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<bool> ExistAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -217,7 +223,8 @@ public class AmazonS3Storage : IPlugin
         }
     }
 
-    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -420,6 +427,11 @@ public class AmazonS3Storage : IPlugin
         return compressEntries;
     }
 
+    public void Dispose()
+    {
+
+    }
+
     #region private methods
     private AmazonS3Client CreateClient(AmazonS3StorageSpecifications specifications)
     {
@@ -546,7 +558,10 @@ public class AmazonS3Storage : IPlugin
                 return false;
             }
 
-            await _client.DeleteObjectAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken).ConfigureAwait(false);
+            await _client
+                .DeleteObjectAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
             return true;
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -563,7 +578,6 @@ public class AmazonS3Storage : IPlugin
         return new AmazonS3Config
         {
             RegionEndpoint = ToRegionEndpoint(region),
-            //ServiceURL = endpoint
         };
     }
 
@@ -576,8 +590,4 @@ public class AmazonS3Storage : IPlugin
     }
 
     #endregion
-    public void Dispose()
-    {
-        //throw new NotImplementedException();
-    }
 }

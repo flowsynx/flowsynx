@@ -297,8 +297,8 @@ public class LocalFileSystemStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, IEnumerable<TransmissionData> transmissionData,
-        CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+        IEnumerable<TransmissionData> transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
         var data = transmissionData.ToList();
@@ -386,6 +386,8 @@ public class LocalFileSystemStorage : IPlugin
         return stream;
     }
 
+    public void Dispose() { }
+
     #region internal methods
     private bool DeleteEntityAsync(string path)
     {
@@ -423,6 +425,4 @@ public class LocalFileSystemStorage : IPlugin
         }
     }
     #endregion
-
-    public void Dispose() { }
 }

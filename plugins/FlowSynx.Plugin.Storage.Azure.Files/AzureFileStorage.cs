@@ -42,7 +42,8 @@ public class AzureFileStorage : IPlugin
         return Task.CompletedTask;
     }
 
-    public async Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> About(PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         long totalUsed;
         var aboutOptions = options.ToObject<AboutOptions>();
@@ -64,7 +65,8 @@ public class AzureFileStorage : IPlugin
         };
     }
 
-    public async Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> CreateAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
@@ -172,7 +174,8 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public async Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<object> ReadAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var readOptions = options.ToObject<ReadOptions>();
@@ -225,12 +228,14 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var deleteOptions = options.ToObject<DeleteOptions>();
@@ -261,7 +266,8 @@ public class AzureFileStorage : IPlugin
         return result;
     }
 
-    public async Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<bool> ExistAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrWhiteSpace(path))
@@ -300,7 +306,8 @@ public class AzureFileStorage : IPlugin
         }
     }
 
-    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -430,8 +437,8 @@ public class AzureFileStorage : IPlugin
         return result;
     }
 
-    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, IEnumerable<TransmissionData> transmissionData,
-        CancellationToken cancellationToken = new CancellationToken())
+    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+        IEnumerable<TransmissionData> transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
         var data = transmissionData.ToList();
@@ -509,6 +516,8 @@ public class AzureFileStorage : IPlugin
         return compressEntries;
     }
 
+    public void Dispose() { }
+
     #region internal methods
     private ShareClient CreateClient(AzureFilesSpecifications specifications)
     {
@@ -584,6 +593,4 @@ public class AzureFileStorage : IPlugin
         await dirClient.DeleteAsync(cancellationToken);
     }
     #endregion
-
-    public void Dispose() { }
 }
