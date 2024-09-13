@@ -32,12 +32,14 @@ public class CsvStream : IPlugin
         return Task.CompletedTask;
     }
 
-    public Task<object> About(PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> About(PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<object> CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> CreateAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
@@ -95,36 +97,43 @@ public class CsvStream : IPlugin
         return Task.FromResult<object>(new { });
     }
 
-    public Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> ReadAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<object> UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<object> UpdateAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<bool> ExistAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var listOptions = options.ToObject<ListOptions>();
         string delimiter = GetDelimiter(listOptions.Delimiter);
 
         DataTable dt = ImportCsv(entity, delimiter);
+        var filterData = SearchInAllColumns(dt, listOptions.Filter, listOptions.Sorting, StringComparison.OrdinalIgnoreCase);
+
         var result = new List<object>();
 
-        var colCount = dt.Columns.Count;
-        foreach (DataRow dr in dt.Rows)
+        var colCount = filterData.Columns.Count;
+        foreach (DataRow dr in filterData.Rows)
         {
             dynamic objExpando = new System.Dynamic.ExpandoObject();
             var obj = objExpando as IDictionary<string, object>;
@@ -191,6 +200,23 @@ public class CsvStream : IPlugin
 
         sr.Close();
         return dt;
+    }
+
+    public DataTable SearchInAllColumns(DataTable table, string? filterExpression, string? sorting, StringComparison comparison)
+    {
+        if (string.IsNullOrEmpty(filterExpression) && string.IsNullOrEmpty(sorting))
+            return table;
+
+        DataView view = new DataView(table);
+
+        if (!string.IsNullOrWhiteSpace(sorting))
+            view.Sort = sorting;
+
+        if (!string.IsNullOrEmpty(filterExpression))
+            view.RowFilter = filterExpression;
+        
+        return view.ToTable();
+
     }
 
     public Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
