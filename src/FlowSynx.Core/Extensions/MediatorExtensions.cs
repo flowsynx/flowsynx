@@ -91,7 +91,7 @@ public static class MediatorExtensions
     #endregion
 
     #region Plugins
-    public static Task<Result<IEnumerable<PluginsListResponse>>> Plugins(this IMediator mediator, PluginsListRequest request, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<object>>> Plugins(this IMediator mediator, PluginsListRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -103,7 +103,7 @@ public static class MediatorExtensions
     #endregion
 
     #region Config
-    public static Task<Result<IEnumerable<ConfigListResponse>>> ConfigList(this IMediator mediator, ConfigListRequest request, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<object>>> ConfigList(this IMediator mediator, ConfigListRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -125,7 +125,7 @@ public static class MediatorExtensions
     #endregion
 
     #region Logs
-    public static Task<Result<IEnumerable<LogsListResponse>>> Logs(this IMediator mediator, LogsListRequest listRequest, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<object>>> Logs(this IMediator mediator, LogsListRequest listRequest, CancellationToken cancellationToken)
     {
         return mediator.Send(listRequest, cancellationToken);
     }

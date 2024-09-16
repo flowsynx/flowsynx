@@ -21,9 +21,8 @@ public class ConfigurationManagerHealthCheck : IHealthCheck
     {
         try
         {
-            var searchOptions = new ConfigurationSearchOptions();
             var listOptions = new ConfigurationListOptions();
-            _configurationManager.List(searchOptions, listOptions);
+            _configurationManager.List(listOptions);
             return Task.FromResult(HealthCheckResult.Healthy(Resources.ConfigurationManagerHealthCheckConfigurationRegistryAvailable));
         }
         catch (Exception ex)

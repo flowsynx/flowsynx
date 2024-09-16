@@ -63,7 +63,7 @@ public static class ServiceCollectionExtensions
             config.MinLevel = level;
         }));
 
-        services.AddLoggerFilter();
+        services.AddLoggerManager();
 
         return services;
     }

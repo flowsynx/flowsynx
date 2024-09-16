@@ -17,11 +17,11 @@ using FlowSynx.Plugin.Storage.LocalFileSystem;
 using FlowSynx.Core.Parers.PluginInstancing;
 using FlowSynx.Plugin.Storage.Azure.Blobs;
 using FlowSynx.Plugin.Storage.Azure.Files;
-using FlowSynx.Plugin.Storage.Extensions;
 using FlowSynx.Plugin.Storage.Google.Cloud;
 using FlowSynx.Plugin.Storage.Google.Drive;
 using FlowSynx.Plugin.Storage.Memory;
 using FlowSynx.Plugin.Stream.Csv;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
             .AddParsers()
             .AddCompressions()
             .AddPluginService()
-            .AddStorageFilter()
+            .AddDatFilter()
             .AddMultiKeyCache<string, string, PluginInstance>()
             .AddScoped<IPluginInstanceParser, PluginInstanceParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()

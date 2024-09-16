@@ -22,9 +22,8 @@ public class PluginsManagerHealthCheck : IHealthCheck
     {
         try
         {
-            var searchOptions = new PluginSearchOptions();
             var listOptions = new PluginListOptions();
-            _pluginsManager.List(searchOptions, listOptions);
+            _pluginsManager.List(listOptions);
             return Task.FromResult(HealthCheckResult.Healthy(Resources.PluginsManagerHealthCheckConfigurationRegistryAvailable));
         }
         catch (Exception ex)
