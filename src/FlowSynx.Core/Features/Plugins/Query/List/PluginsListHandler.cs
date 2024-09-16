@@ -26,11 +26,11 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
         {
             var listOptions = new PluginListOptions()
             {
-                Fields = request.Fields,
-                Filter = request.Filter,
-                CaseSensitive = request.CaseSensitive,
-                Sort = request.Sort,
-                Limit = request.Limit
+                Fields = request.Fields ?? [],
+                Filter = request.Filter ?? string.Empty,
+                CaseSensitive = request.CaseSensitive ?? false,
+                Sort = request.Sort ?? string.Empty,
+                Limit = request.Limit ?? string.Empty
             };
 
             var response = _pluginsManager.List(listOptions);

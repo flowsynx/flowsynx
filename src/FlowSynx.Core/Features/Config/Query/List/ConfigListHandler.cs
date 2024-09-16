@@ -23,11 +23,11 @@ internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEn
         {
             var listOptions = new ConfigurationListOptions
             {
-                Fields = request.Fields,
-                CaseSensitive = request.CaseSensitive,
-                Filter = request.Filter,
-                Sort = request.Sort,
-                Limit = request.Limit
+                Fields = request.Fields ?? [],
+                CaseSensitive = request.CaseSensitive ?? false,
+                Filter = request.Filter ?? string.Empty,
+                Sort = request.Sort ?? string.Empty,
+                Limit = request.Limit ?? string.Empty,
             };
 
             var response = _configurationManager.List(listOptions);
