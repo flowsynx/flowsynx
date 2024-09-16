@@ -6,7 +6,7 @@ using FlowSynx.Configuration.Options;
 
 namespace FlowSynx.Core.Features.Config.Query.List;
 
-internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEnumerable<ConfigListResponse>>>
+internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEnumerable<object>>>
 {
     private readonly ILogger<ConfigListHandler> _logger;
     private readonly IConfigurationManager _configurationManager;
@@ -17,39 +17,25 @@ internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEn
         _configurationManager = configurationManager;
     }
 
-    public async Task<Result<IEnumerable<ConfigListResponse>>> Handle(ConfigListRequest request, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<object>>> Handle(ConfigListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var searchOptions = new ConfigurationSearchOptions()
+            var listOptions = new ConfigurationListOptions
             {
-                Include = request.Include,
-                Exclude = request.Exclude,
-                MinimumAge = request.MinAge,
-                MaximumAge = request.MaxAge,
-                CaseSensitive = request.CaseSensitive ?? false
+                Fields = request.Fields,
+                CaseSensitive = request.CaseSensitive,
+                Filter = request.Filter,
+                Sort = request.Sort,
+                Limit = request.Limit
             };
 
-            var listOptions = new ConfigurationListOptions()
-            {
-                Sorting = request.Sorting,
-                MaxResult = request.MaxResults
-            };
-
-            var result = _configurationManager.List(searchOptions, listOptions);
-            var response = result.Select(x => new ConfigListResponse
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Type = x.Type,
-                ModifiedTime = x.ModifiedTime,
-            });
-
-            return await Result<IEnumerable<ConfigListResponse>>.SuccessAsync(response);
+            var response = _configurationManager.List(listOptions);
+            return await Result<IEnumerable<object>>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
-            return await Result<IEnumerable<ConfigListResponse>>.FailAsync(new List<string> { ex.Message });
+            return await Result<IEnumerable<object>>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

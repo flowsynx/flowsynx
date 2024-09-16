@@ -7,7 +7,7 @@ using FlowSynx.Plugin.Manager.Options;
 
 namespace FlowSynx.Core.Features.Plugins.Query.List;
 
-internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<IEnumerable<PluginsListResponse>>>
+internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<IEnumerable<object>>>
 {
     private readonly ILogger<PluginsListHandler> _logger;
     private readonly IPluginsManager _pluginsManager;
@@ -20,36 +20,25 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
         _pluginsManager = pluginsManager;
     }
 
-    public async Task<Result<IEnumerable<PluginsListResponse>>> Handle(PluginsListRequest request, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<object>>> Handle(PluginsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var searchOptions = new PluginSearchOptions()
-            {
-                Include = request.Include,
-                Exclude = request.Exclude,
-                CaseSensitive = request.CaseSensitive ?? false
-            };
-
             var listOptions = new PluginListOptions()
             {
-                Sort = request.Sorting,
-                Limit = request.MaxResults
+                Fields = request.Fields,
+                Filter = request.Filter,
+                CaseSensitive = request.CaseSensitive,
+                Sort = request.Sort,
+                Limit = request.Limit
             };
 
-            var result = _pluginsManager.List(searchOptions, listOptions);
-            var response = result.Select(x => new PluginsListResponse
-            {
-                Id = x.Id,
-                Type = x.Type,
-                Description = x.Description
-            });
-
-            return await Result<IEnumerable<PluginsListResponse>>.SuccessAsync(response);
+            var response = _pluginsManager.List(listOptions);
+            return await Result<IEnumerable<object>>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
-            return await Result<IEnumerable<PluginsListResponse>>.FailAsync(new List<string> { ex.Message });
+            return await Result<IEnumerable<object>>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

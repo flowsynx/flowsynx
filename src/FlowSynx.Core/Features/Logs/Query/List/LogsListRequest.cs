@@ -3,15 +3,12 @@ using MediatR;
 
 namespace FlowSynx.Core.Features.Logs.Query.List;
 
-public class LogsListRequest : IRequest<Result<IEnumerable<LogsListResponse>>>
+public class LogsListRequest : IRequest<Result<IEnumerable<object>>>
 {
-    public string? Include { get; set; }
-    public string? Exclude { get; set; }
-    public string? MinAge { get; set; }
-    public string? MaxAge { get; set; }
-    public string? Level { get; set; }
+    public string[]? Fields { get; set; }
+    public string? Filter { get; set; }
     public bool? CaseSensitive { get; set; } = false;
-    public string? MaxResults { get; set; }
-    public string? Sorting { get; set; }
+    public string? Sort { get; set; }
+    public string? Limit { get; set; }
 }
 

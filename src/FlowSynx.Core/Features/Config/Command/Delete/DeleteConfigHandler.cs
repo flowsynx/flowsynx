@@ -25,16 +25,16 @@ internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result
     {
         try
         {
-            var searchOptions = new ConfigurationSearchOptions
+            var listOptions = new ConfigurationListOptions
             {
-                Include = request.Include,
-                Exclude = request.Exclude,
+                Fields = request.Fields,
                 CaseSensitive = request.CaseSensitive,
-                MinimumAge = request.MinimumAge,
-                MaximumAge = request.MaximumAge,
+                Filter = request.Filter,
+                Sort = request.Sort,
+                Limit = request.Limit
             };
 
-            var result = _configurationManager.Delete(searchOptions);
+            var result = _configurationManager.Delete(listOptions);
             var response = result.Select(c=> new DeleteConfigResponse
             {
                 Id = c.Id
