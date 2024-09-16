@@ -14,7 +14,6 @@ using FlowSynx.Core.Features.Write.Command;
 using FlowSynx.Core.Features.Delete.Command;
 using FlowSynx.Core.Features.Exist.Query;
 using FlowSynx.Core.Features.Compress.Command;
-using FlowSynx.Core.Features.Check.Command;
 using FlowSynx.Core.Features.Read.Query;
 using FlowSynx.Core.Features.About.Query;
 using FlowSynx.Core.Features.Move.Command;
@@ -68,11 +67,6 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<IEnumerable<object>>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-
-    public static Task<Result<IEnumerable<CheckResponse>>> Check(this IMediator mediator, CheckRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
