@@ -16,8 +16,7 @@ static class AzureFileConverter
         {
             CreatedTime = fileItem.Properties.CreatedOn,
             ModifiedTime = fileProperties.Value.LastModified,
-            Size = fileItem.FileSize,
-            Md5 = fileProperties.Value.ContentHash?.ToHexString(),
+            Size = fileItem.FileSize
         };
 
         if (includeMetadata is true)
@@ -26,6 +25,7 @@ static class AzureFileConverter
                 "CopyStatus", fileProperties.Value.CopyStatus.ToString(),
                 "ChangeTime", fileItem.Properties.ChangedOn?.ToString() ?? string.Empty,
                 "CreationTime", fileItem.Properties.CreatedOn?.ToString() ?? string.Empty,
+                "ContentHash", fileProperties.Value.ContentHash.ToHexString(),
                 "ETag", fileProperties.Value.ETag,
                 "IsServerEncrypted", fileProperties.Value.IsServerEncrypted.ToString(),
                 "NtfsAttributes", fileItem.FileAttributes.ToString() ?? string.Empty);
@@ -40,6 +40,7 @@ static class AzureFileConverter
         var fileProperties = await shareDirectoryClient.GetPropertiesAsync(cancellationToken);
         var entity = new StorageEntity(shareDirectoryClient.Path, fileItem.Name, StorageEntityItemKind.Directory)
         {
+            Size = 0,
             CreatedTime = fileItem.Properties.CreatedOn,
             ModifiedTime = fileProperties.Value.LastModified
         };

@@ -47,7 +47,7 @@ internal class AzureContainerBrowser : IDisposable
                 }
             }
 
-            if (listOptions.Recurse && (string.IsNullOrEmpty(listOptions.Kind) || string.Equals(listOptions.Kind, "directory", StringComparison.CurrentCultureIgnoreCase)))
+            if (listOptions.Recurse)
             {
                 var implicitPrefixes = AssumeImplicitPrefixes(
                     PathHelper.Combine(_client.Name, path),

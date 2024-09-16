@@ -1,7 +1,6 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
 using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.Amazon.S3;
 
@@ -11,7 +10,10 @@ static class AmazonS3StorageConverter
 
     public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
     {
-        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory);
+        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory)
+        {
+            Size = 0
+        };
 
         if (includeMetadata is true)
         {
@@ -45,11 +47,11 @@ static class AmazonS3StorageConverter
             : new StorageEntity(fullPath, StorageEntityItemKind.File);
 
         entity.Size = s3Obj.Size;
-        entity.Md5 = s3Obj.ETag.Trim('\"');
         entity.ModifiedTime = s3Obj.LastModified.ToUniversalTime();
 
         if (includeMetadata is true)
         {
+            entity.Metadata["ContentHash"] = s3Obj.ETag.Trim('\"');
             entity.Metadata["StorageClass"] = s3Obj.StorageClass;
             entity.Metadata["ETag"] = s3Obj.ETag;
             AddProperties(client, s3Obj.BucketName, s3Obj.Key, entity, cancellationToken);
@@ -61,7 +63,10 @@ static class AmazonS3StorageConverter
     public static StorageEntity ToEntity(this string prefix, string bucketName, bool? includeMetadata)
     {
         var fullPath = PathHelper.Combine(bucketName, prefix);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory);
+        var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
+        {
+            Size = 0
+        };
 
         if (includeMetadata is true)
         {
@@ -82,7 +87,6 @@ static class AmazonS3StorageConverter
 
     private static void AddProperties(StorageEntity entity, MetadataCollection metadata)
     {
-        //add metadata and strip all
         foreach (string key in metadata.Keys)
         {
             string value = metadata[key];

@@ -11,22 +11,29 @@ using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.Plugin.Storage.Options;
+using FlowSynx.IO.Serialization;
+using FlowSynx.Data.Filter;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
 public class AzureBlobStorage : IPlugin
 {
     private readonly ILogger<AzureBlobStorage> _logger;
-    private readonly IStorageFilter _storageFilter;
+    private readonly IDataFilter _dataFilter;
+    private readonly IDeserializer _deserializer;
     private AzureBlobStorageSpecifications? _azureBlobSpecifications;
     private BlobServiceClient _client = null!;
 
-    public AzureBlobStorage(ILogger<AzureBlobStorage> logger, IStorageFilter storageFilter)
+    public AzureBlobStorage(ILogger<AzureBlobStorage> logger, IDataFilter dataFilter,
+        IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
+        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _storageFilter = storageFilter;
+        _dataFilter = dataFilter;
+        _deserializer = deserializer;
     }
 
     public Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
@@ -113,7 +120,7 @@ public class AzureBlobStorage : IPlugin
 
         var dataValue = dataOptions.GetObjectValue();
         if (dataValue is not string data)
-            throw new StorageException("Entered data is not valid. The data should be in string or Base64 format.");
+            throw new StorageException(Resources.EnteredDataIsNotValid);
 
         var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
 
@@ -337,6 +344,16 @@ public class AzureBlobStorage : IPlugin
         var storageEntities = new List<StorageEntity>();
         var containers = new List<BlobContainerClient>();
         var listOptions = options.ToObject<ListOptions>();
+        var fields = DeserializeToStringArray(listOptions.Fields);
+
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = listOptions.Filter,
+            SortExpression = listOptions.Sort,
+            CaseSensetive = listOptions.CaseSensitive,
+            Limit = listOptions.Limit,
+        };
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
@@ -346,22 +363,9 @@ public class AzureBlobStorage : IPlugin
 
             if (!listOptions.Recurse)
             {
-                var containerEntities = new List<StorageList>(storageEntities.Count());
-                containerEntities.AddRange(storageEntities.Select(storageEntity => new StorageList
-                {
-                    Id = storageEntity.Id,
-                    Kind = storageEntity.Kind.ToString().ToLower(),
-                    Name = storageEntity.Name,
-                    Path = storageEntity.FullPath,
-                    CreatedTime = storageEntity.CreatedTime,
-                    ModifiedTime = storageEntity.ModifiedTime,
-                    Size = storageEntity.Size.ToString(!listOptions.Full),
-                    ContentType = storageEntity.ContentType,
-                    Md5 = storageEntity.Md5,
-                    Metadata = storageEntity.Metadata
-                }));
-
-                return containerEntities;
+                var containerDataTable = storageEntities.ToDataTable();
+                var containerFilteredData = _dataFilter.Filter(containerDataTable, dataFilterOptions);
+                return containerFilteredData.CreateListFromTable();
             }
         }
         else
@@ -377,24 +381,9 @@ public class AzureBlobStorage : IPlugin
             ListAsync(c, storageEntities, path, listOptions, cancellationToken))
         ).ConfigureAwait(false);
 
-        var filteredEntities = _storageFilter.Filter(storageEntities, options).ToList();
-
-        var result = new List<StorageList>(filteredEntities.Count());
-        result.AddRange(filteredEntities.Select(storageEntity => new StorageList
-        {
-            Id = storageEntity.Id,
-            Kind = storageEntity.Kind.ToString().ToLower(),
-            Name = storageEntity.Name,
-            Path = storageEntity.FullPath,
-            CreatedTime = storageEntity.CreatedTime,
-            ModifiedTime = storageEntity.ModifiedTime,
-            Size = storageEntity.Size.ToString(!listOptions.Full),
-            ContentType = storageEntity.ContentType,
-            Md5 = storageEntity.Md5,
-            Metadata = storageEntity.Metadata
-        }));
-
-        return result;
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        return filteredData.CreateListFromTable();
     }
 
     public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
@@ -414,7 +403,7 @@ public class AzureBlobStorage : IPlugin
         var sourceStream = await ReadAsync(entity, null, cancellationToken);
 
         if (sourceStream is not StorageRead storageRead)
-            throw new StorageException($"Copy operation for file '{entity} could not proceed!'");
+            throw new StorageException(string.Format(Resources.CopyOperationCouldNotBeProceed, entity));
 
         return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
     }
@@ -430,7 +419,7 @@ public class AzureBlobStorage : IPlugin
         foreach (var entityItem in storageEntities)
         {
             TransmissionData transmissionData;
-            if (string.Equals(entityItem.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
                 var read = await ReadAsync(entityItem.Path, null, cancellationToken);
                 if (read is not StorageRead storageRead)
@@ -498,7 +487,7 @@ public class AzureBlobStorage : IPlugin
                 continue;
             }
 
-            if (!string.Equals(entry.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(entry.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning($"The item '{entry.Name}' is not a file.");
                 continue;
@@ -673,6 +662,17 @@ public class AzureBlobStorage : IPlugin
         {
             throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
         }
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        string[] result = [];
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }

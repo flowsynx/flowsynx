@@ -16,6 +16,7 @@ static class GoogleDriveConverter
         {
             entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
             {
+                Size = 0,
                 ModifiedTime = file.ModifiedTimeDateTimeOffset,
             };
 
@@ -28,9 +29,8 @@ static class GoogleDriveConverter
         {
             entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
             {
+                Size = file.Size,
                 ModifiedTime = file.ModifiedTimeDateTimeOffset,
-                Md5 = file.Md5Checksum,
-                Size = file.Size
             };
 
             if (includeMetadata is true)
@@ -44,6 +44,8 @@ static class GoogleDriveConverter
 
     private static void AddProperties(StorageEntity entity, DriveFile file)
     {
+        entity.Metadata.Add("ContentHash", file.Md5Checksum);
+
         if (file.CreatedTimeDateTimeOffset.HasValue)
             entity.Metadata.Add("CreatedTimeDateTimeOffset", file.CreatedTimeDateTimeOffset);
 

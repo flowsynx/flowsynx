@@ -1,7 +1,5 @@
 ﻿using FlowSynx.Security;
-using System.IO;
 using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
@@ -11,9 +9,9 @@ static class LocalFileSystemConverter
     {
         var entity = new StorageEntity(PathHelper.ToUnixPath(directory.FullName), StorageEntityItemKind.Directory)
         {
+            Size = 0,
             CreatedTime = directory.CreationTime,
-            ModifiedTime = directory.LastWriteTime,
-            Size = null
+            ModifiedTime = directory.LastWriteTime
         };
 
         if (includeMetadata is true)
@@ -24,19 +22,19 @@ static class LocalFileSystemConverter
         return entity;
     }
 
-    public static StorageEntity ToEntity(this FileInfo file, bool? hashing, bool? includeMetadata)
+    public static StorageEntity ToEntity(this FileInfo file, bool? includeMetadata)
     {
         var fileInfo = new FileInfo(file.FullName);
         var entity = new StorageEntity(PathHelper.ToUnixPath(file.FullName), StorageEntityItemKind.File)
         {
-            CreatedTime = file.CreationTimeUtc,
-            ModifiedTime = file.LastWriteTimeUtc,
             Size = file.Length,
-            Md5 = hashing is true ? HashHelper.Md5.GetHash(fileInfo) : null
+            CreatedTime = file.CreationTimeUtc,
+            ModifiedTime = file.LastWriteTimeUtc
         };
         if (includeMetadata is true)
         {
             entity.TryAddMetadata("Attributes", file.Attributes.ToString());
+            entity.TryAddMetadata("ContentHash", HashHelper.Md5.GetHash(fileInfo));
         }
         return entity;
     }

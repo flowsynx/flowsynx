@@ -9,7 +9,10 @@ static class AzureBlobConverter
 {
     public static StorageEntity ToEntity(this BlobContainerClient client, bool? includeMetadata)
     {
-        var entity = new StorageEntity(client.Name, StorageEntityItemKind.Directory);
+        var entity = new StorageEntity(client.Name, StorageEntityItemKind.Directory)
+        {
+            Size = 0
+        };
 
         if (includeMetadata is true)
         {
@@ -28,7 +31,6 @@ static class AzureBlobConverter
         var fullPath = PathHelper.Combine(containerName, item.Blob.Name);
         var entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
         {
-            Md5 = item.Blob.Properties.ContentHash.ToHexString(),
             Size = item.Blob.Properties.ContentLength,
             CreatedTime = item.Blob.Properties.CreatedOn,
             ModifiedTime = item.Blob.Properties.LastModified

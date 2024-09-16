@@ -1,5 +1,4 @@
 ﻿using FlowSynx.IO;
-using FlowSynx.Plugin.Storage.Abstractions;
 using Object = Google.Apis.Storage.v1.Data.Object;
 
 namespace FlowSynx.Plugin.Storage.Google.Cloud;
@@ -8,7 +7,10 @@ static class GoogleCloudStorageConverter
 {
     public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
     {
-        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory);
+        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory)
+        {
+            Size = 0
+        };
 
         if (includeMetadata is true)
         {
@@ -28,6 +30,7 @@ static class GoogleCloudStorageConverter
         {
             entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
             {
+                Size = 0,
                 ModifiedTime = googleObject.UpdatedDateTimeOffset,
             };
 
@@ -40,9 +43,8 @@ static class GoogleCloudStorageConverter
         {
             entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
             {
+                Size = (long?)googleObject.Size,
                 ModifiedTime = googleObject.UpdatedDateTimeOffset,
-                Md5 = Convert.FromBase64String(googleObject.Md5Hash).ToHexString(),
-                Size = (long?)googleObject.Size
             };
 
             if (includeMetadata is true) {
@@ -64,6 +66,8 @@ static class GoogleCloudStorageConverter
         entity.Metadata.Add("ContentDisposition", googleObject.ContentDisposition);
         entity.Metadata.Add("ContentEncoding", googleObject.ContentEncoding);
         entity.Metadata.Add("ContentLanguage", googleObject.ContentLanguage);
+        entity.Metadata.Add("ContentHash", Convert.FromBase64String(googleObject.Md5Hash).ToHexString());
+
         entity.Metadata.Add("Crc32", googleObject.Crc32c);
 
         entity.Metadata.Add("ETag", googleObject.ETag);

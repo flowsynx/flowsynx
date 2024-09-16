@@ -120,6 +120,12 @@
   <data name="AboutOperrationNotSupported" xml:space="preserve">
     <value>About operation is not supported for Azure Blob storage!</value>
   </data>
+  <data name="CopyOperationCouldNotBeProceed" xml:space="preserve">
+    <value>Copy operation for file '{0} could not proceed!</value>
+  </data>
+  <data name="EnteredDataIsNotValid" xml:space="preserve">
+    <value>Entered data is not valid. The data should be in string or Base64 format.</value>
+  </data>
   <data name="ErrorInCreateDriveServiceCredential" xml:space="preserve">
     <value>An error in creating connection to the Google Drive service!</value>
   </data>

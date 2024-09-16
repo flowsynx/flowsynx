@@ -1,4 +1,6 @@
 ﻿using EnsureThat;
+using FlowSynx.Data.Extensions;
+using FlowSynx.Data.Filter;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.Plugin.Abstractions;
@@ -12,15 +14,15 @@ namespace FlowSynx.Plugin.Storage.Memory;
 public class MemoryStorage : IPlugin
 {
     private readonly ILogger<MemoryStorage> _logger;
-    private readonly IStorageFilter _storageFilter;
+    private readonly IDataFilter _dataFilter;
     private readonly Dictionary<string, Dictionary<string, MemoryEntity>> _entities;
 
-    public MemoryStorage(ILogger<MemoryStorage> logger, IStorageFilter storageFilter)
+    public MemoryStorage(ILogger<MemoryStorage> logger, IDataFilter dataFilter)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
+        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
         _logger = logger;
-        _storageFilter = storageFilter;
+        _dataFilter = dataFilter;
         _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
     }
     
@@ -60,9 +62,9 @@ public class MemoryStorage : IPlugin
 
         return Task.FromResult<object>(new
         {
-            Total = totalSpace.ToString(!aboutOptions.Full), 
-            Free = freeSpace.ToString(!aboutOptions.Full), 
-            Used = usedSpace.ToString(!aboutOptions.Full)
+            Total = totalSpace, 
+            Free = freeSpace, 
+            Used = usedSpace
         });
     }
 
@@ -121,7 +123,7 @@ public class MemoryStorage : IPlugin
 
         var dataValue = dataOptions.GetObjectValue();
         if (dataValue is not string data)
-            throw new StorageException("Entered data is not valid. The data should be in string or Base64 format.");
+            throw new StorageException(Resources.EnteredDataIsNotValid);
 
         var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
 
@@ -171,8 +173,7 @@ public class MemoryStorage : IPlugin
         {
             Stream = new StorageStream(memoryEntity.Content),
             ContentType = memoryEntity.ContentType,
-            Extension = extension,
-            Md5 = memoryEntity.Md5,
+            Extension = extension
         };
 
         return Task.FromResult<object>(result);
@@ -284,24 +285,17 @@ public class MemoryStorage : IPlugin
             ListAsync(storageEntities, b, pathParts.RelativePath, listOptions, cancellationToken))
         ).ConfigureAwait(false);
 
-        var filteredEntities = _storageFilter.Filter(storageEntities, options).ToList();
-
-        var result = new List<StorageList>(filteredEntities.Count());
-        result.AddRange(filteredEntities.Select(storageEntity => new StorageList
+        var dataFilterOptions = new DataFilterOptions
         {
-            Id = storageEntity.Id,
-            Kind = storageEntity.Kind.ToString().ToLower(),
-            Name = storageEntity.Name,
-            Path = storageEntity.FullPath,
-            CreatedTime = storageEntity.CreatedTime,
-            ModifiedTime = storageEntity.ModifiedTime,
-            Size = storageEntity.Size.ToString(!listOptions.Full),
-            ContentType = storageEntity.ContentType,
-            Md5 = storageEntity.Md5,
-            Metadata = storageEntity.Metadata
-        }));
+            FilterExpression = listOptions.Filter,
+            SortExpression = listOptions.Sort,
+            CaseSensetive = listOptions.CaseSensitive,
+            Limit = listOptions.Limit,
+        };
 
-        return result;
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        return filteredData.CreateListFromTable();
     }
 
     public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
@@ -321,7 +315,7 @@ public class MemoryStorage : IPlugin
         var sourceStream = await ReadAsync(entity, null, cancellationToken);
 
         if (sourceStream is not StorageRead storageRead)
-            throw new StorageException($"Copy operation for file '{entity} could not proceed!'");
+            throw new StorageException(string.Format(Resources.CopyOperationCouldNotBeProceed, entity));
 
         return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
     }
@@ -337,7 +331,7 @@ public class MemoryStorage : IPlugin
         foreach (var entityItem in storageEntities)
         {
             TransmissionData transmissionData;
-            if (string.Equals(entityItem.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
                 var read = await ReadAsync(entityItem.Path, null, cancellationToken);
                 if (read is not StorageRead storageRead)
@@ -405,7 +399,7 @@ public class MemoryStorage : IPlugin
                 continue;
             }
 
-            if (!string.Equals(entry.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(entry.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning($"The item '{entry.Name}' is not a file.");
                 continue;

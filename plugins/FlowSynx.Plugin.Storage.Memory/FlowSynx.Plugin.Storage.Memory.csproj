@@ -7,7 +7,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.4.2" />
+	  <PackageReference Include="FlowSynx.Data" Version="1.4.4" />
+	  <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.4.4" />
 	</ItemGroup>
 
 	<ItemGroup>

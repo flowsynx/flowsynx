@@ -70,6 +70,24 @@ namespace FlowSynx.Plugin.Storage.Google.Drive {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Copy operation for file &apos;{0} could not proceed!.
+        /// </summary>
+        internal static string CopyOperationCouldNotBeProceed {
+            get {
+                return ResourceManager.GetString("CopyOperationCouldNotBeProceed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entered data is not valid. The data should be in string or Base64 format..
+        /// </summary>
+        internal static string EnteredDataIsNotValid {
+            get {
+                return ResourceManager.GetString("EnteredDataIsNotValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An error in creating connection to the Google Drive service!.
         /// </summary>
         internal static string ErrorInCreateDriveServiceCredential {

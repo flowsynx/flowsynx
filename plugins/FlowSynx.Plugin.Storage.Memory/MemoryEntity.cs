@@ -18,7 +18,6 @@ public class MemoryEntity: StorageEntity
     {
         Content = content;
         Size = content.Length;
-        Md5 = HashHelper.Md5.GetHash(content);
         ModifiedTime = DateTimeOffset.Now;
     }
 
@@ -33,7 +32,6 @@ public class MemoryEntity: StorageEntity
     {
         Content = content;
         Size = content.Length;
-        Md5 = HashHelper.Md5.GetHash(content);
         ModifiedTime = DateTimeOffset.Now;
     }
 }

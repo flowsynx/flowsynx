@@ -6,22 +6,30 @@ using FlowSynx.IO;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
 using FlowSynx.Security;
-using FlowSynx.Commons;
 using FlowSynx.Plugin.Storage.Options;
 using FlowSynx.IO.Compression;
+using System.Data;
+using FlowSynx.IO.Serialization;
+using FlowSynx.Data.Filter;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
 public class LocalFileSystemStorage : IPlugin
 {
     private readonly ILogger<LocalFileSystemStorage> _logger;
-    private readonly IStorageFilter _storageFilter;
+    private readonly IDataFilter _dataFilter;
+    private readonly IDeserializer _deserializer;
 
-    public LocalFileSystemStorage(ILogger<LocalFileSystemStorage> logger, IStorageFilter storageFilter)
+    public LocalFileSystemStorage(ILogger<LocalFileSystemStorage> logger, IDataFilter dataFilter,
+        IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _storageFilter = storageFilter;
+        _dataFilter = dataFilter;
+        _deserializer = deserializer;
     }
 
     public Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
@@ -60,9 +68,9 @@ public class LocalFileSystemStorage : IPlugin
 
         var result = new
         {
-            Total = totalSpace.ToString(!aboutOptions.Full),
-            Free = freeSpace.ToString(!aboutOptions.Full),
-            Used = (totalSpace - freeSpace).ToString(!aboutOptions.Full)
+            Total = totalSpace,
+            Free = freeSpace,
+            Used = (totalSpace - freeSpace)
         };
         return Task.FromResult<object>(result);
     }
@@ -104,7 +112,7 @@ public class LocalFileSystemStorage : IPlugin
 
         var dataValue = dataOptions.GetObjectValue();
         if (dataValue is not string data)
-            throw new StorageException("Entered data is not valid. The data should be in string or Base64 format.");
+            throw new StorageException(Resources.EnteredDataIsNotValid);
 
         var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
         
@@ -205,40 +213,33 @@ public class LocalFileSystemStorage : IPlugin
 
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
-        
+
         if (!Directory.Exists(path))
             throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
         var listOptions = options.ToObject<ListOptions>();
-
-        if (!string.IsNullOrEmpty(listOptions.Kind) && !EnumUtils.TryParseWithMemberName<StorageEntityItemKind>(listOptions.Kind, out _))
-            throw new StorageException(Resources.ListValidatorKindValueMustBeValidMessage);
-        
         var storageEntities = new List<StorageEntity>();
         var directoryInfo = new DirectoryInfo(path);
 
         storageEntities.AddRange(directoryInfo.FindFiles("*", listOptions.Recurse)
-            .Select(file => file.ToEntity(listOptions.Hashing, listOptions.IncludeMetadata)));
+            .Select(file => file.ToEntity(listOptions.IncludeMetadata)));
 
         storageEntities.AddRange(directoryInfo.FindDirectories("*", listOptions.Recurse)
             .Select(dir => dir.ToEntity(listOptions.IncludeMetadata)));
 
-        var filteredEntities = _storageFilter.Filter(storageEntities, options).ToList();
-
-        var result = new List<StorageList>(filteredEntities.Count());
-        result.AddRange(filteredEntities.Select(storageEntity => new StorageList
+        var fields = DeserializeToStringArray(listOptions.Fields);
+        var dataFilterOptions = new DataFilterOptions
         {
-            Id = storageEntity.Id,
-            Kind = storageEntity.Kind.ToString().ToLower(),
-            Name = storageEntity.Name,
-            Path = storageEntity.FullPath,
-            CreatedTime = storageEntity.CreatedTime,
-            ModifiedTime = storageEntity.ModifiedTime,
-            Size = storageEntity.Size.ToString(!listOptions.Full),
-            ContentType = storageEntity.ContentType,
-            Md5 = storageEntity.Md5,
-            Metadata = storageEntity.Metadata
-        }));
+            Fields = fields,
+            FilterExpression = listOptions.Filter,
+            SortExpression = listOptions.Sort,
+            CaseSensetive = listOptions.CaseSensitive,
+            Limit = listOptions.Limit,
+        };
+
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var result = filteredData.CreateListFromTable();
 
         return Task.FromResult<IEnumerable<object>>(result);
     }
@@ -260,7 +261,7 @@ public class LocalFileSystemStorage : IPlugin
         var sourceStream = await ReadAsync(entity, null, cancellationToken);
 
         if (sourceStream is not StorageRead storageRead)
-            throw new StorageException($"Copy operation for file '{entity} could not proceed!'");
+            throw new StorageException(string.Format(Resources.CopyOperationCouldNotBeProceed, entity));
         
         return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
     }
@@ -276,7 +277,7 @@ public class LocalFileSystemStorage : IPlugin
         foreach (var entityItem in storageEntities)
         {
             TransmissionData transmissionData;
-            if (string.Equals(entityItem.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
                 var read = await ReadAsync(entityItem.Path, null, cancellationToken);
                 if (read is not StorageRead storageRead)
@@ -344,7 +345,7 @@ public class LocalFileSystemStorage : IPlugin
                 continue;
             }
 
-            if (!string.Equals(entry.Kind, "file", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(entry.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning($"The item '{entry.Name}' is not a file.");
                 continue;
@@ -423,6 +424,17 @@ public class LocalFileSystemStorage : IPlugin
         {
             dir.Delete(true);
         }
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        string[] result = [];
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }

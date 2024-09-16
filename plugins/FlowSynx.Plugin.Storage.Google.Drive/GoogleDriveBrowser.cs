@@ -83,7 +83,7 @@ internal class GoogleDriveBrowser : IDisposable
 
         if (listOptions.Recurse)
         {
-            var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory).ToList();
+            var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory.ToString()).ToList();
             await Task.WhenAll(directories.Select(dir => ListFolderAsync(entities, dir.FullPath,
                 listOptions, cancellationToken))).ConfigureAwait(false);
         }
