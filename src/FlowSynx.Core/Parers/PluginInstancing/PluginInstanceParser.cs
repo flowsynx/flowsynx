@@ -8,8 +8,8 @@ using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Manager;
 using FlowSynx.Plugin.Services;
-using FlowSynx.Plugin.Storage;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Core.Parers.PluginInstancing;
@@ -20,33 +20,33 @@ internal class PluginInstanceParser : IPluginInstanceParser
     private readonly IConfigurationManager _configurationManager;
     private readonly IPluginsManager _pluginsManager;
     private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
-    private readonly IStorageFilter _storageFilter;
     private readonly INamespaceParser _namespaceParser;
     private readonly IMultiKeyCache<string, string, PluginInstance> _multiKeyCache;
     private readonly ISerializer _serializer;
+    private readonly IServiceProvider _serviceProvider;
     private const string ParserSeparator = "://";
 
     public PluginInstanceParser(ILogger<PluginInstanceParser> logger, IConfigurationManager configurationManager,
         IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
-        IStorageFilter storageFilter, INamespaceParser namespaceParser,
-        IMultiKeyCache<string, string, PluginInstance> multiKeyCache, ISerializer serializer)
+        INamespaceParser namespaceParser, IMultiKeyCache<string, string, PluginInstance> multiKeyCache, 
+        ISerializer serializer, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(configurationManager, nameof(configurationManager));
         EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
         EnsureArg.IsNotNull(localStorageLogger, nameof(localStorageLogger));
-        EnsureArg.IsNotNull(storageFilter, nameof(storageFilter));
         EnsureArg.IsNotNull(namespaceParser, nameof(namespaceParser));
         EnsureArg.IsNotNull(multiKeyCache, nameof(multiKeyCache));
         EnsureArg.IsNotNull(serializer, nameof(serializer));
+        EnsureArg.IsNotNull(serviceProvider, nameof(serviceProvider));
         _logger = logger;
         _configurationManager = configurationManager;
         _pluginsManager = pluginsManager;
         _localStorageLogger = localStorageLogger;
-        _storageFilter = storageFilter;
         _namespaceParser = namespaceParser;
         _multiKeyCache = multiKeyCache;
         _serializer = serializer;
+        _serviceProvider = serviceProvider;
     }
 
     public PluginInstance Parse(string path)
@@ -84,7 +84,9 @@ internal class PluginInstanceParser : IPluginInstanceParser
 
     private LocalFileSystemStorage GetLocalFileSystemStoragePlugin()
     {
-        return new LocalFileSystemStorage(_localStorageLogger, _storageFilter);
+        var ipluginsServices = _serviceProvider.GetServices<IPlugin>();
+        var localFileSystem = ipluginsServices.First(o => o.GetType() == typeof(LocalFileSystemStorage));
+        return (LocalFileSystemStorage)localFileSystem;
     }
 
     private PluginInstance CreateStorageNormsInfoInstance(IPlugin plugin, string configName, PluginSpecifications? specifications, string entity)
