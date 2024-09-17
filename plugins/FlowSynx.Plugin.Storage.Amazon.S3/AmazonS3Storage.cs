@@ -580,7 +580,7 @@ public class AmazonS3Storage : IPlugin
 
     private string[] DeserializeToStringArray(string? fields)
     {
-        string[] result = [];
+        var result = Array.Empty<string>();
         if (!string.IsNullOrEmpty(fields))
         {
             result = _deserializer.Deserialize<string[]>(fields);

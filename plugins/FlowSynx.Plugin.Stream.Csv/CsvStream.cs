@@ -5,7 +5,6 @@ using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
 using System.Data;
-using System.Text.Json;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
