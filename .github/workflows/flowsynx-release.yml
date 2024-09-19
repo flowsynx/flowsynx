@@ -78,9 +78,9 @@ jobs:
           cd "${{github.workspace}}"
           
     - name: Upload bineries
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
-        name: engine_flowsynx
+        name: flowsynx-${{ matrix.title }}-${{ matrix.os_arch }}
         path: "${{github.workspace}}/dist"
         
   release:
@@ -92,10 +92,11 @@ jobs:
     steps:  
     #Push NuGet package to GitHub packages
     - name: Download nuget package artifact
-      uses: actions/download-artifact@v1.0.0
+      uses: actions/download-artifact@v4
       with:
-        name: engine_flowsynx
+        pattern: flowsynx-*
         path: ${{ env.ARTIFACT_DIR }}
+        merge-multiple: true
     - name: generate checksum files
       run: cd ${ARTIFACT_DIR} && for i in *; do sha256sum -b $i > "$i.sha256"; done && cd -
     - name: Create Release
