@@ -9,6 +9,6 @@ public class ExistValidator : AbstractValidator<ExistRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.ListValidatorPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.ExistValidatorEntityValueShouldNotNullOrEmptyMessage);
     }
 }

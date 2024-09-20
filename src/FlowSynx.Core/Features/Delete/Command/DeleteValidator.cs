@@ -9,6 +9,6 @@ public class DeleteValidator : AbstractValidator<DeleteRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.DeleteValidatorPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.DeleteValidatorEntityValueShouldNotNullOrEmptyMessage);
     }
 }

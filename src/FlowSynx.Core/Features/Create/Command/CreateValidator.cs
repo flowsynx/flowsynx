@@ -9,6 +9,6 @@ public class CreateValidator : AbstractValidator<CreateRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.MakeDirectoryValidatorPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.CreateValidatorEntityShouldNotBeNullOrEmptyMessage);
     }
 }

@@ -147,11 +147,8 @@
   <data name="InputValidationExceptionBaseMessage" xml:space="preserve">
     <value>One or more validation failures have occurred.</value>
   </data>
-  <data name="ListValidatorKindValueMustBeValidMessage" xml:space="preserve">
-    <value>Kind value must be [ File | Directory | FileAndDirectory ]. By default it is FileAndDirectory.</value>
-  </data>
-  <data name="ListValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>{PropertyName} should be not empty.</value>
+  <data name="ListValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Entity should be not empty.</value>
   </data>
   <data name="NamespaceParserInvalidType" xml:space="preserve">
     <value>The given type {0} is not valid!</value>
@@ -159,8 +156,8 @@
   <data name="PlugininItializingInstanceErrorMessage" xml:space="preserve">
     <value>Error in initializing '{0}' plugin instance!</value>
   </data>
-  <data name="ReadValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>{PropertyName} should be not empty.</value>
+  <data name="ReadValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Entity should be not empty.</value>
   </data>
   <data name="SizeValidatorKindValueMustBeValidMessage" xml:space="preserve">
     <value>Kind value must be [ File | Directory | FileAndDirectory ]. By default it is FileAndDirectory.</value>
@@ -174,11 +171,11 @@
   <data name="CopyHandlerSuccessfullyCopy" xml:space="preserve">
     <value>The copy was done successfully.</value>
   </data>
-  <data name="CopyValidatorDestinationPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Destination path should be not empty.</value>
+  <data name="CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Destination entity should be not empty.</value>
   </data>
-  <data name="CopyValidatorSourcePathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Source path should be not empty.</value>
+  <data name="CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Source entity should be not empty.</value>
   </data>
   <data name="CopyDestinationPathIsDifferentThanSourcePath" xml:space="preserve">
     <value>The specified destination-path is of a different type than the source-path.</value>
@@ -189,32 +186,29 @@
   <data name="MoveTheSourceAndDestinationPathAreIdenticalAndOverlap" xml:space="preserve">
     <value>The source and destination path are identical and overlap.</value>
   </data>
-  <data name="DeleteFileHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The file was deleted successfully.</value>
-  </data>
   <data name="DeleteHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The file(s) were deleted successfully.</value>
+    <value>The entities were deleted successfully.</value>
   </data>
-  <data name="DeleteValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
+  <data name="DeleteValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
     <value>Entity should be not empty.</value>
   </data>
-  <data name="MakeDirectoryHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The directory was created successfully.</value>
+  <data name="CreateHandlerSuccessfullyDeleted" xml:space="preserve">
+    <value>The entity was created successfully.</value>
   </data>
-  <data name="MakeDirectoryValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
+  <data name="CreateValidatorEntityShouldNotBeNullOrEmptyMessage" xml:space="preserve">
     <value>Entity should be not empty.</value>
   </data>
   <data name="MoveHandlerSuccessfullyMoved" xml:space="preserve">
     <value>The move was done successfully.</value>
   </data>
-  <data name="MoveValidatorDestinationPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Destination path should be not empty.</value>
+  <data name="MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Destination entity should be not empty.</value>
   </data>
-  <data name="MoveValidatorSourcePathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Source path should be not empty.</value>
+  <data name="MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Source entity should be not empty.</value>
   </data>
   <data name="PluginValidatorPluginNamespaceValueMustBeValidMessage" xml:space="preserve">
-    <value>Namespace value must be [ Storage| Messaging | KeyValue ]. By default it is Storage.</value>
+    <value>Namespace value must be [ Storage| Messaging | Stream ]. By default it is Storage.</value>
   </data>
   <data name="PurgeDirectoryHandlerSuccessfullyPurged" xml:space="preserve">
     <value>The directory was purged successfully.</value>
@@ -255,7 +249,7 @@
   <data name="LogsValidatorKindValueMustBeValidMessage" xml:space="preserve">
     <value>Level value must be [ Dbug | Info | Warn | Fail | Crit ]. By default it is Info.</value>
   </data>
-  <data name="CompressTypeValueMustBeValidMessage" xml:space="preserve">
+  <data name="CompressValidatorTypeValueShouldBeValidMessage" xml:space="preserve">
     <value>Compress type value must be [ Zip | GZip | Tar ]. By default it is Zip.</value>
   </data>
   <data name="ErrorDuringCompressData" xml:space="preserve">
@@ -263,5 +257,20 @@
   </data>
   <data name="NoDataToCompress" xml:space="preserve">
     <value>There is no data found for compress.</value>
+  </data>
+  <data name="CompressValidatorEntityShouldNotBeNullOrEmptyMessage" xml:space="preserve">
+    <value>Entity should be not empty.</value>
+  </data>
+  <data name="CompressHandlerSuccessfullyCompress" xml:space="preserve">
+    <value>The compression was done successfully.</value>
+  </data>
+  <data name="ExistValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Entity should be not empty.</value>
+  </data>
+  <data name="WriteValidatorDataValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Data should be not empty.</value>
+  </data>
+  <data name="WriteValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
+    <value>Entity should be not empty.</value>
   </data>
 </root>

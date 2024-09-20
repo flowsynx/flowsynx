@@ -106,11 +106,29 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The compression was done successfully..
+        /// </summary>
+        internal static string CompressHandlerSuccessfullyCompress {
+            get {
+                return ResourceManager.GetString("CompressHandlerSuccessfullyCompress", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entity should be not empty..
+        /// </summary>
+        internal static string CompressValidatorEntityShouldNotBeNullOrEmptyMessage {
+            get {
+                return ResourceManager.GetString("CompressValidatorEntityShouldNotBeNullOrEmptyMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Compress type value must be [ Zip | GZip | Tar ]. By default it is Zip..
         /// </summary>
-        internal static string CompressTypeValueMustBeValidMessage {
+        internal static string CompressValidatorTypeValueShouldBeValidMessage {
             get {
-                return ResourceManager.GetString("CompressTypeValueMustBeValidMessage", resourceCulture);
+                return ResourceManager.GetString("CompressValidatorTypeValueShouldBeValidMessage", resourceCulture);
             }
         }
         
@@ -133,20 +151,38 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Destination path should be not empty..
+        ///   Looks up a localized string similar to Destination entity should be not empty..
         /// </summary>
-        internal static string CopyValidatorDestinationPathValueMustNotNullOrEmptyMessage {
+        internal static string CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("CopyValidatorDestinationPathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Source path should be not empty..
+        ///   Looks up a localized string similar to Source entity should be not empty..
         /// </summary>
-        internal static string CopyValidatorSourcePathValueMustNotNullOrEmptyMessage {
+        internal static string CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("CopyValidatorSourcePathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entity was created successfully..
+        /// </summary>
+        internal static string CreateHandlerSuccessfullyDeleted {
+            get {
+                return ResourceManager.GetString("CreateHandlerSuccessfullyDeleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entity should be not empty..
+        /// </summary>
+        internal static string CreateValidatorEntityShouldNotBeNullOrEmptyMessage {
+            get {
+                return ResourceManager.GetString("CreateValidatorEntityShouldNotBeNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -169,16 +205,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The file was deleted successfully..
-        /// </summary>
-        internal static string DeleteFileHandlerSuccessfullyDeleted {
-            get {
-                return ResourceManager.GetString("DeleteFileHandlerSuccessfullyDeleted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The file(s) were deleted successfully..
+        ///   Looks up a localized string similar to The entities were deleted successfully..
         /// </summary>
         internal static string DeleteHandlerSuccessfullyDeleted {
             get {
@@ -189,9 +216,9 @@ namespace FlowSynx.Core {
         /// <summary>
         ///   Looks up a localized string similar to Entity should be not empty..
         /// </summary>
-        internal static string DeleteValidatorPathValueMustNotNullOrEmptyMessage {
+        internal static string DeleteValidatorEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("DeleteValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("DeleteValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -201,6 +228,15 @@ namespace FlowSynx.Core {
         internal static string ErrorDuringCompressData {
             get {
                 return ResourceManager.GetString("ErrorDuringCompressData", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entity should be not empty..
+        /// </summary>
+        internal static string ExistValidatorEntityValueShouldNotNullOrEmptyMessage {
+            get {
+                return ResourceManager.GetString("ExistValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -295,20 +331,11 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Kind value must be [ File | Directory | FileAndDirectory ]. By default it is FileAndDirectory..
+        ///   Looks up a localized string similar to Entity should be not empty..
         /// </summary>
-        internal static string ListValidatorKindValueMustBeValidMessage {
+        internal static string ListValidatorEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("ListValidatorKindValueMustBeValidMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {PropertyName} should be not empty..
-        /// </summary>
-        internal static string ListValidatorPathValueMustNotNullOrEmptyMessage {
-            get {
-                return ResourceManager.GetString("ListValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("ListValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -318,24 +345,6 @@ namespace FlowSynx.Core {
         internal static string LogsValidatorKindValueMustBeValidMessage {
             get {
                 return ResourceManager.GetString("LogsValidatorKindValueMustBeValidMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The directory was created successfully..
-        /// </summary>
-        internal static string MakeDirectoryHandlerSuccessfullyDeleted {
-            get {
-                return ResourceManager.GetString("MakeDirectoryHandlerSuccessfullyDeleted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
-        /// </summary>
-        internal static string MakeDirectoryValidatorPathValueMustNotNullOrEmptyMessage {
-            get {
-                return ResourceManager.GetString("MakeDirectoryValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -367,20 +376,20 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Destination path should be not empty..
+        ///   Looks up a localized string similar to Destination entity should be not empty..
         /// </summary>
-        internal static string MoveValidatorDestinationPathValueMustNotNullOrEmptyMessage {
+        internal static string MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("MoveValidatorDestinationPathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Source path should be not empty..
+        ///   Looks up a localized string similar to Source entity should be not empty..
         /// </summary>
-        internal static string MoveValidatorSourcePathValueMustNotNullOrEmptyMessage {
+        internal static string MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("MoveValidatorSourcePathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -412,7 +421,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Namespace value must be [ Storage| Messaging | KeyValue ]. By default it is Storage..
+        ///   Looks up a localized string similar to Namespace value must be [ Storage| Messaging | Stream ]. By default it is Storage..
         /// </summary>
         internal static string PluginValidatorPluginNamespaceValueMustBeValidMessage {
             get {
@@ -439,11 +448,11 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to {PropertyName} should be not empty..
+        ///   Looks up a localized string similar to Entity should be not empty..
         /// </summary>
-        internal static string ReadValidatorPathValueMustNotNullOrEmptyMessage {
+        internal static string ReadValidatorEntityValueShouldNotNullOrEmptyMessage {
             get {
-                return ResourceManager.GetString("ReadValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("ReadValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
         
@@ -498,6 +507,24 @@ namespace FlowSynx.Core {
         internal static string WriteHandlerSuccessfullyWriten {
             get {
                 return ResourceManager.GetString("WriteHandlerSuccessfullyWriten", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data should be not empty..
+        /// </summary>
+        internal static string WriteValidatorDataValueShouldNotNullOrEmptyMessage {
+            get {
+                return ResourceManager.GetString("WriteValidatorDataValueShouldNotNullOrEmptyMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Entity should be not empty..
+        /// </summary>
+        internal static string WriteValidatorEntityValueShouldNotNullOrEmptyMessage {
+            get {
+                return ResourceManager.GetString("WriteValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
             }
         }
     }

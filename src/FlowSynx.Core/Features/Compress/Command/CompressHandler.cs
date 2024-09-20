@@ -49,7 +49,7 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
             var compressResult = await _compressionFactory(compressType).Compress(enumerable);
             var response = new CompressResult { Content = compressResult.Stream, ContentType = compressResult.ContentType };
 
-            return await Result<CompressResult>.SuccessAsync(response, Resources.WriteHandlerSuccessfullyWriten);
+            return await Result<CompressResult>.SuccessAsync(response, Resources.CompressHandlerSuccessfullyCompress);
         }
         catch (Exception ex)
         {

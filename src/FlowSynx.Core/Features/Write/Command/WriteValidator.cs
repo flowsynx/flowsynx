@@ -9,11 +9,11 @@ public class WriteValidator : AbstractValidator<WriteRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.ListValidatorPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.WriteValidatorEntityValueShouldNotNullOrEmptyMessage);
 
         RuleFor(request => request.Data)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.ListValidatorPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.WriteValidatorDataValueShouldNotNullOrEmptyMessage);
     }
 }

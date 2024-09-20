@@ -11,10 +11,6 @@ public class ListValidator : AbstractValidator<ListRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.ListValidatorPathValueMustNotNullOrEmptyMessage);
-
-        //RuleFor(x => x.Kind)
-        //    .Must(x => string.IsNullOrEmpty(x) || EnumUtils.TryParseWithMemberName<StorageFilterItemKind>(x, out _))
-        //    .WithMessage(Resources.ListValidatorKindValueMustBeValidMessage);
+            .WithMessage(Resources.ListValidatorEntityValueShouldNotNullOrEmptyMessage);
     }
 }

@@ -9,11 +9,11 @@ public class CopyValidator : AbstractValidator<CopyRequest>
         RuleFor(request => request.SourceEntity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.CopyValidatorSourcePathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage);
 
         RuleFor(request => request.DestinationEntity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.CopyValidatorDestinationPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage);
     }
 }

@@ -11,10 +11,10 @@ public class CompressValidator : AbstractValidator<CompressRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.CopyValidatorSourcePathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.CompressValidatorEntityShouldNotBeNullOrEmptyMessage);
 
         RuleFor(x => x.CompressType)
             .Must(x => string.IsNullOrEmpty(x) || EnumUtils.TryParseWithMemberName<CompressType>(x, out _))
-            .WithMessage(Resources.CompressTypeValueMustBeValidMessage);
+            .WithMessage(Resources.CompressValidatorTypeValueShouldBeValidMessage);
     }
 }

@@ -9,11 +9,11 @@ public class MoveValidator : AbstractValidator<MoveRequest>
         RuleFor(request => request.SourceEntity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.MoveValidatorSourcePathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage);
 
         RuleFor(request => request.DestinationEntity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.MoveValidatorDestinationPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage);
     }
 }

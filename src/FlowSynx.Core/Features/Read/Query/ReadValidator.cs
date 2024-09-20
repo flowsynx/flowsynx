@@ -9,6 +9,6 @@ public class ReadValidator : AbstractValidator<ReadRequest>
         RuleFor(request => request.Entity)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.ReadValidatorPathValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.ReadValidatorEntityValueShouldNotNullOrEmptyMessage);
     }
 }
