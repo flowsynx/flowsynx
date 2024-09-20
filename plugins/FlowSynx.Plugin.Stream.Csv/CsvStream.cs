@@ -6,22 +6,27 @@ using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Data.Extensions;
+using SharpCompress.Common;
+using System.Text;
+using System.Data;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
 public class CsvStream : IPlugin
 {
+    private readonly ILogger _logger;
     private CsvStreamSpecifications? _csvStreamSpecifications;
     private readonly IDeserializer _deserializer;
     private readonly IDataFilter _dataFilter;
-    private readonly CsvLoader _csvLoader;
+    private readonly CsvHandler _csvHandler;
 
     public CsvStream(ILogger<CsvStream> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
     {
+        _logger = logger;
         _deserializer = deserializer;
         _dataFilter = dataFilter;
-        _csvLoader = new CsvLoader(logger, serializer);
+        _csvHandler = new CsvHandler(logger, serializer);
     }
 
     public Guid Id => Guid.Parse("ce2fc15b-cd5e-4eb0-a5b4-22fa714e5cc9");
@@ -143,12 +148,12 @@ public class CsvStream : IPlugin
             Limit = listOptions.Limit
         };
 
-        var dataTable = _csvLoader.Load(path, delimiter, listOptions.IncludeMetadata);
+        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        _csvLoader.Delete(dataTable, filteredData);
+        _csvHandler.Delete(dataTable, filteredData);
         
         var result = filteredData.CreateListFromTable();
-        var data = _csvLoader.ToCsv(dataTable, delimiter);
+        var data = _csvHandler.ToCsv(dataTable, delimiter);
         await File.WriteAllTextAsync(path, data, cancellationToken);
         return result;
     }
@@ -179,7 +184,7 @@ public class CsvStream : IPlugin
             Limit = listOptions.Limit
         };
 
-        var dataTable = _csvLoader.Load(path, delimiter, listOptions.IncludeMetadata);
+        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
 
@@ -201,7 +206,66 @@ public class CsvStream : IPlugin
     public Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var listOptions = options.ToObject<ListOptions>();
+        var compressOptions = options.ToObject<CompressOptions>();
+
+        var delimiter = GetDelimiter(listOptions.Delimiter);
+
+        var fields = DeserializeToStringArray(listOptions.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = listOptions.Filter,
+            SortExpression = listOptions.Sort,
+            CaseSensetive = listOptions.CaseSensitive,
+            Limit = listOptions.Limit
+        };
+
+        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        if (filteredData.Rows.Count <= 0)
+            throw new StreamException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var compressEntries = new List<CompressEntry>();
+
+        if (compressOptions.SeperateCsvPerRow is false)
+        {
+            var content = _csvHandler.ToCsv(filteredData, delimiter);
+            compressEntries.Add(new CompressEntry
+            {
+                Name = Guid.NewGuid().ToString(),
+                ContentType = "text/csv",
+                Stream = StringToStream(content),
+            });
+
+            return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
+        }
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var headers = string.Join(delimiter, columnNames);
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            try
+            {
+                var content = _csvHandler.ToCsv(row, headers, delimiter);
+                compressEntries.Add(new CompressEntry
+                {
+                    Name = Guid.NewGuid().ToString(),
+                    ContentType = "text/csv",
+                    Stream = StringToStream(content),
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                continue;
+            }
+        }
+        
+        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
     }
     
     public void Dispose()
@@ -231,6 +295,12 @@ public class CsvStream : IPlugin
         }
 
         return result;
+    }
+
+    public System.IO.Stream StringToStream(string input)
+    {
+        byte[] byteArray = Encoding.UTF8.GetBytes(input);
+        return new MemoryStream(byteArray);
     }
     #endregion
 }

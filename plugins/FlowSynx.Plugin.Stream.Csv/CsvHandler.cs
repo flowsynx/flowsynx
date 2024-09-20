@@ -5,12 +5,12 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
-internal class CsvLoader
+internal class CsvHandler
 {
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
 
-    public CsvLoader(ILogger logger, ISerializer serializer)
+    public CsvHandler(ILogger logger, ISerializer serializer)
     {
         _logger = logger;
         _serializer = serializer;
@@ -85,6 +85,17 @@ internal class CsvLoader
             stringBuilder.AppendLine(string.Join(delimiter, fields));
         }
 
+        return stringBuilder.ToString();
+    }
+
+    public string ToCsv(DataRow row, string headers, string delimiter)
+    {
+        var stringBuilder = new StringBuilder();
+        stringBuilder.AppendLine(string.Join(delimiter, headers));
+
+        var fields = row.ItemArray.Select(field => field is null ? string.Empty : field.ToString());
+        stringBuilder.AppendLine(string.Join(delimiter, fields));
+        
         return stringBuilder.ToString();
     }
 

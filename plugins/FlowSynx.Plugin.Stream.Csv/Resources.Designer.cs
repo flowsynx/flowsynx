@@ -79,6 +79,15 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No files found with the given filter in &apos;{0}&apos;..
+        /// </summary>
+        internal static string NoFilesFoundWithTheGivenFilter {
+            get {
+                return ResourceManager.GetString("NoFilesFoundWithTheGivenFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin for manage Comma Separated Values (CSV) data..
         /// </summary>
         internal static string PluginDescription {
