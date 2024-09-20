@@ -61,6 +61,15 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to About operation is not supported for CSV stream!.
+        /// </summary>
+        internal static string AboutOperrationNotSupported {
+            get {
+                return ResourceManager.GetString("AboutOperrationNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
         /// </summary>
         internal static string FileIsAlreadyExistAndCannotBeOverwritten {

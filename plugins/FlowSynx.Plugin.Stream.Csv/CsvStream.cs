@@ -1,10 +1,11 @@
-﻿using FlowSynx.IO;
+﻿using FlowSynx.Data.Filter;
+using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
-using System.Data;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
@@ -12,10 +13,15 @@ public class CsvStream : IPlugin
 {
     private CsvStreamSpecifications? _csvStreamSpecifications;
     private readonly IDeserializer _deserializer;
+    private readonly IDataFilter _dataFilter;
+    private readonly CsvLoader _csvLoader;
 
-    public CsvStream(ILogger<CsvStream> logger, IDeserializer deserializer)
+    public CsvStream(ILogger<CsvStream> logger, IDataFilter dataFilter,
+        IDeserializer deserializer, ISerializer serializer)
     {
         _deserializer = deserializer;
+        _dataFilter = dataFilter;
+        _csvLoader = new CsvLoader(logger, serializer);
     }
 
     public Guid Id => Guid.Parse("ce2fc15b-cd5e-4eb0-a5b4-22fa714e5cc9");
@@ -34,7 +40,7 @@ public class CsvStream : IPlugin
     public Task<object> About(PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
     public Task<object> CreateAsync(string entity, PluginOptions? options, 
@@ -96,10 +102,20 @@ public class CsvStream : IPlugin
         return Task.FromResult<object>(new { });
     }
 
-    public Task<object> ReadAsync(string entity, PluginOptions? options, 
+    public async Task<object> ReadAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+
+        var streamEntities = entities.ToList();
+        if (!streamEntities.Any())
+            throw new StreamException("string.Format(Resources.NoFilesFoundWithTheGivenFilter, path)");
+
+        if (streamEntities.Count() > 1)
+            throw new StreamException("The item you filter should be only single!");
+
+        return streamEntities.First();
     }
 
     public Task<object> UpdateAsync(string entity, PluginOptions? options, 
@@ -108,116 +124,68 @@ public class CsvStream : IPlugin
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
-    }
+        var path = PathHelper.ToUnixPath(entity);
+        var listOptions = options.ToObject<ListOptions>();
+        listOptions.Fields = string.Empty;
+        listOptions.IncludeMetadata = false;
+        var delimiter = GetDelimiter(listOptions.Delimiter);
 
-    public Task<bool> ExistAsync(string entity, PluginOptions? options, 
+        var fields = DeserializeToStringArray(listOptions.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = listOptions.Filter,
+            SortExpression = listOptions.Sort,
+            CaseSensetive = listOptions.CaseSensitive,
+            Limit = listOptions.Limit
+        };
+
+        var dataTable = _csvLoader.Load(path, delimiter, listOptions.IncludeMetadata);
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        _csvLoader.Delete(dataTable, filteredData);
+        
+        var result = filteredData.CreateListFromTable();
+        var data = _csvLoader.ToCsv(dataTable, delimiter);
+        await File.WriteAllTextAsync(path, data, cancellationToken);
+        return result;
+    }
+    
+    public async Task<bool> ExistAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var streamEntities = entities.ToList();
+        return streamEntities.Any();
     }
 
     public Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
+        var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        string delimiter = GetDelimiter(listOptions.Delimiter);
+        var delimiter = GetDelimiter(listOptions.Delimiter);
 
-        DataTable dt = ImportCsv(entity, delimiter);
-        var filterData = SearchInAllColumns(dt, listOptions.Filter, listOptions.Sorting, StringComparison.OrdinalIgnoreCase);
-
-        var result = new List<object>();
-
-        var colCount = filterData.Columns.Count;
-        foreach (DataRow dr in filterData.Rows)
+        var fields = DeserializeToStringArray(listOptions.Fields);
+        var dataFilterOptions = new DataFilterOptions
         {
-            dynamic objExpando = new System.Dynamic.ExpandoObject();
-            var obj = objExpando as IDictionary<string, object>;
+            Fields = fields,
+            FilterExpression = listOptions.Filter,
+            SortExpression = listOptions.Sort,
+            CaseSensetive = listOptions.CaseSensitive,
+            Limit = listOptions.Limit
+        };
 
-            for (var i = 0; i < colCount; i++)
-            {
-                var key = dr.Table.Columns[i].ColumnName.ToString();
-                var val = dr[key];
-
-                if (obj != null) 
-                    obj[key] = val;
-            }
-
-            if (obj != null)
-                result.Add(obj);
-        }
+        var dataTable = _csvLoader.Load(path, delimiter, listOptions.IncludeMetadata);
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var result = filteredData.CreateListFromTable();
 
         return Task.FromResult<IEnumerable<object>>(result);
     }
-
-    public DataTable ImportCsv(string fullPath, string sepString)
-    {
-        var dt = new DataTable();
-        using var sr = new StreamReader(fullPath);
-        var firstLine = sr.ReadLine();
-        var headers = firstLine?.Split(sepString, StringSplitOptions.None);
-        if (headers != null)
-        {
-            foreach (var header in headers)
-            {
-                dt.Columns.Add(header);
-            }
-
-            var columnInterval = headers.Count();
-            var newLine = sr.ReadLine();
-            while (newLine != null)
-            {
-                object?[] fields = newLine.Split(sepString, StringSplitOptions.None);
-                var currentLength = fields.Count();
-                if (currentLength < columnInterval)
-                {
-                    while (currentLength < columnInterval)
-                    {
-                        newLine += sr.ReadLine();
-                        currentLength = newLine.Split(sepString, StringSplitOptions.None).Count();
-                    }
-
-                    fields = newLine.Split(sepString, StringSplitOptions.None);
-                }
-
-                if (currentLength > columnInterval)
-                {
-                    newLine = sr.ReadLine();
-                    continue;
-                }
-
-                if (!fields.Any())
-                    continue;
-
-                dt.Rows.Add(fields);
-                newLine = sr.ReadLine();
-            }
-        }
-
-        sr.Close();
-        return dt;
-    }
-
-    public DataTable SearchInAllColumns(DataTable table, string? filterExpression, string? sorting, StringComparison comparison)
-    {
-        if (string.IsNullOrEmpty(filterExpression) && string.IsNullOrEmpty(sorting))
-            return table;
-
-        DataView view = new DataView(table);
-
-        if (!string.IsNullOrWhiteSpace(sorting))
-            view.Sort = sorting;
-
-        if (!string.IsNullOrEmpty(filterExpression))
-            view.RowFilter = filterExpression;
-        
-        return view.ToTable();
-
-    }
-
+    
     public Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
@@ -252,6 +220,17 @@ public class CsvStream : IPlugin
             : _csvStreamSpecifications.Delimiter;
 
         return string.IsNullOrEmpty(delimiter) ? configDelimiter : delimiter;
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }
