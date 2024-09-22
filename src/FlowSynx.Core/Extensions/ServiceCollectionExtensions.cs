@@ -74,14 +74,14 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection RegisterPlugins(this IServiceCollection services)
     {
-        services.AddScoped<IPlugin, LocalFileSystemStorage>();
-        services.AddScoped<IPlugin, MemoryStorage>();
-        services.AddScoped<IPlugin, AzureFileStorage>();
-        services.AddScoped<IPlugin, AzureBlobStorage>();
-        services.AddScoped<IPlugin, AmazonS3Storage>();
-        services.AddScoped<IPlugin, GoogleCloudStorage>();
-        services.AddScoped<IPlugin, GoogleDriveStorage>();
-        services.AddScoped<IPlugin, CsvStream>();
+        services.AddScoped<PluginBase, LocalFileSystemStorage>();
+        services.AddScoped<PluginBase, MemoryStorage>();
+        services.AddScoped<PluginBase, AzureFileStorage>();
+        services.AddScoped<PluginBase, AzureBlobStorage>();
+        services.AddScoped<PluginBase, AmazonS3Storage>();
+        services.AddScoped<PluginBase, GoogleCloudStorage>();
+        services.AddScoped<PluginBase, GoogleDriveStorage>();
+        services.AddScoped<PluginBase, CsvStream>();
         return services;
     }
 }

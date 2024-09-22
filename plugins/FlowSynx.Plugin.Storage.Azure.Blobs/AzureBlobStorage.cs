@@ -14,10 +14,11 @@ using FlowSynx.Plugin.Storage.Options;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
+using System.Data;
 
 namespace FlowSynx.Plugin.Storage.Azure.Blobs;
 
-public class AzureBlobStorage : IPlugin
+public class AzureBlobStorage : PluginBase
 {
     private readonly ILogger<AzureBlobStorage> _logger;
     private readonly IDataFilter _dataFilter;
@@ -36,27 +37,27 @@ public class AzureBlobStorage : IPlugin
         _deserializer = deserializer;
     }
 
-    public Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
-    public string Name => "Azure.Blobs";
-    public PluginNamespace Namespace => PluginNamespace.Storage;
-    public string? Description => Resources.PluginDescription;
-    public PluginSpecifications? Specifications { get; set; }
-    public Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
+    public override Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
+    public override string Name => "Azure.Blobs";
+    public override PluginNamespace Namespace => PluginNamespace.Storage;
+    public override string? Description => Resources.PluginDescription;
+    public override PluginSpecifications? Specifications { get; set; }
+    public override Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
 
-    public Task Initialize()
+    public override Task Initialize()
     {
         _azureBlobSpecifications = Specifications.ToObject<AzureBlobStorageSpecifications>();
         _client = CreateClient(_azureBlobSpecifications);
         return Task.CompletedTask;
     }
 
-    public Task<object> About(PluginOptions? options, 
+    public override Task<object> About(PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public async Task<object> CreateAsync(string entity, PluginOptions? options, 
+    public override async Task<object> CreateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -106,7 +107,7 @@ public class AzureBlobStorage : IPlugin
         }
     }
 
-    public async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -166,7 +167,7 @@ public class AzureBlobStorage : IPlugin
         }
     }
 
-    public async Task<object> ReadAsync(string entity, PluginOptions? options, 
+    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -227,13 +228,13 @@ public class AzureBlobStorage : IPlugin
         }
     }
 
-    public Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -283,7 +284,7 @@ public class AzureBlobStorage : IPlugin
         return result;
     }
 
-    public async Task<bool> ExistAsync(string entity, PluginOptions? options, 
+    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -330,7 +331,7 @@ public class AzureBlobStorage : IPlugin
         }
     }
 
-    public async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -351,7 +352,7 @@ public class AzureBlobStorage : IPlugin
             Fields = fields,
             FilterExpression = listOptions.Filter,
             SortExpression = listOptions.Sort,
-            CaseSensetive = listOptions.CaseSensitive,
+            CaseSensitive = listOptions.CaseSensitive,
             Limit = listOptions.Limit,
         };
 
@@ -386,89 +387,107 @@ public class AzureBlobStorage : IPlugin
         return filteredData.CreateListFromTable();
     }
 
-    public async Task<IEnumerable<TransmissionData>> PrepareTransmissionData(string entity, PluginOptions? options,
+    public override async Task<TransmissionData> PrepareTransmissionData(string entity, PluginOptions? options,
             CancellationToken cancellationToken = new CancellationToken())
     {
-        if (PathHelper.IsFile(entity))
-        {
-            var copyFile = await PrepareCopyFile(entity, cancellationToken);
-            return new List<TransmissionData>() { copyFile };
-        }
+        //if (PathHelper.IsFile(entity))
+        //{
+        //    var copyFile = await PrepareCopyFile(entity, cancellationToken);
+        //    return new List<TransmissionData>() { copyFile };
+        //}
 
         return await PrepareCopyDirectory(entity, options, cancellationToken);
     }
 
-    private async Task<TransmissionData> PrepareCopyFile(string entity, CancellationToken cancellationToken = default)
-    {
-        var sourceStream = await ReadAsync(entity, null, cancellationToken);
+    //private async Task<TransmissionData> PrepareCopyFile(string entity, CancellationToken cancellationToken = default)
+    //{
+    //    var sourceStream = await ReadAsync(entity, null, cancellationToken);
 
-        if (sourceStream is not StorageRead storageRead)
-            throw new StorageException(string.Format(Resources.CopyOperationCouldNotBeProceed, entity));
+    //    if (sourceStream is not StorageRead storageRead)
+    //        throw new StorageException(string.Format(Resources.CopyOperationCouldNotBeProceed, entity));
 
-        return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
-    }
+    //    return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
+    //}
 
-    private async Task<IEnumerable<TransmissionData>> PrepareCopyDirectory(string entity, PluginOptions? options,
+    private Task<TransmissionData> PrepareCopyDirectory(string entity, PluginOptions? options,
         CancellationToken cancellationToken = default)
     {
-        var entities = await ListAsync(entity, options, cancellationToken).ConfigureAwait(false);
-        var storageEntities = entities.ToList().ConvertAll(item => (StorageList)item);
+        //var entities = await ListAsync(entity, options, cancellationToken).ConfigureAwait(false);
+        //var storageEntities = entities.ToList().ConvertAll(item => (StorageList)item);
 
-        var result = new List<TransmissionData>(storageEntities.Count);
+        //var result = new List<TransmissionData>(storageEntities.Count);
 
-        foreach (var entityItem in storageEntities)
+        //foreach (var entityItem in storageEntities)
+        //{
+        //    TransmissionData transmissionData;
+        //    if (string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+        //    {
+        //        var read = await ReadAsync(entityItem.Path, null, cancellationToken);
+        //        if (read is not StorageRead storageRead)
+        //        {
+        //            _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
+        //            continue;
+        //        }
+        //        transmissionData = new TransmissionData(entityItem.Path, storageRead.Stream, storageRead.ContentType);
+        //    }
+        //    else
+        //    {
+        //        transmissionData = new TransmissionData(entityItem.Path);
+        //    }
+
+        //    result.Add(transmissionData);
+        //}
+
+        //return result;
+        var dataTable = new System.Data.DataTable();
+        var result = new TransmissionData
         {
-            TransmissionData transmissionData;
-            if (string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            Namespace = this.Namespace,
+            Type = this.Type,
+            Columns = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
+            Rows = new List<TransmissionDataRow>()
             {
-                var read = await ReadAsync(entityItem.Path, null, cancellationToken);
-                if (read is not StorageRead storageRead)
-                {
-                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                    continue;
+                new TransmissionDataRow {
+                    Key = Guid.NewGuid().ToString(),
+                    Content = Stream.Null,
+                    Data = dataTable.Rows.Cast<DataRow>().First().ItemArray,
+                    ContentType = ""
                 }
-                transmissionData = new TransmissionData(entityItem.Path, storageRead.Stream, storageRead.ContentType);
             }
-            else
-            {
-                transmissionData = new TransmissionData(entityItem.Path);
-            }
+        };
 
-            result.Add(transmissionData);
-        }
-
-        return result;
+        return Task.FromResult(result);
     }
 
-    public async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
-        IEnumerable<TransmissionData> transmissionData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+        TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
-        var data = transmissionData.ToList();
-        foreach (var item in data)
-        {
-            switch (item.Content)
-            {
-                case null:
-                    result.Add(await CreateAsync(item.Key, options, cancellationToken));
-                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-                    break;
-                case StorageStream stream:
-                    var parentPath = PathHelper.GetParent(item.Key);
-                    if (!PathHelper.IsRootPath(parentPath))
-                    {
-                        await CreateAsync(parentPath, options, cancellationToken);
-                        result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
-                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-                    }
-                    break;
-            }
-        }
+        //var data = transmissionData.ToList();
+        //foreach (var item in data)
+        //{
+        //    switch (item.Content)
+        //    {
+        //        case null:
+        //            result.Add(await CreateAsync(item.Key, options, cancellationToken));
+        //            _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+        //            break;
+        //        case StorageStream stream:
+        //            var parentPath = PathHelper.GetParent(item.Key);
+        //            if (!PathHelper.IsRootPath(parentPath))
+        //            {
+        //                await CreateAsync(parentPath, options, cancellationToken);
+        //                result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
+        //                _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+        //            }
+        //            break;
+        //    }
+        //}
 
         return result;
     }
-    
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
+
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);

@@ -84,12 +84,12 @@ internal class PluginInstanceParser : IPluginInstanceParser
 
     private LocalFileSystemStorage GetLocalFileSystemStoragePlugin()
     {
-        var ipluginsServices = _serviceProvider.GetServices<IPlugin>();
+        var ipluginsServices = _serviceProvider.GetServices<PluginBase>();
         var localFileSystem = ipluginsServices.First(o => o.GetType() == typeof(LocalFileSystemStorage));
         return (LocalFileSystemStorage)localFileSystem;
     }
 
-    private PluginInstance CreateStorageNormsInfoInstance(IPlugin plugin, string configName, PluginSpecifications? specifications, string entity)
+    private PluginInstance CreateStorageNormsInfoInstance(PluginBase plugin, string configName, PluginSpecifications? specifications, string entity)
     {
         var primaryKey = plugin.Id.ToString();
         var secondaryKey = GenerateSecondaryKey(configName, specifications, entity);

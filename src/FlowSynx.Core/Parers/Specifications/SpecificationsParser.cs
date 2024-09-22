@@ -17,7 +17,7 @@ public class SpecificationsParser : ISpecificationsParser
 
     public SpecificationsResult Parse(string type, Dictionary<string, string?>? specifications)
     {
-        IPlugin plugin = _pluginsManager.Get(type);
+        PluginBase plugin = _pluginsManager.Get(type);
         var specificationsType = plugin.SpecificationsType;
         var requiredProperties = specificationsType
             .Properties()
