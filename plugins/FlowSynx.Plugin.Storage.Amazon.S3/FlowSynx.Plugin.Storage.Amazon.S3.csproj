@@ -8,10 +8,10 @@
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.S3" Version="3.7.310.3" />
-    <PackageReference Include="FlowSynx.Data" Version="1.4.5" />
-    <PackageReference Include="FlowSynx.IO" Version="1.4.5" />
-    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.4.5" />
-    <PackageReference Include="FlowSynx.Reflections" Version="1.4.5" />
+    <PackageReference Include="FlowSynx.Data" Version="1.4.6" />
+    <PackageReference Include="FlowSynx.IO" Version="1.4.6" />
+    <PackageReference Include="FlowSynx.Plugin.Storage" Version="1.4.6" />
+    <PackageReference Include="FlowSynx.Reflections" Version="1.4.6" />
   </ItemGroup>
 
   <ItemGroup>
