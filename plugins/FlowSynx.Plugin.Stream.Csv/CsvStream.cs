@@ -220,7 +220,7 @@ public class CsvStream : PluginBase
         if (!isSeparateCsvPerRow)
         {
             var csvContent = _csvHandler.Load(path, delimiter);
-            csvContentBase64 = csvContent.ToBase64();
+            csvContentBase64 = csvContent.ToBase64String();
         }
 
         foreach (DataRow row in filteredData.Rows)
@@ -231,7 +231,7 @@ public class CsvStream : PluginBase
             {
                 Key = $"{Guid.NewGuid().ToString()}.csv",
                 ContentType = contentType,
-                Content = content.ToBase64(),
+                Content = content.ToBase64String(),
                 Items = itemArray
             });
         }
