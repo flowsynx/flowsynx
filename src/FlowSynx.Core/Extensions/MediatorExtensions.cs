@@ -36,7 +36,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<object>> Write(this IMediator mediator, WriteRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> Write(this IMediator mediator, WriteRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -46,7 +46,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<object>>> Delete(this IMediator mediator, DeleteRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> Delete(this IMediator mediator, DeleteRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -56,7 +56,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<object>> Create(this IMediator mediator, CreateRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> Create(this IMediator mediator, CreateRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -66,7 +66,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<object>>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

@@ -30,9 +30,9 @@ internal class CopyHandler : IRequestHandler<CopyRequest, Result<IEnumerable<obj
         {
             var sourcePluginInstance = _pluginInstanceParser.Parse(request.SourceEntity);
             var destinationPluginInstance = _pluginInstanceParser.Parse(request.DestinationEntity);
-            var response = await _pluginService.CopyAsync(sourcePluginInstance, destinationPluginInstance, 
+            await _pluginService.CopyAsync(sourcePluginInstance, destinationPluginInstance, 
                 request.Options, cancellationToken);
-            return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.CopyHandlerSuccessfullyCopy);
+            return await Result<IEnumerable<object>>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }
         catch (Exception ex)
         {

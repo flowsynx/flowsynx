@@ -8,7 +8,7 @@ using FlowSynx.Core.Parers.PluginInstancing;
 
 namespace FlowSynx.Core.Features.Create.Command;
 
-internal class CreateHandler : IRequestHandler<CreateRequest, Result<object>>
+internal class CreateHandler : IRequestHandler<CreateRequest, Result<Unit>>
 {
     private readonly ILogger<CreateHandler> _logger;
     private readonly IPluginService _pluginService;
@@ -23,18 +23,18 @@ internal class CreateHandler : IRequestHandler<CreateRequest, Result<object>>
         _pluginInstanceParser = pluginInstanceParser;
     }
 
-    public async Task<Result<object>> Handle(CreateRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(CreateRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            var response = await _pluginService.CreateAsync(pluginInstance, options, cancellationToken);
-            return await Result<object>.SuccessAsync(response, Resources.CreateHandlerSuccessfullyDeleted);
+            await _pluginService.CreateAsync(pluginInstance, options, cancellationToken);
+            return await Result<Unit>.SuccessAsync(Resources.CreateHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)
         {
-            return await Result<object>.FailAsync(new List<string> { ex.Message });
+            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

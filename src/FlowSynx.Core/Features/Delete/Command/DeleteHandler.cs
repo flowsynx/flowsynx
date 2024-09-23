@@ -8,7 +8,7 @@ using FlowSynx.Plugin.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Delete.Command;
 
-internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<IEnumerable<object>>>
+internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<Unit>>
 {
     private readonly ILogger<DeleteHandler> _logger;
     private readonly IPluginService _pluginService;
@@ -23,18 +23,18 @@ internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<IEnumerable
         _pluginInstanceParser = pluginInstanceParser;
     }
 
-    public async Task<Result<IEnumerable<object>>> Handle(DeleteRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(DeleteRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var storageNorms = _pluginInstanceParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            var response = await _pluginService.DeleteAsync(storageNorms, options, cancellationToken);
-            return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.DeleteHandlerSuccessfullyDeleted);
+            await _pluginService.DeleteAsync(storageNorms, options, cancellationToken);
+            return await Result<Unit>.SuccessAsync(Resources.DeleteHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)
         {
-            return await Result<IEnumerable<object>>.FailAsync(new List<string> { ex.Message });
+            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

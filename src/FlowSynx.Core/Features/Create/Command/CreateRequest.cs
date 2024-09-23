@@ -4,7 +4,7 @@ using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Core.Features.Create.Command;
 
-public class CreateRequest : IRequest<Result<object>>
+public class CreateRequest : IRequest<Result<Unit>>
 {
     public required string Entity { get; set; }
     public PluginOptions? Options { get; set; } = new PluginOptions();

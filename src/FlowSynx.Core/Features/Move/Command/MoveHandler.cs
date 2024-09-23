@@ -7,7 +7,7 @@ using FlowSynx.Plugin.Services;
 
 namespace FlowSynx.Core.Features.Move.Command;
 
-internal class MoveHandler : IRequestHandler<MoveRequest, Result<IEnumerable<object>>>
+internal class MoveHandler : IRequestHandler<MoveRequest, Result<Unit>>
 {
     private readonly ILogger<MoveHandler> _logger;
     private readonly IPluginService _pluginService;
@@ -24,19 +24,19 @@ internal class MoveHandler : IRequestHandler<MoveRequest, Result<IEnumerable<obj
         _pluginInstanceParser = pluginInstanceParser;
     }
 
-    public async Task<Result<IEnumerable<object>>> Handle(MoveRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(MoveRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var sourcePluginInstance = _pluginInstanceParser.Parse(request.SourceEntity);
             var destinationPluginInstance = _pluginInstanceParser.Parse(request.DestinationEntity);
-            var response = await _pluginService.MoveAsync(sourcePluginInstance, destinationPluginInstance,
+            await _pluginService.MoveAsync(sourcePluginInstance, destinationPluginInstance,
                 request.Options, cancellationToken);
-            return await Result<IEnumerable<object>>.SuccessAsync(response, Resources.MoveHandlerSuccessfullyMoved);
+            return await Result<Unit>.SuccessAsync(Resources.MoveHandlerSuccessfullyMoved);
         }
         catch (Exception ex)
         {
-            return await Result<IEnumerable<object>>.FailAsync(new List<string> { ex.Message });
+            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

@@ -8,7 +8,7 @@ using FlowSynx.Core.Parers.PluginInstancing;
 
 namespace FlowSynx.Core.Features.Write.Command;
 
-internal class WriteHandler : IRequestHandler<WriteRequest, Result<object>>
+internal class WriteHandler : IRequestHandler<WriteRequest, Result<Unit>>
 {
     private readonly ILogger<WriteHandler> _logger;
     private readonly IPluginService _storageService;
@@ -23,18 +23,18 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<object>>
         _pluginInstanceParser = pluginInstanceParser;
     }
 
-    public async Task<Result<object>> Handle(WriteRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(WriteRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            var response = await _storageService.WriteAsync(pluginInstance, options, request.Data, cancellationToken);
-            return await Result<object>.SuccessAsync(response, Resources.WriteHandlerSuccessfullyWriten);
+            await _storageService.WriteAsync(pluginInstance, options, request.Data, cancellationToken);
+            return await Result<Unit>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)
         {
-            return await Result<object>.FailAsync(new List<string> { ex.Message });
+            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
         }
     }
 }
