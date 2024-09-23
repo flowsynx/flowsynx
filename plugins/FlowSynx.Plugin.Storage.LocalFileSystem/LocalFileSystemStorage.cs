@@ -12,9 +12,7 @@ using System.Data;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
-using System.Dynamic;
-using System;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.IO;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
@@ -78,7 +76,7 @@ public class LocalFileSystemStorage : PluginBase
         return Task.FromResult<object>(result);
     }
 
-    public override Task<object> CreateAsync(string entity, PluginOptions? options,
+    public override Task CreateAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -94,11 +92,10 @@ public class LocalFileSystemStorage : PluginBase
         if (createOptions.Hidden is true)
             directory.Attributes = FileAttributes.Directory | FileAttributes.Hidden;
 
-        var result = new StorageEntity(path, StorageEntityItemKind.Directory);
-        return Task.FromResult<object>(new { result.Id });
+        return Task.CompletedTask;
     }
 
-    public override Task<object> WriteAsync(string entity, PluginOptions? options, 
+    public override Task WriteAsync(string entity, PluginOptions? options, 
         object dataOptions, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -121,11 +118,13 @@ public class LocalFileSystemStorage : PluginBase
         
         if (File.Exists(path) && writeOptions.Overwrite is true)
             DeleteEntityAsync(path);
-        
-        using var fileStream = File.Create(path);
-        dataStream.CopyTo(fileStream);
-        var result = new StorageEntity(path, StorageEntityItemKind.File);
-        return Task.FromResult<object>(new { result.Id });
+
+        using (var fileStream = File.Create(path))
+        {
+            dataStream.CopyTo(fileStream);
+        }
+
+        return Task.CompletedTask;
     }
 
     public override Task<object> ReadAsync(string entity, PluginOptions? options, 
@@ -156,13 +155,13 @@ public class LocalFileSystemStorage : PluginBase
         return Task.FromResult<object>(result);
     }
 
-    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task UpdateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -172,17 +171,13 @@ public class LocalFileSystemStorage : PluginBase
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        var result = new List<string>();
+        
         foreach (var entityItem in storageEntities)
         {
             if (entityItem is not StorageList list) 
                 continue;
 
-            if (DeleteEntityAsync(list.Path))
-            {
-                result.Add(list.Id);
-            }
+            DeleteEntityAsync(list.Path);
         }
 
         if (deleteOptions.Purge is true)
@@ -193,8 +188,6 @@ public class LocalFileSystemStorage : PluginBase
 
             Directory.Delete(path, true);
         }
-
-        return result;
     }
 
     public override Task<bool> ExistAsync(string entity, PluginOptions? options,
@@ -207,28 +200,12 @@ public class LocalFileSystemStorage : PluginBase
         return Task.FromResult<bool>(PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path));
     }
 
-    public override Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        if (!Directory.Exists(path))
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = new List<StorageEntity>();
-        var directoryInfo = new DirectoryInfo(path);
-
-        storageEntities.AddRange(directoryInfo.FindFiles("*", listOptions.Recurse)
-            .Select(file => file.ToEntity(listOptions.IncludeMetadata)));
-
-        storageEntities.AddRange(directoryInfo.FindDirectories("*", listOptions.Recurse)
-            .Select(dir => dir.ToEntity(listOptions.IncludeMetadata)));
+        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var dataFilterOptions = new DataFilterOptions
@@ -244,35 +221,19 @@ public class LocalFileSystemStorage : PluginBase
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
 
-        return Task.FromResult<IEnumerable<object>>(result);
+        return result;
     }
 
     public override async Task<TransmissionData> PrepareTransmissionData(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        if (!Directory.Exists(path))
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = new List<StorageEntity>();
-        var directoryInfo = new DirectoryInfo(path);
-
-        storageEntities.AddRange(directoryInfo.FindFiles("*", listOptions.Recurse)
-            .Select(file => file.ToEntity(listOptions.IncludeMetadata)));
-
-        storageEntities.AddRange(directoryInfo.FindDirectories("*", listOptions.Recurse)
-            .Select(dir => dir.ToEntity(listOptions.IncludeMetadata)));
-
+        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        
         var fields = DeserializeToStringArray(listOptions.Fields);
-        bool kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        bool fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
             fields = fields.Append("Kind").ToArray();
@@ -295,9 +256,9 @@ public class LocalFileSystemStorage : PluginBase
 
         foreach (DataRow row in filteredData.Rows)
         {
-            Stream content = Stream.Null;
-            string? contentType = string.Empty;
-            string fullPath = row["FullPath"].ToString() ?? string.Empty;
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
 
             if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
@@ -306,7 +267,7 @@ public class LocalFileSystemStorage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream;
+                        content = storageRead.Stream.ConvertToBase64();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -324,7 +285,7 @@ public class LocalFileSystemStorage : PluginBase
                 Key = fullPath,
                 ContentType = contentType,
                 Content = content,
-                Data = itemArray
+                Items = itemArray
             });
         }
 
@@ -337,8 +298,8 @@ public class LocalFileSystemStorage : PluginBase
         var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
         var result = new TransmissionData
         {
-            Namespace = Namespace,
-            Type = Type,
+            PluginNamespace = Namespace,
+            PluginType = Type,
             Columns = columnNames,
             Rows = transmissionDataRows
         };
@@ -346,32 +307,54 @@ public class LocalFileSystemStorage : PluginBase
         return result;
     }
 
-    public override async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options,
+    public override async Task TransmitDataAsync(string entity, PluginOptions? options,
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
-        var result = new List<object>();
-        //var data = transmissionData.ToList();
-        //foreach (var item in data)
-        //{
-        //    switch (item.Content)
-        //    {
-        //        case null:
-        //            result.Add(await CreateAsync(item.Key, options, cancellationToken));
-        //            _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-        //            break;
-        //        case StorageStream stream:
-        //            var parentPath = PathHelper.GetParent(item.Key);
-        //            if (!PathHelper.IsRootPath(parentPath))
-        //            {
-        //                await CreateAsync(parentPath, options, cancellationToken);
-        //                result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
-        //                _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-        //            }
-        //            break;
-        //    }
-        //}
+        if (transmissionData.PluginNamespace == PluginNamespace.Storage)
+        {
+            foreach (var item in transmissionData.Rows)
+            {
+                switch (item.Content)
+                {
+                    case null:
+                    case "":
+                        await CreateAsync(item.Key, options, cancellationToken);
+                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                        break;
+                    case var data:
+                        var parentPath = PathHelper.GetParent(item.Key);
+                        if (!PathHelper.IsRootPath(parentPath))
+                        {
+                            await CreateAsync(parentPath, options, cancellationToken);
+                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                        }
 
-        return result;
+                        break;
+                }
+            }
+        }
+        else
+        {
+            var path = PathHelper.ToUnixPath(entity);
+            if (!string.IsNullOrEmpty(transmissionData.Content))
+            {
+                var fileBytes = Convert.FromBase64String(transmissionData.Content);
+                await File.WriteAllBytesAsync(path, fileBytes, cancellationToken);
+            }
+            else
+            {
+                foreach (var item in transmissionData.Rows)
+                {
+                    if (item.Content != null)
+                    {
+                        var parentPath = PathHelper.GetParent(path);
+                        var fileBytes = Convert.FromBase64String(item.Content);
+                        await File.WriteAllBytesAsync(PathHelper.Combine(parentPath, item.Key), fileBytes, cancellationToken);
+                    }
+                }
+            }
+        }
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
@@ -507,6 +490,31 @@ public class LocalFileSystemStorage : PluginBase
         }
 
         return obj;
+    }
+
+    private Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions? options,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        if (!Directory.Exists(path))
+            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+        var storageEntities = new List<StorageEntity>();
+        var directoryInfo = new DirectoryInfo(path);
+
+        storageEntities.AddRange(directoryInfo.FindFiles("*", options.Recurse)
+            .Select(file => file.ToEntity(options.IncludeMetadata)));
+
+        storageEntities.AddRange(directoryInfo.FindDirectories("*", options.Recurse)
+            .Select(dir => dir.ToEntity(options.IncludeMetadata)));
+        
+       return Task.FromResult<IEnumerable<StorageEntity>>(storageEntities);
     }
     #endregion
 }

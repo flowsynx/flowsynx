@@ -2,5 +2,5 @@
 
 public class CompressOptions
 {
-    public bool? SeperateCsvPerRow { get; set; } = false;
+    public bool? SeparateCsvPerRow { get; set; } = false;
 }

@@ -41,13 +41,13 @@ public class CsvStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(PluginOptions? options, 
+    public override Task<object> About(PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override Task<object> CreateAsync(string entity, PluginOptions? options, 
+    public override Task CreateAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -70,10 +70,10 @@ public class CsvStream : PluginBase
             writer.WriteLine(data);
         }
 
-        return Task.FromResult<object>(new { });
+        return Task.CompletedTask;
     }
 
-    public override Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -102,11 +102,11 @@ public class CsvStream : PluginBase
                 writer.WriteLine(string.Join(delimiter, rowData));
             }
         }
-        
-        return Task.FromResult<object>(new { });
+
+        return Task.CompletedTask;
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
+    public override async Task<object> ReadAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -122,13 +122,13 @@ public class CsvStream : PluginBase
         return streamEntities.First();
     }
 
-    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task UpdateAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task DeleteAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -150,14 +150,13 @@ public class CsvStream : PluginBase
         var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         _csvHandler.Delete(dataTable, filteredData);
-        
+
         var result = filteredData.CreateListFromTable();
         var data = _csvHandler.ToCsv(dataTable, delimiter);
         await File.WriteAllTextAsync(path, data, cancellationToken);
-        return result;
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
+    public override async Task<bool> ExistAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -166,7 +165,7 @@ public class CsvStream : PluginBase
         return streamEntities.Any();
     }
 
-    public override Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
+    public override Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -212,65 +211,67 @@ public class CsvStream : PluginBase
         var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
-        //var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        //var headers = string.Join(delimiter, columnNames);
+        var transmissionDataRows = new List<TransmissionDataRow>();
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+        const string contentType = "text/csv";
+        var isSeparateCsvPerRow = compressOptions.SeparateCsvPerRow is true;
+        var csvContentBase64 = string.Empty;
 
-        //foreach (DataRow row in filteredData.Rows)
-        //{
-        //    try
-        //    {
-        //        var content = _csvHandler.ToCsv(row, headers, delimiter);
-        //        var transmissionData = new TransmissionData(Guid.NewGuid().ToString(), StringToStream(content), "text/csv");
-        //        result.Add(transmissionData);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogWarning(ex.Message);
-        //        continue;
-        //    }
-        //}
+        if (!isSeparateCsvPerRow)
+        {
+            var csvContent = _csvHandler.Load(path, delimiter);
+            csvContentBase64 = csvContent.ToBase64();
+        }
 
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var itemArray = row.ItemArray;
+            var content = isSeparateCsvPerRow ? _csvHandler.ToCsv(row, columnNames, delimiter) : _csvHandler.ToCsv(row, delimiter);
+            transmissionDataRows.Add(new TransmissionDataRow
+            {
+                Key = $"{Guid.NewGuid().ToString()}.csv",
+                ContentType = contentType,
+                Content = content.ToBase64(),
+                Items = itemArray
+            });
+        }
+        
         var result = new TransmissionData
         {
-            Namespace = Namespace,
-            Type = Type,
+            PluginNamespace = Namespace,
+            PluginType = Type,
+            ContentType = isSeparateCsvPerRow ? string.Empty : contentType,
+            Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
             Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
-            Rows = new List<TransmissionDataRow>()
-            {
-                new TransmissionDataRow {
-                    Key = Guid.NewGuid().ToString(),
-                    Content = System.IO.Stream.Null,
-                    Data = filteredData.Rows.Cast<DataRow>().First().ItemArray,
-                    ContentType = ""
-                }
-            }
+            Rows = transmissionDataRows
         };
 
         return Task.FromResult(result);
     }
 
-    public override Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+
+    public override Task TransmitDataAsync(string entity, PluginOptions? options,
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var result = new List<object>();
         var transmitOptions = options.ToObject<TransmitOptions>();
         var delimiter = GetDelimiter(transmitOptions.Delimiter);
 
         var dataTable = new DataTable();
-        foreach ( var column in transmissionData.Columns)
+        foreach (var column in transmissionData.Columns)
         {
             dataTable.Columns.Add(column);
         }
 
         foreach (var row in transmissionData.Rows)
         {
-            dataTable.Rows.Add(row.Data);
+            if (row.Items != null)
+                dataTable.Rows.Add(row.Items);
         }
 
         File.WriteAllText(path, _csvHandler.ToCsv(dataTable, delimiter));
 
-        return Task.FromResult<IEnumerable<object>>(result);
+        return Task.CompletedTask;
     }
 
     public override Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
@@ -300,12 +301,12 @@ public class CsvStream : PluginBase
 
         var compressEntries = new List<CompressEntry>();
 
-        if (compressOptions.SeperateCsvPerRow is false)
+        if (compressOptions.SeparateCsvPerRow is false)
         {
             var content = _csvHandler.ToCsv(filteredData, delimiter);
             compressEntries.Add(new CompressEntry
             {
-                Name = Guid.NewGuid().ToString(),
+                Name = $"{Guid.NewGuid().ToString()}.csv",
                 ContentType = "text/csv",
                 Stream = StringToStream(content),
             });
@@ -313,17 +314,15 @@ public class CsvStream : PluginBase
             return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
         }
 
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        var headers = string.Join(delimiter, columnNames);
-
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
         foreach (DataRow row in filteredData.Rows)
         {
             try
             {
-                var content = _csvHandler.ToCsv(row, headers, delimiter);
+                var content = _csvHandler.ToCsv(row, columnNames, delimiter);
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = Guid.NewGuid().ToString(),
+                    Name = $"{Guid.NewGuid().ToString()}.csv",
                     ContentType = "text/csv",
                     Stream = StringToStream(content),
                 });
@@ -334,10 +333,10 @@ public class CsvStream : PluginBase
                 continue;
             }
         }
-        
+
         return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
     }
-    
+
     public void Dispose()
     {
     }
@@ -349,8 +348,8 @@ public class CsvStream : PluginBase
         if (_csvStreamSpecifications is null)
             return defaultDelimiter;
 
-        var configDelimiter = string.IsNullOrEmpty(_csvStreamSpecifications.Delimiter) 
-            ? defaultDelimiter 
+        var configDelimiter = string.IsNullOrEmpty(_csvStreamSpecifications.Delimiter)
+            ? defaultDelimiter
             : _csvStreamSpecifications.Delimiter;
 
         return string.IsNullOrEmpty(delimiter) ? configDelimiter : delimiter;

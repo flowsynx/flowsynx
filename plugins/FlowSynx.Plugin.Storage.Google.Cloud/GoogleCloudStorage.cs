@@ -60,7 +60,7 @@ public class GoogleCloudStorage :PluginBase
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task<object> CreateAsync(string entity, PluginOptions? options, 
+    public override async Task CreateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -88,12 +88,9 @@ public class GoogleCloudStorage :PluginBase
         {
             await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
         }
-
-        var result = new StorageEntity(path, StorageEntityItemKind.Directory);
-        return new { result.Id };
     }
 
-    public override async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -121,9 +118,6 @@ public class GoogleCloudStorage :PluginBase
 
             await _client.UploadObjectAsync(pathParts.BucketName, pathParts.RelativePath, 
                 null, dataStream, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            var result = new StorageEntity(path, StorageEntityItemKind.File);
-            return new { result.Id };
         }
         catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
         {
@@ -173,13 +167,13 @@ public class GoogleCloudStorage :PluginBase
         }
     }
 
-    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task UpdateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -189,17 +183,13 @@ public class GoogleCloudStorage :PluginBase
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        var result = new List<string>();
+        
         foreach (var entityItem in storageEntities)
         {
             if (entityItem is not StorageList list)
                 continue;
 
-            if (await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false))
-            {
-                result.Add(list.Id);
-            }
+            await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteOptions.Purge is true)
@@ -207,8 +197,6 @@ public class GoogleCloudStorage :PluginBase
             var pathParts = GetPartsAsync(path);
             await DeleteAllAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
         }
-
-        return result;
     }
 
     public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
@@ -340,15 +328,15 @@ public class GoogleCloudStorage :PluginBase
         var dataTable = new System.Data.DataTable();
         var result = new TransmissionData
         {
-            Namespace = this.Namespace,
-            Type = this.Type,
+            PluginNamespace = this.Namespace,
+            PluginType = this.Type,
             Columns = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
             Rows = new List<TransmissionDataRow>()
             {
                 new TransmissionDataRow {
                     Key = Guid.NewGuid().ToString(),
-                    Content = Stream.Null,
-                    Data = dataTable.Rows.Cast<DataRow>().First().ItemArray,
+                    Content = string.Empty,
+                    Items = dataTable.Rows.Cast<DataRow>().First().ItemArray,
                     ContentType = ""
                 }
             }
@@ -357,7 +345,7 @@ public class GoogleCloudStorage :PluginBase
         return Task.FromResult(result);
     }
 
-    public override async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+    public override async Task TransmitDataAsync(string entity, PluginOptions? options, 
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -381,8 +369,6 @@ public class GoogleCloudStorage :PluginBase
         //            break;
         //    }
         //}
-
-        return result;
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,

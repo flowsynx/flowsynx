@@ -57,7 +57,7 @@ public class AzureBlobStorage : PluginBase
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task<object> CreateAsync(string entity, PluginOptions? options, 
+    public override async Task CreateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -77,9 +77,6 @@ public class AzureBlobStorage : PluginBase
 
             if (!string.IsNullOrEmpty(pathParts.RelativePath))
                 _logger.LogWarning($"The Azure Blob storage doesn't support create empty directory.");
-
-            var result = new StorageEntity(path, StorageEntityItemKind.Directory);
-            return new { result.Id };
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
@@ -107,7 +104,7 @@ public class AzureBlobStorage : PluginBase
         }
     }
 
-    public override async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -137,9 +134,6 @@ public class AzureBlobStorage : PluginBase
                 throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
             await blockBlobClient.UploadAsync(dataStream, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            var result = new StorageEntity(path, StorageEntityItemKind.File);
-            return new { result.Id };
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
@@ -228,13 +222,13 @@ public class AzureBlobStorage : PluginBase
         }
     }
 
-    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task UpdateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -244,17 +238,13 @@ public class AzureBlobStorage : PluginBase
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        var result = new List<string>();
+        
         foreach (var entityItem in storageEntities)
         {
             if (entityItem is not StorageList list)
                 continue;
 
-            if (await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false))
-            {
-                result.Add(list.Id);
-            }
+            await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteOptions.Purge is true)
@@ -280,8 +270,6 @@ public class AzureBlobStorage : PluginBase
                 await container.DeleteIfExistsAsync(cancellationToken: cancellationToken);
             }
         }
-
-        return result;
     }
 
     public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
@@ -442,15 +430,15 @@ public class AzureBlobStorage : PluginBase
         var dataTable = new System.Data.DataTable();
         var result = new TransmissionData
         {
-            Namespace = this.Namespace,
-            Type = this.Type,
+            PluginNamespace = this.Namespace,
+            PluginType = this.Type,
             Columns = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
             Rows = new List<TransmissionDataRow>()
             {
                 new TransmissionDataRow {
                     Key = Guid.NewGuid().ToString(),
-                    Content = Stream.Null,
-                    Data = dataTable.Rows.Cast<DataRow>().First().ItemArray,
+                    Content = string.Empty,
+                    Items = dataTable.Rows.Cast<DataRow>().First().ItemArray,
                     ContentType = ""
                 }
             }
@@ -459,7 +447,7 @@ public class AzureBlobStorage : PluginBase
         return Task.FromResult(result);
     }
 
-    public override async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+    public override async Task TransmitDataAsync(string entity, PluginOptions? options, 
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -483,8 +471,6 @@ public class AzureBlobStorage : PluginBase
         //            break;
         //    }
         //}
-
-        return result;
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,

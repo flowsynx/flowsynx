@@ -2,6 +2,7 @@
 using System.Text;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
+using SharpCompress.Common;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
@@ -14,6 +15,11 @@ internal class CsvHandler
     {
         _logger = logger;
         _serializer = serializer;
+    }
+
+    public byte[] Load(string fullPath, string delimiter)
+    {
+        return File.ReadAllBytes(fullPath);
     }
 
     public DataTable Load(string fullPath, string delimiter, bool? includeMetaData)
@@ -88,7 +94,7 @@ internal class CsvHandler
         return stringBuilder.ToString();
     }
 
-    public string ToCsv(DataRow row, string headers, string delimiter)
+    public string ToCsv(DataRow row, string[] headers, string delimiter)
     {
         var stringBuilder = new StringBuilder();
         stringBuilder.AppendLine(string.Join(delimiter, headers));
@@ -96,6 +102,14 @@ internal class CsvHandler
         var fields = row.ItemArray.Select(field => field is null ? string.Empty : field.ToString());
         stringBuilder.AppendLine(string.Join(delimiter, fields));
         
+        return stringBuilder.ToString();
+    }
+
+    public string ToCsv(DataRow row, string delimiter)
+    {
+        var stringBuilder = new StringBuilder();
+        var fields = row.ItemArray.Select(field => field is null ? string.Empty : field.ToString());
+        stringBuilder.AppendLine(string.Join(delimiter, fields));
         return stringBuilder.ToString();
     }
 

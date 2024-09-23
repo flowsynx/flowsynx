@@ -69,7 +69,7 @@ public class MemoryStorage : PluginBase
         });
     }
 
-    public override async Task<object> CreateAsync(string entity, PluginOptions? options, 
+    public override async Task CreateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -90,27 +90,22 @@ public class MemoryStorage : PluginBase
             _entities.Add(pathParts.BucketName, new Dictionary<string, MemoryEntity>());
             _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
         }
-
-        var entityId = string.Empty;
+        
         if (!string.IsNullOrEmpty(pathParts.RelativePath))
         {
             var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
             if (!isExist)
             {
-                entityId = await AddFolder(pathParts.BucketName, pathParts.RelativePath).ConfigureAwait(false);
+                await AddFolder(pathParts.BucketName, pathParts.RelativePath).ConfigureAwait(false);
             }
             else
             {
                 _logger.LogInformation($"Directory '{pathParts.RelativePath}' is already exist.");
-                var bucket = _entities[pathParts.BucketName];
-                entityId = bucket[pathParts.RelativePath].Id;
             }
         }
-        
-        return new { entityId };
     }
 
-    public override Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -145,7 +140,7 @@ public class MemoryStorage : PluginBase
         var memoryEntity = new MemoryEntity(name, dataStream);
         bucket[pathParts.RelativePath] = memoryEntity;
         
-        return Task.FromResult<object>(new { memoryEntity.Id });
+        return Task.CompletedTask;
     }
 
     public override Task<object> ReadAsync(string entity, PluginOptions? options, 
@@ -180,13 +175,13 @@ public class MemoryStorage : PluginBase
         return Task.FromResult<object>(result);
     }
 
-    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task UpdateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -196,17 +191,13 @@ public class MemoryStorage : PluginBase
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        var result = new List<string>();
+        
         foreach (var entityItem in storageEntities)
         {
             if (entityItem is not StorageList list)
                 continue;
 
-            if (DeleteEntityAsync(list.Path))
-            {
-                result.Add(list.Id);
-            }
+            DeleteEntityAsync(list.Path);
         }
 
         if (deleteOptions.Purge is true)
@@ -232,8 +223,6 @@ public class MemoryStorage : PluginBase
                     _entities.Remove(pathParts.BucketName);
             }
         }
-
-        return result;
     }
 
     public override Task<bool> ExistAsync(string entity, PluginOptions? options, 
@@ -348,15 +337,15 @@ public class MemoryStorage : PluginBase
         var dataTable = new System.Data.DataTable();
         var result = new TransmissionData
         {
-            Namespace = this.Namespace,
-            Type = this.Type,
+            PluginNamespace = this.Namespace,
+            PluginType = this.Type,
             Columns = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
             Rows = new List<TransmissionDataRow>()
             {
                 new TransmissionDataRow {
                     Key = Guid.NewGuid().ToString(),
-                    Content = Stream.Null,
-                    Data = dataTable.Rows.Cast<DataRow>().First().ItemArray,
+                    Content = string.Empty,
+                    Items = dataTable.Rows.Cast<DataRow>().First().ItemArray,
                     ContentType = ""
                 }
             }
@@ -365,7 +354,7 @@ public class MemoryStorage : PluginBase
         return Task.FromResult(result);
     }
 
-    public override async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+    public override async Task TransmitDataAsync(string entity, PluginOptions? options, 
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -389,8 +378,6 @@ public class MemoryStorage : PluginBase
         //            break;
         //    }
         //}
-
-        return result;
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,

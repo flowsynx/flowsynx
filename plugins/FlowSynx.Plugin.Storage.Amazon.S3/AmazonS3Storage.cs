@@ -60,7 +60,7 @@ public class AmazonS3Storage : PluginBase
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task<object> CreateAsync(string entity, PluginOptions? options, 
+    public override async Task CreateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -86,12 +86,9 @@ public class AmazonS3Storage : PluginBase
             if (!isFolderExist)
                 await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
         }
-
-        var result = new StorageEntity(path, StorageEntityItemKind.Directory);
-        return new { result.Id };
     }
 
-    public override async Task<object> WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -119,9 +116,6 @@ public class AmazonS3Storage : PluginBase
 
             await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName,
                 pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-
-            var result = new StorageEntity(path, StorageEntityItemKind.File);
-            return new { result.Id };
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -171,13 +165,13 @@ public class AmazonS3Storage : PluginBase
         }
     }
 
-    public override Task<object> UpdateAsync(string entity, PluginOptions? options, 
+    public override Task UpdateAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<IEnumerable<object>> DeleteAsync(string entity, PluginOptions? options, 
+    public override async Task DeleteAsync(string entity, PluginOptions? options, 
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -209,8 +203,6 @@ public class AmazonS3Storage : PluginBase
 
             await _client.DeleteObjectAsync(pathParts.BucketName, folder, cancellationToken);
         }
-
-        return result;
     }
 
     public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
@@ -338,15 +330,15 @@ public class AmazonS3Storage : PluginBase
         var dataTable = new System.Data.DataTable();
         var result = new TransmissionData
         {
-            Namespace = this.Namespace,
-            Type = this.Type,
+            PluginNamespace = this.Namespace,
+            PluginType = this.Type,
             Columns = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
             Rows = new List<TransmissionDataRow>()
             {
                 new TransmissionDataRow {
                     Key = Guid.NewGuid().ToString(), 
-                    Content = Stream.Null, 
-                    Data = dataTable.Rows.Cast<DataRow>().First().ItemArray,
+                    Content = string.Empty, 
+                    Items = dataTable.Rows.Cast<DataRow>().First().ItemArray,
                     ContentType = ""
                 }
             }
@@ -355,7 +347,7 @@ public class AmazonS3Storage : PluginBase
         return Task.FromResult(result);
     }
 
-    public override async Task<IEnumerable<object>> TransmitDataAsync(string entity, PluginOptions? options, 
+    public override async Task TransmitDataAsync(string entity, PluginOptions? options, 
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
         var result = new List<object>();
@@ -379,8 +371,6 @@ public class AmazonS3Storage : PluginBase
         //            break;
         //    }
         //}
-
-        return result;
     }
     
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
