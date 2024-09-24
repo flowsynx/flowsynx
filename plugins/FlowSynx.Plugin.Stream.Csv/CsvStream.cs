@@ -138,14 +138,7 @@ public class CsvStream : PluginBase
         var delimiter = GetDelimiter(listOptions.Delimiter);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
         var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
@@ -172,17 +165,9 @@ public class CsvStream : PluginBase
         var listOptions = options.ToObject<ListOptions>();
         var delimiter = GetDelimiter(listOptions.Delimiter);
 
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
-        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
+        var dataTable = GetDataTable(path, delimiter, listOptions.IncludeMetadata, cancellationToken);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
 
@@ -198,17 +183,9 @@ public class CsvStream : PluginBase
 
         var delimiter = GetDelimiter(listOptions.Delimiter);
 
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
-        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
+        var dataTable = GetDataTable(path, delimiter, listOptions.IncludeMetadata, cancellationToken);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         var transmissionDataRows = new List<TransmissionDataRow>();
@@ -249,7 +226,6 @@ public class CsvStream : PluginBase
         return Task.FromResult(result);
     }
 
-
     public override Task TransmitDataAsync(string entity, PluginOptions? options,
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
@@ -283,17 +259,9 @@ public class CsvStream : PluginBase
 
         var delimiter = GetDelimiter(listOptions.Delimiter);
 
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
-        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
+        var dataTable = GetDataTable(path, delimiter, listOptions.IncludeMetadata, cancellationToken);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         if (filteredData.Rows.Count <= 0)
@@ -337,10 +305,6 @@ public class CsvStream : PluginBase
         return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
     }
 
-    public void Dispose()
-    {
-    }
-
     #region internal methods
     private string GetDelimiter(string delimiter)
     {
@@ -372,12 +336,26 @@ public class CsvStream : PluginBase
         return new MemoryStream(byteArray);
     }
 
-    private string StreamToBase64(System.IO.Stream stream)
+    private DataTable GetDataTable(string entity, string delimiter, 
+        bool? includeMetadata, CancellationToken cancellationToken = new CancellationToken())
     {
-        using var memoryStream = new MemoryStream();
-        stream.CopyTo(memoryStream);
-        byte[] buffer = memoryStream.ToArray();
-        return Convert.ToBase64String(buffer);
+        var path = PathHelper.ToUnixPath(entity);
+        return _csvHandler.Load(path, delimiter, includeMetadata);
+    }
+
+    private DataFilterOptions GetDataFilterOptions(ListOptions options)
+    {
+        var fields = DeserializeToStringArray(options.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = options.Filter,
+            SortExpression = options.Sort,
+            CaseSensitive = options.CaseSensitive,
+            Limit = options.Limit,
+        };
+
+        return dataFilterOptions;
     }
     #endregion
 }

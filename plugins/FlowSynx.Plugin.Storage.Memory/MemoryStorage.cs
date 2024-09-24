@@ -3,6 +3,7 @@ using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Filter;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
+using FlowSynx.IO.Serialization;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Storage.Abstractions.Exceptions;
@@ -16,14 +17,17 @@ public class MemoryStorage : PluginBase
 {
     private readonly ILogger<MemoryStorage> _logger;
     private readonly IDataFilter _dataFilter;
+    private readonly IDeserializer _deserializer;
     private readonly Dictionary<string, Dictionary<string, MemoryEntity>> _entities;
 
-    public MemoryStorage(ILogger<MemoryStorage> logger, IDataFilter dataFilter)
+    public MemoryStorage(ILogger<MemoryStorage> logger, IDataFilter dataFilter,
+        IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
         _logger = logger;
         _dataFilter = dataFilter;
+        _deserializer = deserializer;
         _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
     }
 
@@ -246,178 +250,176 @@ public class MemoryStorage : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-
-        if (string.IsNullOrEmpty(path))
-            path += PathHelper.PathSeparator;
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var storageEntities = new List<StorageEntity>();
-        var buckets = new List<string>();
         var listOptions = options.ToObject<ListOptions>();
+        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
-        var pathParts = GetPartsAsync(path);
-
-        if (pathParts.BucketName == "")
-        {
-            if (pathParts.RelativePath != "")
-                throw new StorageException(Resources.BucketNameIsRequired);
-
-            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
-            storageEntities.AddRange(buckets.Select(b => b.ToEntity(listOptions.IncludeMetadata)));
-            return storageEntities;
-        }
-
-        buckets.Add(pathParts.BucketName);
-
-        await Task.WhenAll(buckets.Select(b =>
-            ListAsync(storageEntities, b, pathParts.RelativePath, listOptions, cancellationToken))
-        ).ConfigureAwait(false);
-
-        var dataFilterOptions = new DataFilterOptions
-        {
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit,
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
         var dataTable = storageEntities.ToDataTable();
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        return filteredData.CreateListFromTable();
+        var result = filteredData.CreateListFromTable();
+
+        return result;
     }
 
     public override async Task<TransmissionData> PrepareTransmissionData(string entity, PluginOptions? options,
             CancellationToken cancellationToken = new CancellationToken())
     {
-        return await PrepareCopyDirectory(entity, options, cancellationToken);
-    }
+        var path = PathHelper.ToUnixPath(entity);
+        var listOptions = options.ToObject<ListOptions>();
+        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
-    //private async Task<TransmissionData> PrepareCopyFile(string entity, CancellationToken cancellationToken = default)
-    //{
-    //    var sourceStream = await ReadAsync(entity, null, cancellationToken);
+        var fields = DeserializeToStringArray(listOptions.Fields);
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
-    //    if (sourceStream is not StorageRead storageRead)
-    //        throw new StorageException(string.Format(Resources.CopyOperationCouldNotBeProceed, entity));
+        if (!kindFieldExist)
+            fields = fields.Append("Kind").ToArray();
 
-    //    return new TransmissionData(entity, storageRead.Stream, storageRead.ContentType);
-    //}
+        if (!fullPathFieldExist)
+            fields = fields.Append("FullPath").ToArray();
 
-    private Task<TransmissionData> PrepareCopyDirectory(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = default)
-    {
-        //var entities = await ListAsync(entity, options, cancellationToken).ConfigureAwait(false);
-        //var storageEntities = entities.ToList().ConvertAll(item => (StorageList)item);
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
-        //var result = new List<TransmissionData>(storageEntities.Count);
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var transmissionDataRows = new List<TransmissionDataRow>();
 
-        //foreach (var entityItem in storageEntities)
-        //{
-        //    TransmissionData transmissionData;
-        //    if (string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-        //    {
-        //        var read = await ReadAsync(entityItem.Path, null, cancellationToken);
-        //        if (read is not StorageRead storageRead)
-        //        {
-        //            _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-        //            continue;
-        //        }
-        //        transmissionData = new TransmissionData(entityItem.Path, storageRead.Stream, storageRead.ContentType);
-        //    }
-        //    else
-        //    {
-        //        transmissionData = new TransmissionData(entityItem.Path);
-        //    }
-
-        //    result.Add(transmissionData);
-        //}
-
-        //return result;
-        var dataTable = new System.Data.DataTable();
-        var result = new TransmissionData
+        foreach (DataRow row in filteredData.Rows)
         {
-            PluginNamespace = this.Namespace,
-            PluginType = this.Type,
-            Columns = dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
-            Rows = new List<TransmissionDataRow>()
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
+
+            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
-                new TransmissionDataRow {
-                    Key = Guid.NewGuid().ToString(),
-                    Content = string.Empty,
-                    Items = dataTable.Rows.Cast<DataRow>().First().ItemArray,
-                    ContentType = ""
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    var read = await ReadAsync(fullPath, null, cancellationToken);
+                    if (read is StorageRead storageRead)
+                    {
+                        content = storageRead.Stream.ConvertToBase64();
+                        contentType = storageRead.ContentType;
+                    }
                 }
             }
+
+            if (!kindFieldExist)
+                row["Kind"] = DBNull.Value;
+
+            if (!fullPathFieldExist)
+                row["FullPath"] = DBNull.Value;
+
+            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
+            transmissionDataRows.Add(new TransmissionDataRow
+            {
+                Key = fullPath,
+                ContentType = contentType,
+                Content = content,
+                Items = itemArray
+            });
+        }
+
+        if (!kindFieldExist)
+            filteredData.Columns.Remove("Kind");
+
+        if (!fullPathFieldExist)
+            filteredData.Columns.Remove("FullPath");
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var result = new TransmissionData
+        {
+            PluginNamespace = Namespace,
+            PluginType = Type,
+            Columns = columnNames,
+            Rows = transmissionDataRows
         };
 
-        return Task.FromResult(result);
+        return result;
     }
 
     public override async Task TransmitDataAsync(string entity, PluginOptions? options, 
         TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
     {
-        var result = new List<object>();
-        //var data = transmissionData.ToList();
-        //foreach (var item in data)
-        //{
-        //    switch (item.Content)
-        //    {
-        //        case null:
-        //            result.Add(await CreateAsync(item.Key, options, cancellationToken));
-        //            _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-        //            break;
-        //        case StorageStream stream:
-        //            var parentPath = PathHelper.GetParent(item.Key);
-        //            if (!PathHelper.IsRootPath(parentPath))
-        //            {
-        //                await CreateAsync(parentPath, options, cancellationToken);
-        //                result.Add(await WriteAsync(item.Key, options, stream, cancellationToken));
-        //                _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-        //            }
-        //            break;
-        //    }
-        //}
+        if (transmissionData.PluginNamespace == PluginNamespace.Storage)
+        {
+            foreach (var item in transmissionData.Rows)
+            {
+                switch (item.Content)
+                {
+                    case null:
+                    case "":
+                        await CreateAsync(item.Key, options, cancellationToken);
+                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                        break;
+                    case var data:
+                        var parentPath = PathHelper.GetParent(item.Key);
+                        if (!PathHelper.IsRootPath(parentPath))
+                        {
+                            await CreateAsync(parentPath, options, cancellationToken);
+                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                        }
+
+                        break;
+                }
+            }
+        }
+        else
+        {
+            var path = PathHelper.ToUnixPath(entity);
+            if (!string.IsNullOrEmpty(transmissionData.Content))
+            {
+                var fileBytes = Convert.FromBase64String(transmissionData.Content);
+                await File.WriteAllBytesAsync(path, fileBytes, cancellationToken);
+            }
+            else
+            {
+                foreach (var item in transmissionData.Rows)
+                {
+                    if (item.Content != null)
+                    {
+                        var parentPath = PathHelper.GetParent(path);
+                        var fileBytes = Convert.FromBase64String(item.Content);
+                        await File.WriteAllBytesAsync(PathHelper.Combine(parentPath, item.Key), fileBytes, cancellationToken);
+                    }
+                }
+            }
+        }
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var listOptions = options.ToObject<ListOptions>();
+        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
-        var storageEntities = entities.ToList();
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
         foreach (var entityItem in storageEntities)
         {
-            if (entityItem is not StorageList entry)
+            if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("The item is not valid object type. It should be StorageEntity type.");
-                continue;
-            }
-
-            if (!string.Equals(entry.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning($"The item '{entry.Name}' is not a file.");
+                _logger.LogWarning($"The item '{entityItem.Name}' is not a file.");
                 continue;
             }
 
             try
             {
-                var stream = await ReadAsync(entry.Path, options, cancellationToken);
+                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
                 if (stream is not StorageRead storageRead)
                 {
-                    _logger.LogWarning($"The item '{entry.Name}' could be not read.");
+                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
                     continue;
                 }
 
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = entry.Name,
-                    ContentType = entry.ContentType,
+                    Name = entityItem.Name,
+                    ContentType = entityItem.ContentType,
                     Stream = storageRead.Stream,
                 });
             }
@@ -430,8 +432,6 @@ public class MemoryStorage : PluginBase
 
         return compressEntries;
     }
-
-    public void Dispose() { }
 
     #region private methods
     private Task<List<string>> ListBucketsAsync(CancellationToken cancellationToken)
@@ -574,6 +574,67 @@ public class MemoryStorage : PluginBase
             bucket.Remove(item);
         }
         return true;
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
+    }
+
+    private async Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
+        if (string.IsNullOrEmpty(path))
+            path += PathHelper.PathSeparator;
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        var storageEntities = new List<StorageEntity>();
+        var buckets = new List<string>();
+
+        var pathParts = GetPartsAsync(path);
+
+        if (pathParts.BucketName == "")
+        {
+            if (pathParts.RelativePath != "")
+                throw new StorageException(Resources.BucketNameIsRequired);
+
+            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
+            storageEntities.AddRange(buckets.Select(b => b.ToEntity(options.IncludeMetadata)));
+            return storageEntities;
+        }
+
+        buckets.Add(pathParts.BucketName);
+
+        await Task.WhenAll(buckets.Select(b =>
+            ListAsync(storageEntities, b, pathParts.RelativePath, options, cancellationToken))
+        ).ConfigureAwait(false);
+
+        return storageEntities;
+    }
+
+    private DataFilterOptions GetDataFilterOptions(ListOptions options)
+    {
+        var fields = DeserializeToStringArray(options.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = options.Filter,
+            SortExpression = options.Sort,
+            CaseSensitive = options.CaseSensitive,
+            Limit = options.Limit,
+        };
+
+        return dataFilterOptions;
     }
     #endregion
 }

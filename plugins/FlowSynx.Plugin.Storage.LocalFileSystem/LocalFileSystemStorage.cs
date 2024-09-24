@@ -12,7 +12,6 @@ using System.Data;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
-using System.IO;
 
 namespace FlowSynx.Plugin.Storage.LocalFileSystem;
 
@@ -207,15 +206,7 @@ public class LocalFileSystemStorage : PluginBase
         var listOptions = options.ToObject<ListOptions>();
         var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit,
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
         var dataTable = storageEntities.ToDataTable();
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
@@ -241,14 +232,7 @@ public class LocalFileSystemStorage : PluginBase
         if (!fullPathFieldExist)
             fields = fields.Append("FullPath").ToArray();
         
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = listOptions.Filter,
-            SortExpression = listOptions.Sort,
-            CaseSensitive = listOptions.CaseSensitive,
-            Limit = listOptions.Limit,
-        };
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
 
         var dataTable = storageEntities.ToDataTable();
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
@@ -361,40 +345,34 @@ public class LocalFileSystemStorage : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var listOptions = options.ToObject<ListOptions>();
+        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
-        var storageEntities = entities.ToList();
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
         foreach (var entityItem in storageEntities)
         {
-            if (entityItem is not StorageList entry)
+            if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogWarning("The item is not valid object type. It should be StorageEntity type.");
-                continue;
-            }
-
-            if (!string.Equals(entry.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning($"The item '{entry.Name}' is not a file.");
+                _logger.LogWarning($"The item '{entityItem.Name}' is not a file.");
                 continue;
             }
 
             try
             {
-                var stream = await ReadAsync(entry.Path, options, cancellationToken);
+                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
                 if (stream is not StorageRead storageRead)
                 {
-                    _logger.LogWarning($"The item '{entry.Name}' could be not read.");
+                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
                     continue;
                 }
 
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = entry.Name,
-                    ContentType = entry.ContentType,
+                    Name = entityItem.Name,
+                    ContentType = entityItem.ContentType,
                     Stream = storageRead.Stream,
                 });
             }
@@ -407,18 +385,6 @@ public class LocalFileSystemStorage : PluginBase
 
         return compressEntries;
     }
-
-    public static Stream GenerateStreamFromString(string s)
-    {
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
-        writer.Write(s);
-        writer.Flush();
-        stream.Position = 0;
-        return stream;
-    }
-
-    public void Dispose() { }
 
     #region internal methods
     private bool DeleteEntityAsync(string path)
@@ -468,31 +434,7 @@ public class LocalFileSystemStorage : PluginBase
         return result;
     }
 
-
-
-
-    private T ConvertExpandoToObject<T>(object expando) where T : new()
-    {
-        var obj = new T();
-        var objType = typeof(T);
-        var expandoDict = (IDictionary<string, object?>)expando;
-
-        foreach (var kvp in expandoDict)
-        {
-            var property = objType.GetProperty(kvp.Key, 
-                System.Reflection.BindingFlags.Public | 
-                System.Reflection.BindingFlags.Instance | 
-                System.Reflection.BindingFlags.IgnoreCase);
-            if (property != null && property.CanWrite)
-            {
-                property.SetValue(obj, kvp.Value);
-            }
-        }
-
-        return obj;
-    }
-
-    private Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions? options,
+    private Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -515,6 +457,21 @@ public class LocalFileSystemStorage : PluginBase
             .Select(dir => dir.ToEntity(options.IncludeMetadata)));
         
        return Task.FromResult<IEnumerable<StorageEntity>>(storageEntities);
+    }
+
+    private DataFilterOptions GetDataFilterOptions(ListOptions options)
+    {
+        var fields = DeserializeToStringArray(options.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = options.Filter,
+            SortExpression = options.Sort,
+            CaseSensitive = options.CaseSensitive,
+            Limit = options.Limit,
+        };
+
+        return dataFilterOptions;
     }
     #endregion
 }
