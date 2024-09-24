@@ -18,6 +18,8 @@ public class CsvStream : PluginBase
     private readonly IDeserializer _deserializer;
     private readonly IDataFilter _dataFilter;
     private readonly CsvHandler _csvHandler;
+    const string contentType = "text/csv";
+    const string extension = ".csv";
 
     public CsvStream(ILogger<CsvStream> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
@@ -88,10 +90,10 @@ public class CsvStream : PluginBase
         var dataValue = dataOptions.GetObjectValue();
 
         if (dataValue is null)
-            throw new StreamException("Data must have value.");
+            throw new StreamException(Resources.ForWritingDataMustHaveValue);
 
         if (dataValue is not string)
-            throw new StreamException("Data is not in valid format.");
+            throw new StreamException(Resources.DataMustBeInValidFormat);
 
         var delimiter = GetDelimiter(writeOptions.Delimiter);
         var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
@@ -114,10 +116,10 @@ public class CsvStream : PluginBase
 
         var streamEntities = entities.ToList();
         if (!streamEntities.Any())
-            throw new StreamException("string.Format(Resources.NoFilesFoundWithTheGivenFilter, path)");
+            throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
 
         if (streamEntities.Count() > 1)
-            throw new StreamException("The item you filter should be only single!");
+            throw new StreamException(Resources.FilteringDataMustReturnASingleItem);
 
         return streamEntities.First();
     }
@@ -190,7 +192,6 @@ public class CsvStream : PluginBase
 
         var transmissionDataRows = new List<TransmissionDataRow>();
         var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
-        const string contentType = "text/csv";
         var isSeparateCsvPerRow = compressOptions.SeparateCsvPerRow is true;
         var csvContentBase64 = string.Empty;
 
@@ -206,7 +207,7 @@ public class CsvStream : PluginBase
             var content = isSeparateCsvPerRow ? _csvHandler.ToCsv(row, columnNames, delimiter) : _csvHandler.ToCsv(row, delimiter);
             transmissionDataRows.Add(new TransmissionDataRow
             {
-                Key = $"{Guid.NewGuid().ToString()}.csv",
+                Key = $"{Guid.NewGuid().ToString()}{extension}",
                 ContentType = contentType,
                 Content = content.ToBase64String(),
                 Items = itemArray
@@ -265,7 +266,7 @@ public class CsvStream : PluginBase
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         if (filteredData.Rows.Count <= 0)
-            throw new StreamException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+            throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
 
@@ -274,8 +275,8 @@ public class CsvStream : PluginBase
             var content = _csvHandler.ToCsv(filteredData, delimiter);
             compressEntries.Add(new CompressEntry
             {
-                Name = $"{Guid.NewGuid().ToString()}.csv",
-                ContentType = "text/csv",
+                Name = $"{Guid.NewGuid().ToString()}{extension}",
+                ContentType = contentType,
                 Stream = StringToStream(content),
             });
 
@@ -290,8 +291,8 @@ public class CsvStream : PluginBase
                 var content = _csvHandler.ToCsv(row, columnNames, delimiter);
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = $"{Guid.NewGuid().ToString()}.csv",
-                    ContentType = "text/csv",
+                    Name = $"{Guid.NewGuid().ToString()}{extension}",
+                    ContentType = contentType,
                     Stream = StringToStream(content),
                 });
             }

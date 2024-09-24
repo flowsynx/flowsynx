@@ -70,6 +70,15 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Data is not in valid format. Data must be in array type..
+        /// </summary>
+        internal static string DataMustBeInValidFormat {
+            get {
+                return ResourceManager.GetString("DataMustBeInValidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
         /// </summary>
         internal static string FileIsAlreadyExistAndCannotBeOverwritten {
@@ -79,11 +88,29 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No files found with the given filter in &apos;{0}&apos;..
+        ///   Looks up a localized string similar to For reading functionality your filter must return single item..
         /// </summary>
-        internal static string NoFilesFoundWithTheGivenFilter {
+        internal static string FilteringDataMustReturnASingleItem {
             get {
-                return ResourceManager.GetString("NoFilesFoundWithTheGivenFilter", resourceCulture);
+                return ResourceManager.GetString("FilteringDataMustReturnASingleItem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data must have value..
+        /// </summary>
+        internal static string ForWritingDataMustHaveValue {
+            get {
+                return ResourceManager.GetString("ForWritingDataMustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No items found with the given filter in &apos;{0}&apos;..
+        /// </summary>
+        internal static string NoItemsFoundWithTheGivenFilter {
+            get {
+                return ResourceManager.GetString("NoItemsFoundWithTheGivenFilter", resourceCulture);
             }
         }
         
