@@ -34,6 +34,7 @@
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.LocalFileSystem\FlowSynx.Plugin.Storage.LocalFileSystem.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Storage.Memory\FlowSynx.Plugin.Storage.Memory.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Stream.Csv\FlowSynx.Plugin.Stream.Csv.csproj" />
+    <ProjectReference Include="..\..\plugins\FlowSynx.Plugin.Stream.Json\FlowSynx.Plugin.Stream.Json.csproj" />
   </ItemGroup>
 
   <ItemGroup>
