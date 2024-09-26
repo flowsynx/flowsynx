@@ -18,8 +18,8 @@ public class CsvStream : PluginBase
     private readonly IDeserializer _deserializer;
     private readonly IDataFilter _dataFilter;
     private readonly CsvHandler _csvHandler;
-    const string contentType = "text/csv";
-    const string extension = ".csv";
+    private const string ContentType = "text/csv";
+    private const string Extension = ".csv";
 
     public CsvStream(ILogger<CsvStream> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
@@ -207,8 +207,8 @@ public class CsvStream : PluginBase
             var content = isSeparateCsvPerRow ? _csvHandler.ToCsv(row, columnNames, delimiter) : _csvHandler.ToCsv(row, delimiter);
             transmissionDataRows.Add(new TransmissionDataRow
             {
-                Key = $"{Guid.NewGuid().ToString()}{extension}",
-                ContentType = contentType,
+                Key = $"{Guid.NewGuid().ToString()}{Extension}",
+                ContentType = ContentType,
                 Content = content.ToBase64String(),
                 Items = itemArray
             });
@@ -218,7 +218,7 @@ public class CsvStream : PluginBase
         {
             PluginNamespace = Namespace,
             PluginType = Type,
-            ContentType = isSeparateCsvPerRow ? string.Empty : contentType,
+            ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
             Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
             Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
             Rows = transmissionDataRows
@@ -275,8 +275,8 @@ public class CsvStream : PluginBase
             var content = _csvHandler.ToCsv(filteredData, delimiter);
             compressEntries.Add(new CompressEntry
             {
-                Name = $"{Guid.NewGuid().ToString()}{extension}",
-                ContentType = contentType,
+                Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                ContentType = ContentType,
                 Stream = StringToStream(content),
             });
 
@@ -291,8 +291,8 @@ public class CsvStream : PluginBase
                 var content = _csvHandler.ToCsv(row, columnNames, delimiter);
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = $"{Guid.NewGuid().ToString()}{extension}",
-                    ContentType = contentType,
+                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                    ContentType = ContentType,
                     Stream = StringToStream(content),
                 });
             }
