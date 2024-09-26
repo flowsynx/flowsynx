@@ -176,7 +176,7 @@ public class CsvStream : PluginBase
         return Task.FromResult<IEnumerable<object>>(result);
     }
 
-    public override Task<TransmissionData> PrepareTransmissionData(string entity, PluginOptions? options,
+    public override Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -190,7 +190,7 @@ public class CsvStream : PluginBase
         var dataTable = GetDataTable(path, delimiter, listOptions.IncludeMetadata, cancellationToken);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
-        var transmissionDataRows = new List<TransmissionDataRow>();
+        var transferDataRows = new List<TransferDataRow>();
         var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
         var isSeparateCsvPerRow = compressOptions.SeparateCsvPerRow is true;
         var csvContentBase64 = string.Empty;
@@ -205,7 +205,7 @@ public class CsvStream : PluginBase
         {
             var itemArray = row.ItemArray;
             var content = isSeparateCsvPerRow ? _csvHandler.ToCsv(row, columnNames, delimiter) : _csvHandler.ToCsv(row, delimiter);
-            transmissionDataRows.Add(new TransmissionDataRow
+            transferDataRows.Add(new TransferDataRow
             {
                 Key = $"{Guid.NewGuid().ToString()}{Extension}",
                 ContentType = ContentType,
@@ -214,33 +214,34 @@ public class CsvStream : PluginBase
             });
         }
         
-        var result = new TransmissionData
+        var result = new TransferData
         {
             PluginNamespace = Namespace,
             PluginType = Type,
+            State = TransferState.Copy,
             ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
             Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
             Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
-            Rows = transmissionDataRows
+            Rows = transferDataRows
         };
 
         return Task.FromResult(result);
     }
 
-    public override Task TransmitDataAsync(string entity, PluginOptions? options,
-        TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
+    public override Task TransferAsync(string entity, PluginOptions? options,
+        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var transmitOptions = options.ToObject<TransmitOptions>();
         var delimiter = GetDelimiter(transmitOptions.Delimiter);
 
         var dataTable = new DataTable();
-        foreach (var column in transmissionData.Columns)
+        foreach (var column in transferData.Columns)
         {
             dataTable.Columns.Add(column);
         }
 
-        foreach (var row in transmissionData.Rows)
+        foreach (var row in transferData.Rows)
         {
             if (row.Items != null)
                 dataTable.Rows.Add(row.Items);

@@ -335,7 +335,7 @@ public class AzureBlobStorage : PluginBase
         return result;
     }
 
-    public override async Task<TransmissionData> PrepareTransmissionData(string entity, PluginOptions? options,
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
             CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -356,7 +356,7 @@ public class AzureBlobStorage : PluginBase
 
         var dataTable = storageEntities.ToDataTable();
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var transmissionDataRows = new List<TransmissionDataRow>();
+        var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
         {
@@ -384,7 +384,7 @@ public class AzureBlobStorage : PluginBase
                 row["FullPath"] = DBNull.Value;
 
             var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
-            transmissionDataRows.Add(new TransmissionDataRow
+            transferDataRows.Add(new TransferDataRow
             {
                 Key = fullPath,
                 ContentType = contentType,
@@ -400,23 +400,24 @@ public class AzureBlobStorage : PluginBase
             filteredData.Columns.Remove("FullPath");
 
         var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        var result = new TransmissionData
+        var result = new TransferData
         {
             PluginNamespace = Namespace,
             PluginType = Type,
+            State = TransferState.Copy,
             Columns = columnNames,
-            Rows = transmissionDataRows
+            Rows = transferDataRows
         };
 
         return result;
     }
 
-    public override async Task TransmitDataAsync(string entity, PluginOptions? options, 
-        TransmissionData transmissionData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(string entity, PluginOptions? options,
+        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
     {
-        if (transmissionData.PluginNamespace == PluginNamespace.Storage)
+        if (transferData.PluginNamespace == PluginNamespace.Storage)
         {
-            foreach (var item in transmissionData.Rows)
+            foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
                 {
@@ -441,14 +442,14 @@ public class AzureBlobStorage : PluginBase
         else
         {
             var path = PathHelper.ToUnixPath(entity);
-            if (!string.IsNullOrEmpty(transmissionData.Content))
+            if (!string.IsNullOrEmpty(transferData.Content))
             {
-                var fileBytes = Convert.FromBase64String(transmissionData.Content);
+                var fileBytes = Convert.FromBase64String(transferData.Content);
                 await File.WriteAllBytesAsync(path, fileBytes, cancellationToken);
             }
             else
             {
-                foreach (var item in transmissionData.Rows)
+                foreach (var item in transferData.Rows)
                 {
                     if (item.Content != null)
                     {

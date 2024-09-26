@@ -108,12 +108,12 @@ public class JsonStream : PluginBase
         return Task.FromResult<IEnumerable<object>>(result);
     }
 
-    public override Task<TransmissionData> PrepareTransmissionData(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override Task<TransferData> PrepareTransferring(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override Task TransmitDataAsync(string entity, PluginOptions? options, TransmissionData transmissionData, CancellationToken cancellationToken = default)
+    public override Task TransferAsync(string entity, PluginOptions? options, TransferData transferData, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Core.Features.Copy.Command;
+namespace FlowSynx.Core.Features.Transfer.Command;
 
-public class CopyValidator : AbstractValidator<CopyRequest>
+public class TransferValidator : AbstractValidator<TransferRequest>
 {
-    public CopyValidator()
+    public TransferValidator()
     {
         RuleFor(request => request.SourceEntity)
             .NotNull()

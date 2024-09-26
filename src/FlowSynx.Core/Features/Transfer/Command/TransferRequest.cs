@@ -2,9 +2,9 @@
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Abstractions;
 
-namespace FlowSynx.Core.Features.Move.Command;
+namespace FlowSynx.Core.Features.Transfer.Command;
 
-public class MoveRequest : IRequest<Result<Unit>>
+public class TransferRequest : IRequest<Result<Unit>>
 {
     public required string SourceEntity { get; set; }
     public required string DestinationEntity { get; set; }

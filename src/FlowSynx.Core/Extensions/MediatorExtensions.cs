@@ -8,7 +8,6 @@ using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Features.Version.Query;
 using FlowSynx.Core.Features.Logs.Query.List;
-using FlowSynx.Core.Features.Copy.Command;
 using FlowSynx.Core.Features.List.Query;
 using FlowSynx.Core.Features.Write.Command;
 using FlowSynx.Core.Features.Delete.Command;
@@ -16,10 +15,10 @@ using FlowSynx.Core.Features.Exist.Query;
 using FlowSynx.Core.Features.Compress.Command;
 using FlowSynx.Core.Features.Read.Query;
 using FlowSynx.Core.Features.About.Query;
-using FlowSynx.Core.Features.Move.Command;
 using FlowSynx.Core.Features.Create.Command;
 using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Core.Features.Transfer.Command;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -61,12 +60,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<object>>> Copy(this IMediator mediator, CopyRequest request, CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-
-    public static Task<Result<Unit>> Move(this IMediator mediator, MoveRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> Transfer(this IMediator mediator, TransferRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

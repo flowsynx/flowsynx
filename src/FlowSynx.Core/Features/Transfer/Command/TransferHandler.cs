@@ -5,15 +5,15 @@ using FlowSynx.Abstractions;
 using FlowSynx.Core.Parers.PluginInstancing;
 using FlowSynx.Plugin.Services;
 
-namespace FlowSynx.Core.Features.Move.Command;
+namespace FlowSynx.Core.Features.Transfer.Command;
 
-internal class MoveHandler : IRequestHandler<MoveRequest, Result<Unit>>
+internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
 {
-    private readonly ILogger<MoveHandler> _logger;
+    private readonly ILogger<TransferHandler> _logger;
     private readonly IPluginService _pluginService;
     private readonly IPluginInstanceParser _pluginInstanceParser;
 
-    public MoveHandler(ILogger<MoveHandler> logger, IPluginService pluginService, 
+    public TransferHandler(ILogger<TransferHandler> logger, IPluginService pluginService, 
         IPluginInstanceParser pluginInstanceParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
@@ -24,15 +24,15 @@ internal class MoveHandler : IRequestHandler<MoveRequest, Result<Unit>>
         _pluginInstanceParser = pluginInstanceParser;
     }
 
-    public async Task<Result<Unit>> Handle(MoveRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(TransferRequest request, CancellationToken cancellationToken)
     {
         try
         {
             var sourcePluginInstance = _pluginInstanceParser.Parse(request.SourceEntity);
             var destinationPluginInstance = _pluginInstanceParser.Parse(request.DestinationEntity);
-            await _pluginService.MoveAsync(sourcePluginInstance, destinationPluginInstance,
+            await _pluginService.TransferAsync(sourcePluginInstance, destinationPluginInstance, 
                 request.Options, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.MoveHandlerSuccessfullyMoved);
+            return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }
         catch (Exception ex)
         {
