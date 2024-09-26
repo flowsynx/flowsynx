@@ -8,6 +8,7 @@ using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Data.Extensions;
+using System.Collections.Generic;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
@@ -77,74 +78,29 @@ public class JsonStream : PluginBase
         var path = PathHelper.ToUnixPath(entity);
         var json = File.ReadAllText(path);
         JToken jToken = JToken.Parse(json);
+        var listOptions = options.ToObject<ListOptions>();
 
+        DataTable dataTable;
         if (jToken is JArray)
         {
-            var jsonLinq = JArray.Parse(json);
-
-            // Find the first array using Linq
-            var srcArray = jsonLinq.Descendants().Where(d => d is JArray).First();
-            var trgArray = new JArray();
-            foreach (JObject row in srcArray.Children<JObject>())
-            {
-                var cleanRow = new JObject();
-                foreach (JProperty column in row.Properties())
-                {
-                    // Only include JValue types
-                    if (column.Value is JValue)
-                    {
-                        cleanRow.Add(column.Name, column.Value);
-                    }
-                }
-
-                trgArray.Add(cleanRow);
-            }
+            var jArray = JArray.Parse(json);
+            dataTable = JArrayToDataTable(jArray, listOptions.IncludeMetadata);
         }
-        //else if (jToken is JObject)
-            
+        else if (jToken is JObject)
+        {
+            var jObject = JObject.Parse(json);
+            dataTable = JObjectToDataTable(jObject, listOptions.IncludeMetadata);
+        }
         else
-            throw new Exception("Unable to cast json to unknown type");
+        {
+            dataTable = new DataTable();
+            dataTable.Columns.Add("Sample");
+            var datarow = dataTable.NewRow();
+            datarow["Sample"] = ((JValue)jToken).Value;
+            dataTable.Rows.Add(datarow);
+        }
 
-        //var jsonLinq = JObject.Parse(json);
-
-        //// Find the first array using Linq
-        //var srcArray = jsonLinq.Descendants().Where(d => d is JArray).First();
-        //var trgArray = new JArray();
-        //foreach (JObject row in srcArray.Children<JObject>())
-        //{
-        //    var cleanRow = new JObject();
-        //    foreach (JProperty column in row.Properties())
-        //    {
-        //        // Only include JValue types
-        //        if (column.Value is JValue)
-        //        {
-        //            cleanRow.Add(column.Name, column.Value);
-        //        }
-        //    }
-
-        //    trgArray.Add(cleanRow);
-        //}
-
-        //// Flatten the nested JSON object
-        //JObject flattenedJsonObject = new JObject();
-        //foreach (var property in nestedJsonObject.Properties())
-        //{
-        //    if (property.Value.Type == JTokenType.Object)
-        //    {
-        //        foreach (var nestedProperty in property.Value.Children<JProperty>())
-        //        {
-        //            flattenedJsonObject.Add(nestedProperty.Name, nestedProperty.Value);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        flattenedJsonObject.Add(property.Name, property.Value);
-        //    }
-        //}
-
-        var listOptions = options.ToObject<ListOptions>();
         var dataFilterOptions = GetDataFilterOptions(listOptions);
-        var dataTable = _deserializer.Deserialize<DataTable>(json);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
 
@@ -191,6 +147,62 @@ public class JsonStream : PluginBase
         };
 
         return dataFilterOptions;
+    }
+
+    private object GetMetaData(object content)
+    {
+        var contentHash = FlowSynx.Security.HashHelper.Md5.GetHash(content);
+        return new
+        {
+            ContentHash = contentHash
+        };
+    }
+
+    private DataTable JArrayToDataTable(JArray jArray, bool? includeMetaData)
+    {
+        var result = new DataTable();
+        foreach (var row in jArray)
+        {
+            var dict = JsonFlattener.Flatten(row);
+
+            var datarow = result.NewRow();
+            foreach (var item in dict)
+            {
+                if (result.Columns[item.Key] == null)
+                {
+                    var type = item.Value is null ? typeof(string) : item.Value.GetType();
+                    result.Columns.Add(item.Key, type);
+                }
+
+                datarow[item.Key] = item.Value;
+
+            }
+            result.Rows.Add(datarow);
+        }
+
+        return result;
+    }
+
+    private DataTable JObjectToDataTable(JObject jsonObject, bool? includeMetaData)
+    {
+        var result = new DataTable();
+        var dict = JsonFlattener.Flatten(jsonObject);
+
+        var datarow = result.NewRow();
+        foreach (var item in dict)
+        {
+            if (result.Columns[item.Key] == null)
+            {
+                var type = item.Value is null ? typeof(string) : item.Value.GetType();
+                result.Columns.Add(item.Key, type);
+            }
+
+            datarow[item.Key] = item.Value;
+
+        }
+
+        result.Rows.Add(datarow);
+        return result;
     }
     #endregion
 }
