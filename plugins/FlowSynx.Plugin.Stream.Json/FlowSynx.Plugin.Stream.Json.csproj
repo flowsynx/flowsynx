@@ -14,6 +14,7 @@
 	<ItemGroup>
 		<PackageReference Include="FlowSynx.Data" Version="1.4.6" />
 		<PackageReference Include="FlowSynx.Plugin.Abstractions" Version="1.4.6" />
+		<PackageReference Include="FlowSynx.Security" Version="1.4.6" />
 	</ItemGroup>
 
 	<ItemGroup>
