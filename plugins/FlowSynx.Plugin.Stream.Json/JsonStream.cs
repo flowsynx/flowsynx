@@ -8,7 +8,6 @@ using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Data.Extensions;
-using System.Collections.Generic;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
@@ -17,6 +16,7 @@ public class JsonStream : PluginBase
     private readonly ILogger _logger;
     private readonly IDeserializer _deserializer;
     private readonly IDataFilter _dataFilter;
+    private readonly JsonHandler _jsonHandler;
 
     public JsonStream(ILogger<JsonStream> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -24,6 +24,7 @@ public class JsonStream : PluginBase
         _logger = logger;
         _deserializer = deserializer;
         _dataFilter = dataFilter;
+        _jsonHandler = new JsonHandler();
     }
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");
@@ -77,27 +78,27 @@ public class JsonStream : PluginBase
     {
         var path = PathHelper.ToUnixPath(entity);
         var json = File.ReadAllText(path);
-        JToken jToken = JToken.Parse(json);
+        var jToken = JToken.Parse(json);
         var listOptions = options.ToObject<ListOptions>();
 
         DataTable dataTable;
-        if (jToken is JArray)
+        switch (jToken)
         {
-            var jArray = JArray.Parse(json);
-            dataTable = JArrayToDataTable(jArray, listOptions.IncludeMetadata);
-        }
-        else if (jToken is JObject)
-        {
-            var jObject = JObject.Parse(json);
-            dataTable = JObjectToDataTable(jObject, listOptions.IncludeMetadata);
-        }
-        else
-        {
-            dataTable = new DataTable();
-            dataTable.Columns.Add("Sample");
-            var datarow = dataTable.NewRow();
-            datarow["Sample"] = ((JValue)jToken).Value;
-            dataTable.Rows.Add(datarow);
+            case JArray:
+                dataTable = JArrayToDataTable(jToken, listOptions.IncludeMetadata);
+                break;
+            case JObject:
+                dataTable = JObjectToDataTable(jToken, listOptions.IncludeMetadata);
+                break;
+            default:
+            {
+                dataTable = new DataTable();
+                dataTable.Columns.Add("Sample");
+                var dataRow = dataTable.NewRow();
+                dataRow["Sample"] = ((JValue)jToken).Value;
+                dataTable.Rows.Add(dataRow);
+                break;
+            }
         }
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
@@ -158,14 +159,20 @@ public class JsonStream : PluginBase
         };
     }
 
-    private DataTable JArrayToDataTable(JArray jArray, bool? includeMetaData)
+    private DataTable JArrayToDataTable(JToken token, bool? includeMetaData)
     {
         var result = new DataTable();
-        foreach (var row in jArray)
+        foreach (var row in token)
         {
-            var dict = JsonFlattener.Flatten(row);
+            var dict = _jsonHandler.Flatten(row);
+            if (includeMetaData is true)
+            {
+                var metadataObject = GetMetaData(dict);
+                if (!dict.ContainsKey("Metadata"))
+                    dict.Add("Metadata", metadataObject);
+            }
 
-            var datarow = result.NewRow();
+            var dataRow = result.NewRow();
             foreach (var item in dict)
             {
                 if (result.Columns[item.Key] == null)
@@ -174,21 +181,28 @@ public class JsonStream : PluginBase
                     result.Columns.Add(item.Key, type);
                 }
 
-                datarow[item.Key] = item.Value;
+                dataRow[item.Key] = item.Value;
 
             }
-            result.Rows.Add(datarow);
+            result.Rows.Add(dataRow);
         }
 
         return result;
     }
 
-    private DataTable JObjectToDataTable(JObject jsonObject, bool? includeMetaData)
+    private DataTable JObjectToDataTable(JToken token, bool? includeMetaData)
     {
         var result = new DataTable();
-        var dict = JsonFlattener.Flatten(jsonObject);
+        var dict = _jsonHandler.Flatten(token);
 
-        var datarow = result.NewRow();
+        if (includeMetaData is true)
+        {
+            var metadataObject = GetMetaData(dict);
+            if (!dict.ContainsKey("Metadata"))
+                dict.Add("Metadata", metadataObject);
+        }
+
+        var dataRow = result.NewRow();
         foreach (var item in dict)
         {
             if (result.Columns[item.Key] == null)
@@ -197,11 +211,10 @@ public class JsonStream : PluginBase
                 result.Columns.Add(item.Key, type);
             }
 
-            datarow[item.Key] = item.Value;
-
+            dataRow[item.Key] = item.Value;
         }
 
-        result.Rows.Add(datarow);
+        result.Rows.Add(dataRow);
         return result;
     }
     #endregion

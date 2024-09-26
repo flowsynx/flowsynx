@@ -1,18 +1,12 @@
 ﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
-public class JsonFlattener
+public class JsonHandler
 {
-    public static IDictionary<string, object?> Flatten(JToken token, string prefix = "")
+    public IDictionary<string, object?> Flatten(JToken token, string prefix = "")
     {
         var result = new Dictionary<string, object?>();
-
         if (token.Type == JTokenType.Object)
         {
             foreach (var property in token.Children<JProperty>())
@@ -24,10 +18,9 @@ public class JsonFlattener
                 }
             }
         }
-
         else if (token.Type == JTokenType.Array)
         {
-            var index = 0;
+            var index = 1;
             foreach (var item in token.Children())
             {
                 var childPrefix = $"{prefix}{index}";
