@@ -61,11 +61,92 @@ namespace FlowSynx.Plugin.Stream.Json {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to About operation is not supported for JSON stream!.
+        /// </summary>
+        internal static string AboutOperrationNotSupported {
+            get {
+                return ResourceManager.GetString("AboutOperrationNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data is not in valid format. Data must be in array type..
+        /// </summary>
+        internal static string DataMustBeInValidFormat {
+            get {
+                return ResourceManager.GetString("DataMustBeInValidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data is not in valid format. Data must be json document format..
+        /// </summary>
+        internal static string DataMustBeJsonValidFormat {
+            get {
+                return ResourceManager.GetString("DataMustBeJsonValidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to File &apos;{0}&apos; is already exist and can&apos;t be overwritten!.
+        /// </summary>
+        internal static string FileIsAlreadyExistAndCannotBeOverwritten {
+            get {
+                return ResourceManager.GetString("FileIsAlreadyExistAndCannotBeOverwritten", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to For reading functionality your filter must return single item..
+        /// </summary>
+        internal static string FilteringDataMustReturnASingleItem {
+            get {
+                return ResourceManager.GetString("FilteringDataMustReturnASingleItem", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Data must have value..
+        /// </summary>
+        internal static string ForWritingDataMustHaveValue {
+            get {
+                return ResourceManager.GetString("ForWritingDataMustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No items found with the given filter in &apos;{0}&apos;..
+        /// </summary>
+        internal static string NoItemsFoundWithTheGivenFilter {
+            get {
+                return ResourceManager.GetString("NoItemsFoundWithTheGivenFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin for manage Comma Separated Values (CSV) data..
         /// </summary>
         internal static string PluginDescription {
             get {
                 return ResourceManager.GetString("PluginDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a file..
+        /// </summary>
+        internal static string ThePathIsNotFile {
+            get {
+                return ResourceManager.GetString("ThePathIsNotFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path must be not empty!.
+        /// </summary>
+        internal static string TheSpecifiedPathMustBeNotEmpty {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathMustBeNotEmpty", resourceCulture);
             }
         }
     }

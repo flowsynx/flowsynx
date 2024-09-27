@@ -117,7 +117,34 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AboutOperrationNotSupported" xml:space="preserve">
+    <value>About operation is not supported for JSON stream!</value>
+  </data>
+  <data name="DataMustBeInValidFormat" xml:space="preserve">
+    <value>Data is not in valid format. Data must be in array type.</value>
+  </data>
+  <data name="DataMustBeJsonValidFormat" xml:space="preserve">
+    <value>Data is not in valid format. Data must be json document format.</value>
+  </data>
+  <data name="FileIsAlreadyExistAndCannotBeOverwritten" xml:space="preserve">
+    <value>File '{0}' is already exist and can't be overwritten!</value>
+  </data>
+  <data name="FilteringDataMustReturnASingleItem" xml:space="preserve">
+    <value>For reading functionality your filter must return single item.</value>
+  </data>
+  <data name="ForWritingDataMustHaveValue" xml:space="preserve">
+    <value>Data must have value.</value>
+  </data>
+  <data name="NoItemsFoundWithTheGivenFilter" xml:space="preserve">
+    <value>No items found with the given filter in '{0}'.</value>
+  </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for manage Comma Separated Values (CSV) data.</value>
+  </data>
+  <data name="ThePathIsNotFile" xml:space="preserve">
+    <value>The entered path is not a file.</value>
+  </data>
+  <data name="TheSpecifiedPathMustBeNotEmpty" xml:space="preserve">
+    <value>The specified path must be not empty!</value>
   </data>
 </root>
