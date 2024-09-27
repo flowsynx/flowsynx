@@ -115,13 +115,12 @@ public class CsvStream : PluginBase
         var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
         var streamEntities = entities.ToList();
-        if (!streamEntities.Any())
-            throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
-
-        if (streamEntities.Count() > 1)
-            throw new StreamException(Resources.FilteringDataMustReturnASingleItem);
-
-        return streamEntities.First();
+        return streamEntities.Count() switch
+        {
+            <= 0 => throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)),
+            > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
+            _ => streamEntities.First()
+        };
     }
 
     public override Task UpdateAsync(string entity, PluginOptions? options,
