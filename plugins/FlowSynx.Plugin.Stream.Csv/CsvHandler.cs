@@ -17,7 +17,7 @@ internal class CsvHandler
         _serializer = serializer;
     }
 
-    public byte[] Load(string fullPath, string delimiter)
+    public byte[] Load(string fullPath)
     {
         return File.ReadAllBytes(fullPath);
     }

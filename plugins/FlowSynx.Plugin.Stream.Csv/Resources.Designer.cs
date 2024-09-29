@@ -124,6 +124,24 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a csv file. The file must be ended with .csv extension..
+        /// </summary>
+        internal static string ThePathIsNotCsvFile {
+            get {
+                return ResourceManager.GetString("ThePathIsNotCsvFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a directory..
+        /// </summary>
+        internal static string ThePathIsNotDirectory {
+            get {
+                return ResourceManager.GetString("ThePathIsNotDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The entered path is not a file..
         /// </summary>
         internal static string ThePathIsNotFile {

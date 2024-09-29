@@ -2,7 +2,6 @@
 
 public class ListOptions
 {
-    public string Delimiter { get; set; } = ",";
     public string? Fields { get; set; }
     public string? Filter { get; set; }
     public bool CaseSensitive { get; set; } = false;

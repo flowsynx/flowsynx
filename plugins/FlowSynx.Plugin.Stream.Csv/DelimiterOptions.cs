@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Plugin.Stream.Csv;
 
-public class TransmitOptions
+public class DelimiterOptions
 {
     public string Delimiter { get; set; } = ",";
 }

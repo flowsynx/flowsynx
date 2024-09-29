@@ -54,6 +54,7 @@ public class CsvStream : PluginBase
     {
         var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
 
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -61,10 +62,13 @@ public class CsvStream : PluginBase
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
         if (File.Exists(path) && createOptions.Overwrite is false)
             throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
-        var delimiter = GetDelimiter(createOptions.Delimiter);
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
         var headers = _deserializer.Deserialize<string[]>(createOptions.Headers);
         var data = string.Join(delimiter, headers);
         using (var writer = File.AppendText(path))
@@ -79,14 +83,17 @@ public class CsvStream : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var writeOptions = options.ToObject<WriteOptions>();
-
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        var writeOptions = options.ToObject<WriteOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
         var dataValue = dataOptions.GetObjectValue();
 
         if (dataValue is null)
@@ -95,7 +102,7 @@ public class CsvStream : PluginBase
         if (dataValue is not string)
             throw new StreamException(Resources.DataMustBeInValidFormat);
 
-        var delimiter = GetDelimiter(writeOptions.Delimiter);
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
         var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
         using (var writer = File.AppendText(path))
         {
@@ -133,10 +140,20 @@ public class CsvStream : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
         var listOptions = options.ToObject<ListOptions>();
         listOptions.Fields = string.Empty;
         listOptions.IncludeMetadata = false;
-        var delimiter = GetDelimiter(listOptions.Delimiter);
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
@@ -163,8 +180,19 @@ public class CsvStream : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
         var listOptions = options.ToObject<ListOptions>();
-        var delimiter = GetDelimiter(listOptions.Delimiter);
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
@@ -179,10 +207,20 @@ public class CsvStream : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var compressOptions = options.ToObject<CompressOptions>();
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        var delimiter = GetDelimiter(listOptions.Delimiter);
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        var listOptions = options.ToObject<ListOptions>();
+        var transferOptions = options.ToObject<TransferOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
@@ -191,12 +229,12 @@ public class CsvStream : PluginBase
 
         var transferDataRows = new List<TransferDataRow>();
         var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
-        var isSeparateCsvPerRow = compressOptions.SeparateCsvPerRow is true;
+        var isSeparateCsvPerRow = transferOptions.SeparateCsvPerRow is true;
         var csvContentBase64 = string.Empty;
 
         if (!isSeparateCsvPerRow)
         {
-            var csvContent = _csvHandler.Load(path, delimiter);
+            var csvContent = _csvHandler.ToCsv(filteredData, delimiter);
             csvContentBase64 = csvContent.ToBase64String();
         }
 
@@ -217,7 +255,7 @@ public class CsvStream : PluginBase
         {
             PluginNamespace = Namespace,
             PluginType = Type,
-            State = TransferState.Copy,
+            Kind = TransferKind.Copy,
             ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
             Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
             Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
@@ -231,8 +269,10 @@ public class CsvStream : PluginBase
         TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        var transmitOptions = options.ToObject<TransmitOptions>();
-        var delimiter = GetDelimiter(transmitOptions.Delimiter);
+        var transferOptions = options.ToObject<TransferOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
         var dataTable = new DataTable();
         foreach (var column in transferData.Columns)
@@ -240,13 +280,38 @@ public class CsvStream : PluginBase
             dataTable.Columns.Add(column);
         }
 
-        foreach (var row in transferData.Rows)
+        if (transferOptions.SeparateCsvPerRow is true)
         {
-            if (row.Items != null)
-                dataTable.Rows.Add(row.Items);
-        }
+            if (!PathHelper.IsDirectory(path))
+                throw new StreamException(Resources.ThePathIsNotDirectory);
 
-        File.WriteAllText(path, _csvHandler.ToCsv(dataTable, delimiter));
+            foreach (var row in transferData.Rows)
+            {
+                if (row.Items != null)
+                {
+                    var newRow = dataTable.NewRow();
+                    newRow.ItemArray = row.Items;
+                    dataTable.Rows.Add(newRow);
+                    File.WriteAllText(PathHelper.Combine(path, row.Key), 
+                        _csvHandler.ToCsv(newRow, transferData.Columns.ToArray(), delimiter));
+                }
+            }
+        }
+        else
+        {
+            if (!PathHelper.IsFile(path))
+                throw new StreamException(Resources.ThePathIsNotFile);
+
+            foreach (var row in transferData.Rows)
+            {
+                if (row.Items != null)
+                {
+                    dataTable.Rows.Add(row.Items);
+                }
+            }
+
+            File.WriteAllText(path, _csvHandler.ToCsv(dataTable, delimiter));
+        }
 
         return Task.CompletedTask;
     }
@@ -255,10 +320,20 @@ public class CsvStream : PluginBase
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
         var listOptions = options.ToObject<ListOptions>();
         var compressOptions = options.ToObject<CompressOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
 
-        var delimiter = GetDelimiter(listOptions.Delimiter);
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
@@ -340,8 +415,7 @@ public class CsvStream : PluginBase
     private DataTable GetDataTable(string entity, string delimiter, 
         bool? includeMetadata, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
-        return _csvHandler.Load(path, delimiter, includeMetadata);
+        return _csvHandler.Load(entity, delimiter, includeMetadata);
     }
 
     private DataFilterOptions GetDataFilterOptions(ListOptions options)

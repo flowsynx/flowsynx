@@ -2,5 +2,5 @@
 
 public class WriteOptions
 {
-    public string Delimiter { get; set; } = ",";
+
 }
