@@ -284,7 +284,7 @@ public class LocalFileSystemStorage : PluginBase
         {
             PluginNamespace = Namespace,
             PluginType = Type,
-            State = TransferState.Copy,
+            Kind = TransferKind.Copy,
             Columns = columnNames,
             Rows = transferDataRows
         };
@@ -323,18 +323,23 @@ public class LocalFileSystemStorage : PluginBase
             var path = PathHelper.ToUnixPath(entity);
             if (!string.IsNullOrEmpty(transferData.Content))
             {
+                if (!PathHelper.IsFile(path))
+                    throw new StorageException(Resources.ThePathIsNotFile);
+
                 var fileBytes = Convert.FromBase64String(transferData.Content);
                 await File.WriteAllBytesAsync(path, fileBytes, cancellationToken);
             }
             else
             {
+                if (!PathHelper.IsDirectory(path))
+                    throw new StorageException(Resources.ThePathIsNotDirectory);
+
                 foreach (var item in transferData.Rows)
                 {
                     if (item.Content != null)
                     {
-                        var parentPath = PathHelper.GetParent(path);
                         var fileBytes = Convert.FromBase64String(item.Content);
-                        await File.WriteAllBytesAsync(PathHelper.Combine(parentPath, item.Key), fileBytes, cancellationToken);
+                        await File.WriteAllBytesAsync(PathHelper.Combine(path, item.Key), fileBytes, cancellationToken);
                     }
                 }
             }

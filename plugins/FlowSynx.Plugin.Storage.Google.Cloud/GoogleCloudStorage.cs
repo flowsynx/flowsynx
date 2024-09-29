@@ -310,7 +310,7 @@ public class GoogleCloudStorage :PluginBase
         {
             PluginNamespace = Namespace,
             PluginType = Type,
-            State = TransferState.Copy,
+            Kind = TransferKind.Copy,
             Columns = columnNames,
             Rows = transferDataRows
         };

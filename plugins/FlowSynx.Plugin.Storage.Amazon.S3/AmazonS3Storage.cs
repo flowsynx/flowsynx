@@ -308,7 +308,7 @@ public class AmazonS3Storage : PluginBase
         {
             PluginNamespace = Namespace,
             PluginType = Type,
-            State = TransferState.Copy,
+            Kind = TransferKind.Copy,
             Columns = columnNames,
             Rows = transferDataRow
         };
