@@ -141,6 +141,9 @@
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for manage Comma Separated Values (CSV) data.</value>
   </data>
+  <data name="ThePathIsNotDirectory" xml:space="preserve">
+    <value>The entered path is not a directory.</value>
+  </data>
   <data name="ThePathIsNotFile" xml:space="preserve">
     <value>The entered path is not a file.</value>
   </data>

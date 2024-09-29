@@ -133,6 +133,15 @@ namespace FlowSynx.Plugin.Stream.Json {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The entered path is not a directory..
+        /// </summary>
+        internal static string ThePathIsNotDirectory {
+            get {
+                return ResourceManager.GetString("ThePathIsNotDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The entered path is not a file..
         /// </summary>
         internal static string ThePathIsNotFile {

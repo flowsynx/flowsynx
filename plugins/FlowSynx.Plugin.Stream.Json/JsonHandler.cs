@@ -1,10 +1,50 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using FlowSynx.IO.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Data;
+using System.Text;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
 public class JsonHandler
 {
+    private readonly ISerializer _serializer;
+
+    public JsonHandler(ISerializer serializer)
+    {
+        _serializer = serializer;
+    }
+
+    public byte[] Load(string fullPath)
+    {
+        return File.ReadAllBytes(fullPath);
+    }
+
+    public string ToJson(DataTable dataTable, bool? indented)
+    {
+        string jsonString = string.Empty;
+
+        if (dataTable != null && dataTable.Rows.Count > 0)
+        {
+            var config = new JsonSerializationConfiguration { Indented = indented ?? true };
+            jsonString = _serializer.Serialize(dataTable, config);
+        }
+
+        return jsonString;
+    }
+
+    public string ToJson(DataRow datarow, bool? indented)
+    {
+        var dict = new Dictionary<string, object>();
+        foreach (DataColumn col in datarow.Table.Columns)
+        {
+            dict.Add(col.ColumnName, datarow[col]);
+        }
+
+        var config = new JsonSerializationConfiguration { Indented = indented ?? true };
+        return _serializer.Serialize(dict, config);
+    }
+
     public IDictionary<string, object?> Flatten(JToken token, string prefix = "")
     {
         var result = new Dictionary<string, object?>();

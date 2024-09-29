@@ -2,5 +2,5 @@
 
 public class WriteOptions
 {
-    public bool? Indented { get; set; } = false;
+
 }

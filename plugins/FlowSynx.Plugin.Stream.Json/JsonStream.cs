@@ -9,9 +9,8 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Plugin.Stream.Exceptions;
-using SharpCompress.Common;
-using System.Runtime.Serialization.Formatters.Binary;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
@@ -22,7 +21,8 @@ public class JsonStream : PluginBase
     private readonly ISerializer _serializer;
     private readonly IDataFilter _dataFilter;
     private readonly JsonHandler _jsonHandler;
-
+    private const string ContentType = "application/json";
+    private const string Extension = ".json";
     public JsonStream(ILogger<JsonStream> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
     {
@@ -30,7 +30,7 @@ public class JsonStream : PluginBase
         _deserializer = deserializer;
         _serializer = serializer;
         _dataFilter = dataFilter;
-        _jsonHandler = new JsonHandler();
+        _jsonHandler = new JsonHandler(serializer);
     }
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");
@@ -72,13 +72,14 @@ public class JsonStream : PluginBase
     public override Task WriteAsync(string entity, PluginOptions? options, object dataOptions, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
-        var writeOptions = options.ToObject<WriteOptions>();
-
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
+
+        var writeOptions = options.ToObject<WriteOptions>();
+        var indentedOptions = options.ToObject<IndentedOptions>();
 
         var dataValue = dataOptions.GetObjectValue();
 
@@ -94,7 +95,7 @@ public class JsonStream : PluginBase
         var deserializeData = _deserializer.Deserialize<dynamic>(json);
         var serializeData = _serializer.Serialize(deserializeData, new JsonSerializationConfiguration
         {
-            Indented = writeOptions.Indented ?? false,
+            Indented = indentedOptions.Indented ?? false,
         });
         
         File.WriteAllText(path, serializeData);
@@ -105,6 +106,12 @@ public class JsonStream : PluginBase
     public override async Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
         var listOptions = options.ToObject<ListOptions>();
         var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
@@ -124,29 +131,20 @@ public class JsonStream : PluginBase
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override Task DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var listOptions = options.ToObject<ListOptions>();
-        listOptions.Fields = string.Empty;
-        listOptions.IncludeMetadata = false;
-
-        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        _jsonHandler.Delete(dataTable, filteredData);
-
-        var x = GetDict(dataTable);
-        var unFlatten = _jsonHandler.UnFlattenJson(x);
-        var data = _serializer.Serialize(unFlatten);
-        //var result = filteredData.CreateListFromTable();
-        //var data = _csvHandler.ToCsv(dataTable, delimiter);
-        await File.WriteAllTextAsync(path, data, cancellationToken);
+        throw new NotImplementedException();
     }
 
     public override async Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
         var listOptions = options.ToObject<ListOptions>();
         var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
@@ -158,6 +156,12 @@ public class JsonStream : PluginBase
     public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
         var listOptions = options.ToObject<ListOptions>();
         var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
 
@@ -168,19 +172,166 @@ public class JsonStream : PluginBase
         return result;
     }
 
-    public override Task<TransferData> PrepareTransferring(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        var listOptions = options.ToObject<ListOptions>();
+        var transferOptions = options.ToObject<TransferOptions>();
+        var transferDataRows = new List<TransferDataRow>();
+        var indentedOptions = options.ToObject<IndentedOptions>();
+
+        var transferKind = GetTransferKind(transferOptions.TransferKind);
+
+        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow is true;
+        var jsonContentBase64 = string.Empty;
+
+        if (!isSeparateJsonPerRow)
+        {
+            var jsonContent = _jsonHandler.ToJson(filteredData, indentedOptions.Indented);
+            jsonContentBase64 = jsonContent.ToBase64String();
+        }
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var itemArray = row.ItemArray;
+            var content = _jsonHandler.ToJson(row, indentedOptions.Indented);
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = $"{Guid.NewGuid().ToString()}{Extension}",
+                ContentType = ContentType,
+                Content = content.ToBase64String(),
+                Items = itemArray
+            });
+        }
+
+        var result = new TransferData
+        {
+            PluginNamespace = Namespace,
+            PluginType = Type,
+            Kind = transferKind,
+            ContentType = isSeparateJsonPerRow ? string.Empty : ContentType,
+            Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
+            Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
+            Rows = transferDataRows
+        };
+
+        return result;
     }
 
     public override Task TransferAsync(string entity, PluginOptions? options, TransferData transferData, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        var transferOptions = options.ToObject<TransferOptions>();
+        var indentedOptions = options.ToObject<IndentedOptions>();
+
+        var dataTable = new DataTable();
+        foreach (var column in transferData.Columns)
+        {
+            dataTable.Columns.Add(column);
+        }
+
+        if (transferOptions.SeparateJsonPerRow is true)
+        {
+            if (!PathHelper.IsDirectory(path))
+                throw new StreamException(Resources.ThePathIsNotDirectory);
+
+            foreach (var row in transferData.Rows)
+            {
+                if (row.Items != null)
+                {
+                    var newRow = dataTable.NewRow();
+                    newRow.ItemArray = row.Items;
+                    dataTable.Rows.Add(newRow);
+                    File.WriteAllText(PathHelper.Combine(path, row.Key), _jsonHandler.ToJson(newRow, indentedOptions.Indented));
+                }
+            }
+        }
+        else
+        {
+            if (!PathHelper.IsFile(path))
+                throw new StreamException(Resources.ThePathIsNotFile);
+
+            foreach (var row in transferData.Rows)
+            {
+                if (row.Items != null)
+                {
+                    dataTable.Rows.Add(row.Items);
+                }
+            }
+
+            File.WriteAllText(path, _jsonHandler.ToJson(dataTable, indentedOptions.Indented));
+        }
+
+        return Task.CompletedTask;
     }
 
-    public override Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        var listOptions = options.ToObject<ListOptions>();
+        var compressOptions = options.ToObject<CompressOptions>();
+        var indentedOptions = options.ToObject<IndentedOptions>();
+
+        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        if (filteredData.Rows.Count <= 0)
+            throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
+
+        var compressEntries = new List<CompressEntry>();
+
+        if (compressOptions.SeparateJsonPerRow is false)
+        {
+            var content = _jsonHandler.ToJson(filteredData, indentedOptions.Indented);
+            compressEntries.Add(new CompressEntry
+            {
+                Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                ContentType = ContentType,
+                Stream = StringToStream(content),
+            });
+
+            return compressEntries;
+        }
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+        foreach (DataRow row in filteredData.Rows)
+        {
+            try
+            {
+                var content = _jsonHandler.ToJson(row, indentedOptions.Indented);
+                compressEntries.Add(new CompressEntry
+                {
+                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                    ContentType = ContentType,
+                    Stream = StringToStream(content),
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                continue;
+            }
+        }
+
+        return compressEntries;
     }
 
     #region internal methods
@@ -344,6 +495,26 @@ public class JsonStream : PluginBase
         return dt.AsEnumerable()
             .ToDictionary<DataRow, string, string>(row => row.Field<string>(0),
                 row => row.Field<string>(1));
+    }
+
+    private TransferKind GetTransferKind(string? kind)
+    {
+        if (string.IsNullOrEmpty(kind))
+            return TransferKind.Copy;
+        
+        if (string.Equals(kind, "copy", StringComparison.OrdinalIgnoreCase))
+            return TransferKind.Copy;
+
+        if (string.Equals(kind, "move", StringComparison.OrdinalIgnoreCase))
+            return TransferKind.Move;
+
+        throw new StreamException("Transfer Kind is not supported. Its value should be Copy or Move.");
+    }
+
+    private System.IO.Stream StringToStream(string input)
+    {
+        byte[] byteArray = Encoding.UTF8.GetBytes(input);
+        return new MemoryStream(byteArray);
     }
     #endregion
 }
