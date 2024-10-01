@@ -274,6 +274,6 @@
     <value>Entity should be not empty.</value>
   </data>
   <data name="AddConfigValidatorNameValueOnlyAcceptLatingCharacters" xml:space="preserve">
-    <value>Config name only accept lating characters and numbers as well as underscore. In addition, the name must starting with alphabet.</value>
+    <value>The config name accepts only Latin letters and numbers, as well as underscores. Additionally, the name must begin with an alphabetic letter.</value>
   </data>
 </root>
