@@ -20,6 +20,10 @@ public class AddConfigValidator : AbstractValidator<AddConfigRequest>
             .NotEmpty()
             .WithMessage(Resources.AddConfigValidatorNameValueMustNotNullOrEmptyMessage);
 
+        RuleFor(request => request.Name)
+            .Matches("^[a-zA-Z][a-zA-Z0-9_]*$")
+            .WithMessage(Resources.AddConfigValidatorNameValueOnlyAcceptLatingCharacters);
+
         RuleFor(request => request.Type)
             .NotNull()
             .NotEmpty()

@@ -88,6 +88,15 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Config name only accept lating characters and numbers as well as underscore. In addition, the name must starting with alphabet..
+        /// </summary>
+        internal static string AddConfigValidatorNameValueOnlyAcceptLatingCharacters {
+            get {
+                return ResourceManager.GetString("AddConfigValidatorNameValueOnlyAcceptLatingCharacters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The entered type is not valid or not exist!.
         /// </summary>
         internal static string AddConfigValidatorTypeValueIsNotValid {
