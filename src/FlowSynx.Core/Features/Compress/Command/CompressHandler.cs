@@ -4,7 +4,7 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Commons;
 using FlowSynx.Plugin.Services;
-using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.IO.Compression;
 using FlowSynx.Plugin.Abstractions;
@@ -15,17 +15,17 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
 {
     private readonly ILogger<CompressHandler> _logger;
     private readonly IPluginService _storageService;
-    private readonly IPluginInstanceParser _pluginInstanceParser;
+    private readonly IPluginContexParser _pluginContexParser;
     private readonly Func<CompressType, ICompression> _compressionFactory;
 
-    public CompressHandler(ILogger<CompressHandler> logger, IPluginService storageService, 
-        IPluginInstanceParser pluginInstanceParser, Func<CompressType, ICompression> compressionFactory)
+    public CompressHandler(ILogger<CompressHandler> logger, IPluginService storageService,
+        IPluginContexParser pluginContexParser, Func<CompressType, ICompression> compressionFactory)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(storageService, nameof(storageService));
         _logger = logger;
         _storageService = storageService;
-        _pluginInstanceParser = pluginInstanceParser;
+        _pluginContexParser = pluginContexParser;
         _compressionFactory = compressionFactory;
     }
 
@@ -33,21 +33,21 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
     {
         try
         {
-            var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
+            var contex = _pluginContexParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
 
             var compressType = string.IsNullOrEmpty(request.CompressType)
                 ? CompressType.Zip
                 : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-            var compressEntries = await _storageService.CompressAsync(pluginInstance, options, cancellationToken);
+            var compressEntries = await _storageService.CompressAsync(contex, options, cancellationToken);
 
             var enumerable = compressEntries.ToList();
             if (!enumerable.Any())
                 throw new Exception(Resources.NoDataToCompress);
 
             var compressResult = await _compressionFactory(compressType).Compress(enumerable);
-            var response = new CompressResult { Content = compressResult.Stream, ContentType = compressResult.ContentType };
+            var response = new CompressResult { Content = compressResult.Content, ContentType = compressResult.ContentType };
 
             return await Result<CompressResult>.SuccessAsync(response, Resources.CompressHandlerSuccessfullyCompress);
         }

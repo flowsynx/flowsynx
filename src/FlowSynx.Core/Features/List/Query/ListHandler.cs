@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Services;
-using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Plugin.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.List.Query;
@@ -12,24 +12,24 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<obj
 {
     private readonly ILogger<ListHandler> _logger;
     private readonly IPluginService _storageService;
-    private readonly IPluginInstanceParser _pluginInstanceParser;
+    private readonly IPluginContexParser _pluginContexParser;
 
-    public ListHandler(ILogger<ListHandler> logger, IPluginService storageService, IPluginInstanceParser pluginInstanceParser)
+    public ListHandler(ILogger<ListHandler> logger, IPluginService storageService, IPluginContexParser pluginContexParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(storageService, nameof(storageService));
         _logger = logger;
         _storageService = storageService;
-        _pluginInstanceParser = pluginInstanceParser;
+        _pluginContexParser = pluginContexParser;
     }
 
     public async Task<Result<IEnumerable<object>>> Handle(ListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var pluginInstance = _pluginInstanceParser.Parse(request.Entity);
+            var contex = _pluginContexParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            var response = await _storageService.ListAsync(pluginInstance, options, cancellationToken);
+            var response = await _storageService.ListAsync(contex, options, cancellationToken);
             return await Result<IEnumerable<object>>.SuccessAsync(response);
         }
         catch (Exception ex)

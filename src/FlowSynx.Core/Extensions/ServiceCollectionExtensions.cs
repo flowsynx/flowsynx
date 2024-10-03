@@ -14,7 +14,7 @@ using FlowSynx.Plugin.Extensions;
 using FlowSynx.Plugin.Services;
 using FlowSynx.Plugin.Storage.Amazon.S3;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
-using FlowSynx.Core.Parers.PluginInstancing;
+using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Plugin.Storage.Azure.Blobs;
 using FlowSynx.Plugin.Storage.Azure.Files;
 using FlowSynx.Plugin.Storage.Google.Cloud;
@@ -23,6 +23,7 @@ using FlowSynx.Plugin.Storage.Memory;
 using FlowSynx.Plugin.Stream.Csv;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Plugin.Stream.Json;
+using FlowSynx.Plugin;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -49,8 +50,8 @@ public static class ServiceCollectionExtensions
             .AddCompressions()
             .AddPluginService()
             .AddDatFilter()
-            .AddMultiKeyCache<string, string, PluginInstance>()
-            .AddScoped<IPluginInstanceParser, PluginInstanceParser>()
+            .AddMultiKeyCache<string, string, PluginContex>()
+            .AddScoped<IPluginContexParser, PluginContexParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>();
 

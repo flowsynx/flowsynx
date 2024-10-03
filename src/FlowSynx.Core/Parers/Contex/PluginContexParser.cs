@@ -4,6 +4,7 @@ using FlowSynx.Core.Exceptions;
 using FlowSynx.Core.Parers.Namespace;
 using FlowSynx.IO.Cache;
 using FlowSynx.IO.Serialization;
+using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Manager;
@@ -12,24 +13,24 @@ using FlowSynx.Plugin.Storage.LocalFileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Core.Parers.PluginInstancing;
+namespace FlowSynx.Core.Parers.Contex;
 
-internal class PluginInstanceParser : IPluginInstanceParser
+internal class PluginContexParser : IPluginContexParser
 {
-    private readonly ILogger<PluginInstanceParser> _logger;
+    private readonly ILogger<PluginContexParser> _logger;
     private readonly IConfigurationManager _configurationManager;
     private readonly IPluginsManager _pluginsManager;
     private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
     private readonly INamespaceParser _namespaceParser;
-    private readonly IMultiKeyCache<string, string, PluginInstance> _multiKeyCache;
+    private readonly IMultiKeyCache<string, string, PluginContex> _multiKeyCache;
     private readonly ISerializer _serializer;
     private readonly IServiceProvider _serviceProvider;
     private const string ParserSeparator = "://";
     private const string PipelineSeparator = "|";
 
-    public PluginInstanceParser(ILogger<PluginInstanceParser> logger, IConfigurationManager configurationManager,
+    public PluginContexParser(ILogger<PluginContexParser> logger, IConfigurationManager configurationManager,
         IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
-        INamespaceParser namespaceParser, IMultiKeyCache<string, string, PluginInstance> multiKeyCache, 
+        INamespaceParser namespaceParser, IMultiKeyCache<string, string, PluginContex> multiKeyCache, 
         ISerializer serializer, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
@@ -50,7 +51,7 @@ internal class PluginInstanceParser : IPluginInstanceParser
         _serviceProvider = serviceProvider;
     }
 
-    public PluginInstance Parse(string path)
+    public PluginContex Parse(string path)
     {
         try
         {
@@ -111,7 +112,7 @@ internal class PluginInstanceParser : IPluginInstanceParser
         return (LocalFileSystemStorage)localFileSystem;
     }
 
-    private PluginInstance CreateStorageNormsInfoInstance(PluginBase plugin, string configName, PluginSpecifications? specifications, string entity)
+    private PluginContex CreateStorageNormsInfoInstance(PluginBase plugin, string configName, PluginSpecifications? specifications, string entity)
     {
         var primaryKey = plugin.Id.ToString();
         var secondaryKey = GenerateSecondaryKey(configName, specifications, entity);
@@ -124,7 +125,7 @@ internal class PluginInstanceParser : IPluginInstanceParser
             return cachedStorageNormsInfo;
         }
 
-        var storageNormsInfo = new PluginInstance(plugin, entity, specifications);
+        var storageNormsInfo = new PluginContex(plugin, entity, specifications);
         _multiKeyCache.Set(primaryKey, secondaryKey, storageNormsInfo);
         storageNormsInfo.Initialize();
         return storageNormsInfo;
