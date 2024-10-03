@@ -5,16 +5,16 @@ namespace FlowSynx.Plugin.Storage.Memory;
 
 public class MemoryEntity: StorageEntity
 {
-    public Stream Content { get; }
+    public byte[]? Content { get; }
 
     public MemoryEntity(string fullPath) : base(fullPath, StorageEntityItemKind.Directory)
     {
-        Content = Stream.Null;
+        Content = null;
         Size = 0;
         ModifiedTime = DateTimeOffset.Now;
     }
 
-    public MemoryEntity(string fullPath, Stream content) : base(fullPath, StorageEntityItemKind.File)
+    public MemoryEntity(string fullPath, byte[] content) : base(fullPath, StorageEntityItemKind.File)
     {
         Content = content;
         Size = content.Length;
@@ -23,12 +23,12 @@ public class MemoryEntity: StorageEntity
 
     public MemoryEntity(string folderPath, string name) : base(folderPath, name, StorageEntityItemKind.Directory)
     {
-        Content = Stream.Null;
+        Content = null;
         Size = 0;
         ModifiedTime = DateTimeOffset.Now;
     }
 
-    public MemoryEntity(string folderPath, string name, Stream content) : base(folderPath, name, StorageEntityItemKind.File)
+    public MemoryEntity(string folderPath, string name, byte[] content) : base(folderPath, name, StorageEntityItemKind.File)
     {
         Content = content;
         Size = content.Length;

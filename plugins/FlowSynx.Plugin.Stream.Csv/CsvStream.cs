@@ -352,7 +352,7 @@ public class CsvStream : PluginBase
             {
                 Name = $"{Guid.NewGuid().ToString()}{Extension}",
                 ContentType = ContentType,
-                Stream = StringToStream(content),
+                Content = StringToByteArray(content),
             });
 
             return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
@@ -368,7 +368,7 @@ public class CsvStream : PluginBase
                 {
                     Name = $"{Guid.NewGuid().ToString()}{Extension}",
                     ContentType = ContentType,
-                    Stream = StringToStream(content),
+                    Content = StringToByteArray(content),
                 });
             }
             catch (Exception ex)
@@ -406,10 +406,9 @@ public class CsvStream : PluginBase
         return result;
     }
 
-    private System.IO.Stream StringToStream(string input)
+    private byte[] StringToByteArray(string input)
     {
-        byte[] byteArray = Encoding.UTF8.GetBytes(input);
-        return new MemoryStream(byteArray);
+        return Encoding.UTF8.GetBytes(input);
     }
 
     private DataTable GetDataTable(string entity, string delimiter, 

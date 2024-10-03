@@ -305,7 +305,7 @@ public class JsonStream : PluginBase
             {
                 Name = $"{Guid.NewGuid().ToString()}{Extension}",
                 ContentType = ContentType,
-                Stream = StringToStream(content),
+                Content = StringToByteArray(content),
             });
 
             return compressEntries;
@@ -321,7 +321,7 @@ public class JsonStream : PluginBase
                 {
                     Name = $"{Guid.NewGuid().ToString()}{Extension}",
                     ContentType = ContentType,
-                    Stream = StringToStream(content),
+                    Content = StringToByteArray(content),
                 });
             }
             catch (Exception ex)
@@ -511,10 +511,9 @@ public class JsonStream : PluginBase
         throw new StreamException("Transfer Kind is not supported. Its value should be Copy or Move.");
     }
 
-    private System.IO.Stream StringToStream(string input)
+    private byte[] StringToByteArray(string input)
     {
-        byte[] byteArray = Encoding.UTF8.GetBytes(input);
-        return new MemoryStream(byteArray);
+        return Encoding.UTF8.GetBytes(input);
     }
     #endregion
 }

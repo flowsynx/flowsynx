@@ -190,7 +190,7 @@ public class AzureBlobStorage : PluginBase
 
             return new StorageRead()
             {
-                Stream = new StorageStream(response),
+                Content = response.StreamToByteArray(),
                 ContentType = blobProperties.Value.ContentType,
                 Extension = fileExtension,
                 Md5 = blobProperties.Value.ContentHash?.ToHexString(),
@@ -371,7 +371,7 @@ public class AzureBlobStorage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -494,7 +494,7 @@ public class AzureBlobStorage : PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)

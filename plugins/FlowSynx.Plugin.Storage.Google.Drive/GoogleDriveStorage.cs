@@ -199,7 +199,7 @@ public class GoogleDriveStorage : PluginBase
 
             return new StorageRead()
             {
-                Stream = new StorageStream(ms),
+                Content = ms.ToArray(),
                 ContentType = fileRequest.MimeType,
                 Extension = fileExtension,
                 Md5 = fileRequest.Md5Checksum,
@@ -335,7 +335,7 @@ public class GoogleDriveStorage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -458,7 +458,7 @@ public class GoogleDriveStorage : PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)

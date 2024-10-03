@@ -145,7 +145,7 @@ public class LocalFileSystemStorage : PluginBase
         var fileExtension = file.Extension;
         var result = new StorageRead()
         {
-            Stream = new StorageStream(File.OpenRead(path)),
+            Content = File.ReadAllBytes(path),
             ContentType = fileExtension.GetContentType(),
             Extension = fileExtension,
             Md5 = HashHelper.Md5.GetHash(file)
@@ -251,7 +251,7 @@ public class LocalFileSystemStorage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -378,7 +378,7 @@ public class LocalFileSystemStorage : PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)

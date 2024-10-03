@@ -29,7 +29,7 @@ public class Read : EndpointGroupBase
             http.Response.Headers.Append("flowsynx-md5", read.Md5);
 
         return read.ContentType != null ?
-            Results.Stream(read.Stream, read.ContentType) :
-            Results.Stream(read.Stream);
+            Results.Bytes(read.Content, read.ContentType) :
+            Results.Bytes(read.Content);
     }
 }

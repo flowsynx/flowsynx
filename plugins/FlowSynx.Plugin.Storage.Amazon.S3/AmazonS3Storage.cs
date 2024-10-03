@@ -153,7 +153,7 @@ public class AmazonS3Storage : PluginBase
             
             return new StorageRead()
             {
-                Stream = new StorageStream(ms),
+                Content = ms.ToArray(),
                 ContentType = response.Headers.ContentType,
                 Extension = fileExtension,
                 Md5 = response.ETag.Trim('\"'),
@@ -275,7 +275,7 @@ public class AmazonS3Storage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -398,7 +398,7 @@ public class AmazonS3Storage : PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)

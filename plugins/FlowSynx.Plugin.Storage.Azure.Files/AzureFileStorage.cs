@@ -202,7 +202,7 @@ public class AzureFileStorage : PluginBase
 
             return new StorageRead()
             {
-                Stream = new StorageStream(stream),
+                Content = stream.StreamToByteArray(),
                 ContentType = fileProperties.Value.ContentType,
                 Extension = fileExtension,
                 Md5 = fileProperties.Value.ContentHash?.ToHexString(),
@@ -354,7 +354,7 @@ public class AzureFileStorage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -477,7 +477,7 @@ public class AzureFileStorage : PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)

@@ -24,7 +24,7 @@ public class Compress : EndpointGroupBase
             http.Response.Headers.Append("flowsynx-md5", resultData.Md5);
 
         return resultData.ContentType != null ?
-            Results.Stream(resultData.Content, resultData.ContentType) :
-            Results.Stream(resultData.Content);
+            Results.Bytes(resultData.Content, resultData.ContentType) :
+            Results.Bytes(resultData.Content);
     }
 }

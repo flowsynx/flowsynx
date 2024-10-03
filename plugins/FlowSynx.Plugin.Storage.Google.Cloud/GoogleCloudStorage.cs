@@ -155,7 +155,7 @@ public class GoogleCloudStorage :PluginBase
 
             return new StorageRead()
             {
-                Stream = new StorageStream(ms),
+                Content = ms.ToArray(),
                 ContentType = response.ContentType,
                 Extension = fileExtension,
                 Md5 = Convert.FromBase64String(response.Md5Hash).ToHexString(),
@@ -277,7 +277,7 @@ public class GoogleCloudStorage :PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -400,7 +400,7 @@ public class GoogleCloudStorage :PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)

@@ -125,7 +125,7 @@ public class MemoryStorage : PluginBase
         if (dataValue is not string data)
             throw new StorageException(Resources.EnteredDataIsNotValid);
 
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+        var dataStream = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
         var pathParts = GetPartsAsync(path);
         var isBucketExist = BucketExists(pathParts.BucketName);
@@ -171,7 +171,7 @@ public class MemoryStorage : PluginBase
 
         var result = new StorageRead
         {
-            Stream = new StorageStream(memoryEntity.Content),
+            Content = memoryEntity.Content,
             ContentType = memoryEntity.ContentType,
             Extension = extension
         };
@@ -298,7 +298,7 @@ public class MemoryStorage : PluginBase
                     var read = await ReadAsync(fullPath, null, cancellationToken);
                     if (read is StorageRead storageRead)
                     {
-                        content = storageRead.Stream.ConvertToBase64();
+                        content = storageRead.Content.ToBase64String();
                         contentType = storageRead.ContentType;
                     }
                 }
@@ -421,7 +421,7 @@ public class MemoryStorage : PluginBase
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Stream = storageRead.Stream,
+                    Content = storageRead.Content,
                 });
             }
             catch (Exception ex)
