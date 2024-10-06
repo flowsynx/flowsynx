@@ -1,9 +1,10 @@
 ﻿using FlowSynx.Parsers;
 using FlowSynx.Plugin;
+using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Core.Parers.Contex;
 
-public interface IPluginContexParser : IParser
+public interface IPluginContextParser : IParser
 {
-    PluginContex Parse(string path);
+    PluginContext Parse(string path);
 }

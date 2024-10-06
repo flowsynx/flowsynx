@@ -8,29 +8,28 @@ using FlowSynx.Plugin;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Plugin.Manager;
-using FlowSynx.Plugin.Services;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Core.Parers.Contex;
 
-internal class PluginContexParser : IPluginContexParser
+internal class PluginContextParser : IPluginContextParser
 {
-    private readonly ILogger<PluginContexParser> _logger;
+    private readonly ILogger<PluginContextParser> _logger;
     private readonly IConfigurationManager _configurationManager;
     private readonly IPluginsManager _pluginsManager;
     private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
     private readonly INamespaceParser _namespaceParser;
-    private readonly IMultiKeyCache<string, string, PluginContex> _multiKeyCache;
+    private readonly ICache<string, PluginBase> _cache;
     private readonly ISerializer _serializer;
     private readonly IServiceProvider _serviceProvider;
     private const string ParserSeparator = "://";
     private const string PipelineSeparator = "|";
 
-    public PluginContexParser(ILogger<PluginContexParser> logger, IConfigurationManager configurationManager,
+    public PluginContextParser(ILogger<PluginContextParser> logger, IConfigurationManager configurationManager,
         IPluginsManager pluginsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
-        INamespaceParser namespaceParser, IMultiKeyCache<string, string, PluginContex> multiKeyCache, 
+        INamespaceParser namespaceParser, ICache<string, PluginBase> cache, 
         ISerializer serializer, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
@@ -38,7 +37,7 @@ internal class PluginContexParser : IPluginContexParser
         EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
         EnsureArg.IsNotNull(localStorageLogger, nameof(localStorageLogger));
         EnsureArg.IsNotNull(namespaceParser, nameof(namespaceParser));
-        EnsureArg.IsNotNull(multiKeyCache, nameof(multiKeyCache));
+        EnsureArg.IsNotNull(cache, nameof(cache));
         EnsureArg.IsNotNull(serializer, nameof(serializer));
         EnsureArg.IsNotNull(serviceProvider, nameof(serviceProvider));
         _logger = logger;
@@ -46,12 +45,12 @@ internal class PluginContexParser : IPluginContexParser
         _pluginsManager = pluginsManager;
         _localStorageLogger = localStorageLogger;
         _namespaceParser = namespaceParser;
-        _multiKeyCache = multiKeyCache;
+        _cache = cache;
         _serializer = serializer;
         _serviceProvider = serviceProvider;
     }
 
-    public PluginContex Parse(string path)
+    public PluginContext Parse(string path)
     {
         try
         {
@@ -60,7 +59,8 @@ internal class PluginContexParser : IPluginContexParser
 
             if (segments.Length != 2)
             {
-                return CreateStorageNormsInfoInstance(GetLocalFileSystemStoragePlugin(), "LocalFileSystem", null, path);
+                var localFileSystemPlugin = GetPluginBase(LocalFileSystemStoragePlugin(), "LocalFileSystem", null);
+                return CreatePluginContext(localFileSystemPlugin, null, path);
             }
 
             entity = segments[1];
@@ -83,20 +83,25 @@ internal class PluginContexParser : IPluginContexParser
             var primaryConfigNameExist = _configurationManager.IsExist(primaryConfigName);
 
             if (!primaryConfigNameExist)
-                throw new StorageNormsParserException($"{primaryConfigName} is exist.");
+                throw new StorageNormsParserException($"{primaryConfigName} is not exist.");
 
             var primaryConfig = _configurationManager.Get(primaryConfigName);
             if (_namespaceParser.Parse(primaryConfig.Type) == PluginNamespace.Stream)
             {
                 var secondaryConfigNameExist = _configurationManager.IsExist(secondaryConfigName);
                 if (!secondaryConfigNameExist)
-                    throw new StorageNormsParserException($"{secondaryConfigName} is exist.");
+                    throw new StorageNormsParserException($"{secondaryConfigName} is not exist.");
             }
-            else if (_namespaceParser.Parse(primaryConfig.Type) != PluginNamespace.Stream && !string.IsNullOrEmpty(secondaryConfigName))
-                throw new StorageNormsParserException($"{primaryConfigName} not supporting multiple entity.");
 
-            var plugin = _pluginsManager.Get(primaryConfig.Type);
-            return CreateStorageNormsInfoInstance(plugin, segments[0], primaryConfig.Specifications.ToSpecifications(), entity);
+            var secondaryConfig = _configurationManager.Get(secondaryConfigName);
+
+            var primaryPlugin = _pluginsManager.Get(primaryConfig.Type);
+            var secondaryPlugin = _pluginsManager.Get(secondaryConfig.Type);
+
+            var invokePlugin = GetPluginBase(primaryPlugin, primaryConfigName, primaryConfig.Specifications.ToSpecifications());
+            var inferiorPlugin = GetPluginBase(secondaryPlugin, secondaryConfigName, secondaryConfig.Specifications.ToSpecifications());
+
+            return CreatePluginContext(invokePlugin, inferiorPlugin, entity);
         }
         catch (Exception ex)
         {
@@ -105,36 +110,40 @@ internal class PluginContexParser : IPluginContexParser
         }
     }
 
-    private LocalFileSystemStorage GetLocalFileSystemStoragePlugin()
+    private LocalFileSystemStorage LocalFileSystemStoragePlugin()
     {
         var ipluginsServices = _serviceProvider.GetServices<PluginBase>();
         var localFileSystem = ipluginsServices.First(o => o.GetType() == typeof(LocalFileSystemStorage));
         return (LocalFileSystemStorage)localFileSystem;
     }
 
-    private PluginContex CreateStorageNormsInfoInstance(PluginBase plugin, string configName, PluginSpecifications? specifications, string entity)
+    private PluginBase GetPluginBase(PluginBase plugin, string configName, PluginSpecifications? specifications)
     {
-        var primaryKey = plugin.Id.ToString();
-        var secondaryKey = GenerateSecondaryKey(configName, specifications, entity);
-        var cachedStorageNormsInfo = _multiKeyCache.Get(primaryKey, secondaryKey);
+        var key = GenerateKey(plugin.Id, configName, specifications);
+        var cachedPluginContext = _cache.Get(key);
 
-        if (cachedStorageNormsInfo != null)
+        if (cachedPluginContext != null)
         {
             _logger.LogInformation($"{plugin.Name} is found in Cache.");
-            cachedStorageNormsInfo.Entity = entity;
-            return cachedStorageNormsInfo;
+            return cachedPluginContext;
         }
 
-        var storageNormsInfo = new PluginContex(plugin, entity, specifications);
-        _multiKeyCache.Set(primaryKey, secondaryKey, storageNormsInfo);
-        storageNormsInfo.Initialize();
-        return storageNormsInfo;
+        plugin.Specifications = specifications;
+        plugin.Initialize();
+        _cache.Set(key, plugin);
+        return plugin;
     }
 
-    private string GenerateSecondaryKey(string configName, object? specifications, string entity)
+    private PluginContext CreatePluginContext(PluginBase invokePlugin, PluginBase? inferiorPlugin, string entity)
     {
-        var specificationsValue = specifications == null ? $"{configName}-{entity}" : $"{configName}-{entity}-{_serializer.Serialize(specifications)}";
-        return Security.HashHelper.Md5.GetHash(specificationsValue);
+        return new PluginContext(invokePlugin, inferiorPlugin, entity);
+    }
+
+    private string GenerateKey(Guid pluginId, string configName, object? pluginSpecifications)
+    {
+        var key = $"{pluginId}-{configName}";
+        var result = pluginSpecifications == null ? key : $"{key}-{_serializer.Serialize(pluginSpecifications)}";
+        return Security.HashHelper.Md5.GetHash(result);
     }
 
     public void Dispose() { }
