@@ -11,7 +11,6 @@ using FlowSynx.IO;
 using FlowSynx.Parsers;
 using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Plugin.Extensions;
-using FlowSynx.Plugin.Services;
 using FlowSynx.Plugin.Storage.Amazon.S3;
 using FlowSynx.Plugin.Storage.LocalFileSystem;
 using FlowSynx.Core.Parers.Contex;
@@ -48,10 +47,10 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            .AddPluginService()
+            //.AddPluginService()
             .AddDatFilter()
-            .AddMultiKeyCache<string, string, PluginContex>()
-            .AddScoped<IPluginContexParser, PluginContexParser>()
+            .AddCache<string, PluginBase>()
+            .AddScoped<IPluginContextParser, PluginContextParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>();
 

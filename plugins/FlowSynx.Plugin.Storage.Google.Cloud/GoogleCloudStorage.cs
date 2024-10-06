@@ -54,131 +54,48 @@ public class GoogleCloudStorage :PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<object> About(PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task CreateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        if (_cloudStorageSpecifications == null)
-            throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
-
-        var pathParts = GetPartsAsync(path);
-        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
-        if (!isExist)
-        {
-            await _client.CreateBucketAsync(_cloudStorageSpecifications.ProjectId, pathParts.BucketName,
-                cancellationToken: cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
-        }
-
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
+        await CreateEntityAsync(entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var writeOptions = options.ToObject<WriteOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
-            if (isExist && writeOptions.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-            await _client.UploadObjectAsync(pathParts.BucketName, pathParts.RelativePath, 
-                null, dataStream, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        await WriteEntityAsync(entity, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var readOptions = options.ToObject<ReadOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var ms = new MemoryStream();
-            var response = await _client.DownloadObjectAsync(pathParts.BucketName, 
-                pathParts.RelativePath, ms, cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            var fileExtension = Path.GetExtension(path);
-
-            ms.Position = 0;
-
-            return new StorageRead()
-            {
-                Content = ms.ToArray(),
-                ContentType = response.ContentType,
-                Extension = fileExtension,
-                Md5 = Convert.FromBase64String(response.Md5Hash).ToHexString(),
-            };
-        }
-        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        return await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task DeleteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
+        var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var entities = dataTable.CreateListFromTable();
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -199,8 +116,8 @@ public class GoogleCloudStorage :PluginBase
         }
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -225,28 +142,22 @@ public class GoogleCloudStorage :PluginBase
         }
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
-
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var result = filteredData.CreateListFromTable();
-
-        return result;
+        var filteredData = await FilteredEntitiesAsync(entity, listOptions, cancellationToken);
+        return filteredData.CreateListFromTable();
     }
 
-    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
-            CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var readOptions = options.ToObject<ReadOptions>();
+
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -274,12 +185,8 @@ public class GoogleCloudStorage :PluginBase
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadAsync(fullPath, null, cancellationToken);
-                    if (read is StorageRead storageRead)
-                    {
-                        content = storageRead.Content.ToBase64String();
-                        contentType = storageRead.ContentType;
-                    }
+                    var read = await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
                 }
             }
 
@@ -318,26 +225,30 @@ public class GoogleCloudStorage :PluginBase
         return result;
     }
 
-    public override async Task TransferAsync(string entity, PluginOptions? options,
-        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, TransferData transferData, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         if (transferData.PluginNamespace == PluginNamespace.Storage)
         {
+            var createOptions = options.ToObject<CreateOptions>();
+            var writeOptions = options.ToObject<WriteOptions>();
+
             foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
                 {
                     case null:
                     case "":
-                        await CreateAsync(item.Key, options, cancellationToken);
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         break;
                     case var data:
                         var parentPath = PathHelper.GetParent(item.Key);
                         if (!PathHelper.IsRootPath(parentPath))
                         {
-                            await CreateAsync(parentPath, options, cancellationToken);
-                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                            await WriteEntityAsync(item.Key, writeOptions, data, cancellationToken).ConfigureAwait(false);
                             _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         }
 
@@ -368,12 +279,12 @@ public class GoogleCloudStorage :PluginBase
         }
     }
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
@@ -389,18 +300,13 @@ public class GoogleCloudStorage :PluginBase
 
             try
             {
-                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
-                if (stream is not StorageRead storageRead)
-                {
-                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                    continue;
-                }
-
+                var readOptions = new ReadOptions { Hashing = false };
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Content = storageRead.Content,
+                    Content = content.Content,
                 });
             }
             catch (Exception ex)
@@ -596,18 +502,117 @@ public class GoogleCloudStorage :PluginBase
         while (request.PageToken != null);
     }
 
-    private string[] DeserializeToStringArray(string? fields)
+    private async Task CreateEntityAsync(string entity, CreateOptions options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        if (_cloudStorageSpecifications == null)
+            throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
+
+        var pathParts = GetPartsAsync(path);
+        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
+        if (!isExist)
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            await _client.CreateBucketAsync(_cloudStorageSpecifications.ProjectId, pathParts.BucketName,
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
         }
+
+        if (!string.IsNullOrEmpty(pathParts.RelativePath))
+        {
+            await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task WriteEntityAsync(string entity, WriteOptions options, 
+        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException(Resources.EnteredDataIsNotValid);
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+
+            if (isExist && options.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            await _client.UploadObjectAsync(pathParts.BucketName, pathParts.RelativePath,
+                null, dataStream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var ms = new MemoryStream();
+            var response = await _client.DownloadObjectAsync(pathParts.BucketName,
+                pathParts.RelativePath, ms, cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            ms.Position = 0;
+
+            return new ReadResult
+            {
+                Content = ms.ToArray(),
+                ContentHash = Convert.FromBase64String(response.Md5Hash).ToHexString(),
+            };
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
+    CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+
+        var dataFilterOptions = GetDataFilterOptions(options);
+        var dataTable = storageEntities.ToDataTable();
+        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
+    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -661,5 +666,17 @@ public class GoogleCloudStorage :PluginBase
 
         return dataFilterOptions;
     }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
+    }
+
     #endregion
 }

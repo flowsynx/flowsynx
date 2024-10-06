@@ -43,101 +43,46 @@ public class CsvStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<object> About(PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override Task CreateAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StreamException(Resources.ThePathIsNotFile);
-
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
-            throw new StreamException(Resources.ThePathIsNotCsvFile);
-
-        if (File.Exists(path) && createOptions.Overwrite is false)
-            throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
-        var headers = _deserializer.Deserialize<string[]>(createOptions.Headers);
-        var data = string.Join(delimiter, headers);
-        using (var writer = File.AppendText(path))
-        {
-            writer.WriteLine(data);
-        }
-
-        return Task.CompletedTask;
+        await CreateEntityAsync(entity, createOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StreamException(Resources.ThePathIsNotFile);
-
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
-            throw new StreamException(Resources.ThePathIsNotCsvFile);
-
         var writeOptions = options.ToObject<WriteOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
-        var dataValue = dataOptions.GetObjectValue();
-
-        if (dataValue is null)
-            throw new StreamException(Resources.ForWritingDataMustHaveValue);
-
-        if (dataValue is not string)
-            throw new StreamException(Resources.DataMustBeInValidFormat);
-
-        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
-        var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
-        using (var writer = File.AppendText(path))
-        {
-            foreach (var rowData in dataList)
-            {
-                writer.WriteLine(string.Join(delimiter, rowData));
-            }
-        }
-
-        return Task.CompletedTask;
+        await WriteEntityAsync(entity, writeOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
-
-        var streamEntities = entities.ToList();
-        return streamEntities.Count() switch
-        {
-            <= 0 => throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)),
-            > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
-            _ => streamEntities.First()
-        };
+        var readOptions = options.ToObject<ReadOptions>();
+        var listOptions = options.ToObject<ListOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        return await ReadEntityAsync(entity, readOptions, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task DeleteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -167,17 +112,18 @@ public class CsvStream : PluginBase
         await File.WriteAllTextAsync(path, data, cancellationToken);
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
-        var streamEntities = entities.ToList();
-        return streamEntities.Any();
+        var listOptions = options.ToObject<ListOptions>();
+        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var filteredData = await FilteredEntitiesAsync(entity, listOptions, delimiterOptions, cancellationToken)
+                                .ConfigureAwait(false);
+        return filteredData.Rows.Count > 0;
     }
 
-    public override Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -203,8 +149,8 @@ public class CsvStream : PluginBase
         return Task.FromResult<IEnumerable<object>>(result);
     }
 
-    public override Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -265,8 +211,9 @@ public class CsvStream : PluginBase
         return Task.FromResult(result);
     }
 
-    public override Task TransferAsync(string entity, PluginOptions? options,
-        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
+    public override Task TransferAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, TransferData transferData,
+        CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var transferOptions = options.ToObject<TransferOptions>();
@@ -316,8 +263,8 @@ public class CsvStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -395,26 +342,135 @@ public class CsvStream : PluginBase
         return string.IsNullOrEmpty(delimiter) ? configDelimiter : delimiter;
     }
 
-    private string[] DeserializeToStringArray(string? fields)
+    private Task CreateEntityAsync(string entity, CreateOptions createOptions,
+        DelimiterOptions delimiterOptions, CancellationToken cancellationToken)
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        if (File.Exists(path) && createOptions.Overwrite is false)
+            throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+        var headers = _deserializer.Deserialize<string[]>(createOptions.Headers);
+        var data = string.Join(delimiter, headers);
+        using (var writer = File.AppendText(path))
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            writer.WriteLine(data);
         }
 
+        return Task.CompletedTask;
+    }
+
+    private Task WriteEntityAsync(string entity, WriteOptions writeOptions,
+        DelimiterOptions delimiterOptions, object dataOptions,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+
+        if (dataValue is null)
+            throw new StreamException(Resources.ForWritingDataMustHaveValue);
+
+        if (dataValue is not string)
+            throw new StreamException(Resources.DataMustBeInValidFormat);
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+        var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
+        using (var writer = File.AppendText(path))
+        {
+            foreach (var rowData in dataList)
+            {
+                writer.WriteLine(string.Join(delimiter, rowData));
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions readOptions,
+        ListOptions listOptions, DelimiterOptions delimiterOptions, 
+        CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await FilteredEntitiesAsync(path, listOptions, delimiterOptions, cancellationToken)
+                            .ConfigureAwait(false);
+
+        return entities.Rows.Count switch
+        {
+            <= 0 => throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)),
+            > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
+            _ => new ReadResult { Content = ObjectToByteArray(entities) }
+        };
+    }
+
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions listOptions,
+        DelimiterOptions delimiterOptions, CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var dataTable = await EntitiesAsync(path, listOptions, delimiterOptions, cancellationToken);
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
+        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
         return result;
     }
 
-    private byte[] StringToByteArray(string input)
+    private Task<DataTable> EntitiesAsync(string entity, ListOptions options,
+        DelimiterOptions delimiterOptions, CancellationToken cancellationToken)
     {
-        return Encoding.UTF8.GetBytes(input);
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+        var dataTable = GetDataTable(path, delimiter, options.IncludeMetadata, cancellationToken);
+
+        return Task.FromResult(dataTable);
     }
 
     private DataTable GetDataTable(string entity, string delimiter, 
         bool? includeMetadata, CancellationToken cancellationToken = new CancellationToken())
     {
         return _csvHandler.Load(entity, delimiter, includeMetadata);
+    }
+
+    private byte[] ObjectToByteArray(object obj)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        using (MemoryStream stream = new MemoryStream())
+        {
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                // Convert object to byte array here
+                writer.Write((int)obj);
+            }
+            return stream.ToArray();
+        }
     }
 
     private DataFilterOptions GetDataFilterOptions(ListOptions options)
@@ -430,6 +486,22 @@ public class CsvStream : PluginBase
         };
 
         return dataFilterOptions;
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
+    }
+
+    private byte[] StringToByteArray(string input)
+    {
+        return Encoding.UTF8.GetBytes(input);
     }
     #endregion
 }

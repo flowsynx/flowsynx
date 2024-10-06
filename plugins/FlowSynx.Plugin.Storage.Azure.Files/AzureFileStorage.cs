@@ -50,8 +50,8 @@ public class AzureFileStorage : PluginBase
         return Task.CompletedTask;
     }
 
-    public override async Task<object> About(PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<object> About(PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         long totalUsed;
         var aboutOptions = options.ToObject<AboutOptions>();
@@ -73,175 +73,42 @@ public class AzureFileStorage : PluginBase
         };
     }
 
-    public override async Task CreateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        try
-        {
-            var pathParts = PathHelper.Split(path);
-            string proceedPath = string.Empty;
-            foreach (var part in pathParts)
-            {
-                proceedPath = PathHelper.Combine(proceedPath, part);
-                ShareDirectoryClient directoryClient = _client.GetDirectoryClient(proceedPath);
-                await directoryClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
-            }
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
+        await CreateEntityAsync(entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var writeOptions = options.ToObject<WriteOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
-
-        try
-        {
-            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-
-            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-            if (isExist && writeOptions.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-            var parentPath = PathHelper.GetParent(path) + PathHelper.PathSeparatorString;
-            await CreateAsync(parentPath, null, cancellationToken);
-
-            await fileClient.CreateAsync(maxSize: dataStream.Length, cancellationToken: cancellationToken);
-            await fileClient.UploadRangeAsync(new HttpRange(0, dataStream.Length), dataStream, cancellationToken: cancellationToken);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidResourceName)
-        {
-            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
+        await WriteEntityAsync(entity, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var readOptions = options.ToObject<ReadOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-
-            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var stream = await fileClient.OpenReadAsync(cancellationToken: cancellationToken);
-            var fileProperties = await fileClient.GetPropertiesAsync(cancellationToken);
-            var fileExtension = Path.GetExtension(path);
-
-            return new StorageRead()
-            {
-                Content = stream.StreamToByteArray(),
-                ContentType = fileProperties.Value.ContentType,
-                Extension = fileExtension,
-                Md5 = fileProperties.Value.ContentHash?.ToHexString(),
-            };
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
-        {
-            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
-        }
+        return await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task DeleteAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
+        var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var entities = dataTable.CreateListFromTable();
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -262,8 +129,8 @@ public class AzureFileStorage : PluginBase
         }
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrWhiteSpace(path))
@@ -302,28 +169,22 @@ public class AzureFileStorage : PluginBase
         }
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
-
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var result = filteredData.CreateListFromTable();
-
-        return result;
+        var filteredData = await FilteredEntitiesAsync(entity, listOptions, cancellationToken).ConfigureAwait(false);
+        return filteredData.CreateListFromTable();
     }
 
-    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
-            CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var readOptions = options.ToObject<ReadOptions>();
+
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -351,12 +212,8 @@ public class AzureFileStorage : PluginBase
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadAsync(fullPath, null, cancellationToken);
-                    if (read is StorageRead storageRead)
-                    {
-                        content = storageRead.Content.ToBase64String();
-                        contentType = storageRead.ContentType;
-                    }
+                    var read = await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
                 }
             }
 
@@ -395,26 +252,30 @@ public class AzureFileStorage : PluginBase
         return result;
     }
 
-    public override async Task TransferAsync(string entity, PluginOptions? options,
-        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, TransferData transferData, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         if (transferData.PluginNamespace == PluginNamespace.Storage)
         {
+            var createOptions = options.ToObject<CreateOptions>();
+            var writeOptions = options.ToObject<WriteOptions>();
+
             foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
                 {
                     case null:
                     case "":
-                        await CreateAsync(item.Key, options, cancellationToken);
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         break;
                     case var data:
                         var parentPath = PathHelper.GetParent(item.Key);
                         if (!PathHelper.IsRootPath(parentPath))
                         {
-                            await CreateAsync(parentPath, options, cancellationToken);
-                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                            await WriteEntityAsync(item.Key, writeOptions, data, cancellationToken).ConfigureAwait(false);
                             _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         }
 
@@ -445,12 +306,12 @@ public class AzureFileStorage : PluginBase
         }
     }
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
@@ -466,18 +327,13 @@ public class AzureFileStorage : PluginBase
 
             try
             {
-                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
-                if (stream is not StorageRead storageRead)
-                {
-                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                    continue;
-                }
-
+                var readOptions = new ReadOptions { Hashing = false };
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Content = storageRead.Content,
+                    Content = content.Content,
                 });
             }
             catch (Exception ex)
@@ -565,18 +421,170 @@ public class AzureFileStorage : PluginBase
         await dirClient.DeleteAsync(cancellationToken);
     }
 
-    private string[] DeserializeToStringArray(string? fields)
+    private async Task CreateEntityAsync(string entity, CreateOptions options,
+        CancellationToken cancellationToken = new CancellationToken())
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var path = PathHelper.ToUnixPath(entity);
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        try
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            var pathParts = PathHelper.Split(path);
+            string proceedPath = string.Empty;
+            foreach (var part in pathParts)
+            {
+                proceedPath = PathHelper.Combine(proceedPath, part);
+                ShareDirectoryClient directoryClient = _client.GetDirectoryClient(proceedPath);
+                await directoryClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+            }
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    private async Task WriteEntityAsync(string entity, WriteOptions options, 
+        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException(Resources.EnteredDataIsNotValid);
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+
+        try
+        {
+            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
+
+            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
+            if (isExist && options.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            var createOption = new CreateOptions { Hidden = false };
+            var parentPath = PathHelper.GetParent(path) + PathHelper.PathSeparatorString;
+            await CreateEntityAsync(parentPath, createOption, cancellationToken);
+
+            await fileClient.CreateAsync(maxSize: dataStream.Length, cancellationToken: cancellationToken);
+            await fileClient.UploadRangeAsync(new HttpRange(0, dataStream.Length), dataStream, cancellationToken: cancellationToken);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidResourceName)
+        {
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
+
+            var isExist = await fileClient.ExistsAsync(cancellationToken: cancellationToken);
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var stream = await fileClient.OpenReadAsync(cancellationToken: cancellationToken);
+            var fileProperties = await fileClient.GetPropertiesAsync(cancellationToken);
+
+            return new ReadResult
+            {
+                Content = stream.StreamToByteArray(),
+                ContentHash = fileProperties.Value.ContentHash?.ToHexString(),
+            };
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ShareNotFound)
+        {
+            throw new StorageException(string.Format(Resources.ShareItemNotFound, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.InvalidUri)
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ParentNotFound)
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingFile);
+        }
+    }
+
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
+    CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+
+        var dataFilterOptions = GetDataFilterOptions(options);
+        var dataTable = storageEntities.ToDataTable();
+        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
+    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -648,6 +656,17 @@ public class AzureFileStorage : PluginBase
         };
 
         return dataFilterOptions;
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }

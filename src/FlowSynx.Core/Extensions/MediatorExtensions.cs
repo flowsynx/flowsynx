@@ -40,7 +40,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<object>> Read(this IMediator mediator, ReadRequest request, CancellationToken cancellationToken)
+    public static Task<Result<ReadResult>> Read(this IMediator mediator, ReadRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

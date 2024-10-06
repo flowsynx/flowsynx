@@ -45,12 +45,14 @@ public class JsonStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(PluginOptions? options, CancellationToken cancellationToken = default)
+    public override Task<object> About(PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override Task CreateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override Task CreateAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
@@ -69,7 +71,9 @@ public class JsonStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task WriteAsync(string entity, PluginOptions? options, object dataOptions, CancellationToken cancellationToken = default)
+    public override Task WriteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, object dataOptions, 
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -103,7 +107,8 @@ public class JsonStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -122,21 +127,42 @@ public class JsonStream : PluginBase
         {
             <= 0 => throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)),
             > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
-            _ => result.First()
+            _ => new ReadResult { Content = ObjectToByteArray(result.First()) }
         };
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    private byte[] ObjectToByteArray(object obj)
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        using (MemoryStream stream = new MemoryStream())
+        {
+            using (BinaryWriter writer = new BinaryWriter(stream))
+            {
+                // Convert object to byte array here
+                writer.Write((int)obj);
+            }
+            return stream.ToArray();
+        }
+    }
+
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override Task DeleteAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override Task DeleteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -153,7 +179,8 @@ public class JsonStream : PluginBase
         return result.Any();
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -172,7 +199,8 @@ public class JsonStream : PluginBase
         return result;
     }
 
-    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -229,7 +257,9 @@ public class JsonStream : PluginBase
         return result;
     }
 
-    public override Task TransferAsync(string entity, PluginOptions? options, TransferData transferData, CancellationToken cancellationToken = default)
+    public override Task TransferAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, TransferData transferData, 
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         var transferOptions = options.ToObject<TransferOptions>();
@@ -276,7 +306,8 @@ public class JsonStream : PluginBase
         return Task.CompletedTask;
     }
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options, CancellationToken cancellationToken = default)
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))

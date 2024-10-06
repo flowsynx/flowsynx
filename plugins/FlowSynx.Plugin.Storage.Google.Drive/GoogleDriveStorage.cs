@@ -56,8 +56,8 @@ public class GoogleDriveStorage : PluginBase
         return Task.CompletedTask;
     }
 
-    public override async Task<object> About(PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<object> About(PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var aboutOptions = options.ToObject<AboutOptions>();
         long totalSpace = 0, totalUsed = 0, totalFree = 0;
@@ -88,141 +88,42 @@ public class GoogleDriveStorage : PluginBase
         };
     }
 
-    public override async Task CreateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var pathParts = PathHelper.Split(path);
-        var folderName = pathParts.Last();
-        var parentFolder = string.Join(PathHelper.PathSeparatorString, pathParts.SkipLast(1));
-        var folder = await GetDriveFolder(parentFolder, cancellationToken).ConfigureAwait(false);
-
-        if (!folder.Exist) 
-            throw new StorageException(string.Format(Resources.ParentPathIsNotExist, parentFolder));
-
-        var driveFolder = new DriveFile
-        {
-            Name = folderName,
-            MimeType = "application/vnd.google-apps.folder",
-            Parents = new string[] { folder.Id }
-        };
-
-        var command = _client.Files.Create(driveFolder);
-        var file = await command.ExecuteAsync(cancellationToken);
-        _logger.LogInformation($"Directory '{folderName}' was created successfully.");
+        await CreateEntityAsync(entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, object dataOptions,
         CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var writeOptions = options.ToObject<WriteOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
-
-        try
-        {
-            var file = await GetDriveFile(path, cancellationToken);
-            if (file.Exist && writeOptions.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-            var fileName = Path.GetFileName(path) ?? "";
-            if (string.IsNullOrEmpty(fileName))
-                throw new StorageException(string.Format(Resources.TePathIsNotFile, path));
-
-            var directoryPath = PathHelper.GetParent(path) ?? "";
-            var folderId = await GetFolderId(directoryPath, cancellationToken).ConfigureAwait(false);
-
-            var fileMime = Path.GetExtension(fileName).GetContentType();
-            var driveFile = new DriveFile
-            {
-                Name = fileName,
-                MimeType = fileMime,
-                Parents = new[] { folderId }
-            };
-
-            var request = _client.Files.Create(driveFile, dataStream, fileMime);
-            var response = await request.UploadAsync(cancellationToken).ConfigureAwait(false);
-            if (response.Status != UploadStatus.Completed)
-                throw response.Exception;
-        }
-        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        await WriteEntityAsync(entity, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
         var readOptions = options.ToObject<ReadOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            var file = await GetDriveFile(path, cancellationToken);
-            if (!file.Exist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var ms = new MemoryStream();
-            var request = _client.Files.Get(file.Id);
-            request.Fields = "id, name, mimeType, md5Checksum";
-            var fileRequest = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
-            request.Download(ms);
-            var fileExtension = Path.GetExtension(path);
-
-            ms.Position = 0;
-
-            return new StorageRead()
-            {
-                Content = ms.ToArray(),
-                ContentType = fileRequest.MimeType,
-                Extension = fileExtension,
-                Md5 = fileRequest.Md5Checksum,
-            };
-        }
-        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        return await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task DeleteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
+        var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var entities = dataTable.CreateListFromTable();
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -258,53 +159,28 @@ public class GoogleDriveStorage : PluginBase
         }
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var path = PathHelper.ToUnixPath(entity);
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        try
-        {
-            if (PathHelper.IsFile(path))
-            {
-                var fileExist = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
-                return fileExist.Exist;
-            }
-
-            var folderExist = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
-            return folderExist.Exist;
-        }
-        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        return await ExistEntityAsync(entity, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var listOptions = options.ToObject<ListOptions>();
+        var filteredData = await FilteredEntitiesAsync(entity, listOptions, cancellationToken);
+        return filteredData.CreateListFromTable();
+    }
+
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var readOptions = options.ToObject<ReadOptions>();
 
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var result = filteredData.CreateListFromTable();
-
-        return result;
-    }
-
-    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
-            CancellationToken cancellationToken = new CancellationToken())
-    {
-        var path = PathHelper.ToUnixPath(entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -332,12 +208,8 @@ public class GoogleDriveStorage : PluginBase
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadAsync(fullPath, null, cancellationToken);
-                    if (read is StorageRead storageRead)
-                    {
-                        content = storageRead.Content.ToBase64String();
-                        contentType = storageRead.ContentType;
-                    }
+                    var read = await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
                 }
             }
 
@@ -376,26 +248,30 @@ public class GoogleDriveStorage : PluginBase
         return result;
     }
 
-    public override async Task TransferAsync(string entity, PluginOptions? options,
-        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, TransferData transferData, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
         if (transferData.PluginNamespace == PluginNamespace.Storage)
         {
+            var createOptions = options.ToObject<CreateOptions>();
+            var writeOptions = options.ToObject<WriteOptions>();
+
             foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
                 {
                     case null:
                     case "":
-                        await CreateAsync(item.Key, options, cancellationToken);
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         break;
                     case var data:
                         var parentPath = PathHelper.GetParent(item.Key);
                         if (!PathHelper.IsRootPath(parentPath))
                         {
-                            await CreateAsync(parentPath, options, cancellationToken);
-                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                            await WriteEntityAsync(item.Key, writeOptions, data, cancellationToken).ConfigureAwait(false);
                             _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         }
 
@@ -426,12 +302,12 @@ public class GoogleDriveStorage : PluginBase
         }
     }
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
@@ -447,18 +323,13 @@ public class GoogleDriveStorage : PluginBase
 
             try
             {
-                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
-                if (stream is not StorageRead storageRead)
-                {
-                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                    continue;
-                }
-
+                var readOptions = new ReadOptions { Hashing = false };
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Content = storageRead.Content,
+                    Content = content.Content,
                 });
             }
             catch (Exception ex)
@@ -617,18 +488,159 @@ public class GoogleDriveStorage : PluginBase
         }
     }
 
-    private string[] DeserializeToStringArray(string? fields)
+    private async Task CreateEntityAsync(string entity, CreateOptions options, 
+        CancellationToken cancellationToken = new CancellationToken())
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        var pathParts = PathHelper.Split(path);
+        var folderName = pathParts.Last();
+        var parentFolder = string.Join(PathHelper.PathSeparatorString, pathParts.SkipLast(1));
+        var folder = await GetDriveFolder(parentFolder, cancellationToken).ConfigureAwait(false);
+
+        if (!folder.Exist)
+            throw new StorageException(string.Format(Resources.ParentPathIsNotExist, parentFolder));
+
+        var driveFolder = new DriveFile
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            Name = folderName,
+            MimeType = "application/vnd.google-apps.folder",
+            Parents = new string[] { folder.Id }
+        };
+
+        var command = _client.Files.Create(driveFolder);
+        var file = await command.ExecuteAsync(cancellationToken);
+        _logger.LogInformation($"Directory '{folderName}' was created successfully.");
+    }
+
+    private async Task WriteEntityAsync(string entity, WriteOptions options, 
+        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException(Resources.EnteredDataIsNotValid);
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+
+        try
+        {
+            var file = await GetDriveFile(path, cancellationToken);
+            if (file.Exist && options.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            var fileName = Path.GetFileName(path) ?? "";
+            if (string.IsNullOrEmpty(fileName))
+                throw new StorageException(string.Format(Resources.TePathIsNotFile, path));
+
+            var directoryPath = PathHelper.GetParent(path) ?? "";
+            var folderId = await GetFolderId(directoryPath, cancellationToken).ConfigureAwait(false);
+
+            var fileMime = Path.GetExtension(fileName).GetContentType();
+            var driveFile = new DriveFile
+            {
+                Name = fileName,
+                MimeType = fileMime,
+                Parents = new[] { folderId }
+            };
+
+            var request = _client.Files.Create(driveFile, dataStream, fileMime);
+            var response = await request.UploadAsync(cancellationToken).ConfigureAwait(false);
+            if (response.Status != UploadStatus.Completed)
+                throw response.Exception;
         }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var file = await GetDriveFile(path, cancellationToken);
+            if (!file.Exist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var ms = new MemoryStream();
+            var request = _client.Files.Get(file.Id);
+            request.Fields = "id, name, mimeType, md5Checksum";
+            var fileRequest = await request.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            request.Download(ms);
+            var fileExtension = Path.GetExtension(path);
+
+            ms.Position = 0;
+
+            return new ReadResult
+            {
+                Content = ms.ToArray(),
+                ContentHash = fileRequest.Md5Checksum,
+            };
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<bool> ExistEntityAsync(string entity, CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            if (PathHelper.IsFile(path))
+            {
+                var fileExist = await GetDriveFile(path, cancellationToken).ConfigureAwait(false);
+                return fileExist.Exist;
+            }
+
+            var folderExist = await GetDriveFolder(path, cancellationToken).ConfigureAwait(false);
+            return folderExist.Exist;
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
+CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+
+        var dataFilterOptions = GetDataFilterOptions(options);
+        var dataTable = storageEntities.ToDataTable();
+        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
+    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
         CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -661,6 +673,17 @@ public class GoogleDriveStorage : PluginBase
         };
 
         return dataFilterOptions;
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }

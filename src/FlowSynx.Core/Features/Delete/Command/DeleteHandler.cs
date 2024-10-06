@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Plugin.Services;
 using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Plugin.Abstractions.Extensions;
 
@@ -11,25 +10,22 @@ namespace FlowSynx.Core.Features.Delete.Command;
 internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<Unit>>
 {
     private readonly ILogger<DeleteHandler> _logger;
-    private readonly IPluginService _pluginService;
-    private readonly IPluginContexParser _pluginContexParser;
+    private readonly IPluginContextParser _pluginContextParser;
 
-    public DeleteHandler(ILogger<DeleteHandler> logger, IPluginService pluginService, IPluginContexParser pluginContexParser)
+    public DeleteHandler(ILogger<DeleteHandler> logger, IPluginContextParser pluginContextParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginService, nameof(pluginService));
         _logger = logger;
-        _pluginService = pluginService;
-        _pluginContexParser = pluginContexParser;
+        _pluginContextParser = pluginContextParser;
     }
 
     public async Task<Result<Unit>> Handle(DeleteRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _pluginContexParser.Parse(request.Entity);
+            var contex = _pluginContextParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            await _pluginService.DeleteAsync(contex, options, cancellationToken);
+            await contex.InvokePlugin.DeleteAsync(contex.Entity, contex.InferiorPlugin, options, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

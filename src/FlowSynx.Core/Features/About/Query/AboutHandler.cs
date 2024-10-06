@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Plugin.Abstractions.Extensions;
-using FlowSynx.Plugin.Services;
 using FlowSynx.Core.Parers.Contex;
 
 namespace FlowSynx.Core.Features.About.Query;
@@ -11,25 +10,22 @@ namespace FlowSynx.Core.Features.About.Query;
 internal class AboutHandler : IRequestHandler<AboutRequest, Result<object>>
 {
     private readonly ILogger<AboutHandler> _logger;
-    private readonly IPluginService _pluginService;
-    private readonly IPluginContexParser _pluginContexParser;
+    private readonly IPluginContextParser _pluginContextParser;
 
-    public AboutHandler(ILogger<AboutHandler> logger, IPluginService pluginService, IPluginContexParser pluginContexParser)
+    public AboutHandler(ILogger<AboutHandler> logger, IPluginContextParser pluginContextParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginService, nameof(pluginService));
         _logger = logger;
-        _pluginService = pluginService;
-        _pluginContexParser = pluginContexParser;
+        _pluginContextParser = pluginContextParser;
     }
 
     public async Task<Result<object>> Handle(AboutRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _pluginContexParser.Parse(request.Entity);
+            var contex = _pluginContextParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            var response = await _pluginService.About(contex, options, cancellationToken);
+            var response = await contex.InvokePlugin.About(contex.InferiorPlugin, options, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

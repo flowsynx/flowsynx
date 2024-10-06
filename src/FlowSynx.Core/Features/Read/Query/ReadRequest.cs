@@ -4,7 +4,7 @@ using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Core.Features.Read.Query;
 
-public class ReadRequest : IRequest<Result<object>>
+public class ReadRequest : IRequest<Result<ReadResult>>
 {
     public required string Entity { get; set; }
     public PluginOptions? Options { get; set; } = new PluginOptions();

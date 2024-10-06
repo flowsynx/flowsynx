@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Commons;
-using FlowSynx.Plugin.Services;
 using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.IO.Compression;
@@ -14,18 +13,15 @@ namespace FlowSynx.Core.Features.Compress.Command;
 internal class CompressHandler : IRequestHandler<CompressRequest, Result<CompressResult>>
 {
     private readonly ILogger<CompressHandler> _logger;
-    private readonly IPluginService _storageService;
-    private readonly IPluginContexParser _pluginContexParser;
+    private readonly IPluginContextParser _pluginContextParser;
     private readonly Func<CompressType, ICompression> _compressionFactory;
 
-    public CompressHandler(ILogger<CompressHandler> logger, IPluginService storageService,
-        IPluginContexParser pluginContexParser, Func<CompressType, ICompression> compressionFactory)
+    public CompressHandler(ILogger<CompressHandler> logger, IPluginContextParser pluginContextParser, 
+        Func<CompressType, ICompression> compressionFactory)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(storageService, nameof(storageService));
         _logger = logger;
-        _storageService = storageService;
-        _pluginContexParser = pluginContexParser;
+        _pluginContextParser = pluginContextParser;
         _compressionFactory = compressionFactory;
     }
 
@@ -33,14 +29,15 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
     {
         try
         {
-            var contex = _pluginContexParser.Parse(request.Entity);
+            var contex = _pluginContextParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
 
             var compressType = string.IsNullOrEmpty(request.CompressType)
                 ? CompressType.Zip
                 : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-            var compressEntries = await _storageService.CompressAsync(contex, options, cancellationToken);
+            var compressEntries = await contex.InvokePlugin.CompressAsync(contex.Entity, contex.InferiorPlugin, 
+                options, cancellationToken);
 
             var enumerable = compressEntries.ToList();
             if (!enumerable.Any())

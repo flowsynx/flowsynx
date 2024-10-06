@@ -54,144 +54,62 @@ public class AmazonS3Storage : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<object> About(PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task CreateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var createFilters = options.ToObject<CreateOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var pathParts = GetPartsAsync(path);
-        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
-        if (!isExist)
-        {
-            await _client.PutBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
-        }
-
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            var isFolderExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-            if (!isFolderExist)
-                await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
+        var createOptions = options.ToObject<CreateOptions>();
+        await CreateEntityAsync(entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, object dataOptions, 
+        CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
         var writeFilters = options.ToObject<WriteOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
-            if (isExist && writeFilters.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-            await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName,
-                pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        await WriteEntityAsync(entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var readFilters = options.ToObject<ReadOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var request = new GetObjectRequest { BucketName = pathParts.BucketName, Key = pathParts.RelativePath };
-            var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-            var fileExtension = Path.GetExtension(path);
-
-            var ms = new MemoryStream();
-            await response.ResponseStream.CopyToAsync(ms, cancellationToken);
-            ms.Seek(0, SeekOrigin.Begin);
-            
-            return new StorageRead()
-            {
-                Content = ms.ToArray(),
-                ContentType = response.Headers.ContentType,
-                Extension = fileExtension,
-                Md5 = response.ETag.Trim('\"'),
-            };
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        var readOptions = options.ToObject<ReadOptions>();
+        return await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task DeleteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+        var listptions = options.ToObject<ListOptions>();
         var deleteFilters = options.ToObject<DeleteOptions>();
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
 
+        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var entities = dataTable.CreateListFromTable();
         var storageEntities = entities.ToList();
+
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var result = new List<string>();
         foreach (var entityItem in storageEntities)
         {
-            if (entityItem is not StorageList list)
+            if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            if (await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false))
-            {
-                result.Add(list.Id);
-            }
+            if (await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false))
+                result.Add(storageEntity.Id);
         }
 
         if (deleteFilters.Purge is true)
@@ -205,46 +123,28 @@ public class AmazonS3Storage : PluginBase
         }
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        return await ExistEntityAsync(entity, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
+    {
+        var listOptions = options.ToObject<ListOptions>();
+        var filteredData = await FilteredEntitiesAsync(entity, listOptions, cancellationToken);
+        return filteredData.CreateListFromTable();
+    }
+
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var readOptions = options.ToObject<ReadOptions>();
 
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var result = filteredData.CreateListFromTable();
-
-        return result;
-    }
-
-    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
-            CancellationToken cancellationToken = new CancellationToken())
-    {
-        var path = PathHelper.ToUnixPath(entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -272,12 +172,8 @@ public class AmazonS3Storage : PluginBase
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadAsync(fullPath, null, cancellationToken);
-                    if (read is StorageRead storageRead)
-                    {
-                        content = storageRead.Content.ToBase64String();
-                        contentType = storageRead.ContentType;
-                    }
+                    var read = await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
                 }
             }
 
@@ -316,26 +212,29 @@ public class AmazonS3Storage : PluginBase
         return result;
     }
 
-    public override async Task TransferAsync(string entity, PluginOptions? options,
-        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, TransferData transferData, CancellationToken cancellationToken = default)
     {
         if (transferData.PluginNamespace == PluginNamespace.Storage)
         {
+            var createOptions = options.ToObject<CreateOptions>();
+            var writeOptions = options.ToObject<WriteOptions>();
+
             foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
                 {
                     case null:
                     case "":
-                        await CreateAsync(item.Key, options, cancellationToken);
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         break;
                     case var data:
                         var parentPath = PathHelper.GetParent(item.Key);
                         if (!PathHelper.IsRootPath(parentPath))
                         {
-                            await CreateAsync(parentPath, options, cancellationToken);
-                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                            await WriteEntityAsync(item.Key, writeOptions, data, cancellationToken).ConfigureAwait(false);
                             _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         }
 
@@ -366,12 +265,13 @@ public class AmazonS3Storage : PluginBase
         }
     }
     
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
@@ -387,18 +287,13 @@ public class AmazonS3Storage : PluginBase
 
             try
             {
-                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
-                if (stream is not StorageRead storageRead)
-                {
-                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                    continue;
-                }
-
+                var readOptions = new ReadOptions { Hashing = false };
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Content = storageRead.Content,
+                    Content = content.Content,
                 });
             }
             catch (Exception ex)
@@ -584,8 +479,21 @@ public class AmazonS3Storage : PluginBase
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
+    CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+
+        var dataFilterOptions = GetDataFilterOptions(options);
+        var dataTable = storageEntities.ToDataTable();
+        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        return result;
+    }
+
+    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -622,6 +530,119 @@ public class AmazonS3Storage : PluginBase
         ).ConfigureAwait(false);
 
         return storageEntities;
+    }
+
+    private async Task CreateEntityAsync(string entity, CreateOptions options, 
+        CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        var pathParts = GetPartsAsync(path);
+        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
+        if (!isExist)
+        {
+            await _client.PutBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
+        }
+
+        if (!string.IsNullOrEmpty(pathParts.RelativePath))
+        {
+            var isFolderExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+            if (!isFolderExist)
+                await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task WriteEntityAsync(string entity, WriteOptions options, 
+        object dataOptions, CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException(Resources.EnteredDataIsNotValid);
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+
+            if (isExist && options.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName,
+                pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
+        CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var request = new GetObjectRequest { BucketName = pathParts.BucketName, Key = pathParts.RelativePath };
+            var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+
+            var ms = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(ms, cancellationToken);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            return new ReadResult
+            {
+                Content = ms.ToArray(),
+                ContentHash = options.Hashing is true ? response.ETag.Trim('\"') : string.Empty,
+            };
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<bool> ExistEntityAsync(string entity, CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
     }
 
     private DataFilterOptions GetDataFilterOptions(ListOptions options)

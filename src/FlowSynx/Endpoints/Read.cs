@@ -22,14 +22,15 @@ public class Read : EndpointGroupBase
         if (!result.Succeeded) return Results.NotFound(result);
 
         var resultData = result.Data;
-        if (resultData is not StorageRead read)
-            return Results.BadRequest(result);
+        //if (resultData is not StorageRead read)
+        //    return Results.BadRequest(result);
 
-        if (!string.IsNullOrEmpty(read.Md5))
-            http.Response.Headers.Append("flowsynx-md5", read.Md5);
+        if (!string.IsNullOrEmpty(resultData.ContentHash))
+            http.Response.Headers.Append("flowsynx-md5", resultData.ContentHash);
 
-        return read.ContentType != null ?
-            Results.Bytes(read.Content, read.ContentType) :
-            Results.Bytes(read.Content);
+        return Results.Bytes(resultData.Content);
+        //return read.ContentType != null ?
+        //    Results.Bytes(read.Content, read.ContentType) :
+        //    Results.Bytes(read.Content);
     }
 }

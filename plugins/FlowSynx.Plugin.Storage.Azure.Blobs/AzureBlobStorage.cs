@@ -51,189 +51,48 @@ public class AzureBlobStorage : PluginBase
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task<object> About(PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task CreateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
         var createOptions = options.ToObject<CreateOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var container = _client.GetBlobContainerClient(pathParts.ContainerName);
-            await container.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-
-            if (!string.IsNullOrEmpty(pathParts.RelativePath))
-                _logger.LogWarning($"The Azure Blob storage doesn't support create empty directory.");
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
-        {
-            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
-        {
-            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
-        }
+        await CreateEntityAsync(entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(string entity, PluginOptions? options, object dataOptions,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, object dataOptions, 
+        CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
         var writeOptions = options.ToObject<WriteOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
-            BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
-
-            var isExist = await blockBlobClient.ExistsAsync(cancellationToken);
-
-            if (isExist && writeOptions.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-            await blockBlobClient.UploadAsync(dataStream, cancellationToken: cancellationToken).ConfigureAwait(false);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
-        {
-            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
-        {
-            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
-        }
+        await WriteEntityAsync(entity, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<object> ReadAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
         var readOptions = options.ToObject<ReadOptions>();
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
-            BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
-
-            var isExist = await blockBlobClient.ExistsAsync(cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var response = await blockBlobClient.OpenReadAsync(cancellationToken: cancellationToken);
-            var blobProperties = await blockBlobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
-            var fileExtension = Path.GetExtension(path);
-
-            return new StorageRead()
-            {
-                Content = response.StreamToByteArray(),
-                ContentType = blobProperties.Value.ContentType,
-                Extension = fileExtension,
-                Md5 = blobProperties.Value.ContentHash?.ToHexString(),
-            };
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
-        {
-            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
-        {
-            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
-        }
+        return await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task DeleteAsync(string entity, PluginBase? inferiorPlugin,
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+        var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
-        var entities = await ListAsync(path, options, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var entities = dataTable.CreateListFromTable();
 
         var storageEntities = entities.ToList();
         if (!storageEntities.Any())
@@ -272,75 +131,27 @@ public class AzureBlobStorage : PluginBase
         }
     }
 
-    public override async Task<bool> ExistAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
-
-            if (PathHelper.IsFile(path))
-            {
-                BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
-                return await blockBlobClient.ExistsAsync(cancellationToken: cancellationToken);
-            }
-
-            var blobItems = container.GetBlobsByHierarchy(prefix: pathParts.RelativePath);
-            return blobItems.Select(x=>x.IsPrefix).Any();
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
-        {
-            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
-        {
-            throw new StorageException(Resources.InvalidPathEntered);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
-        {
-            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
-        }
-        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
-        {
-            throw new StorageException(Resources.ParentNotFound);
-        }
-        catch (RequestFailedException)
-        {
-            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
-        }
+        return await ExistEntityAsync(entity, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
+    {
+        var listOptions = options.ToObject<ListOptions>();
+        var filteredData = await FilteredEntitiesAsync(entity, listOptions, cancellationToken);
+        return filteredData.CreateListFromTable();
+    }
+
+    public override async Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
-
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var result = filteredData.CreateListFromTable();
-
-        return result;
-    }
-
-    public override async Task<TransferData> PrepareTransferring(string entity, PluginOptions? options,
-            CancellationToken cancellationToken = new CancellationToken())
-    {
-        var path = PathHelper.ToUnixPath(entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var readOptions = options.ToObject<ReadOptions>();
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -368,12 +179,8 @@ public class AzureBlobStorage : PluginBase
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadAsync(fullPath, null, cancellationToken);
-                    if (read is StorageRead storageRead)
-                    {
-                        content = storageRead.Content.ToBase64String();
-                        contentType = storageRead.ContentType;
-                    }
+                    var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
                 }
             }
 
@@ -412,26 +219,30 @@ public class AzureBlobStorage : PluginBase
         return result;
     }
 
-    public override async Task TransferAsync(string entity, PluginOptions? options,
-        TransferData transferData, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, TransferData transferData, 
+        CancellationToken cancellationToken = default)
     {
         if (transferData.PluginNamespace == PluginNamespace.Storage)
         {
+            var createOptions = options.ToObject<CreateOptions>();
+            var writeOptions = options.ToObject<WriteOptions>();
+
             foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
                 {
                     case null:
                     case "":
-                        await CreateAsync(item.Key, options, cancellationToken);
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         break;
                     case var data:
                         var parentPath = PathHelper.GetParent(item.Key);
                         if (!PathHelper.IsRootPath(parentPath))
                         {
-                            await CreateAsync(parentPath, options, cancellationToken);
-                            await WriteAsync(item.Key, options, data, cancellationToken);
+                            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                            await WriteEntityAsync(item.Key, writeOptions, data, cancellationToken).ConfigureAwait(false);
                             _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                         }
 
@@ -462,12 +273,12 @@ public class AzureBlobStorage : PluginBase
         }
     }
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, PluginBase? inferiorPlugin, 
+        PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
@@ -483,18 +294,19 @@ public class AzureBlobStorage : PluginBase
 
             try
             {
-                var stream = await ReadAsync(entityItem.FullPath, options, cancellationToken);
-                if (stream is not StorageRead storageRead)
-                {
-                    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                    continue;
-                }
+                var readOptions = new ReadOptions { Hashing = false };
+                var stream = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken);
+                //if (stream is not StorageRead storageRead)
+                //{
+                //    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
+                //    continue;
+                //}
 
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
                     ContentType = entityItem.ContentType,
-                    Content = storageRead.Content,
+                    Content = stream.Content,
                 });
             }
             catch (Exception ex)
@@ -597,6 +409,162 @@ public class AzureBlobStorage : PluginBase
         return container;
     }
 
+    private async Task CreateEntityAsync(string entity, CreateOptions options, 
+        CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var container = _client.GetBlobContainerClient(pathParts.ContainerName);
+            await container.CreateIfNotExistsAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(pathParts.RelativePath))
+                _logger.LogWarning($"The Azure Blob storage doesn't support create empty directory.");
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
+        {
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
+        {
+            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
+        }
+    }
+
+    private async Task WriteEntityAsync(string entity, WriteOptions options, 
+        object dataOptions, CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        var dataValue = dataOptions.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException(Resources.EnteredDataIsNotValid);
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
+            BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
+
+            var isExist = await blockBlobClient.ExistsAsync(cancellationToken);
+
+            if (isExist && options.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            await blockBlobClient.UploadAsync(dataStream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
+        {
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
+        {
+            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
+        }
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
+        CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
+            BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
+
+            var isExist = await blockBlobClient.ExistsAsync(cancellationToken);
+
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var response = await blockBlobClient.OpenReadAsync(cancellationToken: cancellationToken);
+            var blobProperties = await blockBlobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
+
+            return new ReadResult
+            {
+                Content = response.StreamToByteArray(),
+                ContentHash = blobProperties.Value.ContentHash?.ToHexString(),
+            };
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
+        {
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
+        {
+            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
+        }
+    }
+
     private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(path))
@@ -648,19 +616,67 @@ public class AzureBlobStorage : PluginBase
         }
     }
 
-    private string[] DeserializeToStringArray(string? fields)
+    private async Task<bool> ExistEntityAsync(string entity, CancellationToken cancellationToken = default)
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var path = PathHelper.ToUnixPath(entity);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        try
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            var pathParts = GetPartsAsync(path);
+            var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
+
+            if (PathHelper.IsFile(path))
+            {
+                BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
+                return await blockBlobClient.ExistsAsync(cancellationToken: cancellationToken);
+            }
+
+            var blobItems = container.GetBlobsByHierarchy(prefix: pathParts.RelativePath);
+            return blobItems.Select(x => x.IsPrefix).Any();
         }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidResourceName")
+        {
+            throw new StorageException(Resources.TheSpecifiedResourceNameContainsInvalidCharacters);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "InvalidUri")
+        {
+            throw new StorageException(Resources.InvalidPathEntered);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "OperationNotAllowedInCurrentState")
+        {
+            throw new StorageException(Resources.OperationNotAllowedInCurrentState);
+        }
+        catch (RequestFailedException ex) when (ex.ErrorCode == "ParentNotFound")
+        {
+            throw new StorageException(Resources.ParentNotFound);
+        }
+        catch (RequestFailedException)
+        {
+            throw new StorageException(Resources.SomethingWrongHappenedDuringProcessingExistingBlob);
+        }
+    }
+
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
+        CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+
+        var dataFilterOptions = GetDataFilterOptions(options);
+        var dataTable = storageEntities.ToDataTable();
+        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> ListEntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -714,6 +730,17 @@ public class AzureBlobStorage : PluginBase
         };
 
         return dataFilterOptions;
+    }
+
+    private string[] DeserializeToStringArray(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }

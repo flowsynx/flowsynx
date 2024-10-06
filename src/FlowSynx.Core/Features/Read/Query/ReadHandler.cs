@@ -2,39 +2,36 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Plugin.Services;
 using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Core.Parers.Contex;
+using FlowSynx.Plugin.Abstractions;
 
 namespace FlowSynx.Core.Features.Read.Query;
 
-internal class ReadHandler : IRequestHandler<ReadRequest, Result<object>>
+internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResult>>
 {
     private readonly ILogger<ReadHandler> _logger;
-    private readonly IPluginService _pluginService;
-    private readonly IPluginContexParser _pluginContexParser;
+    private readonly IPluginContextParser _pluginContextParser;
 
-    public ReadHandler(ILogger<ReadHandler> logger, IPluginService pluginService, IPluginContexParser pluginContexParser)
+    public ReadHandler(ILogger<ReadHandler> logger, IPluginContextParser pluginContextParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginService, nameof(pluginService));
         _logger = logger;
-        _pluginService = pluginService;
-        _pluginContexParser = pluginContexParser;
+        _pluginContextParser = pluginContextParser;
     }
 
-    public async Task<Result<object>> Handle(ReadRequest request, CancellationToken cancellationToken)
+    public async Task<Result<ReadResult>> Handle(ReadRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _pluginContexParser.Parse(request.Entity);
+            var contex = _pluginContextParser.Parse(request.Entity);
             var options = request.Options.ToPluginFilters();
-            var response = await _pluginService.ReadAsync(contex, options, cancellationToken);
-            return await Result<object>.SuccessAsync(response);
+            var response = await contex.InvokePlugin.ReadAsync(contex.Entity, contex.InferiorPlugin, options, cancellationToken);
+            return await Result<ReadResult>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
-            return await Result<object>.FailAsync(new List<string> { ex.Message });
+            return await Result<ReadResult>.FailAsync(new List<string> { ex.Message });
         }
     }
 }
