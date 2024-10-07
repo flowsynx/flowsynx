@@ -11,6 +11,8 @@ using FlowSynx.Data.Extensions;
 using FlowSynx.Plugin.Stream.Exceptions;
 using Newtonsoft.Json;
 using System.Text;
+using System.IO;
+using System.Threading;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
@@ -51,10 +53,17 @@ public class JsonStream : PluginBase
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override Task CreateAsync(string entity, PluginBase? inferiorPlugin, 
+    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin, 
         PluginOptions? options, CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+
+        if (inferiorPlugin is not null)
+        {
+            await inferiorPlugin.WriteAsync(path, null, options, string.Empty, cancellationToken);
+            return;
+        }
+
         var createOptions = options.ToObject<CreateOptions>();
 
         if (string.IsNullOrEmpty(path))
@@ -67,8 +76,6 @@ public class JsonStream : PluginBase
             throw new StreamException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
         File.Create(path).Dispose();
-
-        return Task.CompletedTask;
     }
 
     public override Task WriteAsync(string entity, PluginBase? inferiorPlugin,
@@ -190,8 +197,9 @@ public class JsonStream : PluginBase
             throw new StreamException(Resources.ThePathIsNotFile);
 
         var listOptions = options.ToObject<ListOptions>();
-        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var content = await ReadContent(entity, inferiorPlugin, cancellationToken);
 
+        var dataTable = await ListEntitiesAsync(content, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
@@ -504,13 +512,25 @@ public class JsonStream : PluginBase
         }
     }
 
-    private Task<DataTable> ListEntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+    private async Task<string> ReadContent(string entity, PluginBase? plugin, 
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
-        var json = File.ReadAllText(path);
-        var jToken = JToken.Parse(json);
+        if (plugin is not null)
+        {
+            var content = await plugin.ReadAsync(path, null, null, cancellationToken);
+            return Encoding.UTF8.GetString(content.Content);
+        }
+        else
+        {
+            return File.ReadAllText(path);
+        }
+    }
 
+    private Task<DataTable> ListEntitiesAsync(string json, ListOptions options,
+        CancellationToken cancellationToken = new CancellationToken())
+    {
+        var jToken = JToken.Parse(json);
         var dataTable = jToken switch
         {
             JArray => JArrayToDataTable(jToken, options.IncludeMetadata),
@@ -519,13 +539,6 @@ public class JsonStream : PluginBase
         };
 
         return Task.FromResult(dataTable);
-    }
-
-    private Dictionary<string, string> GetDict(DataTable dt)
-    {
-        return dt.AsEnumerable()
-            .ToDictionary<DataRow, string, string>(row => row.Field<string>(0),
-                row => row.Field<string>(1));
     }
 
     private TransferKind GetTransferKind(string? kind)
