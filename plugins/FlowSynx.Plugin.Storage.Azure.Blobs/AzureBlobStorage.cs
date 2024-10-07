@@ -91,6 +91,7 @@ public class AzureBlobStorage : PluginBase
         var path = PathHelper.ToUnixPath(entity);
         var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
+
         var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
 
@@ -100,10 +101,10 @@ public class AzureBlobStorage : PluginBase
         
         foreach (var entityItem in storageEntities)
         {
-            if (entityItem is not StorageList list)
+            if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false);
+            await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteOptions.Purge is true)

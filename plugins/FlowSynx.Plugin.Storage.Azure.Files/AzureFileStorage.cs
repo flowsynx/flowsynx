@@ -116,10 +116,10 @@ public class AzureFileStorage : PluginBase
         
         foreach (var entityItem in storageEntities)
         {
-            if (entityItem is not StorageList list)
+            if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            await DeleteEntityAsync(list.Path, cancellationToken).ConfigureAwait(false);
+            await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteOptions.Purge is true)

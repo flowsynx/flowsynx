@@ -117,10 +117,10 @@ public class MemoryStorage : PluginBase
         
         foreach (var entityItem in storageEntities)
         {
-            if (entityItem is not StorageList list)
+            if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            DeleteEntityAsync(list.Path);
+            DeleteEntityAsync(storageEntity.FullPath);
         }
 
         if (deleteOptions.Purge is true)
