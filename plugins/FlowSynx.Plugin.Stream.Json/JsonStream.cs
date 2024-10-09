@@ -11,8 +11,6 @@ using FlowSynx.Data.Extensions;
 using FlowSynx.Plugin.Stream.Exceptions;
 using Newtonsoft.Json;
 using System.Text;
-using System.IO;
-using System.Threading;
 
 namespace FlowSynx.Plugin.Stream.Json;
 
@@ -78,11 +76,18 @@ public class JsonStream : PluginBase
         File.Create(path).Dispose();
     }
 
-    public override Task WriteAsync(string entity, PluginBase? inferiorPlugin,
+    public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin,
         PluginOptions? options, object dataOptions, 
         CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
+
+        if (inferiorPlugin is not null)
+        {
+            await inferiorPlugin.WriteAsync(path, null, options, dataOptions, cancellationToken);
+            return;
+        }
+
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -110,8 +115,6 @@ public class JsonStream : PluginBase
         });
         
         File.WriteAllText(path, serializeData);
-
-        return Task.CompletedTask;
     }
 
     public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
@@ -125,7 +128,9 @@ public class JsonStream : PluginBase
             throw new StreamException(Resources.ThePathIsNotFile);
 
         var listOptions = options.ToObject<ListOptions>();
-        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var content = await ReadContent(entity, inferiorPlugin, cancellationToken);
+
+        var dataTable = await ListEntitiesAsync(content, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
@@ -179,7 +184,9 @@ public class JsonStream : PluginBase
             throw new StreamException(Resources.ThePathIsNotFile);
 
         var listOptions = options.ToObject<ListOptions>();
-        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var content = await ReadContent(entity, inferiorPlugin, cancellationToken);
+
+        var dataTable = await ListEntitiesAsync(content, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
@@ -197,7 +204,7 @@ public class JsonStream : PluginBase
             throw new StreamException(Resources.ThePathIsNotFile);
 
         var listOptions = options.ToObject<ListOptions>();
-        var content = await ReadContent(entity, inferiorPlugin, cancellationToken);
+        var content = await ReadContent(path, inferiorPlugin, cancellationToken);
 
         var dataTable = await ListEntitiesAsync(content, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
@@ -223,8 +230,9 @@ public class JsonStream : PluginBase
         var indentedOptions = options.ToObject<IndentedOptions>();
 
         var transferKind = GetTransferKind(transferOptions.TransferKind);
+        var readContent = await ReadContent(entity, inferiorPlugin, cancellationToken);
 
-        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var dataTable = await ListEntitiesAsync(readContent, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
@@ -328,7 +336,9 @@ public class JsonStream : PluginBase
         var compressOptions = options.ToObject<CompressOptions>();
         var indentedOptions = options.ToObject<IndentedOptions>();
 
-        var dataTable = await ListEntitiesAsync(path, listOptions, cancellationToken);
+        var readContent = await ReadContent(entity, inferiorPlugin, cancellationToken);
+
+        var dataTable = await ListEntitiesAsync(readContent, listOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
 
