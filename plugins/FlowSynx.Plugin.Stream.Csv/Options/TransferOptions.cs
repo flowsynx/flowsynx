@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Plugin.Stream.Csv;
+﻿namespace FlowSynx.Plugin.Stream.Csv.Options;
 
 public class TransferOptions
 {

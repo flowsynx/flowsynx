@@ -139,7 +139,7 @@
     <value>Data must have value.</value>
   </data>
   <data name="NoItemsFoundWithTheGivenFilter" xml:space="preserve">
-    <value>No items found with the given filter in '{0}'.</value>
+    <value>No items found with the given filter'.</value>
   </data>
   <data name="PluginDescription" xml:space="preserve">
     <value>Plugin for manage Comma Separated Values (CSV) data.</value>

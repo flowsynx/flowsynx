@@ -8,7 +8,9 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Data.Extensions;
 using System.Text;
 using System.Data;
-using static System.Net.Mime.MediaTypeNames;
+using FlowSynx.Plugin.Stream.Csv.Options;
+using System.IO;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
@@ -63,10 +65,10 @@ public class CsvStream : PluginBase
         var writeOptions = options.ToObject<WriteOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
 
-        var content = PrepareData(writeOptions, delimiterOptions, dataOptions);
+        var content = PrepareDataForWrite(writeOptions, delimiterOptions, dataOptions);
         if (inferiorPlugin != null) 
         { 
-            await inferiorPlugin.WriteAsync(entity, inferiorPlugin, options, content, cancellationToken).ConfigureAwait(false);
+            await inferiorPlugin.WriteAsync(entity, null, options, content, cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -77,10 +79,14 @@ public class CsvStream : PluginBase
     public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
         PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
+        var path = PathHelper.ToUnixPath(entity);
         var readOptions = options.ToObject<ReadOptions>();
         var listOptions = options.ToObject<ListOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
-        return await ReadEntityAsync(entity, readOptions, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
+
+        var content = await ReadContent(path, inferiorPlugin, cancellationToken);
+
+        return await ReadEntityAsync(content, readOptions, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(string entity, PluginBase? inferiorPlugin,
@@ -93,14 +99,6 @@ public class CsvStream : PluginBase
         PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StreamException(Resources.ThePathIsNotFile);
-
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
-            throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         var delimiterOptions = options.ToObject<DelimiterOptions>();
         var listOptions = options.ToObject<ListOptions>();
@@ -108,23 +106,27 @@ public class CsvStream : PluginBase
         listOptions.IncludeMetadata = false;
         var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
-        var fields = DeserializeToStringArray(listOptions.Fields);
+        var content = await ReadContent(path, inferiorPlugin, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
-        var dataTable = _csvHandler.Load(path, delimiter, listOptions.IncludeMetadata);
+        var dataTable = GetDataTable(content, delimiter, listOptions.IncludeMetadata, cancellationToken);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         _csvHandler.Delete(dataTable, filteredData);
 
-        var result = filteredData.CreateListFromTable();
         var data = _csvHandler.ToCsv(dataTable, delimiter);
-        await File.WriteAllTextAsync(path, data, cancellationToken);
+
+        await WriteContent(entity, data, inferiorPlugin, options, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<bool> ExistAsync(string entity, PluginBase? inferiorPlugin, 
         PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
+        var path = PathHelper.ToUnixPath(entity);
         var listOptions = options.ToObject<ListOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
+
+        var content = await ReadContent(path, inferiorPlugin, cancellationToken);
+
         var filteredData = await FilteredEntitiesAsync(entity, listOptions, delimiterOptions, cancellationToken)
                                 .ConfigureAwait(false);
         return filteredData.Rows.Count > 0;
@@ -378,7 +380,7 @@ public class CsvStream : PluginBase
         return Task.CompletedTask;
     }
 
-    private string PrepareData(WriteOptions writeOptions, DelimiterOptions delimiterOptions, object dataOptions)
+    private string PrepareDataForWrite(WriteOptions writeOptions, DelimiterOptions delimiterOptions, object dataOptions)
     {
         var dataValue = dataOptions.GetObjectValue();
 
@@ -430,34 +432,50 @@ public class CsvStream : PluginBase
         return Task.CompletedTask;
     }
 
-    private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions readOptions,
+    private async Task<ReadResult> ReadEntityAsync(string content, ReadOptions readOptions,
         ListOptions listOptions, DelimiterOptions delimiterOptions, 
         CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var entities = await FilteredEntitiesAsync(path, listOptions, delimiterOptions, cancellationToken)
+        var entities = await FilteredEntitiesAsync(content, listOptions, delimiterOptions, cancellationToken)
                             .ConfigureAwait(false);
 
         return entities.Rows.Count switch
         {
-            <= 0 => throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)),
+            <= 0 => throw new StreamException(Resources.NoItemsFoundWithTheGivenFilter),
             > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
             _ => new ReadResult { Content = ObjectToByteArray(entities) }
         };
     }
 
-    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions listOptions,
+    private async Task<DataTable> FilteredEntitiesAsync(string content, ListOptions listOptions,
         DelimiterOptions delimiterOptions, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
-        var dataTable = await EntitiesAsync(path, listOptions, delimiterOptions, cancellationToken);
+        var dataTable = await EntitiesAsync(content, listOptions, delimiterOptions, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         var result = _dataFilter.Filter(dataTable, dataFilterOptions);
         return result;
     }
 
-    private Task<DataTable> EntitiesAsync(string entity, ListOptions options,
+    private Task<DataTable> EntitiesAsync(string content, ListOptions options,
         DelimiterOptions delimiterOptions, CancellationToken cancellationToken)
+    {
+        //if (string.IsNullOrEmpty(path))
+        //    throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        //if (!PathHelper.IsFile(path))
+        //    throw new StreamException(Resources.ThePathIsNotFile);
+
+        //if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        //    throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+        var dataTable = GetDataTable(content, delimiter, options.IncludeMetadata, cancellationToken);
+
+        return Task.FromResult(dataTable);
+    }
+
+    private async Task<string> ReadContent(string entity, PluginBase? plugin,
+    CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -469,25 +487,36 @@ public class CsvStream : PluginBase
         if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
-        var dataTable = GetDataTable(path, delimiter, options.IncludeMetadata, cancellationToken);
-
-        return Task.FromResult(dataTable);
-    }
-
-    private async Task<string> ReadContent(string entity, PluginBase? plugin,
-    CancellationToken cancellationToken)
-    {
-        var path = PathHelper.ToUnixPath(entity);
         if (plugin is not null)
         {
             var content = await plugin.ReadAsync(path, null, null, cancellationToken);
             return Encoding.UTF8.GetString(content.Content);
         }
-        else
+
+        return File.ReadAllText(path);
+    }
+
+    private async Task WriteContent(string entity, string content, PluginBase? plugin, 
+        PluginOptions? options, CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
+        if (plugin != null)
         {
-            return File.ReadAllText(path);
+            await plugin.WriteAsync(path, null, options, content, cancellationToken).ConfigureAwait(false);
+            return;
         }
+
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+            throw new StreamException(Resources.ThePathIsNotCsvFile);
+
+        await File.WriteAllTextAsync(path, content, cancellationToken);
     }
 
     private DataTable GetDataTable(string content, string delimiter, 

@@ -124,7 +124,7 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No items found with the given filter in &apos;{0}&apos;..
+        ///   Looks up a localized string similar to No items found with the given filter&apos;..
         /// </summary>
         internal static string NoItemsFoundWithTheGivenFilter {
             get {
