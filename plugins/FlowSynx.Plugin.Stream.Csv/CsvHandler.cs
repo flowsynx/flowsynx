@@ -1,8 +1,8 @@
 ﻿using System.Data;
+using System.IO;
 using System.Text;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
-using SharpCompress.Common;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
@@ -22,59 +22,48 @@ internal class CsvHandler
         return File.ReadAllBytes(fullPath);
     }
 
-    public DataTable Load(string fullPath, string delimiter, bool? includeMetaData)
+    public DataTable Load(string content, string delimiter, bool? includeMetaData)
     {
-        var dataTable = new DataTable();
-        using var streamReader = new StreamReader(fullPath);
-        var firstLine = streamReader.ReadLine();
-        var headers = firstLine?.Split(delimiter, StringSplitOptions.None);
+        DataTable dataTable = new DataTable();
+        var lines = content.Split(System.Environment.NewLine);
+
+        if (lines.Length == 0)
+            return dataTable;
+
+        // Add columns
+        string[] headers = lines[0].Split(delimiter, StringSplitOptions.None);
 
         if (includeMetaData is true)
-            headers = headers?.Append("Metadata").ToArray();
-        
-        if (headers != null)
+            headers = [.. headers, "Metadata"];
+
+        foreach (string header in headers)
+            dataTable.Columns.Add(header);
+
+        var columnsCount = headers.Length;
+
+        // Add rows
+        for (int i = 1; i < lines.Length-1; i++)
         {
-            foreach (var header in headers)
-                dataTable.Columns.Add(header);
-
-            var columnInterval = headers.Count();
-            var newLine = streamReader.ReadLine();
-            while (newLine != null)
+            object[] fields = lines[i].Split(delimiter, StringSplitOptions.None);
+            if (includeMetaData is true)
             {
-                object?[] fields = newLine.Split(delimiter, StringSplitOptions.None);
-                if (includeMetaData is true)
-                {
-                    var metadataObject = GetMetaData(fields);
-                    fields = fields.Append(metadataObject).ToArray();
-                }
-
-                var currentLength = fields.Count();
-                if (currentLength < columnInterval)
-                {
-                    while (currentLength < columnInterval)
-                    {
-                        newLine += streamReader.ReadLine();
-                        currentLength = newLine.Split(delimiter, StringSplitOptions.None).Count();
-                    }
-
-                    fields = newLine.Split(delimiter, StringSplitOptions.None);
-                }
-
-                if (currentLength > columnInterval)
-                {
-                    newLine = streamReader.ReadLine();
-                    continue;
-                }
-
-                if (!fields.Any())
-                    continue;
-
-                dataTable.Rows.Add(fields);
-                newLine = streamReader.ReadLine();
+                var metadataObject = GetMetaData(fields);
+                fields = [.. fields, metadataObject];
             }
+
+            var currentLength = fields.Length;
+            if (currentLength != columnsCount)
+                continue;
+            
+            DataRow dataRow = dataTable.NewRow();
+            for (int j = 0; j < headers.Length; j++)
+            {
+                dataRow[j] = fields[j];
+            }
+
+            dataTable.Rows.Add(dataRow);
         }
 
-        streamReader.Close();
         return dataTable;
     }
 
@@ -142,9 +131,6 @@ internal class CsvHandler
     private object GetMetaData(object content)
     {
         var contentHash = FlowSynx.Security.HashHelper.Md5.GetHash(content);
-        return new
-        {
-            ContentHash = contentHash
-        };
+        return contentHash;
     }
 }

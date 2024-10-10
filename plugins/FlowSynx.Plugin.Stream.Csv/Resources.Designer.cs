@@ -70,6 +70,24 @@ namespace FlowSynx.Plugin.Stream.Csv {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Create operation is not supported for CSV stream!.
+        /// </summary>
+        internal static string CreateOperrationNotSupported {
+            get {
+                return ResourceManager.GetString("CreateOperrationNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to CSV File &apos;{0}&apos; not exist!.
+        /// </summary>
+        internal static string CsvFileNotExist {
+            get {
+                return ResourceManager.GetString("CsvFileNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Data is not in valid format. Data must be in array type..
         /// </summary>
         internal static string DataMustBeInValidFormat {

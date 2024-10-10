@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Data.Extensions;
 using System.Text;
 using System.Data;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace FlowSynx.Plugin.Stream.Csv;
 
@@ -49,12 +50,10 @@ public class CsvStream : PluginBase
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task CreateAsync(string entity, PluginBase? inferiorPlugin,
+    public override Task CreateAsync(string entity, PluginBase? inferiorPlugin,
         PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
-        var createOptions = options.ToObject<CreateOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
-        await CreateEntityAsync(entity, createOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
+        throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
     public override async Task WriteAsync(string entity, PluginBase? inferiorPlugin,
@@ -63,7 +62,16 @@ public class CsvStream : PluginBase
     {
         var writeOptions = options.ToObject<WriteOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
-        await WriteEntityAsync(entity, writeOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
+
+        var content = PrepareData(writeOptions, delimiterOptions, dataOptions);
+        if (inferiorPlugin != null) 
+        { 
+            await inferiorPlugin.WriteAsync(entity, inferiorPlugin, options, content, cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        var append = writeOptions.Append is true;
+        await WriteEntityAsync(entity, content, append, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(string entity, PluginBase? inferiorPlugin,
@@ -122,7 +130,7 @@ public class CsvStream : PluginBase
         return filteredData.Rows.Count > 0;
     }
 
-    public override Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
+    public override async Task<IEnumerable<object>> ListAsync(string entity, PluginBase? inferiorPlugin,
         PluginOptions? options, CancellationToken cancellationToken = new CancellationToken())
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -141,12 +149,13 @@ public class CsvStream : PluginBase
         var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
+        var content = await ReadContent(path, inferiorPlugin, cancellationToken);
 
-        var dataTable = GetDataTable(path, delimiter, listOptions.IncludeMetadata, cancellationToken);
+        var dataTable = GetDataTable(content, delimiter, listOptions.IncludeMetadata, cancellationToken);
         var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
         var result = filteredData.CreateListFromTable();
 
-        return Task.FromResult<IEnumerable<object>>(result);
+        return result;
     }
 
     public override Task<TransferData> PrepareTransferring(string entity, PluginBase? inferiorPlugin,
@@ -369,9 +378,36 @@ public class CsvStream : PluginBase
         return Task.CompletedTask;
     }
 
-    private Task WriteEntityAsync(string entity, WriteOptions writeOptions,
-        DelimiterOptions delimiterOptions, object dataOptions,
-        CancellationToken cancellationToken = new CancellationToken())
+    private string PrepareData(WriteOptions writeOptions, DelimiterOptions delimiterOptions, object dataOptions)
+    {
+        var dataValue = dataOptions.GetObjectValue();
+
+        if (dataValue is null)
+            throw new StreamException(Resources.ForWritingDataMustHaveValue);
+
+        if (dataValue is not string)
+            throw new StreamException(Resources.DataMustBeInValidFormat);
+
+        var sb = new StringBuilder();
+        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+        var headers = _deserializer.Deserialize<string[]>(writeOptions.Headers);
+        var data = string.Join(delimiter, headers);
+        var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
+        var append = writeOptions.Append is true;
+
+        if (!append && !string.IsNullOrEmpty(data))
+            sb.AppendLine(data);
+
+        foreach (var rowData in dataList)
+        {
+            sb.AppendLine(string.Join(delimiter, rowData));
+        }
+
+        return sb.ToString();
+    }
+
+    private Task WriteEntityAsync(string entity, string content, bool append,
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -383,22 +419,12 @@ public class CsvStream : PluginBase
         if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        var dataValue = dataOptions.GetObjectValue();
+        if (!File.Exists(path))
+            throw new StreamException(string.Format(Resources.CsvFileNotExist, path));
 
-        if (dataValue is null)
-            throw new StreamException(Resources.ForWritingDataMustHaveValue);
-
-        if (dataValue is not string)
-            throw new StreamException(Resources.DataMustBeInValidFormat);
-
-        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
-        var dataList = _deserializer.Deserialize<List<List<string>>>(dataValue.ToString());
-        using (var writer = File.AppendText(path))
+        using (StreamWriter writer = new StreamWriter(path, append))
         {
-            foreach (var rowData in dataList)
-            {
-                writer.WriteLine(string.Join(delimiter, rowData));
-            }
+            writer.WriteLine(content);
         }
 
         return Task.CompletedTask;
@@ -449,10 +475,25 @@ public class CsvStream : PluginBase
         return Task.FromResult(dataTable);
     }
 
-    private DataTable GetDataTable(string entity, string delimiter, 
+    private async Task<string> ReadContent(string entity, PluginBase? plugin,
+    CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        if (plugin is not null)
+        {
+            var content = await plugin.ReadAsync(path, null, null, cancellationToken);
+            return Encoding.UTF8.GetString(content.Content);
+        }
+        else
+        {
+            return File.ReadAllText(path);
+        }
+    }
+
+    private DataTable GetDataTable(string content, string delimiter, 
         bool? includeMetadata, CancellationToken cancellationToken = new CancellationToken())
     {
-        return _csvHandler.Load(entity, delimiter, includeMetadata);
+        return _csvHandler.Load(content, delimiter, includeMetadata);
     }
 
     private byte[] ObjectToByteArray(object obj)
