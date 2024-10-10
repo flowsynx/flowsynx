@@ -11,6 +11,7 @@ using FlowSynx.Data.Extensions;
 using FlowSynx.Plugin.Stream.Exceptions;
 using Newtonsoft.Json;
 using System.Text;
+using FlowSynx.Plugin.Stream.Json.Options;
 
 namespace FlowSynx.Plugin.Stream.Json;
 

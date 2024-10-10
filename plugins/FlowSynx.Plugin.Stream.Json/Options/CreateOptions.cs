@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Plugin.Stream.Json;
+﻿namespace FlowSynx.Plugin.Stream.Json.Options;
 
 public class CreateOptions
 {
