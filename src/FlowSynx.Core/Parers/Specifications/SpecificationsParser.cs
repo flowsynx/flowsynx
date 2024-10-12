@@ -1,24 +1,23 @@
-﻿using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Reflections;
+﻿using FlowSynx.Reflections;
 using FlowSynx.Abstractions.Attributes;
-using FlowSynx.Plugin;
-using FlowSynx.Plugin.Manager;
+using FlowSynx.Connectors.Manager;
+using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Core.Parers.Specifications;
 
 public class SpecificationsParser : ISpecificationsParser
 {
-    private readonly IPluginsManager _pluginsManager;
+    private readonly IConnectorsManager _connectorsManager;
 
-    public SpecificationsParser(IPluginsManager pluginsManager)
+    public SpecificationsParser(IConnectorsManager connectorsManager)
     {
-        _pluginsManager = pluginsManager;
+        _connectorsManager = connectorsManager;
     }
 
     public SpecificationsResult Parse(string type, Dictionary<string, string?>? specifications)
     {
-        PluginBase plugin = _pluginsManager.Get(type);
-        var specificationsType = plugin.SpecificationsType;
+        Connector connector = _connectorsManager.Get(type);
+        var specificationsType = connector.SpecificationsType;
         var requiredProperties = specificationsType
             .Properties()
             .Where(prop => Attribute.IsDefined(prop, typeof(RequiredMemberAttribute)))

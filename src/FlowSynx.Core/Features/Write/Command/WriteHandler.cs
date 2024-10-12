@@ -2,30 +2,30 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Core.Parers.Contex;
+using FlowSynx.Connectors.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Write.Command;
 
 internal class WriteHandler : IRequestHandler<WriteRequest, Result<Unit>>
 {
     private readonly ILogger<WriteHandler> _logger;
-    private readonly IPluginContextParser _pluginContexParser;
+    private readonly IContextParser _contexParser;
 
-    public WriteHandler(ILogger<WriteHandler> logger, IPluginContextParser pluginContextParser)
+    public WriteHandler(ILogger<WriteHandler> logger, IContextParser contextParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
-        _pluginContexParser = pluginContextParser;
+        _contexParser = contextParser;
     }
 
     public async Task<Result<Unit>> Handle(WriteRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _pluginContexParser.Parse(request.Entity);
-            var options = request.Options.ToPluginFilters();
-            await contex.InvokePlugin.WriteAsync(contex.Entity, contex.InferiorPlugin, options, request.Data, cancellationToken);
+            var contex = _contexParser.Parse(request.Entity);
+            var options = request.Options.ToConnectorOptions();
+            await contex.CurrentConnector.WriteAsync(contex.Entity, contex.NextConnector, options, request.Data, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)

@@ -70,11 +70,11 @@ namespace FlowSynx {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Plugins Registry.
+        ///   Looks up a localized string similar to Connectors Registry.
         /// </summary>
-        internal static string AddHealthCheckerPluginsRegistry {
+        internal static string AddHealthCheckerConnectorsRegistry {
             get {
-                return ResourceManager.GetString("AddHealthCheckerPluginsRegistry", resourceCulture);
+                return ResourceManager.GetString("AddHealthCheckerConnectorsRegistry", resourceCulture);
             }
         }
         
@@ -93,6 +93,24 @@ namespace FlowSynx {
         internal static string ConfigurationManagerHealthCheckConfigurationRegistryFailed {
             get {
                 return ResourceManager.GetString("ConfigurationManagerHealthCheckConfigurationRegistryFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connectors registry available.
+        /// </summary>
+        internal static string ConnectorsManagerHealthCheckConfigurationRegistryAvailable {
+            get {
+                return ResourceManager.GetString("ConnectorsManagerHealthCheckConfigurationRegistryAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Connectors registry failed.
+        /// </summary>
+        internal static string ConnectorsManagerHealthCheckConfigurationRegistryFailed {
+            get {
+                return ResourceManager.GetString("ConnectorsManagerHealthCheckConfigurationRegistryFailed", resourceCulture);
             }
         }
         
@@ -156,24 +174,6 @@ namespace FlowSynx {
         internal static string OptionsVerifierTheEnteredConfigFileIsNotExist {
             get {
                 return ResourceManager.GetString("OptionsVerifierTheEnteredConfigFileIsNotExist", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Plugins registry available.
-        /// </summary>
-        internal static string PluginsManagerHealthCheckConfigurationRegistryAvailable {
-            get {
-                return ResourceManager.GetString("PluginsManagerHealthCheckConfigurationRegistryAvailable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Plugins registry failed.
-        /// </summary>
-        internal static string PluginsManagerHealthCheckConfigurationRegistryFailed {
-            get {
-                return ResourceManager.GetString("PluginsManagerHealthCheckConfigurationRegistryFailed", resourceCulture);
             }
         }
         

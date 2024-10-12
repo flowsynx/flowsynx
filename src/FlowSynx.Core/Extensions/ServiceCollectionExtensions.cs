@@ -9,20 +9,19 @@ using FlowSynx.Core.Parers.Specifications;
 using FlowSynx.Environment;
 using FlowSynx.IO;
 using FlowSynx.Parsers;
-using FlowSynx.Plugin.Abstractions;
-using FlowSynx.Plugin.Extensions;
-using FlowSynx.Plugin.Storage.Amazon.S3;
-using FlowSynx.Plugin.Storage.LocalFileSystem;
+using FlowSynx.Connectors.Abstractions;
+using FlowSynx.Connectors.Extensions;
+using FlowSynx.Connectors.Storage.Amazon.S3;
+using FlowSynx.Connectors.Storage.LocalFileSystem;
 using FlowSynx.Core.Parers.Contex;
-using FlowSynx.Plugin.Storage.Azure.Blobs;
-using FlowSynx.Plugin.Storage.Azure.Files;
-using FlowSynx.Plugin.Storage.Google.Cloud;
-using FlowSynx.Plugin.Storage.Google.Drive;
-using FlowSynx.Plugin.Storage.Memory;
-using FlowSynx.Plugin.Stream.Csv;
+using FlowSynx.Connectors.Storage.Azure.Blobs;
+using FlowSynx.Connectors.Storage.Azure.Files;
+using FlowSynx.Connectors.Storage.Google.Cloud;
+using FlowSynx.Connectors.Storage.Google.Drive;
+using FlowSynx.Connectors.Storage.Memory;
+using FlowSynx.Connectors.Stream.Csv;
 using FlowSynx.Data.Extensions;
-using FlowSynx.Plugin.Stream.Json;
-using FlowSynx.Plugin;
+using FlowSynx.Connectors.Stream.Json;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -47,10 +46,9 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            //.AddPluginService()
             .AddDatFilter()
-            .AddCache<string, PluginBase>()
-            .AddScoped<IPluginContextParser, PluginContextParser>()
+            .AddCache<string, Connector>()
+            .AddScoped<IContextParser, ContextParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>();
 
@@ -65,25 +63,25 @@ public static class ServiceCollectionExtensions
         return services;
     }
     
-    public static IServiceCollection AddFlowSynxPlugins(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxConnectors(this IServiceCollection services)
     {
         services
-            .RegisterPlugins()
-            .AddPluginManager();
+            .RegisterConnectors()
+            .AddConnectorsManager();
         return services;
     }
 
-    public static IServiceCollection RegisterPlugins(this IServiceCollection services)
+    public static IServiceCollection RegisterConnectors(this IServiceCollection services)
     {
-        services.AddScoped<PluginBase, LocalFileSystemStorage>();
-        services.AddScoped<PluginBase, MemoryStorage>();
-        services.AddScoped<PluginBase, AzureFileStorage>();
-        services.AddScoped<PluginBase, AzureBlobStorage>();
-        services.AddScoped<PluginBase, AmazonS3Storage>();
-        services.AddScoped<PluginBase, GoogleCloudStorage>();
-        services.AddScoped<PluginBase, GoogleDriveStorage>();
-        services.AddScoped<PluginBase, CsvStream>();
-        services.AddScoped<PluginBase, JsonStream>();
+        services.AddScoped<Connector, LocalFileSystemStorage>();
+        services.AddScoped<Connector, MemoryStorage>();
+        services.AddScoped<Connector, AzureFileStorage>();
+        services.AddScoped<Connector, AzureBlobStorage>();
+        services.AddScoped<Connector, AmazonS3Storage>();
+        services.AddScoped<Connector, GoogleCloudStorage>();
+        services.AddScoped<Connector, GoogleDriveStorage>();
+        services.AddScoped<Connector, CsvStream>();
+        services.AddScoped<Connector, JsonStream>();
         return services;
     }
 }

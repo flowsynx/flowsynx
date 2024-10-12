@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Parsers;
-using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Core.Parers.Namespace;
 
 public interface INamespaceParser: IParser
 {
-    PluginNamespace Parse(string type);
+    Connectors.Abstractions.Namespace Parse(string type);
 }

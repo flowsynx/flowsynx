@@ -9,23 +9,23 @@ namespace FlowSynx.Core.Features.Transfer.Command;
 internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
 {
     private readonly ILogger<TransferHandler> _logger;
-    private readonly IPluginContextParser _pluginContextParser;
+    private readonly IContextParser _contextParser;
 
-    public TransferHandler(ILogger<TransferHandler> logger, IPluginContextParser pluginContextParser)
+    public TransferHandler(ILogger<TransferHandler> logger, IContextParser contextParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginContextParser, nameof(pluginContextParser));
+        EnsureArg.IsNotNull(contextParser, nameof(contextParser));
         _logger = logger;
-        _pluginContextParser = pluginContextParser;
+        _contextParser = contextParser;
     }
 
     public async Task<Result<Unit>> Handle(TransferRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _pluginContextParser.Parse(request.SourceEntity);
-            var destinationPluginContext = _pluginContextParser.Parse(request.DestinationEntity);
-            await contex.InvokePlugin.TransferAsync(contex.Entity, contex.InferiorPlugin, request.Options, null, cancellationToken);
+            var contex = _contextParser.Parse(request.SourceEntity);
+            var destinationConnectorContext = _contextParser.Parse(request.DestinationEntity);
+            await contex.CurrentConnector.TransferAsync(contex.Entity, contex.NextConnector, request.Options, null, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }
         catch (Exception ex)

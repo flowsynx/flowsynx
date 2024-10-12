@@ -4,24 +4,23 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Commons;
 using FlowSynx.Core.Parers.Contex;
-using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.IO.Compression;
-using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Connectors.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Compress.Command;
 
 internal class CompressHandler : IRequestHandler<CompressRequest, Result<CompressResult>>
 {
     private readonly ILogger<CompressHandler> _logger;
-    private readonly IPluginContextParser _pluginContextParser;
+    private readonly IContextParser _contextParser;
     private readonly Func<CompressType, ICompression> _compressionFactory;
 
-    public CompressHandler(ILogger<CompressHandler> logger, IPluginContextParser pluginContextParser, 
+    public CompressHandler(ILogger<CompressHandler> logger, IContextParser contextParser, 
         Func<CompressType, ICompression> compressionFactory)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
-        _pluginContextParser = pluginContextParser;
+        _contextParser = contextParser;
         _compressionFactory = compressionFactory;
     }
 
@@ -29,14 +28,14 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
     {
         try
         {
-            var contex = _pluginContextParser.Parse(request.Entity);
-            var options = request.Options.ToPluginFilters();
+            var contex = _contextParser.Parse(request.Entity);
+            var options = request.Options.ToConnectorOptions();
 
             var compressType = string.IsNullOrEmpty(request.CompressType)
                 ? CompressType.Zip
                 : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-            var compressEntries = await contex.InvokePlugin.CompressAsync(contex.Entity, contex.InferiorPlugin, 
+            var compressEntries = await contex.CurrentConnector.CompressAsync(contex.Entity, contex.NextConnector, 
                 options, cancellationToken);
 
             var enumerable = compressEntries.ToList();

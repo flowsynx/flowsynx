@@ -2,31 +2,31 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Plugin.Abstractions.Extensions;
 using FlowSynx.Core.Parers.Contex;
-using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Connectors.Abstractions;
+using FlowSynx.Connectors.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Read.Query;
 
 internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResult>>
 {
     private readonly ILogger<ReadHandler> _logger;
-    private readonly IPluginContextParser _pluginContextParser;
+    private readonly IContextParser _contextParser;
 
-    public ReadHandler(ILogger<ReadHandler> logger, IPluginContextParser pluginContextParser)
+    public ReadHandler(ILogger<ReadHandler> logger, IContextParser connectorContextParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
-        _pluginContextParser = pluginContextParser;
+        _contextParser = connectorContextParser;
     }
 
     public async Task<Result<ReadResult>> Handle(ReadRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _pluginContextParser.Parse(request.Entity);
-            var options = request.Options.ToPluginFilters();
-            var response = await contex.InvokePlugin.ReadAsync(contex.Entity, contex.InferiorPlugin, options, cancellationToken);
+            var contex = _contextParser.Parse(request.Entity);
+            var options = request.Options.ToConnectorOptions();
+            var response = await contex.CurrentConnector.ReadAsync(contex.Entity, contex.NextConnector, options, cancellationToken);
             return await Result<ReadResult>.SuccessAsync(response);
         }
         catch (Exception ex)

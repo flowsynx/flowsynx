@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using FlowSynx.Commons;
 using FlowSynx.Core.Exceptions;
-using FlowSynx.Plugin.Abstractions;
+using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Core.Parers.Namespace;
 
@@ -16,7 +16,7 @@ internal class NamespaceParser : INamespaceParser
         _logger = logger;
     }
 
-    public PluginNamespace Parse(string type)
+    public Connectors.Abstractions.Namespace Parse(string type)
     {
         try
         {
@@ -40,7 +40,7 @@ internal class NamespaceParser : INamespaceParser
                 throw new NamespaceParserException(string.Format(Resources.NamespaceParserInvalidType, terms[0]));
             }
 
-            return EnumUtils.GetEnumValueOrDefault<PluginNamespace>(firstTerm[1])!.Value;
+            return EnumUtils.GetEnumValueOrDefault<Connectors.Abstractions.Namespace>(firstTerm[1])!.Value;
         }
         catch (Exception ex)
         {

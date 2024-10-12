@@ -120,14 +120,20 @@
   <data name="AddHealthCheckerConfigurationRegistry" xml:space="preserve">
     <value>Configuration Registry</value>
   </data>
-  <data name="AddHealthCheckerPluginsRegistry" xml:space="preserve">
-    <value>Plugins Registry</value>
+  <data name="AddHealthCheckerConnectorsRegistry" xml:space="preserve">
+    <value>Connectors Registry</value>
   </data>
   <data name="ConfigurationManagerHealthCheckConfigurationRegistryAvailable" xml:space="preserve">
     <value>Configuration registry available</value>
   </data>
   <data name="ConfigurationManagerHealthCheckConfigurationRegistryFailed" xml:space="preserve">
     <value>Configuration registry failed</value>
+  </data>
+  <data name="ConnectorsManagerHealthCheckConfigurationRegistryAvailable" xml:space="preserve">
+    <value>Connectors registry available</value>
+  </data>
+  <data name="ConnectorsManagerHealthCheckConfigurationRegistryFailed" xml:space="preserve">
+    <value>Connectors registry failed</value>
   </data>
   <data name="EntryPointErrorInExecutteApplication" xml:space="preserve">
     <value>Something wrong happen during execute the application.</value>
@@ -149,12 +155,6 @@
   </data>
   <data name="OptionsVerifierTheEnteredConfigFileIsNotExist" xml:space="preserve">
     <value>The entered config file '{0}' is not exist!</value>
-  </data>
-  <data name="PluginsManagerHealthCheckConfigurationRegistryAvailable" xml:space="preserve">
-    <value>Plugins registry available</value>
-  </data>
-  <data name="PluginsManagerHealthCheckConfigurationRegistryFailed" xml:space="preserve">
-    <value>Plugins registry failed</value>
   </data>
   <data name="UseCustomHeadersVersionServiceCouldNotBeInitialized" xml:space="preserve">
     <value>Version service could not be initialized.</value>

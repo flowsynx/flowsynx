@@ -73,7 +73,7 @@ public static class ServiceCollectionExtensions
         services
             .AddHealthChecks()
             .AddCheck<ConfigurationManagerHealthCheck>(name: Resources.AddHealthCheckerConfigurationRegistry)
-            .AddCheck<PluginsManagerHealthCheck>(name: Resources.AddHealthCheckerPluginsRegistry);
+            .AddCheck<ConnectorsManagerHealthCheck>(name: Resources.AddHealthCheckerConnectorsRegistry);
         return services;
     }
 

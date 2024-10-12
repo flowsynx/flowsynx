@@ -1,8 +1,6 @@
 ﻿using FlowSynx.Core.Extensions;
-using FlowSynx.Core.Features.About.Query;
 using FlowSynx.Core.Features.Read.Query;
 using FlowSynx.Extensions;
-using FlowSynx.Plugin.Storage;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 

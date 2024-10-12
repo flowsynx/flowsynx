@@ -142,6 +142,24 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error in initializing &apos;{0}&apos; connector instance!.
+        /// </summary>
+        internal static string ConnectorInItializingInstanceErrorMessage {
+            get {
+                return ResourceManager.GetString("ConnectorInItializingInstanceErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Namespace value must be [ Storage| Messaging | Stream ]. By default it is Storage..
+        /// </summary>
+        internal static string ConnectorValidatorConnectorNamespaceValueMustBeValidMessage {
+            get {
+                return ResourceManager.GetString("ConnectorValidatorConnectorNamespaceValueMustBeValidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The specified destination-path is of a different type than the source-path..
         /// </summary>
         internal static string CopyDestinationPathIsDifferentThanSourcePath {
@@ -421,24 +439,6 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error in initializing &apos;{0}&apos; plugin instance!.
-        /// </summary>
-        internal static string PlugininItializingInstanceErrorMessage {
-            get {
-                return ResourceManager.GetString("PlugininItializingInstanceErrorMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Namespace value must be [ Storage| Messaging | Stream ]. By default it is Storage..
-        /// </summary>
-        internal static string PluginValidatorPluginNamespaceValueMustBeValidMessage {
-            get {
-                return ResourceManager.GetString("PluginValidatorPluginNamespaceValueMustBeValidMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The directory was purged successfully..
         /// </summary>
         internal static string PurgeDirectoryHandlerSuccessfullyPurged {
@@ -498,15 +498,6 @@ namespace FlowSynx.Core {
         internal static string SpecificationsRequiredMemberMustHaveValue {
             get {
                 return ResourceManager.GetString("SpecificationsRequiredMemberMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The selected plugin type &apos;{0}&apos; is not valid storage plugin type..
-        /// </summary>
-        internal static string StorageNormsParserInvalidStorageType {
-            get {
-                return ResourceManager.GetString("StorageNormsParserInvalidStorageType", resourceCulture);
             }
         }
         

@@ -19,7 +19,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
                .AddLocation()
                .AddVersion()
                .AddFlowSynxCore()
-               .AddFlowSynxPlugins()
+               .AddFlowSynxConnectors()
                .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
         
         if (rootCommandOptions.EnableHealthCheck)

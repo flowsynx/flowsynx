@@ -1,35 +1,35 @@
 ﻿using EnsureThat;
-using FlowSynx.Plugin.Manager;
-using FlowSynx.Plugin.Manager.Options;
+using FlowSynx.Connectors.Manager;
+using FlowSynx.Connectors.Manager.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;
 
-public class PluginsManagerHealthCheck : IHealthCheck
+public class ConnectorsManagerHealthCheck : IHealthCheck
 {
-    private readonly ILogger<PluginsManagerHealthCheck> _logger;
-    private readonly IPluginsManager _pluginsManager;
+    private readonly ILogger<ConnectorsManagerHealthCheck> _logger;
+    private readonly IConnectorsManager _connectorsManager;
 
-    public PluginsManagerHealthCheck(ILogger<PluginsManagerHealthCheck> logger, IPluginsManager pluginsManager)
+    public ConnectorsManagerHealthCheck(ILogger<ConnectorsManagerHealthCheck> logger, IConnectorsManager connectorsManager)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(pluginsManager, nameof(pluginsManager));
+        EnsureArg.IsNotNull(connectorsManager, nameof(connectorsManager));
         _logger = logger;
-        _pluginsManager = pluginsManager;
+        _connectorsManager = connectorsManager;
     }
 
     public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
-            var listOptions = new PluginListOptions();
-            _pluginsManager.List(listOptions);
-            return Task.FromResult(HealthCheckResult.Healthy(Resources.PluginsManagerHealthCheckConfigurationRegistryAvailable));
+            var listOptions = new ConnectorListOptions();
+            _connectorsManager.List(listOptions);
+            return Task.FromResult(HealthCheckResult.Healthy(Resources.ConnectorsManagerHealthCheckConfigurationRegistryAvailable));
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Plugins manager health checking: Error: {ex.Message}");
-            return Task.FromResult(HealthCheckResult.Unhealthy(Resources.PluginsManagerHealthCheckConfigurationRegistryFailed));
+            _logger.LogError($"Connectors manager health checking: Error: {ex.Message}");
+            return Task.FromResult(HealthCheckResult.Unhealthy(Resources.ConnectorsManagerHealthCheckConfigurationRegistryFailed));
         }
     }
 }

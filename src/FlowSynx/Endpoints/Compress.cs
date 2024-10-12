@@ -20,8 +20,8 @@ public class Compress : EndpointGroupBase
         if (!result.Succeeded) return Results.NotFound(result);
 
         var resultData = result.Data;
-        if (!string.IsNullOrEmpty(resultData.Md5))
-            http.Response.Headers.Append("flowsynx-md5", resultData.Md5);
+        if (!string.IsNullOrEmpty(resultData.ContentHash))
+            http.Response.Headers.Append("flowsynx-md5", resultData.ContentHash);
 
         return resultData.ContentType != null ?
             Results.Bytes(resultData.Content, resultData.ContentType) :

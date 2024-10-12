@@ -1,19 +1,17 @@
-﻿using FlowSynx.Plugin.Abstractions;
-using FluentValidation;
+﻿using FluentValidation;
 using FlowSynx.Core.Parers.Specifications;
-using FlowSynx.Plugin;
-using FlowSynx.Plugin.Manager;
+using FlowSynx.Connectors.Manager;
 
 namespace FlowSynx.Core.Features.Config.Command.Add;
 
 public class AddConfigValidator : AbstractValidator<AddConfigRequest>
 {
-    private readonly IPluginsManager _pluginsManager;
+    private readonly IConnectorsManager _connectorsManager;
     private readonly ISpecificationsParser _specificationsParser;
 
-    public AddConfigValidator(IPluginsManager pluginsManager, ISpecificationsParser specificationsParser)
+    public AddConfigValidator(IConnectorsManager connectorsManager, ISpecificationsParser specificationsParser)
     {
-        _pluginsManager = pluginsManager;
+        _connectorsManager = connectorsManager;
         _specificationsParser = specificationsParser;
         RuleFor(request => request.Name)
             .NotNull()
@@ -39,7 +37,7 @@ public class AddConfigValidator : AbstractValidator<AddConfigRequest>
 
     private bool IsTypeValid(string type)
     {
-        return _pluginsManager.IsExist(type);
+        return _connectorsManager.IsExist(type);
     }
 
     private void IsSpecificationsValid(Dictionary<string, string?>? specifications, ValidationContext<AddConfigRequest> context)

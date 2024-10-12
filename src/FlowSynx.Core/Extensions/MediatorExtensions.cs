@@ -4,8 +4,8 @@ using FlowSynx.Core.Features.Config.Command.Add;
 using FlowSynx.Core.Features.Config.Query.Details;
 using FlowSynx.Core.Features.Config.Query.List;
 using FlowSynx.Core.Features.Config.Command.Delete;
-using FlowSynx.Core.Features.Plugins.Query.Details;
-using FlowSynx.Core.Features.Plugins.Query.List;
+using FlowSynx.Core.Features.Connectors.Query.Details;
+using FlowSynx.Core.Features.Connectors.Query.List;
 using FlowSynx.Core.Features.Version.Query;
 using FlowSynx.Core.Features.Logs.Query.List;
 using FlowSynx.Core.Features.List.Query;
@@ -16,9 +16,9 @@ using FlowSynx.Core.Features.Compress.Command;
 using FlowSynx.Core.Features.Read.Query;
 using FlowSynx.Core.Features.About.Query;
 using FlowSynx.Core.Features.Create.Command;
-using FlowSynx.Plugin;
-using FlowSynx.Plugin.Abstractions;
 using FlowSynx.Core.Features.Transfer.Command;
+using FlowSynx.Connectors.Abstractions;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -78,13 +78,13 @@ public static class MediatorExtensions
     }
     #endregion
 
-    #region Plugins
-    public static Task<Result<IEnumerable<object>>> Plugins(this IMediator mediator, PluginsListRequest request, CancellationToken cancellationToken)
+    #region Connectors
+    public static Task<Result<IEnumerable<object>>> Connectors(this IMediator mediator, ConnectorListRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<PluginDetailsResponse>> PluginDetails(this IMediator mediator, PluginDetailsRequest request, CancellationToken cancellationToken)
+    public static Task<Result<ConnectorDetailsResponse>> ConnectorDetails(this IMediator mediator, ConnectorDetailsRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

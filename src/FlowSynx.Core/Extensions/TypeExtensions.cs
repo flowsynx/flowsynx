@@ -1,6 +1,4 @@
-﻿using FlowSynx.Core.Features.Plugins.Query.Details;
-
-namespace FlowSynx.Core.Extensions;
+﻿namespace FlowSynx.Core.Extensions;
 public static class TypeExtensions
 {
     public static string GetPrimitiveType(this Type type)
