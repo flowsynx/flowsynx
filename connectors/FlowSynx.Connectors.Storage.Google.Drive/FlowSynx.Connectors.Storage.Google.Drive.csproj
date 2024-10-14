@@ -12,12 +12,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FlowSynx.Commons" Version="1.4.11" />
-		<PackageReference Include="FlowSynx.Data" Version="1.4.11" />
-		<PackageReference Include="FlowSynx.IO" Version="1.4.11" />
-		<PackageReference Include="FlowSynx.Net" Version="1.4.11" />
-		<PackageReference Include="FlowSynx.Connectors.Storage" Version="1.4.11" />
-		<PackageReference Include="FlowSynx.Reflections" Version="1.4.11" />
+		<PackageReference Include="FlowSynx.Commons" Version="1.4.12" />
+		<PackageReference Include="FlowSynx.Data" Version="1.4.12" />
+		<PackageReference Include="FlowSynx.IO" Version="1.4.12" />
+		<PackageReference Include="FlowSynx.Net" Version="1.4.12" />
+		<PackageReference Include="FlowSynx.Connectors.Storage" Version="1.4.12" />
+		<PackageReference Include="FlowSynx.Reflections" Version="1.4.12" />
 		<PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3466" />
 	</ItemGroup>
 

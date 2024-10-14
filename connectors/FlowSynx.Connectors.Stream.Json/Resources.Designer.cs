@@ -61,7 +61,7 @@ namespace FlowSynx.Connectors.Stream.Json {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to About operation is not supported for JSON stream!.
+        ///   Looks up a localized string similar to About operation is not supported for JSON connector!.
         /// </summary>
         internal static string AboutOperrationNotSupported {
             get {
@@ -70,11 +70,20 @@ namespace FlowSynx.Connectors.Stream.Json {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Connector for manage Comma Separated Values (CSV) data..
+        ///   Looks up a localized string similar to Connector for manage JSON data..
         /// </summary>
         internal static string ConnectorDescription {
             get {
                 return ResourceManager.GetString("ConnectorDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Create operation is not supported for JSON connector!.
+        /// </summary>
+        internal static string CreateOperrationNotSupported {
+            get {
+                return ResourceManager.GetString("CreateOperrationNotSupported", resourceCulture);
             }
         }
         
@@ -124,7 +133,7 @@ namespace FlowSynx.Connectors.Stream.Json {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to No items found with the given filter in &apos;{0}&apos;..
+        ///   Looks up a localized string similar to No items found with the given filter in..
         /// </summary>
         internal static string NoItemsFoundWithTheGivenFilter {
             get {

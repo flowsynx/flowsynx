@@ -120,6 +120,9 @@
   <data name="AboutOperrationNotSupported" xml:space="preserve">
     <value>About operation is not supported for Azure Blob storage!</value>
   </data>
+  <data name="CalleeConnectorNotSupported" xml:space="preserve">
+    <value>Google Drive Storage connector doesn't support as callee connector!</value>
+  </data>
   <data name="ConnectorDescription" xml:space="preserve">
     <value>Connector for managing Google Drive system.</value>
   </data>

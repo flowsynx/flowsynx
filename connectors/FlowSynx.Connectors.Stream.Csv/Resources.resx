@@ -126,9 +126,6 @@
   <data name="CreateOperrationNotSupported" xml:space="preserve">
     <value>Create operation is not supported for CSV stream!</value>
   </data>
-  <data name="CsvFileNotExist" xml:space="preserve">
-    <value>CSV File '{0}' not exist!</value>
-  </data>
   <data name="DataMustBeInValidFormat" xml:space="preserve">
     <value>Data is not in valid format. Data must be in array type.</value>
   </data>

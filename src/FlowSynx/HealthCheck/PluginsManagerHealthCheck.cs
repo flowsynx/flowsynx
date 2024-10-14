@@ -1,6 +1,5 @@
 ﻿using EnsureThat;
 using FlowSynx.Connectors.Manager;
-using FlowSynx.Connectors.Manager.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;

@@ -35,8 +35,7 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
                 ? CompressType.Zip
                 : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-            var compressEntries = await contex.CurrentConnector.CompressAsync(contex.Entity, contex.NextConnector, 
-                options, cancellationToken);
+            var compressEntries = await contex.Connector.CompressAsync(contex.Context, options, cancellationToken);
 
             var enumerable = compressEntries.ToList();
             if (!enumerable.Any())

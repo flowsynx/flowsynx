@@ -23,9 +23,12 @@ internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
     {
         try
         {
-            var contex = _contextParser.Parse(request.SourceEntity);
-            var destinationConnectorContext = _contextParser.Parse(request.DestinationEntity);
-            await contex.CurrentConnector.TransferAsync(contex.Entity, contex.NextConnector, request.Options, null, cancellationToken);
+            var sourceContext = _contextParser.Parse(request.SourceEntity);
+            var destinationContext = _contextParser.Parse(request.DestinationEntity);
+
+            await sourceContext.Connector.TransferAsync(sourceContext.Context, destinationContext.Connector,
+                destinationContext.Context, request.Options, cancellationToken);
+
             return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }
         catch (Exception ex)

@@ -18,7 +18,7 @@ internal class ContextParser : IContextParser
     private readonly ILogger<ContextParser> _logger;
     private readonly IConfigurationManager _configurationManager;
     private readonly IConnectorsManager _connectorsManager;
-    private readonly ILogger<LocalFileSystemStorage> _localStorageLogger;
+    private readonly ILogger<LocalFileSystemConnector> _localStorageLogger;
     private readonly INamespaceParser _namespaceParser;
     private readonly ICache<string, Connector> _cache;
     private readonly ISerializer _serializer;
@@ -27,7 +27,7 @@ internal class ContextParser : IContextParser
     private const string PipelineSeparator = "|";
 
     public ContextParser(ILogger<ContextParser> logger, IConfigurationManager configurationManager,
-        IConnectorsManager connectorsManager, ILogger<LocalFileSystemStorage> localStorageLogger,
+        IConnectorsManager connectorsManager, ILogger<LocalFileSystemConnector> localStorageLogger,
         INamespaceParser namespaceParser, ICache<string, Connector> cache, 
         ISerializer serializer, IServiceProvider serviceProvider)
     {
@@ -49,7 +49,7 @@ internal class ContextParser : IContextParser
         _serviceProvider = serviceProvider;
     }
 
-    public Context Parse(string path)
+    public ConnectorContext Parse(string path)
     {
         try
         {
@@ -58,8 +58,8 @@ internal class ContextParser : IContextParser
 
             if (segments.Length != 2)
             {
-                var localFileSystemConnector = GetConnector(LocalFileSystemStorageConnector(), "LocalFileSystem", null);
-                return CreateConnectorContext(localFileSystemConnector, null, path);
+                var localFileSystemConnector = GetConnector(LocalFileSystemConnector(), "LocalFileSystem", null);
+                return CreateConnectorContext(localFileSystemConnector, path, null);
             }
 
             entity = segments[1];
@@ -92,15 +92,18 @@ internal class ContextParser : IContextParser
                     throw new StorageNormsParserException($"{nextConfigName} is not exist.");
             }
 
-            var secondaryConfig = _configurationManager.Get(nextConfigName);
+            Connector? nextConnector = null;
+            if (!string.IsNullOrEmpty(nextConfigName))
+            {
+                var secondaryConfig = _configurationManager.Get(nextConfigName);
+                var getNextConnector = _connectorsManager.Get(secondaryConfig.Type);
+                nextConnector = GetConnector(getNextConnector, nextConfigName, secondaryConfig.Specifications.ToSpecifications());
+            }
 
             var getCurrentConnector = _connectorsManager.Get(primaryConfig.Type);
-            var getNextConnector = _connectorsManager.Get(secondaryConfig.Type);
-
             var currentConnector = GetConnector(getCurrentConnector, currentConfigName, primaryConfig.Specifications.ToSpecifications());
-            var nextConnector = GetConnector(getNextConnector, nextConfigName, secondaryConfig.Specifications.ToSpecifications());
 
-            return CreateConnectorContext(currentConnector, nextConnector, entity);
+            return CreateConnectorContext(currentConnector, entity, nextConnector);
         }
         catch (Exception ex)
         {
@@ -109,11 +112,11 @@ internal class ContextParser : IContextParser
         }
     }
 
-    private LocalFileSystemStorage LocalFileSystemStorageConnector()
+    private LocalFileSystemConnector LocalFileSystemConnector()
     {
         var iConnectorsServices = _serviceProvider.GetServices<Connector>();
-        var localFileSystem = iConnectorsServices.First(o => o.GetType() == typeof(LocalFileSystemStorage));
-        return (LocalFileSystemStorage)localFileSystem;
+        var localFileSystem = iConnectorsServices.First(o => o.GetType() == typeof(LocalFileSystemConnector));
+        return (LocalFileSystemConnector)localFileSystem;
     }
 
     private Connector GetConnector(Connector connector, string configName, Connectors.Abstractions.Specifications? specifications)
@@ -133,9 +136,10 @@ internal class ContextParser : IContextParser
         return connector;
     }
 
-    private Context CreateConnectorContext(Connector currentConnector, Connector? nextConnector, string entity)
+    private ConnectorContext CreateConnectorContext(Connector currentConnector, string entity, Connector? nextConnector)
     {
-        return new Context(currentConnector, nextConnector, entity);
+        var context = nextConnector is null ? new Context(entity) : new Context(entity, nextConnector);
+        return new ConnectorContext(currentConnector, context);
     }
 
     private string GenerateKey(Guid connectorId, string configName, object? connectorSpecifications)

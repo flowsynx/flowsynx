@@ -25,7 +25,7 @@ internal class CreateHandler : IRequestHandler<CreateRequest, Result<Unit>>
         {
             var contex = _contextParser.Parse(request.Entity);
             var options = request.Options.ToConnectorOptions();
-            await contex.CurrentConnector.CreateAsync(contex.Entity, contex.NextConnector, options, cancellationToken);
+            await contex.Connector.CreateAsync(contex.Context, options, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.CreateHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

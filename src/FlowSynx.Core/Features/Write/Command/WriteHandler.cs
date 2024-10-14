@@ -25,7 +25,7 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<Unit>>
         {
             var contex = _contexParser.Parse(request.Entity);
             var options = request.Options.ToConnectorOptions();
-            await contex.CurrentConnector.WriteAsync(contex.Entity, contex.NextConnector, options, request.Data, cancellationToken);
+            await contex.Connector.WriteAsync(contex.Context, options, request.Data, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)

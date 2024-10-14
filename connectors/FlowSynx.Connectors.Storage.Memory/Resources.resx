@@ -123,6 +123,9 @@
   <data name="BucketNotExist" xml:space="preserve">
     <value>The bucket '{0}' is not exist</value>
   </data>
+  <data name="CalleeConnectorNotSupported" xml:space="preserve">
+    <value>Memory Storage connector doesn't support as callee connector!</value>
+  </data>
   <data name="ConnectorDescription" xml:space="preserve">
     <value>Connector for managing entities in memory</value>
   </data>

@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Connectors.Manager;
-using FlowSynx.Connectors.Manager.Options;
 
 namespace FlowSynx.Core.Features.Connectors.Query.List;
 

@@ -61,6 +61,15 @@ namespace FlowSynx.Connectors.Storage.LocalFileSystem {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Local File Storage connector doesn&apos;t support as callee connector!.
+        /// </summary>
+        internal static string CalleeConnectorNotSupported {
+            get {
+                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connector for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever.
         /// </summary>
         internal static string ConnectorDescription {

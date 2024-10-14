@@ -25,7 +25,7 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<IEnumerable<obj
         {
             var contex = _contextParser.Parse(request.Entity);
             var options = request.Options.ToConnectorOptions();
-            var response = await contex.CurrentConnector.ListAsync(contex.Entity, contex.NextConnector, options, cancellationToken);
+            var response = await contex.Connector.ListAsync(contex.Context, options, cancellationToken);
             return await Result<IEnumerable<object>>.SuccessAsync(response);
         }
         catch (Exception ex)

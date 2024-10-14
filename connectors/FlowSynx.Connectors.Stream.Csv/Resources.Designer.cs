@@ -88,15 +88,6 @@ namespace FlowSynx.Connectors.Stream.Csv {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to CSV File &apos;{0}&apos; not exist!.
-        /// </summary>
-        internal static string CsvFileNotExist {
-            get {
-                return ResourceManager.GetString("CsvFileNotExist", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Data is not in valid format. Data must be in array type..
         /// </summary>
         internal static string DataMustBeInValidFormat {

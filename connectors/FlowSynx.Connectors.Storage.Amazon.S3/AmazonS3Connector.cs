@@ -19,16 +19,16 @@ using FlowSynx.Connectors.Storage.Exceptions;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3;
 
-public class AmazonS3Storage : Connector
+public class AmazonS3Connector : Connector
 {
-    private readonly ILogger<AmazonS3Storage> _logger;
+    private readonly ILogger<AmazonS3Connector> _logger;
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
     private AmazonS3StorageSpecifications? _s3StorageSpecifications;
     private AmazonS3Client _client = null!;
     private TransferUtility _fileTransferUtility = null!;
 
-    public AmazonS3Storage(ILogger<AmazonS3Storage> logger, IDataFilter dataFilter,
+    public AmazonS3Connector(ILogger<AmazonS3Connector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
@@ -54,44 +54,58 @@ public class AmazonS3Storage : Connector
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(Connector? connector, Abstractions.Options? options, 
+    public override Task<object> About(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
         throw new StorageException(Resources.AboutOperrationNotSupported);
     }
 
-    public override async Task CreateAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
-    {
-        var createOptions = options.ToObject<CreateOptions>();
-        await CreateEntityAsync(entity, createOptions, cancellationToken).ConfigureAwait(false);
-    }
-
-    public override async Task WriteAsync(string entity, Connector? connector,
-        Abstractions.Options? options, object dataOptions, 
+    public override async Task CreateAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var writeFilters = options.ToObject<WriteOptions>();
-        await WriteEntityAsync(entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var createOptions = options.ToObject<CreateOptions>();
+        await CreateEntityAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<ReadResult> ReadAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(Context context, ConnectorOptions? options, 
+        object dataOptions, CancellationToken cancellationToken = default)
     {
-        var readOptions = options.ToObject<ReadOptions>();
-        return await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var writeFilters = options.ToObject<WriteOptions>();
+        await WriteEntityAsync(context.Entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+    public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
+    {
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var readOptions = options.ToObject<ReadOptions>();
+        return await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public override Task UpdateAsync(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+    public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var path = PathHelper.ToUnixPath(context.Entity);
         var listptions = options.ToObject<ListOptions>();
         var deleteFilters = options.ToObject<DeleteOptions>();
 
@@ -123,24 +137,33 @@ public class AmazonS3Storage : Connector
         }
     }
 
-    public override async Task<bool> ExistAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+    public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
     {
-        return await ExistEntityAsync(entity, cancellationToken).ConfigureAwait(false);
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        return await ExistEntityAsync(context.Entity, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+    public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
     {
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
         var listOptions = options.ToObject<ListOptions>();
-        var filteredData = await FilteredEntitiesAsync(entity, listOptions, cancellationToken);
+        var filteredData = await FilteredEntitiesAsync(context.Entity, listOptions, cancellationToken);
         return filteredData.CreateListFromTable();
     }
 
-    public override async Task<TransferData> PrepareTransferring(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+    private async Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
         var readOptions = options.ToObject<ReadOptions>();
 
@@ -151,10 +174,10 @@ public class AmazonS3Storage : Connector
         var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
+            fields = [.. fields, "Kind"];
 
         if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
+            fields = [.. fields, "FullPath"];
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
@@ -172,7 +195,7 @@ public class AmazonS3Storage : Connector
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadEntityAsync(entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    var read = await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
                     content = read.Content.ToBase64String();
                 }
             }
@@ -212,14 +235,31 @@ public class AmazonS3Storage : Connector
         return result;
     }
 
-    public override async Task TransferAsync(string entity, Connector? connector,
-        Abstractions.Options? options, TransferData transferData, CancellationToken cancellationToken = default)
+    public override async Task TransferAsync(Context sourceContext, Connector? destinationConnector,
+        Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
+        if (destinationConnector is null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var createOptions = options.ToObject<CreateOptions>();
+        var writeOptions = options.ToObject<WriteOptions>();
+
+        var transferData = await PrepareTransferring(sourceContext, options, cancellationToken);
+
+        foreach (var row in transferData.Rows)
+            row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
+        
+        await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
+    }
+
+    public override async Task ProcessTransferAsync(Context sourceContext, TransferData transferData,
+        ConnectorOptions? options, CancellationToken cancellationToken = default)
+    {
+        var createOptions = options.ToObject<CreateOptions>();
+        var writeOptions = options.ToObject<WriteOptions>();
+
         if (transferData.Namespace == Namespace.Storage)
         {
-            var createOptions = options.ToObject<CreateOptions>();
-            var writeOptions = options.ToObject<WriteOptions>();
-
             foreach (var item in transferData.Rows)
             {
                 switch (item.Content)
@@ -244,11 +284,17 @@ public class AmazonS3Storage : Connector
         }
         else
         {
-            var path = PathHelper.ToUnixPath(entity);
+            var path = PathHelper.ToUnixPath(sourceContext.Entity);
+
             if (!string.IsNullOrEmpty(transferData.Content))
             {
-                var fileBytes = Convert.FromBase64String(transferData.Content);
-                await File.WriteAllBytesAsync(path, fileBytes, cancellationToken);
+                var parentPath = PathHelper.GetParent(path);
+                if (!PathHelper.IsRootPath(parentPath))
+                {
+                    await CreateEntityAsync(parentPath, new CreateOptions(), cancellationToken).ConfigureAwait(false);
+                    await WriteEntityAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                    _logger.LogInformation($"Copy operation done for entity '{path}'");
+                }
             }
             else
             {
@@ -257,18 +303,25 @@ public class AmazonS3Storage : Connector
                     if (item.Content != null)
                     {
                         var parentPath = PathHelper.GetParent(path);
-                        var fileBytes = Convert.FromBase64String(item.Content);
-                        await File.WriteAllBytesAsync(PathHelper.Combine(parentPath, item.Key), fileBytes, cancellationToken);
+                        if (!PathHelper.IsRootPath(parentPath))
+                        {
+                            await CreateEntityAsync(parentPath, new CreateOptions(), cancellationToken).ConfigureAwait(false);
+                            await WriteEntityAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                            _logger.LogInformation($"Copy operation done for entity '{path}'");
+                        }
                     }
                 }
             }
         }
     }
-    
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(string entity, Connector? connector,
-        Abstractions.Options? options, CancellationToken cancellationToken = default)
+
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
+        ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
 
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
@@ -304,11 +357,6 @@ public class AmazonS3Storage : Connector
         }
 
         return compressEntries;
-    }
-
-    public void Dispose()
-    {
-
     }
 
     #region private methods

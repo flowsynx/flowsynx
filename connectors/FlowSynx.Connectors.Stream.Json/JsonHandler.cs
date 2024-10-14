@@ -1,4 +1,6 @@
-﻿using FlowSynx.IO.Serialization;
+﻿using FlowSynx.Connectors.Abstractions;
+using FlowSynx.IO;
+using FlowSynx.IO.Serialization;
 using Newtonsoft.Json.Linq;
 using System.Data;
 
@@ -7,6 +9,9 @@ namespace FlowSynx.Connectors.Stream.Json;
 public class JsonHandler
 {
     private readonly ISerializer _serializer;
+
+    public string ContentType => "application/json";
+    public string Extension => ".json";
 
     public JsonHandler(ISerializer serializer)
     {
@@ -104,6 +109,30 @@ public class JsonHandler
                 current = (JObject)current[keys[i]];
             }
         }
+    }
+
+    public IEnumerable<string> GetColumnNames(DataTable dataTable)
+    {
+        return dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName);
+    }
+
+    public IEnumerable<TransferDataRow> GenerateTransferDataRow(DataTable dataTable, bool? indented = false)
+    {
+        var transferDataRows = new List<TransferDataRow>();
+        foreach (DataRow row in dataTable.Rows)
+        {
+            var itemArray = row.ItemArray;
+            var rowContent = ToJson(row, indented);
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = $"{Guid.NewGuid()}{Extension}",
+                ContentType = ContentType,
+                Content = rowContent.ToBase64String(),
+                Items = itemArray
+            });
+        }
+
+        return transferDataRows;
     }
 
     public void Delete(DataTable allRows, DataTable rowsToDelete)

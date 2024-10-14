@@ -118,10 +118,13 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AboutOperrationNotSupported" xml:space="preserve">
-    <value>About operation is not supported for JSON stream!</value>
+    <value>About operation is not supported for JSON connector!</value>
   </data>
   <data name="ConnectorDescription" xml:space="preserve">
-    <value>Connector for manage Comma Separated Values (CSV) data.</value>
+    <value>Connector for manage JSON data.</value>
+  </data>
+  <data name="CreateOperrationNotSupported" xml:space="preserve">
+    <value>Create operation is not supported for JSON connector!</value>
   </data>
   <data name="DataMustBeInValidFormat" xml:space="preserve">
     <value>Data is not in valid format. Data must be in array type.</value>
@@ -139,7 +142,7 @@
     <value>Data must have value.</value>
   </data>
   <data name="NoItemsFoundWithTheGivenFilter" xml:space="preserve">
-    <value>No items found with the given filter in '{0}'.</value>
+    <value>No items found with the given filter in.</value>
   </data>
   <data name="ThePathIsNotDirectory" xml:space="preserve">
     <value>The entered path is not a directory.</value>

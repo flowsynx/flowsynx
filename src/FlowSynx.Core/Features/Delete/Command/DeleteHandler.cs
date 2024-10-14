@@ -25,7 +25,7 @@ internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<Unit>>
         {
             var contex = _contextParser.Parse(request.Entity);
             var options = request.Options.ToConnectorOptions();
-            await contex.CurrentConnector.DeleteAsync(contex.Entity, contex.NextConnector, options, cancellationToken);
+            await contex.Connector.DeleteAsync(contex.Context, options, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

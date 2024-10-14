@@ -73,15 +73,15 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection RegisterConnectors(this IServiceCollection services)
     {
-        services.AddScoped<Connector, LocalFileSystemStorage>();
-        services.AddScoped<Connector, MemoryStorage>();
-        services.AddScoped<Connector, AzureFileStorage>();
-        services.AddScoped<Connector, AzureBlobStorage>();
-        services.AddScoped<Connector, AmazonS3Storage>();
-        services.AddScoped<Connector, GoogleCloudStorage>();
-        services.AddScoped<Connector, GoogleDriveStorage>();
-        services.AddScoped<Connector, CsvStream>();
-        services.AddScoped<Connector, JsonStream>();
+        services.AddScoped<Connector, LocalFileSystemConnector>();
+        services.AddScoped<Connector, MemoryConnector>();
+        services.AddScoped<Connector, AzureFileConnector>();
+        services.AddScoped<Connector, AzureBlobConnector>();
+        services.AddScoped<Connector, AmazonS3Connector>();
+        services.AddScoped<Connector, GoogleStorageConnector>();
+        services.AddScoped<Connector, GoogleDriveConnector>();
+        services.AddScoped<Connector, CsvConnector>();
+        services.AddScoped<Connector, JsonConnector>();
         return services;
     }
 }

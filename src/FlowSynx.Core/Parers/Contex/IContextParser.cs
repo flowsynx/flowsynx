@@ -5,5 +5,5 @@ namespace FlowSynx.Core.Parers.Contex;
 
 public interface IContextParser : IParser
 {
-    Context Parse(string path);
+    ConnectorContext Parse(string path);
 }

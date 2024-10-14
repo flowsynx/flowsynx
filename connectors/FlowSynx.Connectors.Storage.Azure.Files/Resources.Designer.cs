@@ -61,6 +61,15 @@ namespace FlowSynx.Connectors.Storage.Azure.Files {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Azure Files Storage connector doesn&apos;t support as callee connector!.
+        /// </summary>
+        internal static string CalleeConnectorNotSupported {
+            get {
+                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connector for managing Microsoft Azure File storage system..
         /// </summary>
         internal static string ConnectorDescription {

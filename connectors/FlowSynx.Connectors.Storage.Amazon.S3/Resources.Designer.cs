@@ -70,6 +70,15 @@ namespace FlowSynx.Connectors.Storage.Amazon.S3 {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Amazon S3 Storage connector doesn&apos;t support as callee connector!.
+        /// </summary>
+        internal static string CalleeConnectorNotSupported {
+            get {
+                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connector for managing Amazon Web Service S3 Storage system..
         /// </summary>
         internal static string ConnectorDescription {

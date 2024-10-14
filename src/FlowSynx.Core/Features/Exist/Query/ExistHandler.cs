@@ -25,7 +25,7 @@ internal class ExistHandler : IRequestHandler<ExistRequest, Result<object>>
         {
             var contex = _contextParser.Parse(request.Entity);
             var options = request.Options.ToConnectorOptions();
-            var response = await contex.CurrentConnector.ExistAsync(contex.Entity, contex.NextConnector, options, cancellationToken);
+            var response = await contex.Connector.ExistAsync(contex.Context, options, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

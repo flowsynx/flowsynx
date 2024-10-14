@@ -79,6 +79,15 @@ namespace FlowSynx.Connectors.Storage.Azure.Blobs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Azure Blobs Storage connector doesn&apos;t support as callee connector!.
+        /// </summary>
+        internal static string CalleeConnectorNotSupported {
+            get {
+                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connector for managing Microsoft Azure Blob storage system..
         /// </summary>
         internal static string ConnectorDescription {
