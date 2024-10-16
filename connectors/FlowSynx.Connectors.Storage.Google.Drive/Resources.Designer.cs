@@ -79,6 +79,15 @@ namespace FlowSynx.Connectors.Storage.Google.Drive {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Can&apos;t purge root directory.
+        /// </summary>
+        internal static string CanNotPurgeRootDirectory {
+            get {
+                return ResourceManager.GetString("CanNotPurgeRootDirectory", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connector for managing Google Drive system..
         /// </summary>
         internal static string ConnectorDescription {
@@ -201,6 +210,15 @@ namespace FlowSynx.Connectors.Storage.Google.Drive {
         internal static string TheSpecifiedPathMustBeNotEmpty {
             get {
                 return ResourceManager.GetString("TheSpecifiedPathMustBeNotEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path &apos;{0}&apos; was deleted successfully..
+        /// </summary>
+        internal static string TheSpecifiedPathWasDeleted {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathWasDeleted", resourceCulture);
             }
         }
     }

@@ -177,6 +177,9 @@
   <data name="TheSpecifiedPathMustBeNotEmpty" xml:space="preserve">
     <value>The specified path must be not empty!</value>
   </data>
+  <data name="TheSpecifiedPathWasDeleted" xml:space="preserve">
+    <value>The specified path '{0}' was deleted successfully.</value>
+  </data>
   <data name="TheSpecifiedResourceNameContainsInvalidCharacters" xml:space="preserve">
     <value>The specified resource name contains invalid characters.</value>
   </data>

@@ -57,8 +57,6 @@ public class AzureFileConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         long totalUsed;
-        var aboutOptions = options.ToObject<AboutOptions>();
-
         try
         {
             var state = await _client.GetStatisticsAsync(cancellationToken);
@@ -119,9 +117,9 @@ public class AzureFileConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listptions = options.ToObject<ListOptions>();
+        var listOptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
-        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
 
         var storageEntities = entities.ToList();
@@ -197,144 +195,65 @@ public class AzureFileConnector : Connector
         return filteredData.CreateListFromTable();
     }
 
-    private async Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+    public override async Task TransferAsync(Context sourceContext, Connector? destinationConnector,
+        Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        if (context.Connector is not null)
+        if (destinationConnector is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
         var readOptions = options.ToObject<ReadOptions>();
 
-        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions, cancellationToken);
 
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+        foreach (var row in transferData.Rows)
+            row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
 
-        if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
-
-        if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
-
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var transferDataRows = new List<TransferDataRow>();
-
-        foreach (DataRow row in filteredData.Rows)
-        {
-            var content = string.Empty;
-            var contentType = string.Empty;
-            var fullPath = row["FullPath"].ToString() ?? string.Empty;
-
-            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                if (!string.IsNullOrEmpty(fullPath))
-                {
-                    var read = await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
-                    content = read.Content.ToBase64String();
-                }
-            }
-
-            if (!kindFieldExist)
-                row["Kind"] = DBNull.Value;
-
-            if (!fullPathFieldExist)
-                row["FullPath"] = DBNull.Value;
-
-            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
-            transferDataRows.Add(new TransferDataRow
-            {
-                Key = fullPath,
-                ContentType = contentType,
-                Content = content,
-                Items = itemArray
-            });
-        }
-
-        if (!kindFieldExist)
-            filteredData.Columns.Remove("Kind");
-
-        if (!fullPathFieldExist)
-            filteredData.Columns.Remove("FullPath");
-
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        var result = new TransferData
-        {
-            Namespace = Namespace,
-            ConnectorType = Type,
-            Kind = TransferKind.Copy,
-            Columns = columnNames,
-            Rows = transferDataRows
-        };
-
-        return result;
-    }
-
-    public override async Task TransferAsync(Context destinationContext, Connector? sourceConnector,
-        Context sourceContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
-    {
-        if (sourceContext.Connector is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        //if (transferData.Namespace == Namespace.Storage)
-        //{
-        //    var createOptions = options.ToObject<CreateOptions>();
-        //    var writeOptions = options.ToObject<WriteOptions>();
-
-        //    foreach (var item in transferData.Rows)
-        //    {
-        //        switch (item.Content)
-        //        {
-        //            case null:
-        //            case "":
-        //                await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
-        //                _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-        //                break;
-        //            case var data:
-        //                var parentPath = PathHelper.GetParent(item.Key);
-        //                if (!PathHelper.IsRootPath(parentPath))
-        //                {
-        //                    await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-        //                    await WriteEntityAsync(item.Key, writeOptions, data, cancellationToken).ConfigureAwait(false);
-        //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-        //                }
-
-        //                break;
-        //        }
-        //    }
-        //}
-        //else
-        //{
-        //    var path = PathHelper.ToUnixPath(entity);
-        //    if (!string.IsNullOrEmpty(transferData.Content))
-        //    {
-        //        var fileBytes = Convert.FromBase64String(transferData.Content);
-        //        await File.WriteAllBytesAsync(path, fileBytes, cancellationToken);
-        //    }
-        //    else
-        //    {
-        //        foreach (var item in transferData.Rows)
-        //        {
-        //            if (item.Content != null)
-        //            {
-        //                var parentPath = PathHelper.GetParent(path);
-        //                var fileBytes = Convert.FromBase64String(item.Content);
-        //                await File.WriteAllBytesAsync(PathHelper.Combine(parentPath, item.Key), fileBytes, cancellationToken);
-        //            }
-        //        }
-        //    }
-        //}
+        await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
     }
 
     public override async Task ProcessTransferAsync(Context sourceContext, TransferData transferData,
     ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
+        var createOptions = options.ToObject<CreateOptions>();
+        var writeOptions = options.ToObject<WriteOptions>();
 
+        var path = PathHelper.ToUnixPath(sourceContext.Entity);
+
+        if (!string.IsNullOrEmpty(transferData.Content))
+        {
+            var parentPath = PathHelper.GetParent(path);
+            if (!PathHelper.IsRootPath(parentPath))
+            {
+                await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                await WriteEntityAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                _logger.LogInformation($"Copy operation done for entity '{path}'");
+            }
+        }
+        else
+        {
+            foreach (var item in transferData.Rows)
+            {
+                if (string.IsNullOrEmpty(item.Content))
+                {
+                    if (transferData.Namespace == Namespace.Storage)
+                    {
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                    }
+                }
+                else
+                {
+                    var parentPath = PathHelper.GetParent(item.Key);
+                    if (!PathHelper.IsRootPath(parentPath))
+                    {
+                        await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                        await WriteEntityAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
+                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                    }
+                }
+            }
+        }
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
@@ -347,11 +266,12 @@ public class AzureFileConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
-        if (!storageEntities.Any())
+        var entityItems = storageEntities.ToList();
+        if (!entityItems.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
-        foreach (var entityItem in storageEntities)
+        foreach (var entityItem in entityItems)
         {
             if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
@@ -373,7 +293,6 @@ public class AzureFileConnector : Connector
             catch (Exception ex)
             {
                 _logger.LogWarning(ex.Message);
-                continue;
             }
         }
 
@@ -397,7 +316,7 @@ public class AzureFileConnector : Connector
         return new ShareClient(shareUri: uri, credential: credential);
     }
 
-    private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync(string path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -407,12 +326,14 @@ public class AzureFileConnector : Connector
             if (PathHelper.IsFile(path))
             {
                 ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
-                return await fileClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+                await fileClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+                _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+                return;
             }
 
             ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
             await DeleteAllAsync(directoryClient, cancellationToken: cancellationToken);
-            return true;
+            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
@@ -675,6 +596,82 @@ public class AzureFileConnector : Connector
         }
 
         return storageEntities;
+    }
+
+    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions, 
+        ReadOptions readOptions, CancellationToken cancellationToken = new CancellationToken())
+    {
+        if (context.Connector is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var path = PathHelper.ToUnixPath(context.Entity);
+
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+
+        var fields = DeserializeToStringArray(listOptions.Fields);
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+
+        if (!kindFieldExist)
+            fields = fields.Append("Kind").ToArray();
+
+        if (!fullPathFieldExist)
+            fields = fields.Append("FullPath").ToArray();
+
+        var dataFilterOptions = GetDataFilterOptions(listOptions);
+
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var transferDataRows = new List<TransferDataRow>();
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
+
+            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    var read = await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
+                }
+            }
+
+            if (!kindFieldExist)
+                row["Kind"] = DBNull.Value;
+
+            if (!fullPathFieldExist)
+                row["FullPath"] = DBNull.Value;
+
+            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = fullPath,
+                ContentType = contentType,
+                Content = content,
+                Items = itemArray
+            });
+        }
+
+        if (!kindFieldExist)
+            filteredData.Columns.Remove("Kind");
+
+        if (!fullPathFieldExist)
+            filteredData.Columns.Remove("FullPath");
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var result = new TransferData
+        {
+            Namespace = Namespace,
+            ConnectorType = Type,
+            Kind = TransferKind.Copy,
+            Columns = columnNames,
+            Rows = transferDataRows
+        };
+
+        return result;
     }
 
     private DataFilterOptions GetDataFilterOptions(ListOptions options)

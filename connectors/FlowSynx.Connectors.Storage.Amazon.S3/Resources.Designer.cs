@@ -167,5 +167,14 @@ namespace FlowSynx.Connectors.Storage.Amazon.S3 {
                 return ResourceManager.GetString("TheSpecifiedPathMustBeNotEmpty", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path &apos;{0}&apos; was deleted successfully..
+        /// </summary>
+        internal static string TheSpecifiedPathWasDeleted {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathWasDeleted", resourceCulture);
+            }
+        }
     }
 }

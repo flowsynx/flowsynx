@@ -15,7 +15,6 @@ using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
 using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs;
 
@@ -104,10 +103,10 @@ public class AzureBlobConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listptions = options.ToObject<ListOptions>();
+        var listOptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
 
-        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
 
         var storageEntities = entities.ToList();
@@ -173,10 +172,10 @@ public class AzureBlobConnector : Connector
         if (destinationConnector is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        var createOptions = options.ToObject<CreateOptions>();
-        var writeOptions = options.ToObject<WriteOptions>();
+        var listOptions = options.ToObject<ListOptions>();
+        var readOptions = options.ToObject<ReadOptions>();
 
-        var transferData = await PrepareTransferring(sourceContext, options, cancellationToken);
+        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions, cancellationToken);
 
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
@@ -238,11 +237,12 @@ public class AzureBlobConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
-        if (!storageEntities.Any())
+        var entityItems = storageEntities.ToList();
+        if (!entityItems.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
-        foreach (var entityItem in storageEntities)
+        foreach (var entityItem in entityItems)
         {
             if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
@@ -254,12 +254,6 @@ public class AzureBlobConnector : Connector
             {
                 var readOptions = new ReadOptions { Hashing = false };
                 var stream = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken);
-                //if (stream is not StorageRead storageRead)
-                //{
-                //    _logger.LogWarning($"The item '{entityItem.Name}' could be not read.");
-                //    continue;
-                //}
-
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -270,7 +264,6 @@ public class AzureBlobConnector : Connector
             catch (Exception ex)
             {
                 _logger.LogWarning(ex.Message);
-                continue;
             }
         }
 
@@ -523,7 +516,7 @@ public class AzureBlobConnector : Connector
         }
     }
 
-    private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync(string path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -536,7 +529,9 @@ public class AzureBlobConnector : Connector
             if (PathHelper.IsFile(path))
             {
                 BlockBlobClient blockBlobClient = container.GetBlockBlobClient(pathParts.RelativePath);
-                return await blockBlobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+                await blockBlobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+                _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+                return;
             }
 
             var blobItems = container.GetBlobsAsync(prefix: pathParts.RelativePath);
@@ -544,9 +539,8 @@ public class AzureBlobConnector : Connector
             {
                 BlobClient blobClient = container.GetBlobClient(blobItem.Name);
                 await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+                _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, blobItem.Name));
             }
-
-            return true;
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
@@ -646,9 +640,7 @@ public class AzureBlobConnector : Connector
 
         var storageEntities = new List<StorageEntity>();
         var containers = new List<BlobContainerClient>();
-
-        var dataFilterOptions = GetDataFilterOptions(options);
-
+        
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
             containers.AddRange(await ListContainersAsync(cancellationToken).ConfigureAwait(false));
@@ -675,15 +667,14 @@ public class AzureBlobConnector : Connector
         return storageEntities;
     }
 
-    private async Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options,
-        CancellationToken cancellationToken = default)
+    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions, 
+        ReadOptions readOptions, CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var readOptions = options.ToObject<ReadOptions>();
+
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
@@ -691,10 +682,10 @@ public class AzureBlobConnector : Connector
         var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
-            fields = [.. fields, "Kind"];
+            fields = fields.Append("Kind").ToArray();
 
         if (!fullPathFieldExist)
-            fields = [.. fields, "FullPath"];
+            fields = fields.Append("FullPath").ToArray();
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 

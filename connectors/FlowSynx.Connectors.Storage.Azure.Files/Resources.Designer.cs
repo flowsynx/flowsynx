@@ -241,6 +241,15 @@ namespace FlowSynx.Connectors.Storage.Azure.Files {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The specified path &apos;{0}&apos; was deleted successfully..
+        /// </summary>
+        internal static string TheSpecifiedPathWasDeleted {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathWasDeleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The specified resource name contains invalid characters..
         /// </summary>
         internal static string TheSpecifiedResourceNameContainsInvalidCharacters {

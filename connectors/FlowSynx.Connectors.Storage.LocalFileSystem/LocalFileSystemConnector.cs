@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Connectors.Abstractions;
-using FlowSynx.Net;
 using FlowSynx.IO;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Security;
@@ -49,8 +48,7 @@ public class LocalFileSystemConnector : Connector
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var aboutOptions = options.ToObject<AboutOptions>();
+        
         long totalSpace = 0, freeSpace = 0;
         try
         {
@@ -85,7 +83,7 @@ public class LocalFileSystemConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var createOptions = options.ToObject<CreateOptions>();
-        await CreateEntityAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
+        await CreateEntityAsync(context.Entity, createOptions).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
@@ -95,7 +93,7 @@ public class LocalFileSystemConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeOptions = options.ToObject<WriteOptions>();
-        await WriteEntityAsync(context.Entity, writeOptions, dataOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntityAsync(context.Entity, writeOptions, dataOptions).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
@@ -105,7 +103,7 @@ public class LocalFileSystemConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var readOptions = options.ToObject<ReadOptions>();
-        return await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+        return await ReadEntityAsync(context.Entity, readOptions).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
@@ -124,7 +122,7 @@ public class LocalFileSystemConnector : Connector
         var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
 
-        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listptions).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
         var storageEntities = entities.ToList();
 
@@ -159,7 +157,7 @@ public class LocalFileSystemConnector : Connector
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        return Task.FromResult<bool>(PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path));
+        return Task.FromResult(PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path));
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
@@ -169,7 +167,7 @@ public class LocalFileSystemConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var listOptions = options.ToObject<ListOptions>();
-        var filteredData = await FilteredEntitiesAsync(context.Entity, listOptions, cancellationToken);
+        var filteredData = await FilteredEntitiesAsync(context.Entity, listOptions);
         return filteredData.CreateListFromTable();
     }
 
@@ -179,10 +177,10 @@ public class LocalFileSystemConnector : Connector
         if (destinationConnector is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        var createOptions = options.ToObject<CreateOptions>();
-        var writeOptions = options.ToObject<WriteOptions>();
+        var listOptions = options.ToObject<ListOptions>();
+        var readOptions = options.ToObject<ReadOptions>();
 
-        var transferData = await PrepareTransferring(sourceContext, options, cancellationToken);
+        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions);
 
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
@@ -203,8 +201,8 @@ public class LocalFileSystemConnector : Connector
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                await WriteEntityAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
+                await WriteEntityAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -216,7 +214,7 @@ public class LocalFileSystemConnector : Connector
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+                        await CreateEntityAsync(item.Key, createOptions).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -225,8 +223,8 @@ public class LocalFileSystemConnector : Connector
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                        await WriteEntityAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
+                        await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
+                        await WriteEntityAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -242,13 +240,14 @@ public class LocalFileSystemConnector : Connector
 
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions);
 
-        if (!storageEntities.Any())
+        var entityItems = storageEntities.ToList();
+        if (!entityItems.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
-        foreach (var entityItem in storageEntities)
+        foreach (var entityItem in entityItems)
         {
             if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
@@ -259,7 +258,7 @@ public class LocalFileSystemConnector : Connector
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -270,7 +269,6 @@ public class LocalFileSystemConnector : Connector
             catch (Exception ex)
             {
                 _logger.LogWarning(ex.Message);
-                continue;
             }
         }
 
@@ -278,27 +276,34 @@ public class LocalFileSystemConnector : Connector
     }
 
     #region internal methods
-    private bool DeleteEntityAsync(string path)
+    private void DeleteEntityAsync(string path)
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         if (PathHelper.IsDirectory(path))
         {
-            if (!Directory.Exists(path)) 
-                return false;
+            if (!Directory.Exists(path))
+            {
+                _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+                return;
+            }
 
             DeleteAllEntities(path);
             Directory.Delete(path);
+            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
         else
         {
             if (!File.Exists(path))
-                return false;
+            {
+                _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+                return;
+            }
             
             File.Delete(path);
+            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
-        return true;
     }
 
     private void DeleteAllEntities(string path)
@@ -314,8 +319,7 @@ public class LocalFileSystemConnector : Connector
         }
     }
 
-    private Task CreateEntityAsync(string entity, CreateOptions options, 
-        CancellationToken cancellationToken)
+    private Task CreateEntityAsync(string entity, CreateOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -332,7 +336,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     private Task WriteEntityAsync(string entity, WriteOptions options, 
-        object dataOptions, CancellationToken cancellationToken)
+        object dataOptions)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -361,8 +365,7 @@ public class LocalFileSystemConnector : Connector
         return Task.CompletedTask;
     }
 
-    private Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
-        CancellationToken cancellationToken)
+    private Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -385,11 +388,10 @@ public class LocalFileSystemConnector : Connector
         return Task.FromResult(result);
     }
 
-    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken)
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
-        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, options);
 
         var dataFilterOptions = GetDataFilterOptions(options);
         var dataTable = storageEntities.ToDataTable();
@@ -398,8 +400,7 @@ public class LocalFileSystemConnector : Connector
         return result;
     }
 
-    private Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+    private Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -423,27 +424,25 @@ public class LocalFileSystemConnector : Connector
        return Task.FromResult<IEnumerable<StorageEntity>>(storageEntities);
     }
 
-    private async Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options,
-        CancellationToken cancellationToken = new CancellationToken())
+    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
+        ReadOptions readOptions)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var readOptions = options.ToObject<ReadOptions>();
 
-        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
         var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
-            fields = [.. fields, "Kind"];
+            fields = fields.Append("Kind").ToArray();
 
         if (!fullPathFieldExist)
-            fields = [.. fields, "FullPath"];
+            fields = fields.Append("FullPath").ToArray();
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
@@ -461,7 +460,7 @@ public class LocalFileSystemConnector : Connector
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                    var read = await ReadEntityAsync(fullPath, readOptions).ConfigureAwait(false);
                     content = read.Content.ToBase64String();
                 }
             }

@@ -123,6 +123,9 @@
   <data name="CalleeConnectorNotSupported" xml:space="preserve">
     <value>Google Drive Storage connector doesn't support as callee connector!</value>
   </data>
+  <data name="CanNotPurgeRootDirectory" xml:space="preserve">
+    <value>Can't purge root directory</value>
+  </data>
   <data name="ConnectorDescription" xml:space="preserve">
     <value>Connector for managing Google Drive system.</value>
   </data>
@@ -164,5 +167,8 @@
   </data>
   <data name="TheSpecifiedPathMustBeNotEmpty" xml:space="preserve">
     <value>The specified path must be not empty!</value>
+  </data>
+  <data name="TheSpecifiedPathWasDeleted" xml:space="preserve">
+    <value>The specified path '{0}' was deleted successfully.</value>
   </data>
 </root>

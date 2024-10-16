@@ -16,7 +16,6 @@ using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
 using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3;
 
@@ -107,24 +106,22 @@ public class AmazonS3Connector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listptions = options.ToObject<ListOptions>();
+        var listOptions = options.ToObject<ListOptions>();
         var deleteFilters = options.ToObject<DeleteOptions>();
 
-        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
         var storageEntities = entities.ToList();
 
         if (!storageEntities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        var result = new List<string>();
+        
         foreach (var entityItem in storageEntities)
         {
             if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            if (await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false))
-                result.Add(storageEntity.Id);
+            await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteFilters.Purge is true)
@@ -164,10 +161,10 @@ public class AmazonS3Connector : Connector
         if (destinationConnector is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        var createOptions = options.ToObject<CreateOptions>();
-        var writeOptions = options.ToObject<WriteOptions>();
+        var listOptions = options.ToObject<ListOptions>();
+        var readOptions = options.ToObject<ReadOptions>();
 
-        var transferData = await PrepareTransferring(sourceContext, options, cancellationToken);
+        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions, cancellationToken);
 
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
@@ -230,11 +227,12 @@ public class AmazonS3Connector : Connector
 
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
-        if (!storageEntities.Any())
+        var entityItems = storageEntities.ToList();
+        if (!entityItems.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         var compressEntries = new List<CompressEntry>();
-        foreach (var entityItem in storageEntities)
+        foreach (var entityItem in entityItems)
         {
             if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
             {
@@ -256,7 +254,6 @@ public class AmazonS3Connector : Connector
             catch (Exception ex)
             {
                 _logger.LogWarning(ex.Message);
-                continue;
             }
         }
 
@@ -373,7 +370,7 @@ public class AmazonS3Connector : Connector
         _logger.LogInformation($"Folder '{folderName}' was created successfully.");
     }
 
-    private async Task<bool> DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync(string path, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -382,18 +379,17 @@ public class AmazonS3Connector : Connector
         {
             var pathParts = GetPartsAsync(path);
             var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
             if (!isExist)
             {
                 _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-                return false;
+                return;
             }
 
             await _client
                 .DeleteObjectAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return true;
+            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -457,8 +453,6 @@ public class AmazonS3Connector : Connector
 
         var storageEntities = new List<StorageEntity>();
         var buckets = new List<string>();
-
-        var dataFilterOptions = GetDataFilterOptions(options);
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
@@ -597,15 +591,13 @@ public class AmazonS3Connector : Connector
         }
     }
 
-    private async Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options,
-        CancellationToken cancellationToken = default)
+    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
+        ReadOptions readOptions, CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var readOptions = options.ToObject<ReadOptions>();
 
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 
@@ -614,10 +606,10 @@ public class AmazonS3Connector : Connector
         var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
-            fields = [.. fields, "Kind"];
+            fields = fields.Append("Kind").ToArray();
 
         if (!fullPathFieldExist)
-            fields = [.. fields, "FullPath"];
+            fields = fields.Append("FullPath").ToArray();
 
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
