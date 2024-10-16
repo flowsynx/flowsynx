@@ -432,7 +432,7 @@ public class JsonConnector : Connector
     }
 
     private Task WriteEntityAsync(string entity, string content, bool append,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -481,7 +481,7 @@ public class JsonConnector : Connector
         }
         else
         {
-            return File.ReadAllText(path);
+            return await File.ReadAllTextAsync(path, cancellationToken);
         }
     }
 

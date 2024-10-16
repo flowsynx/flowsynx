@@ -44,7 +44,7 @@ public class MemoryConnector : Connector
     }
 
     public override Task<object> About(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -76,43 +76,43 @@ public class MemoryConnector : Connector
     }
 
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var createOptions = options.ToObject<CreateOptions>();
-        await CreateEntityAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
+        await CreateEntityAsync(context.Entity, createOptions).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
-        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+        object dataOptions, CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeOptions = options.ToObject<WriteOptions>();
-        await WriteEntityAsync(context.Entity, writeOptions, dataOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntityAsync(context.Entity, writeOptions, dataOptions).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var readOptions = options.ToObject<ReadOptions>();
-        return await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+        return await ReadEntityAsync(context.Entity, readOptions).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -121,7 +121,7 @@ public class MemoryConnector : Connector
         var listptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
 
-        var dataTable = await FilteredEntitiesAsync(path, listptions, cancellationToken).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listptions).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
         var storageEntities = entities.ToList();
 
@@ -162,12 +162,12 @@ public class MemoryConnector : Connector
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        return await ExistEntityAsync(context.Entity, options, cancellationToken).ConfigureAwait(false);
+        return await ExistEntityAsync(context.Entity, options).ConfigureAwait(false);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
@@ -177,7 +177,7 @@ public class MemoryConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var listOptions = options.ToObject<ListOptions>();
-        var filteredData = await FilteredEntitiesAsync(context.Entity, listOptions, cancellationToken);
+        var filteredData = await FilteredEntitiesAsync(context.Entity, listOptions);
         return filteredData.CreateListFromTable();
     }
 
@@ -190,7 +190,7 @@ public class MemoryConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
         var readOptions = options.ToObject<ReadOptions>();
 
-        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions, cancellationToken);
+        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions);
 
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
@@ -211,8 +211,8 @@ public class MemoryConnector : Connector
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                await WriteEntityAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
+                await WriteEntityAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -224,7 +224,7 @@ public class MemoryConnector : Connector
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+                        await CreateEntityAsync(item.Key, createOptions).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -233,8 +233,8 @@ public class MemoryConnector : Connector
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                        await WriteEntityAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
+                        await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
+                        await WriteEntityAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -243,14 +243,14 @@ public class MemoryConnector : Connector
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -268,7 +268,7 @@ public class MemoryConnector : Connector
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -286,7 +286,7 @@ public class MemoryConnector : Connector
     }
 
     #region private methods
-    private Task<List<string>> ListBucketsAsync(CancellationToken cancellationToken)
+    private Task<List<string>> ListBucketsAsync()
     {
         var buckets = _entities.Keys;
         var result = buckets
@@ -296,8 +296,8 @@ public class MemoryConnector : Connector
         return Task.FromResult(result);
     }
 
-    private Task ListAsync(List<StorageEntity> result, string bucketName, string path,
-        ListOptions listOptions, CancellationToken cancellationToken)
+    private Task ListAsync(ICollection<StorageEntity> result, string bucketName, string path,
+        ListOptions listOptions)
     {
         if (!_entities.ContainsKey(bucketName))
             throw new Exception(string.Format(Resources.BucketNotExist, bucketName));
@@ -433,8 +433,7 @@ public class MemoryConnector : Connector
         }
     }
 
-    private async Task CreateEntityAsync(string entity, CreateOptions options, 
-        CancellationToken cancellationToken)
+    private async Task CreateEntityAsync(string entity, CreateOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -470,7 +469,7 @@ public class MemoryConnector : Connector
     }
 
     private Task WriteEntityAsync(string entity, WriteOptions options, 
-        object dataOptions, CancellationToken cancellationToken)
+        object dataOptions)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -504,8 +503,7 @@ public class MemoryConnector : Connector
         return Task.CompletedTask;
     }
 
-    private Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
-        CancellationToken cancellationToken)
+    private Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -531,8 +529,7 @@ public class MemoryConnector : Connector
         return Task.FromResult(result);
     }
 
-    private Task<bool> ExistEntityAsync(string entity, ConnectorOptions? options,
-        CancellationToken cancellationToken)
+    private Task<bool> ExistEntityAsync(string entity, ConnectorOptions? options)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -548,11 +545,10 @@ public class MemoryConnector : Connector
         return Task.FromResult(folderExist);
     }
 
-    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken)
+    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
-        var storageEntities = await EntitiesAsync(path, options, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, options);
 
         var dataFilterOptions = GetDataFilterOptions(options);
         var dataTable = storageEntities.ToDataTable();
@@ -561,8 +557,7 @@ public class MemoryConnector : Connector
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken)
+    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -582,7 +577,7 @@ public class MemoryConnector : Connector
             if (pathParts.RelativePath != "")
                 throw new StorageException(Resources.BucketNameIsRequired);
 
-            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
+            buckets.AddRange(await ListBucketsAsync().ConfigureAwait(false));
             storageEntities.AddRange(buckets.Select(b => b.ToEntity(options.IncludeMetadata)));
             return storageEntities;
         }
@@ -590,21 +585,21 @@ public class MemoryConnector : Connector
         buckets.Add(pathParts.BucketName);
 
         await Task.WhenAll(buckets.Select(b =>
-            ListAsync(storageEntities, b, pathParts.RelativePath, options, cancellationToken))
+            ListAsync(storageEntities, b, pathParts.RelativePath, options))
         ).ConfigureAwait(false);
 
         return storageEntities;
     }
 
     private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
-        ReadOptions readOptions, CancellationToken cancellationToken = new CancellationToken())
+        ReadOptions readOptions)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
 
-        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesAsync(path, listOptions);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -632,7 +627,7 @@ public class MemoryConnector : Connector
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadEntityAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    var read = await ReadEntityAsync(context.Entity, readOptions).ConfigureAwait(false);
                     content = read.Content.ToBase64String();
                 }
             }

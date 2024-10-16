@@ -44,7 +44,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override Task<object> About(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -77,7 +77,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -87,7 +87,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
-        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+        object dataOptions, CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -97,7 +97,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -107,13 +107,13 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -148,7 +148,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -161,7 +161,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -233,7 +233,7 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);

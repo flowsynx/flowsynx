@@ -45,19 +45,19 @@ public class CsvConnector : Connector
     }
 
     public override Task<object> About(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
     public override Task CreateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
-        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+        object dataOptions, CancellationToken cancellationToken = default)
     {
         var writeOptions = options.ToObject<WriteOptions>();
         var delimiterOptions = options.ToObject<DelimiterOptions>();
@@ -73,7 +73,8 @@ public class CsvConnector : Connector
         await WriteEntityAsync(context.Entity, content, append, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, CancellationToken cancellationToken = new CancellationToken())
+    public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(context.Entity);
         var readOptions = options.ToObject<ReadOptions>();
@@ -86,13 +87,13 @@ public class CsvConnector : Connector
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(context.Entity);
 
@@ -115,7 +116,7 @@ public class CsvConnector : Connector
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
@@ -128,7 +129,7 @@ public class CsvConnector : Connector
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
@@ -142,7 +143,7 @@ public class CsvConnector : Connector
     }
 
     private Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(context.Entity);
         if (string.IsNullOrEmpty(path))
@@ -261,7 +262,7 @@ public class CsvConnector : Connector
     }
 
     public override Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         var path = PathHelper.ToUnixPath(context.Entity);
         if (string.IsNullOrEmpty(path))
@@ -395,7 +396,7 @@ public class CsvConnector : Connector
     }
 
     private Task WriteEntityAsync(string entity, string content, bool append,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -467,7 +468,7 @@ public class CsvConnector : Connector
             return Encoding.UTF8.GetString(content.Content);
         }
 
-        return File.ReadAllText(path);
+        return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
     private async Task WriteContent(string entity, string content, Connector? connector,
@@ -494,7 +495,7 @@ public class CsvConnector : Connector
     }
 
     private DataTable GetDataTable(string content, string delimiter, 
-        bool? includeMetadata, CancellationToken cancellationToken = new CancellationToken())
+        bool? includeMetadata, CancellationToken cancellationToken)
     {
         return _csvHandler.Load(content, delimiter, includeMetadata);
     }

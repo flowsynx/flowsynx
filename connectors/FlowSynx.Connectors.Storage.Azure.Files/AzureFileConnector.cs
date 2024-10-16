@@ -51,7 +51,7 @@ public class AzureFileConnector : Connector
     }
 
     public override async Task<object> About(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -75,7 +75,7 @@ public class AzureFileConnector : Connector
     }
 
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -85,17 +85,17 @@ public class AzureFileConnector : Connector
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
-        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+        object dataOptions, CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeOptions = options.ToObject<WriteOptions>();
-        await WriteEntityAsync(context.Entity, writeOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntityAsync(context.Entity, writeOptions, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -105,13 +105,13 @@ public class AzureFileConnector : Connector
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -142,7 +142,7 @@ public class AzureFileConnector : Connector
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -185,7 +185,7 @@ public class AzureFileConnector : Connector
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -257,7 +257,7 @@ public class AzureFileConnector : Connector
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken = default)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -377,7 +377,7 @@ public class AzureFileConnector : Connector
     }
 
     private async Task CreateEntityAsync(string entity, CreateOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -421,7 +421,7 @@ public class AzureFileConnector : Connector
     }
 
     private async Task WriteEntityAsync(string entity, WriteOptions options, 
-        object dataOptions, CancellationToken cancellationToken = new CancellationToken())
+        object dataOptions, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -478,7 +478,7 @@ public class AzureFileConnector : Connector
     }
 
     private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -527,7 +527,7 @@ public class AzureFileConnector : Connector
     }
 
     private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
-    CancellationToken cancellationToken = default)
+    CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         var storageEntities = await EntitiesAsync(path, options, cancellationToken);
@@ -540,7 +540,7 @@ public class AzureFileConnector : Connector
     }
 
     private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -599,7 +599,7 @@ public class AzureFileConnector : Connector
     }
 
     private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions, 
-        ReadOptions readOptions, CancellationToken cancellationToken = new CancellationToken())
+        ReadOptions readOptions, CancellationToken cancellationToken)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);

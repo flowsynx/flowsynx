@@ -77,7 +77,7 @@ public class AzureBlobConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeOptions = options.ToObject<WriteOptions>();
-        await WriteEntityAsync(context.Entity, writeOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntityAsync(context.Entity, writeOptions, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
@@ -361,7 +361,7 @@ public class AzureBlobConnector : Connector
     }
 
     private async Task CreateEntityAsync(string entity, CreateOptions options, 
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -406,7 +406,7 @@ public class AzureBlobConnector : Connector
     }
 
     private async Task WriteEntityAsync(string entity, WriteOptions options, 
-        object dataOptions, CancellationToken cancellationToken = default)
+        object dataOptions, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -461,7 +461,7 @@ public class AzureBlobConnector : Connector
     }
 
     private async Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options, 
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -568,7 +568,7 @@ public class AzureBlobConnector : Connector
         }
     }
 
-    private async Task<bool> ExistEntityAsync(string entity, CancellationToken cancellationToken = default)
+    private async Task<bool> ExistEntityAsync(string entity, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -615,7 +615,7 @@ public class AzureBlobConnector : Connector
     }
 
     private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         var storageEntities = await EntitiesAsync(path, options, cancellationToken);
@@ -628,7 +628,7 @@ public class AzureBlobConnector : Connector
     }
 
     private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -668,7 +668,7 @@ public class AzureBlobConnector : Connector
     }
 
     private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions, 
-        ReadOptions readOptions, CancellationToken cancellationToken = default)
+        ReadOptions readOptions, CancellationToken cancellationToken)
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
