@@ -3,5 +3,5 @@
 public class WriteOptions
 {
     public string Headers { get; set; } = string.Empty;
-    public bool? Overwite { get; set; } = false;
+    public bool? OverWrite { get; set; } = false;
 }

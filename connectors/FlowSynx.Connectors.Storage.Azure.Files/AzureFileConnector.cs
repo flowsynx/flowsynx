@@ -195,7 +195,7 @@ public class AzureFileConnector : Connector
         return filteredData.CreateListFromTable();
     }
 
-    public override async Task TransferAsync(Context sourceContext, Connector? destinationConnector,
+    public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
         Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
         if (destinationConnector is null)
@@ -212,13 +212,13 @@ public class AzureFileConnector : Connector
         await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
     }
 
-    public override async Task ProcessTransferAsync(Context sourceContext, TransferData transferData,
-    ConnectorOptions? options, CancellationToken cancellationToken = default)
+    public override async Task ProcessTransferAsync(Context context, TransferData transferData,
+        ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
         var createOptions = options.ToObject<CreateOptions>();
         var writeOptions = options.ToObject<WriteOptions>();
 
-        var path = PathHelper.ToUnixPath(sourceContext.Entity);
+        var path = PathHelper.ToUnixPath(context.Entity);
 
         if (!string.IsNullOrEmpty(transferData.Content))
         {

@@ -70,6 +70,15 @@ namespace FlowSynx.Connectors.Stream.Json {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Amazon S3 Storage connector doesn&apos;t support as callee connector!.
+        /// </summary>
+        internal static string CalleeConnectorNotSupported {
+            get {
+                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Connector for manage JSON data..
         /// </summary>
         internal static string ConnectorDescription {

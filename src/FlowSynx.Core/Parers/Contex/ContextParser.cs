@@ -87,9 +87,12 @@ internal class ContextParser : IContextParser
             var primaryConfig = _configurationManager.Get(currentConfigName);
             if (_namespaceParser.Parse(primaryConfig.Type) == FlowSynx.Connectors.Abstractions.Namespace.Stream)
             {
-                var secondaryConfigNameExist = _configurationManager.IsExist(nextConfigName);
-                if (!secondaryConfigNameExist)
-                    throw new StorageNormsParserException($"{nextConfigName} is not exist.");
+                if (!string.IsNullOrEmpty(nextConfigName))
+                {
+                    var secondaryConfigNameExist = _configurationManager.IsExist(nextConfigName);
+                    if (!secondaryConfigNameExist)
+                        throw new StorageNormsParserException($"{nextConfigName} is not exist.");
+                }
             }
 
             Connector? nextConnector = null;

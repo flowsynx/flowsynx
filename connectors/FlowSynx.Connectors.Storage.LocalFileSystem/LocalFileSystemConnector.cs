@@ -171,7 +171,7 @@ public class LocalFileSystemConnector : Connector
         return filteredData.CreateListFromTable();
     }
 
-    public override async Task TransferAsync(Context sourceContext, Connector? destinationConnector,
+    public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
         Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
         if (destinationConnector is null)
@@ -188,13 +188,13 @@ public class LocalFileSystemConnector : Connector
         await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
     }
 
-    public override async Task ProcessTransferAsync(Context sourceContext, TransferData transferData,
-    ConnectorOptions? options, CancellationToken cancellationToken = default)
+    public override async Task ProcessTransferAsync(Context context, TransferData transferData,
+        ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
         var createOptions = options.ToObject<CreateOptions>();
         var writeOptions = options.ToObject<WriteOptions>();
 
-        var path = PathHelper.ToUnixPath(sourceContext.Entity);
+        var path = PathHelper.ToUnixPath(context.Entity);
 
         if (!string.IsNullOrEmpty(transferData.Content))
         {
@@ -285,24 +285,24 @@ public class LocalFileSystemConnector : Connector
         {
             if (!Directory.Exists(path))
             {
-                _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+                _logger.LogWarning($"The specified path '{path}' is not exist.");
                 return;
             }
 
             DeleteAllEntities(path);
             Directory.Delete(path);
-            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+            _logger.LogInformation($"The specified path '{path}' was deleted successfully.");
         }
         else
         {
             if (!File.Exists(path))
             {
-                _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+                _logger.LogWarning($"The specified path '{path}' is not exist.");
                 return;
             }
             
             File.Delete(path);
-            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+            _logger.LogInformation($"The specified path '{path}' was deleted successfully.");
         }
     }
 

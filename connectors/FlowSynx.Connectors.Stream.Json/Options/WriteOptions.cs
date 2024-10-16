@@ -2,5 +2,5 @@
 
 public class WriteOptions
 {
-    public bool? Overwite { get; set; } = false;
+    public bool? OverWrite { get; set; } = false;
 }

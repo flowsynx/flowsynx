@@ -69,7 +69,7 @@ public class JsonConnector : Connector
             return;
         }
 
-        var append = writeOptions.Overwite is false;
+        var append = writeOptions.OverWrite is false;
         await WriteEntityAsync(context.Entity, content, append, cancellationToken).ConfigureAwait(false);
     }
 
@@ -121,94 +121,74 @@ public class JsonConnector : Connector
         return result;
     }
 
-    private async Task<TransferData> PrepareTransferring(Context context, ConnectorOptions? options, 
-        CancellationToken cancellationToken = default)
+    public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
+        Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
+        if (destinationConnector is null)
+            throw new StreamException(Resources.CalleeConnectorNotSupported);
 
         var listOptions = options.ToObject<ListOptions>();
         var transferOptions = options.ToObject<TransferOptions>();
         var indentedOptions = options.ToObject<IndentedOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
-        var filteredData = await FilteredEntitiesAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
+        var transferData = await PrepareTransferring(sourceContext, listOptions, transferOptions, indentedOptions, cancellationToken);
 
-        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow is true;
-        var jsonContentBase64 = string.Empty;
+        await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
+    }
 
-        var transferKind = GetTransferKind(transferOptions.TransferKind);
-        if (!isSeparateJsonPerRow)
+    public override async Task ProcessTransferAsync(Context context, TransferData transferData,
+        ConnectorOptions? options, CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(context.Entity);
+
+        var transferOptions = options.ToObject<TransferOptions>();
+        var indentedOptions = options.ToObject<IndentedOptions>();
+
+        var dataTable = new DataTable();
+
+        foreach (var column in transferData.Columns)
+            dataTable.Columns.Add(column);
+
+        if (transferOptions.SeparateJsonPerRow is true)
         {
-            var jsonContent = _jsonHandler.ToJson(filteredData, indentedOptions.Indented);
-            jsonContentBase64 = jsonContent.ToBase64String();
+            if (!PathHelper.IsDirectory(path))
+                throw new StreamException(Resources.ThePathIsNotDirectory);
+
+            foreach (var row in transferData.Rows)
+            {
+                if (row.Items != null)
+                {
+                    var newRow = dataTable.NewRow();
+                    newRow.ItemArray = row.Items;
+                    dataTable.Rows.Add(newRow);
+
+                    var data = _jsonHandler.ToJson(newRow, indentedOptions.Indented);
+                    var clonedContext = (Context)context.Clone();
+                    clonedContext.Entity = PathHelper.Combine(path, row.Key);
+
+                    await WriteAsync(clonedContext, options, data, cancellationToken);
+                }
+            }
         }
-
-        var result = new TransferData
+        else
         {
-            Namespace = Namespace,
-            ConnectorType = Type,
-            Kind = transferKind,
-            ContentType = isSeparateJsonPerRow ? string.Empty : _jsonHandler.ContentType,
-            Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
-            Columns = _jsonHandler.GetColumnNames(filteredData),
-            Rows = _jsonHandler.GenerateTransferDataRow(filteredData, indentedOptions.Indented)
-        };
+            if (!PathHelper.IsFile(path))
+                throw new StreamException(Resources.ThePathIsNotFile);
 
-        return result;
-    }
+            foreach (var row in transferData.Rows)
+            {
+                if (row.Items != null)
+                {
+                    dataTable.Rows.Add(row.Items);
+                }
+            }
 
-    public override Task TransferAsync(Context destinationContext, Connector? sourceConnector,
-        Context sourceContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
-    {
-        //var path = PathHelper.ToUnixPath(entity);
-        //var transferOptions = options.ToObject<TransferOptions>();
-        //var indentedOptions = options.ToObject<IndentedOptions>();
+            var data = _jsonHandler.ToJson(dataTable, indentedOptions.Indented);
+            var clonedContext = (Context)context.Clone();
+            clonedContext.Entity = path;
 
-        //var dataTable = new DataTable();
-        //foreach (var column in transferData.Columns)
-        //{
-        //    dataTable.Columns.Add(column);
-        //}
-
-        //if (transferOptions.SeparateJsonPerRow is true)
-        //{
-        //    if (!PathHelper.IsDirectory(path))
-        //        throw new StreamException(Resources.ThePathIsNotDirectory);
-
-        //    foreach (var row in transferData.Rows)
-        //    {
-        //        if (row.Items != null)
-        //        {
-        //            var newRow = dataTable.NewRow();
-        //            newRow.ItemArray = row.Items;
-        //            dataTable.Rows.Add(newRow);
-        //            File.WriteAllText(PathHelper.Combine(path, row.Key), _jsonHandler.ToJson(newRow, indentedOptions.Indented));
-        //        }
-        //    }
-        //}
-        //else
-        //{
-        //    if (!PathHelper.IsFile(path))
-        //        throw new StreamException(Resources.ThePathIsNotFile);
-
-        //    foreach (var row in transferData.Rows)
-        //    {
-        //        if (row.Items != null)
-        //        {
-        //            dataTable.Rows.Add(row.Items);
-        //        }
-        //    }
-
-        //    File.WriteAllText(path, _jsonHandler.ToJson(dataTable, indentedOptions.Indented));
-        //}
-
-        return Task.CompletedTask;
-    }
-
-    public override async Task ProcessTransferAsync(Context sourceContext, TransferData transferData,
-    ConnectorOptions? options, CancellationToken cancellationToken = default)
-    {
-
+            await WriteAsync(clonedContext, options, data, cancellationToken);
+        }
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
@@ -441,6 +421,9 @@ public class JsonConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
+        var parentPath = PathHelper.GetParent(path);
+        Directory.CreateDirectory(parentPath);
+
         using (StreamWriter writer = new StreamWriter(path, append))
         {
             writer.WriteLine(content);
@@ -505,6 +488,39 @@ public class JsonConnector : Connector
         };
 
         return Task.FromResult(dataTable);
+    }
+
+    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
+        TransferOptions transferOptions, IndentedOptions indentedOptions,
+        CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(context.Entity);
+
+        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var filteredData = await FilteredEntitiesAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
+
+        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow is true;
+        var jsonContentBase64 = string.Empty;
+
+        var transferKind = GetTransferKind(transferOptions.TransferKind);
+        if (!isSeparateJsonPerRow)
+        {
+            var jsonContent = _jsonHandler.ToJson(filteredData, indentedOptions.Indented);
+            jsonContentBase64 = jsonContent.ToBase64String();
+        }
+
+        var result = new TransferData
+        {
+            Namespace = Namespace,
+            ConnectorType = Type,
+            Kind = transferKind,
+            ContentType = isSeparateJsonPerRow ? string.Empty : _jsonHandler.ContentType,
+            Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
+            Columns = _jsonHandler.GetColumnNames(filteredData),
+            Rows = _jsonHandler.GenerateTransferDataRow(filteredData, indentedOptions.Indented)
+        };
+
+        return result;
     }
 
     private TransferKind GetTransferKind(string? kind)
