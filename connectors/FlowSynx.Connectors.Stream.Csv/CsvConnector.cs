@@ -187,7 +187,19 @@ public class CsvConnector : Connector
 
                     var data = _csvHandler.ToCsv(newRow, transferData.Columns.ToArray(), delimiter);
                     var clonedContext = (Context)context.Clone();
-                    clonedContext.Entity = PathHelper.Combine(path, row.Key);
+                    var newPath = transferData.Namespace == Namespace.Storage
+                        ? row.Key
+                        : PathHelper.Combine(path, row.Key);
+
+                    if (Path.GetExtension(newPath) != Extension)
+                    {
+                        _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
+                                           $"So its extension will be automatically changed to {Extension}");
+
+                        newPath = Path.ChangeExtension(path, Extension);
+                    }
+
+                    clonedContext.Entity = Path.ChangeExtension(newPath, Extension);
 
                     await WriteAsync(clonedContext, options, data, cancellationToken);
                 }
@@ -208,8 +220,17 @@ public class CsvConnector : Connector
 
             var data = _csvHandler.ToCsv(dataTable, delimiter);
             var clonedContext = (Context)context.Clone();
-            clonedContext.Entity = path;
 
+            var newPath = path;
+            if (Path.GetExtension(path) != Extension)
+            {
+                _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
+                                   $"So its extension will be automatically changed to {Extension}");
+
+                newPath = Path.ChangeExtension(path, Extension);
+            }
+            clonedContext.Entity = newPath;
+            
             await WriteAsync(clonedContext, options, data, cancellationToken);
         }
     }

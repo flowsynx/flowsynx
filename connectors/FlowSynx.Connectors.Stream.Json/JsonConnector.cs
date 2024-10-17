@@ -70,7 +70,7 @@ public class JsonConnector : Connector
         }
 
         var append = writeOptions.OverWrite is false;
-        await WriteEntityAsync(context.Entity, content, append, cancellationToken).ConfigureAwait(false);
+        await WriteEntityAsync(context.Entity, content, append).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
@@ -103,7 +103,7 @@ public class JsonConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
 
         var content = await ReadContent(path, context.Connector, cancellationToken);
-        var filteredData = await FilteredEntitiesAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
 
         return filteredData.Rows.Count > 0;
     }
@@ -115,7 +115,7 @@ public class JsonConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
 
         var content = await ReadContent(path, context.Connector, cancellationToken);
-        var filteredData = await FilteredEntitiesAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
         var result = filteredData.CreateListFromTable();
 
         return result;
@@ -149,7 +149,7 @@ public class JsonConnector : Connector
         foreach (var column in transferData.Columns)
             dataTable.Columns.Add(column);
 
-        if (transferOptions.SeparateJsonPerRow is true)
+        if (transferOptions.SeparateJsonPerRow)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new StreamException(Resources.ThePathIsNotDirectory);
@@ -164,7 +164,19 @@ public class JsonConnector : Connector
 
                     var data = _jsonHandler.ToJson(newRow, indentedOptions.Indented);
                     var clonedContext = (Context)context.Clone();
-                    clonedContext.Entity = PathHelper.Combine(path, row.Key);
+                    var newPath = transferData.Namespace == Namespace.Storage
+                        ? row.Key
+                        : PathHelper.Combine(path, row.Key);
+
+                    if (Path.GetExtension(newPath) != _jsonHandler.Extension)
+                    {
+                        _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
+                                           $"So its extension will be automatically changed to {_jsonHandler.Extension}");
+
+                        newPath = Path.ChangeExtension(path, _jsonHandler.Extension);
+                    }
+
+                    clonedContext.Entity = Path.ChangeExtension(newPath, _jsonHandler.Extension);
 
                     await WriteAsync(clonedContext, options, data, cancellationToken);
                 }
@@ -185,7 +197,16 @@ public class JsonConnector : Connector
 
             var data = _jsonHandler.ToJson(dataTable, indentedOptions.Indented);
             var clonedContext = (Context)context.Clone();
-            clonedContext.Entity = path;
+
+            var newPath = path;
+            if (Path.GetExtension(path) != _jsonHandler.Extension)
+            {
+                _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
+                                   $"So its extension will be automatically changed to {_jsonHandler.Extension}");
+
+                newPath = Path.ChangeExtension(path, _jsonHandler.Extension);
+            }
+            clonedContext.Entity = newPath;
 
             await WriteAsync(clonedContext, options, data, cancellationToken);
         }
@@ -206,7 +227,7 @@ public class JsonConnector : Connector
         var indentedOptions = options.ToObject<IndentedOptions>();
 
         var content = await ReadContent(path, context.Connector, cancellationToken);
-        var filteredData = await FilteredEntitiesAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
 
         if (filteredData.Rows.Count <= 0)
             throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
@@ -242,7 +263,6 @@ public class JsonConnector : Connector
             catch (Exception ex)
             {
                 _logger.LogWarning(ex.Message);
-                continue;
             }
         }
 
@@ -278,7 +298,7 @@ public class JsonConnector : Connector
 
     private object GetMetaData(object content)
     {
-        var contentHash = FlowSynx.Security.HashHelper.Md5.GetHash(content);
+        var contentHash = Security.HashHelper.Md5.GetHash(content);
         return new
         {
             ContentHash = contentHash
@@ -411,8 +431,7 @@ public class JsonConnector : Connector
         return serializeData;
     }
 
-    private Task WriteEntityAsync(string entity, string content, bool append,
-    CancellationToken cancellationToken)
+    private Task WriteEntityAsync(string entity, string content, bool append)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -435,7 +454,7 @@ public class JsonConnector : Connector
     private async Task<ReadResult> ReadEntityAsync(string content, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
-        var entities = await FilteredEntitiesAsync(content, listOptions, cancellationToken)
+        var entities = await FilteredEntitiesAsync(content, listOptions)
                             .ConfigureAwait(false);
 
         return entities.Rows.Count switch
@@ -468,16 +487,14 @@ public class JsonConnector : Connector
         }
     }
 
-    private async Task<DataTable> FilteredEntitiesAsync(string content, ListOptions listOptions,
-        CancellationToken cancellationToken)
+    private async Task<DataTable> FilteredEntitiesAsync(string content, ListOptions listOptions)
     {
-        var dataTable = await EntitiesAsync(content, listOptions, cancellationToken);
+        var dataTable = await EntitiesAsync(content, listOptions);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
         return _dataFilter.Filter(dataTable, dataFilterOptions);
     }
 
-    private Task<DataTable> EntitiesAsync(string json, ListOptions options,
-        CancellationToken cancellationToken = new CancellationToken())
+    private Task<DataTable> EntitiesAsync(string json, ListOptions options)
     {
         var jToken = JToken.Parse(json);
         var dataTable = jToken switch
@@ -497,9 +514,9 @@ public class JsonConnector : Connector
         var path = PathHelper.ToUnixPath(context.Entity);
 
         var content = await ReadContent(path, context.Connector, cancellationToken);
-        var filteredData = await FilteredEntitiesAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
 
-        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow is true;
+        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow;
         var jsonContentBase64 = string.Empty;
 
         var transferKind = GetTransferKind(transferOptions.TransferKind);
@@ -535,24 +552,6 @@ public class JsonConnector : Connector
             return TransferKind.Move;
 
         throw new StreamException("Transfer Kind is not supported. Its value should be Copy or Move.");
-    }
-
-    private byte[] ObjectToByteArray(object obj)
-    {
-        if (obj == null)
-        {
-            return null;
-        }
-
-        using (MemoryStream stream = new MemoryStream())
-        {
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                // Convert object to byte array here
-                writer.Write((int)obj);
-            }
-            return stream.ToArray();
-        }
     }
     #endregion
 }

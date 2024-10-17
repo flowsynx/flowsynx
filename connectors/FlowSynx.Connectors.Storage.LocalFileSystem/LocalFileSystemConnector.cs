@@ -220,11 +220,17 @@ public class LocalFileSystemConnector : Connector
                 }
                 else
                 {
-                    var parentPath = PathHelper.GetParent(item.Key);
+                    var newPath = item.Key;
+                    if (transferData.Namespace != Namespace.Storage)
+                    {
+                        newPath = Path.Combine(path, item.Key);
+                    }
+
+                    var parentPath = PathHelper.GetParent(newPath);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
                         await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-                        await WriteEntityAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
+                        await WriteEntityAsync(newPath, writeOptions, item.Content).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
