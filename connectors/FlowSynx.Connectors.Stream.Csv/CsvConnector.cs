@@ -19,8 +19,6 @@ public class CsvConnector : Connector
     private readonly IDeserializer _deserializer;
     private readonly IDataFilter _dataFilter;
     private readonly CsvHandler _csvHandler;
-    private const string ContentType = "text/csv";
-    private const string Extension = ".csv";
 
     public CsvConnector(ILogger<CsvConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
@@ -191,15 +189,15 @@ public class CsvConnector : Connector
                         ? row.Key
                         : PathHelper.Combine(path, row.Key);
 
-                    if (Path.GetExtension(newPath) != Extension)
+                    if (Path.GetExtension(newPath) != _csvHandler.Extension)
                     {
                         _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
-                                           $"So its extension will be automatically changed to {Extension}");
+                                           $"So its extension will be automatically changed to {_csvHandler.Extension}");
 
-                        newPath = Path.ChangeExtension(path, Extension);
+                        newPath = Path.ChangeExtension(path, _csvHandler.Extension);
                     }
 
-                    clonedContext.Entity = Path.ChangeExtension(newPath, Extension);
+                    clonedContext.Entity = Path.ChangeExtension(newPath, _csvHandler.Extension);
 
                     await WriteAsync(clonedContext, options, data, cancellationToken);
                 }
@@ -222,12 +220,12 @@ public class CsvConnector : Connector
             var clonedContext = (Context)context.Clone();
 
             var newPath = path;
-            if (Path.GetExtension(path) != Extension)
+            if (Path.GetExtension(path) != _csvHandler.Extension)
             {
                 _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
-                                   $"So its extension will be automatically changed to {Extension}");
+                                   $"So its extension will be automatically changed to {_csvHandler.Extension}");
 
-                newPath = Path.ChangeExtension(path, Extension);
+                newPath = Path.ChangeExtension(path, _csvHandler.Extension);
             }
             clonedContext.Entity = newPath;
             
@@ -245,7 +243,7 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Path.GetExtension(path), _csvHandler.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         var listOptions = options.ToObject<ListOptions>();
@@ -269,8 +267,8 @@ public class CsvConnector : Connector
             var content = _csvHandler.ToCsv(filteredData, delimiter);
             compressEntries.Add(new CompressEntry
             {
-                Name = $"{Guid.NewGuid().ToString()}{Extension}",
-                ContentType = ContentType,
+                Name = $"{Guid.NewGuid().ToString()}{_csvHandler.Extension}",
+                ContentType = _csvHandler.ContentType,
                 Content = content.ToByteArray(),
             });
 
@@ -285,8 +283,8 @@ public class CsvConnector : Connector
                 var content = _csvHandler.ToCsv(row, columnNames, delimiter);
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
-                    ContentType = ContentType,
+                    Name = $"{Guid.NewGuid().ToString()}{_csvHandler.Extension}",
+                    ContentType = _csvHandler.ContentType,
                     Content = content.ToByteArray(),
                 });
             }
@@ -324,7 +322,7 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Path.GetExtension(path), _csvHandler.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         if (File.Exists(path) && createOptions.Overwrite is false)
@@ -379,7 +377,7 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Path.GetExtension(path), _csvHandler.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         using (StreamWriter writer = new StreamWriter(path, append))
@@ -433,7 +431,7 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Path.GetExtension(path), _csvHandler.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         if (connector is not null)
@@ -462,7 +460,7 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Path.GetExtension(path), _csvHandler.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         await File.WriteAllTextAsync(path, content, cancellationToken);
@@ -485,7 +483,7 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(Path.GetExtension(path), _csvHandler.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
         var delimiter = GetDelimiter(delimiterOptions.Delimiter);
@@ -512,8 +510,8 @@ public class CsvConnector : Connector
             var content = isSeparateCsvPerRow ? _csvHandler.ToCsv(row, columnNames, delimiter) : _csvHandler.ToCsv(row, delimiter);
             transferDataRows.Add(new TransferDataRow
             {
-                Key = $"{Guid.NewGuid().ToString()}{Extension}",
-                ContentType = ContentType,
+                Key = $"{Guid.NewGuid().ToString()}{_csvHandler.Extension}",
+                ContentType = _csvHandler.ContentType,
                 Content = content.ToBase64String(),
                 Items = itemArray
             });
@@ -524,7 +522,7 @@ public class CsvConnector : Connector
             Namespace = Namespace,
             ConnectorType = Type,
             Kind = TransferKind.Copy,
-            ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
+            ContentType = isSeparateCsvPerRow ? string.Empty : _csvHandler.ContentType,
             Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
             Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
             Rows = transferDataRows

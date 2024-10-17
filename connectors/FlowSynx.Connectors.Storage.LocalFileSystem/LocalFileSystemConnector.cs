@@ -119,10 +119,10 @@ public class LocalFileSystemConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
-        var listptions = options.ToObject<ListOptions>();
+        var listOptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
 
-        var dataTable = await FilteredEntitiesAsync(path, listptions).ConfigureAwait(false);
+        var dataTable = await FilteredEntitiesAsync(path, listOptions).ConfigureAwait(false);
         var entities = dataTable.CreateListFromTable();
         var storageEntities = entities.ToList();
 

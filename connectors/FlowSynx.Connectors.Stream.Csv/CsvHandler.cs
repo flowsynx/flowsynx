@@ -10,6 +10,9 @@ internal class CsvHandler
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
 
+    public string ContentType => "text/csv";
+    public string Extension => ".csv";
+
     public CsvHandler(ILogger logger, ISerializer serializer)
     {
         _logger = logger;
@@ -23,39 +26,39 @@ internal class CsvHandler
 
     public DataTable Load(string content, string delimiter, bool? includeMetaData)
     {
-        DataTable dataTable = new DataTable();
+        var dataTable = new DataTable();
         var lines = content.Split(System.Environment.NewLine);
 
         if (lines.Length == 0)
             return dataTable;
 
         // Add columns
-        string[] headers = lines[0].Split(delimiter, StringSplitOptions.None);
+        var headers = lines[0].Split(delimiter, StringSplitOptions.None);
 
         if (includeMetaData is true)
-            headers = [.. headers, "Metadata"];
+            headers = headers.Append("Metadata").ToArray();
 
-        foreach (string header in headers)
+        foreach (var header in headers)
             dataTable.Columns.Add(header);
 
         var columnsCount = headers.Length;
 
         // Add rows
-        for (int i = 1; i < lines.Length-1; i++)
+        for (var i = 1; i < lines.Length-1; i++)
         {
             object[] fields = lines[i].Split(delimiter, StringSplitOptions.None);
             if (includeMetaData is true)
             {
                 var metadataObject = GetMetaData(fields);
-                fields = [.. fields, metadataObject];
+                fields = fields.Append(metadataObject).ToArray();
             }
 
             var currentLength = fields.Length;
             if (currentLength != columnsCount)
                 continue;
             
-            DataRow dataRow = dataTable.NewRow();
-            for (int j = 0; j < headers.Length; j++)
+            var dataRow = dataTable.NewRow();
+            for (var j = 0; j < headers.Length; j++)
             {
                 dataRow[j] = fields[j];
             }

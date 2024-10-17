@@ -27,7 +27,7 @@ public class JsonHandler
     {
         string jsonString = string.Empty;
 
-        if (dataTable != null && dataTable.Rows.Count > 0)
+        if (dataTable is { Rows.Count: > 0 })
         {
             var config = new JsonSerializationConfiguration { Indented = indented ?? true };
             jsonString = _serializer.Serialize(dataTable, config);
@@ -36,12 +36,12 @@ public class JsonHandler
         return jsonString;
     }
 
-    public string ToJson(DataRow datarow, bool? indented)
+    public string ToJson(DataRow dataRow, bool? indented)
     {
         var dict = new Dictionary<string, object>();
-        foreach (DataColumn col in datarow.Table.Columns)
+        foreach (DataColumn col in dataRow.Table.Columns)
         {
-            dict.Add(col.ColumnName, datarow[col]);
+            dict.Add(col.ColumnName, dataRow[col]);
         }
 
         var config = new JsonSerializationConfiguration { Indented = indented ?? true };
