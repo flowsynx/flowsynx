@@ -9,7 +9,6 @@ namespace FlowSynx.Connectors.Stream.Json;
 public class JsonHandler
 {
     private readonly ISerializer _serializer;
-
     public string ContentType => "application/json";
     public string Extension => ".json";
 

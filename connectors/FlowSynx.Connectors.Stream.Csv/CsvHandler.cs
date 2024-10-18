@@ -9,7 +9,6 @@ internal class CsvHandler
 {
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
-
     public string ContentType => "text/csv";
     public string Extension => ".csv";
 
