@@ -16,9 +16,16 @@ WORKDIR /code
 
 COPY ["src/FlowSynx/FlowSynx.csproj", "src/FlowSynx/"]
 COPY ["src/FlowSynx.Core/FlowSynx.Core.csproj", "src/FlowSynx.Core/"]
-COPY ["plugins/FlowSynx.Plugin.Storage.LocalFileSystem/FlowSynx.Plugin.Storage.LocalFileSystem.csproj", "plugins/FlowSynx.Plugin.Storage.LocalFileSystem/"]
-COPY ["plugins/FlowSynx.Plugin.Storage.Azure.Files/FlowSynx.Plugin.Storage.Azure.Files.csproj", "plugins/FlowSynx.Plugin.Storage.Azure.Files/"]
-COPY ["plugins/FlowSynx.Plugin.Storage.Azure.Blobs/FlowSynx.Plugin.Storage.Azure.Blobs.csproj", "plugins/FlowSynx.Plugin.Storage.Azure.Blobs/"]
+
+COPY ["connectors/FlowSynx.Connectors.Storage.Amazon.S3/FlowSynx.Connectors.Storage.Amazon.S3.csproj", "connectors/FlowSynx.Connectors.Storage.Amazon.S3/"]
+COPY ["connectors/FlowSynx.Connectors.Storage.Azure.Blobs/FlowSynx.Connectors.Storage.Azure.Blobs.csproj", "connectors/FlowSynx.Connectors.Storage.Azure.Blobs/"]
+COPY ["connectors/FlowSynx.Connectors.Storage.Azure.Files/FlowSynx.Connectors.Storage.Azure.Files.csproj", "connectors/FlowSynx.Connectors.Storage.Azure.Files/"]
+COPY ["connectors/FlowSynx.Connectors.Storage.Google.Cloud/FlowSynx.Connectors.Storage.Google.Cloud.csproj", "connectors/FlowSynx.Connectors.Storage.Google.Cloud/"]
+COPY ["connectors/FlowSynx.Connectors.Storage.Google.Drive/FlowSynx.Connectors.Storage.Google.Drive.csproj", "connectors/FlowSynx.Connectors.Storage.Google.Drive/"]
+COPY ["connectors/FlowSynx.Connectors.Storage.LocalFileSystem/FlowSynx.Connectors.Storage.LocalFileSystem.csproj", "connectors/FlowSynx.Connectors.Storage.LocalFileSystem/"]
+COPY ["connectors/FlowSynx.Connectors.Storage.Memory/FlowSynx.Connectors.Storage.Memory.csproj", "connectors/FlowSynx.Connectors.Storage.Memory/"]
+COPY ["connectors/FlowSynx.Connectors.Stream.Csv/FlowSynx.Connectors.Stream.Csv.csproj", "connectors/FlowSynx.Connectors.Stream.Csv/"]
+COPY ["connectors/FlowSynx.Connectors.Stream.Json/FlowSynx.Connectors.Stream.Json.csproj", "connectors/FlowSynx.Connectors.Stream.Json/"]
 
 ENV NUGET_URL="https://nuget.pkg.github.com/${NUGET_ORGANIZATION}/index.json"
 RUN dotnet nuget add source --username ${NUGET_USERNAME} --password ${NUGET_PASSWORD} --store-password-in-clear-text --name github ${NUGET_URL}
