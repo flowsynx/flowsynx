@@ -11,6 +11,8 @@ using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
 using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
+using FlowSynx.Connectors.Storage.Amazon.S3.Services;
+using FlowSynx.Connectors.Storage.Amazon.S3.Models;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3;
 

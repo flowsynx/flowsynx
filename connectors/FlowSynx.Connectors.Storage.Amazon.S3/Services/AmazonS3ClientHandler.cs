@@ -1,13 +1,9 @@
 ﻿using Amazon;
 using Amazon.Runtime;
 using Amazon.S3;
+using FlowSynx.Connectors.Storage.Amazon.S3.Models;
 
-namespace FlowSynx.Connectors.Storage.Amazon.S3;
-
-public interface IAmazonS3ClientHandler
-{
-    AmazonS3Client GetClient(AmazonS3StorageSpecifications specifications);
-}
+namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
 public class AmazonS3ClientHandler : IAmazonS3ClientHandler
 {
@@ -19,7 +15,7 @@ public class AmazonS3ClientHandler : IAmazonS3ClientHandler
         if (specifications.SecretKey == null)
             throw new ArgumentNullException(nameof(specifications.SecretKey));
 
-        var awsCredentials = (string.IsNullOrEmpty(specifications.SessionToken))
+        var awsCredentials = string.IsNullOrEmpty(specifications.SessionToken)
             ? (AWSCredentials)new BasicAWSCredentials(specifications.AccessKey, specifications.SecretKey)
             : new SessionAWSCredentials(specifications.AccessKey, specifications.SecretKey, specifications.SessionToken);
 

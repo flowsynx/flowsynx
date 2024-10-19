@@ -9,29 +9,10 @@ using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using Amazon.S3.Transfer;
 using EnsureThat;
+using FlowSynx.Connectors.Storage.Amazon.S3.Models;
+using FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
 
-namespace FlowSynx.Connectors.Storage.Amazon.S3;
-
-public interface IAmazonS3Browser
-{
-    Task CreateAsync(string entity, CreateOptions options, 
-        CancellationToken cancellationToken);
-
-    Task WriteAsync(string entity, WriteOptions options,
-        object dataOptions, CancellationToken cancellationToken);
-
-    Task<ReadResult> ReadAsync(string entity, ReadOptions options,
-        CancellationToken cancellationToken);
-
-    Task DeleteAsync(string path,
-        CancellationToken cancellationToken);
-
-    Task<bool> ExistAsync(string entity, 
-        CancellationToken cancellationToken);
-
-    Task<IEnumerable<StorageEntity>> ListAsync(string path, ListOptions listOptions,
-        CancellationToken cancellationToken);
-}
+namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
 public class AmazonS3Browser : IAmazonS3Browser, IDisposable
 {
@@ -248,7 +229,7 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
         try
         {
             var bucketsResponse = await _client.ListBucketsAsync(cancellationToken);
-            return (bucketsResponse.Buckets.Any(x => x.BucketName == bucketName));
+            return bucketsResponse.Buckets.Any(x => x.BucketName == bucketName);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -276,7 +257,7 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
         }
     }
 
-    private async Task ListFolderAsync(List<StorageEntity> entities, string bucketName, string path, 
+    private async Task ListFolderAsync(List<StorageEntity> entities, string bucketName, string path,
         ListOptions listOptions, CancellationToken cancellationToken)
     {
         var request = new ListObjectsV2Request()

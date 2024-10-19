@@ -1,10 +1,10 @@
-﻿using Amazon.S3;
-using Amazon.S3.Model;
+﻿using Amazon.S3.Model;
+using Amazon.S3;
 using FlowSynx.IO;
 
-namespace FlowSynx.Connectors.Storage.Amazon.S3;
+namespace FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
 
-static class AmazonS3StorageConverter
+static class ConverterExtensions
 {
     private const string MetaDataHeaderPrefix = "x-amz-meta-";
 
@@ -22,8 +22,8 @@ static class AmazonS3StorageConverter
 
         return entity;
     }
-    
-    public static IReadOnlyCollection<StorageEntity> ToEntity(this ListObjectsV2Response response, 
+
+    public static IReadOnlyCollection<StorageEntity> ToEntity(this ListObjectsV2Response response,
         AmazonS3Client client, string bucketName, bool? includeMetadata, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
@@ -38,7 +38,7 @@ static class AmazonS3StorageConverter
         return result;
     }
 
-    public static StorageEntity ToEntity(this S3Object s3Obj, AmazonS3Client client, string bucketName, 
+    public static StorageEntity ToEntity(this S3Object s3Obj, AmazonS3Client client, string bucketName,
         bool? includeMetadata, CancellationToken cancellationToken)
     {
         var fullPath = PathHelper.Combine(bucketName, s3Obj.Key);
@@ -76,7 +76,8 @@ static class AmazonS3StorageConverter
         return entity;
     }
 
-    private static async void AddProperties(AmazonS3Client client, string bucketName, string key, StorageEntity entity, CancellationToken cancellationToken)
+    private static async void AddProperties(AmazonS3Client client, string bucketName, string key, 
+        StorageEntity entity, CancellationToken cancellationToken)
     {
         GetObjectMetadataResponse obj = await client.GetObjectMetadataAsync(bucketName, key, cancellationToken).ConfigureAwait(false);
         if (obj != null)
