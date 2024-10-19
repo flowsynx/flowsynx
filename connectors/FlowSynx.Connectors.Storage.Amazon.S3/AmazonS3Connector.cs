@@ -21,7 +21,7 @@ public class AmazonS3Connector : Connector
     private readonly ILogger<AmazonS3Connector> _logger;
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
-    private AmazonS3StorageSpecifications? _s3StorageSpecifications;
+    private AmazonS3Specifications? _s3Specifications;
     private AmazonS3Client _client = null!;
     private readonly IAmazonS3ClientHandler _clientHandler1;
     private IAmazonS3Browser? _amazonS3Browser;
@@ -43,12 +43,12 @@ public class AmazonS3Connector : Connector
     public override Namespace Namespace => Namespace.Storage;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(AmazonS3StorageSpecifications);
+    public override Type SpecificationsType => typeof(AmazonS3Specifications);
 
     public override Task Initialize()
     {
-        _s3StorageSpecifications = Specifications.ToObject<AmazonS3StorageSpecifications>();
-        _client = _clientHandler1.GetClient(_s3StorageSpecifications);
+        _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
+        _client = _clientHandler1.GetClient(_s3Specifications);
         _amazonS3Browser = new AmazonS3Browser(_logger, _client);
         return Task.CompletedTask;
     }

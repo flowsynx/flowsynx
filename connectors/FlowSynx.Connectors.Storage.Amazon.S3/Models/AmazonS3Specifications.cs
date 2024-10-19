@@ -3,7 +3,7 @@ using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3.Models;
 
-public class AmazonS3StorageSpecifications : Specifications
+public class AmazonS3Specifications : Specifications
 {
     [RequiredMember]
     public string AccessKey { get; set; } = string.Empty;

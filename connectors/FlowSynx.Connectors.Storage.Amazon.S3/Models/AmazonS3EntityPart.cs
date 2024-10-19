@@ -1,8 +1,8 @@
 ﻿namespace FlowSynx.Connectors.Storage.Amazon.S3.Models;
 
-internal class AmazonS3StorageBucketPathPart
+internal class AmazonS3EntityPart
 {
-    public AmazonS3StorageBucketPathPart(string bucketName, string relativePath)
+    public AmazonS3EntityPart(string bucketName, string relativePath)
     {
         BucketName = bucketName;
         RelativePath = relativePath;

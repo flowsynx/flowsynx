@@ -5,5 +5,5 @@ namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
 public interface IAmazonS3ClientHandler
 {
-    AmazonS3Client GetClient(AmazonS3StorageSpecifications specifications);
+    AmazonS3Client GetClient(AmazonS3Specifications specifications);
 }

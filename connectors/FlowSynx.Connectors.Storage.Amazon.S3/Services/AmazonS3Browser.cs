@@ -310,7 +310,7 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
         return parts.Length == 1 ? string.Empty : PathHelper.Combine(parts.Skip(1));
     }
 
-    private AmazonS3StorageBucketPathPart GetPartsAsync(string fullPath)
+    private AmazonS3EntityPart GetPartsAsync(string fullPath)
     {
         fullPath = PathHelper.Normalize(fullPath);
         if (fullPath == null)
@@ -330,7 +330,7 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
             relativePath = PathHelper.Combine(parts.Skip(1));
         }
 
-        return new AmazonS3StorageBucketPathPart(bucketName, relativePath);
+        return new AmazonS3EntityPart(bucketName, relativePath);
     }
 
     private async Task AddFolder(string bucketName, string folderName, CancellationToken cancellationToken)

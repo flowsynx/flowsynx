@@ -7,7 +7,7 @@ namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
 public class AmazonS3ClientHandler : IAmazonS3ClientHandler
 {
-    public AmazonS3Client GetClient(AmazonS3StorageSpecifications specifications)
+    public AmazonS3Client GetClient(AmazonS3Specifications specifications)
     {
         if (specifications.AccessKey == null)
             throw new ArgumentNullException(nameof(specifications.AccessKey));
