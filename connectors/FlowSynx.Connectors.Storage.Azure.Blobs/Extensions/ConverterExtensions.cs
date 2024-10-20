@@ -2,9 +2,9 @@
 using Azure.Storage.Blobs.Models;
 using FlowSynx.IO;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs;
+namespace FlowSynx.Connectors.Storage.Azure.Blobs.Extensions;
 
-static class AzureBlobConverter
+static class ConverterExtensions
 {
     public static StorageEntity ToEntity(this BlobContainerClient client, bool? includeMetadata)
     {
@@ -70,7 +70,7 @@ static class AzureBlobConverter
         entity.Metadata.Add("ContentHash", properties.ContentHash.ToHexString());
         entity.Metadata.Add("ContentLanguage", properties.ContentLanguage);
         entity.Metadata.Add("CustomerProvidedKeySha256", properties.CustomerProvidedKeySha256);
-        
+
         if (properties.ContentLength.HasValue)
             entity.Metadata.Add("ContentLength", properties.ContentLength);
 
@@ -113,7 +113,7 @@ static class AzureBlobConverter
 
         if (properties.LeaseStatus.HasValue)
             entity.Metadata.Add("LeaseStatus", properties.LeaseStatus);
-        
+
         if (properties.RemainingRetentionDays.HasValue)
             entity.Metadata.Add("RemainingRetentionDays", properties.RemainingRetentionDays);
 

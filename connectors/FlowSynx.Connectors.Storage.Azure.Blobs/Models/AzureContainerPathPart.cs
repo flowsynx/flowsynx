@@ -1,8 +1,8 @@
-﻿namespace FlowSynx.Connectors.Storage.Azure.Blobs;
+﻿namespace FlowSynx.Connectors.Storage.Azure.Blobs.Models;
 
-internal class AzureContainerPathPart
+internal class AzureBlobEntityPart
 {
-    public AzureContainerPathPart(string containerName, string relativePath)
+    public AzureBlobEntityPart(string containerName, string relativePath)
     {
         ContainerName = containerName;
         RelativePath = relativePath;

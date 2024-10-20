@@ -3,15 +3,16 @@ using Azure.Storage.Blobs;
 using FlowSynx.IO;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Storage.Options;
+using FlowSynx.Connectors.Storage.Azure.Blobs.Extensions;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs;
+namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
-internal class AzureContainerBrowser : IDisposable
+public class AzureBlobBrowser : IAzureBlobBrowser, IDisposable
 {
     private readonly ILogger _logger;
     private readonly BlobContainerClient _client;
 
-    public AzureContainerBrowser(ILogger logger, BlobContainerClient client)
+    public AzureBlobBrowser(ILogger logger, BlobContainerClient client)
     {
         _logger = logger;
         _client = client ?? throw new ArgumentNullException(nameof(client));

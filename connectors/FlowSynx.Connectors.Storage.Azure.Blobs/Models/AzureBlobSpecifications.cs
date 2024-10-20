@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Connectors.Abstractions;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs;
+namespace FlowSynx.Connectors.Storage.Azure.Blobs.Models;
 
-internal class AzureBlobStorageSpecifications: Specifications
+public class AzureBlobSpecifications : Specifications
 {
     [RequiredMember]
     public string AccountName { get; set; } = string.Empty;

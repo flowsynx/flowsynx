@@ -3,7 +3,6 @@ using Azure.Storage.Blobs;
 using FlowSynx.Connectors.Abstractions;
 using Microsoft.Extensions.Logging;
 using EnsureThat;
-using Azure.Storage;
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs.Specialized;
 using FlowSynx.Connectors.Abstractions.Extensions;
@@ -15,6 +14,9 @@ using FlowSynx.Data.Filter;
 using FlowSynx.Data.Extensions;
 using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
+using FlowSynx.Connectors.Storage.Azure.Blobs.Models;
+using FlowSynx.Connectors.Storage.Azure.Blobs.Services;
+using FlowSynx.Connectors.Storage.Azure.Blobs.Extensions;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs;
 
@@ -23,8 +25,9 @@ public class AzureBlobConnector : Connector
     private readonly ILogger<AzureBlobConnector> _logger;
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
-    private AzureBlobStorageSpecifications? _azureBlobSpecifications;
+    private AzureBlobSpecifications? _azureBlobSpecifications;
     private BlobServiceClient _client = null!;
+    private readonly IAzureBlobClientHandler _clientHandler;
 
     public AzureBlobConnector(ILogger<AzureBlobConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -35,6 +38,7 @@ public class AzureBlobConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
+        _clientHandler = new AzureBlobClientHandler();
     }
 
     public override Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
@@ -42,12 +46,12 @@ public class AzureBlobConnector : Connector
     public override Namespace Namespace => Namespace.Storage;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(AzureBlobStorageSpecifications);
+    public override Type SpecificationsType => typeof(AzureBlobSpecifications);
 
     public override Task Initialize()
     {
-        _azureBlobSpecifications = Specifications.ToObject<AzureBlobStorageSpecifications>();
-        _client = CreateClient(_azureBlobSpecifications);
+        _azureBlobSpecifications = Specifications.ToObject<AzureBlobSpecifications>();
+        _client = _clientHandler.GetClient(_azureBlobSpecifications);
         return Task.CompletedTask;
     }
 
@@ -271,17 +275,7 @@ public class AzureBlobConnector : Connector
     }
 
     #region private methods
-    private BlobServiceClient CreateClient(AzureBlobStorageSpecifications specifications)
-    {
-        if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName))
-            throw new StorageException(Resources.PropertiesShouldHaveValue);
-
-        var uri = new Uri($"https://{specifications.AccountName}.blob.core.windows.net");
-        var credential = new StorageSharedKeyCredential(specifications.AccountName, specifications.AccountKey);
-        return new BlobServiceClient(serviceUri: uri, credential: credential);
-    }
-
-    private AzureContainerPathPart GetPartsAsync(string fullPath)
+    private AzureBlobEntityPart GetPartsAsync(string fullPath)
     {
         fullPath = PathHelper.Normalize(fullPath);
         if (fullPath == null)
@@ -301,13 +295,13 @@ public class AzureBlobConnector : Connector
             relativePath = PathHelper.Combine(parts.Skip(1));
         }
 
-        return new AzureContainerPathPart(containerName, relativePath);
+        return new AzureBlobEntityPart(containerName, relativePath);
     }
 
     private async Task ListAsync(BlobContainerClient containerClient, List<StorageEntity> result, string path,
         ListOptions listOptions, CancellationToken cancellationToken)
     {
-        using var browser = new AzureContainerBrowser(_logger, containerClient);
+        using var browser = new AzureBlobBrowser(_logger, containerClient);
         IReadOnlyCollection<StorageEntity> containerBlobs =
             await browser.ListFolderAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
 
