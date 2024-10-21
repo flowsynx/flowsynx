@@ -4,7 +4,7 @@ using FlowSynx.IO;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Extensions;
 
-static class ConverterExtensions
+internal static class ConverterExtensions
 {
     public static StorageEntity ToEntity(this BlobContainerClient client, bool? includeMetadata)
     {
