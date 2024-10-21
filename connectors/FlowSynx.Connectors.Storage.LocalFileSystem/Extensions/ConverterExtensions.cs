@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Security;
 using FlowSynx.IO;
 
-namespace FlowSynx.Connectors.Storage.LocalFileSystem;
+namespace FlowSynx.Connectors.Storage.LocalFileSystem.Extensions;
 
-static class LocalFileSystemConverter
+static class ConverterExtensions
 {
     public static StorageEntity ToEntity(this DirectoryInfo directory, bool? includeMetadata)
     {
