@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Connectors.Abstractions;
 
-namespace FlowSynx.Connectors.Storage.Azure.Files;
+namespace FlowSynx.Connectors.Storage.Azure.Files.Models;
 
-public class AzureFilesSpecifications: Specifications
+public class AzureFilesSpecifications : Specifications
 {
     [RequiredMember]
     public string ShareName { get; set; } = string.Empty;

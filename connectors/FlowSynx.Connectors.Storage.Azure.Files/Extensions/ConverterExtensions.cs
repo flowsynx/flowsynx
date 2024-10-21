@@ -2,12 +2,12 @@
 using Azure.Storage.Files.Shares.Models;
 using FlowSynx.IO;
 
-namespace FlowSynx.Connectors.Storage.Azure.Files;
+namespace FlowSynx.Connectors.Storage.Azure.Files.Extensions;
 
-static class AzureFileConverter
+internal static class ConverterExtensions
 {
-    public static async Task<StorageEntity> ToEntity(this ShareDirectoryClient shareDirectoryClient, 
-        ShareFileItem fileItem, ShareFileClient client, bool? includeMetadata, 
+    public static async Task<StorageEntity> ToEntity(this ShareDirectoryClient shareDirectoryClient,
+        ShareFileItem fileItem, ShareFileClient client, bool? includeMetadata,
         CancellationToken cancellationToken)
     {
         var fileProperties = await client.GetPropertiesAsync(cancellationToken);
@@ -33,7 +33,7 @@ static class AzureFileConverter
         return entity;
     }
 
-    public static async Task<StorageEntity> ToEntity(this ShareDirectoryClient shareDirectoryClient, 
+    public static async Task<StorageEntity> ToEntity(this ShareDirectoryClient shareDirectoryClient,
         ShareFileItem fileItem, bool? includeMetadata, CancellationToken cancellationToken)
     {
         var fileProperties = await shareDirectoryClient.GetPropertiesAsync(cancellationToken);
