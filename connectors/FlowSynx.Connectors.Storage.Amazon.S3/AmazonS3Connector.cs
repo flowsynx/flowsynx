@@ -24,7 +24,7 @@ public class AmazonS3Connector : Connector
     private AmazonS3Specifications? _s3Specifications;
     private AmazonS3Client _client = null!;
     private readonly IAmazonS3ClientHandler _clientHandler;
-    private IAmazonS3Browser? _amazonS3Browser;
+    private IAmazonS3Browser? _browser;
 
     public AmazonS3Connector(ILogger<AmazonS3Connector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -49,7 +49,7 @@ public class AmazonS3Connector : Connector
     {
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
         _client = _clientHandler.GetClient(_s3Specifications);
-        _amazonS3Browser = new AmazonS3Browser(_logger, _client);
+        _browser = new AmazonS3Browser(_logger, _client);
         return Task.CompletedTask;
     }
 
@@ -65,37 +65,37 @@ public class AmazonS3Connector : Connector
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var createOptions = options.ToObject<CreateOptions>();
-        await _amazonS3Browser.CreateAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
+        await browser.CreateAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
         object dataOptions, CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeFilters = options.ToObject<WriteOptions>();
-        await _amazonS3Browser.WriteAsync(context.Entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
+        await browser.WriteAsync(context.Entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var readOptions = options.ToObject<ReadOptions>();
-        return await _amazonS3Browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+        return await browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
@@ -107,7 +107,7 @@ public class AmazonS3Connector : Connector
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -128,28 +128,22 @@ public class AmazonS3Connector : Connector
             if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            await _amazonS3Browser.DeleteAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
+            await browser.DeleteAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteFilters.Purge is true)
-        {
-            var folder = path;
-            if (!folder.EndsWith(PathHelper.PathSeparator))
-                folder += PathHelper.PathSeparator;
-
-            await _amazonS3Browser.DeleteAsync(folder, cancellationToken);
-        }
+            await browser.PurgeAsync(path, cancellationToken);
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        return await _amazonS3Browser.ExistAsync(context.Entity, cancellationToken).ConfigureAwait(false);
+        return await browser.ExistAsync(context.Entity, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
@@ -183,7 +177,7 @@ public class AmazonS3Connector : Connector
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         var createOptions = options.ToObject<CreateOptions>();
         var writeOptions = options.ToObject<WriteOptions>();
@@ -195,8 +189,8 @@ public class AmazonS3Connector : Connector
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                await _amazonS3Browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                await _amazonS3Browser.WriteAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                await browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                await browser.WriteAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -208,7 +202,7 @@ public class AmazonS3Connector : Connector
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        await _amazonS3Browser.CreateAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+                        await browser.CreateAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -217,8 +211,8 @@ public class AmazonS3Connector : Connector
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await _amazonS3Browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                        await _amazonS3Browser.WriteAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
+                        await browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                        await browser.WriteAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -229,7 +223,7 @@ public class AmazonS3Connector : Connector
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
         ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -237,7 +231,7 @@ public class AmazonS3Connector : Connector
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
 
-        var storageEntities = await _amazonS3Browser.ListAsync(path, listOptions, cancellationToken);
+        var storageEntities = await browser.ListAsync(path, listOptions, cancellationToken);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -255,7 +249,7 @@ public class AmazonS3Connector : Connector
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await _amazonS3Browser.ReadAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await browser.ReadAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -287,10 +281,10 @@ public class AmazonS3Connector : Connector
     private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
     CancellationToken cancellationToken)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         var path = PathHelper.ToUnixPath(entity);
-        var storageEntities = await _amazonS3Browser.ListAsync(path, options, cancellationToken);
+        var storageEntities = await browser.ListAsync(path, options, cancellationToken);
 
         var dataFilterOptions = GetDataFilterOptions(options);
         var dataTable = storageEntities.ToDataTable();
@@ -302,14 +296,14 @@ public class AmazonS3Connector : Connector
     private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
         ReadOptions readOptions, CancellationToken cancellationToken = default)
     {
-        EnsureArg.IsNotNull(_amazonS3Browser, nameof(_amazonS3Browser));
+        var browser = GetBrowser();
 
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
 
-        var storageEntities = await _amazonS3Browser.ListAsync(path, listOptions, cancellationToken);
+        var storageEntities = await browser.ListAsync(path, listOptions, cancellationToken);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -337,7 +331,7 @@ public class AmazonS3Connector : Connector
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await _amazonS3Browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+                    var read = await browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
                     content = read.Content.ToBase64String();
                 }
             }
@@ -390,6 +384,11 @@ public class AmazonS3Connector : Connector
         };
 
         return dataFilterOptions;
+    }
+
+    private IAmazonS3Browser GetBrowser()
+    {
+        return _browser ?? new AmazonS3Browser(_logger, _client);
     }
     #endregion
 }

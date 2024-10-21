@@ -18,7 +18,7 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
 {
     private readonly ILogger _logger;
     private readonly AmazonS3Client _client;
-    private TransferUtility _fileTransferUtility = null!;
+    private readonly TransferUtility _fileTransferUtility;
 
     public AmazonS3Browser(ILogger logger, AmazonS3Client client)
     {
@@ -125,8 +125,9 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
         }
     }
 
-    public async Task DeleteAsync(string path, CancellationToken cancellationToken)
+    public async Task DeleteAsync(string entity, CancellationToken cancellationToken)
     {
+        var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -150,6 +151,16 @@ public class AmazonS3Browser : IAmazonS3Browser, IDisposable
         {
             throw new StorageException(string.Format(Resources.ResourceNotExist, path));
         }
+    }
+
+    public async Task PurgeAsync(string entity, CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var folder = path;
+        if (!folder.EndsWith(PathHelper.PathSeparator))
+            folder += PathHelper.PathSeparator;
+
+        await DeleteAsync(folder, cancellationToken);
     }
 
     public async Task<bool> ExistAsync(string entity, CancellationToken cancellationToken)
