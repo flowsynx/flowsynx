@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Connectors.Abstractions;
 
-namespace FlowSynx.Connectors.Storage.Google.Drive;
+namespace FlowSynx.Connectors.Storage.Google.Drive.Models;
 
-internal class GoogleDriveSpecifications: Specifications
+public class GoogleDriveSpecifications : Specifications
 {
     [RequiredMember]
     public string ProjectId { get; set; } = string.Empty;

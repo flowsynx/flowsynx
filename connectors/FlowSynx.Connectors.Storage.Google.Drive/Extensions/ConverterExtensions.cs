@@ -1,11 +1,11 @@
 ﻿using FlowSynx.IO;
 using DriveFile = Google.Apis.Drive.v3.Data.File;
 
-namespace FlowSynx.Connectors.Storage.Google.Drive;
+namespace FlowSynx.Connectors.Storage.Google.Drive.Extensions;
 
-static class GoogleDriveConverter
+static class ConverterExtensions
 {
-    public static StorageEntity ToEntity(this DriveFile file, string path, bool isDirectory, 
+    public static StorageEntity ToEntity(this DriveFile file, string path, bool isDirectory,
         bool? includeMetadata)
     {
         StorageEntity entity;
@@ -50,16 +50,16 @@ static class GoogleDriveConverter
 
         if (file.ModifiedTimeDateTimeOffset.HasValue)
             entity.Metadata.Add("ModifiedTimeDateTime", file.ModifiedTimeDateTimeOffset);
-        
+
         if (file.CopyRequiresWriterPermission.HasValue)
             entity.Metadata.Add("CopyRequiresWriterPermission", file.CopyRequiresWriterPermission);
 
         if (file.WritersCanShare.HasValue)
             entity.Metadata.Add("WritersCanShare", file.WritersCanShare);
-        
+
         if (file.ViewedByMe.HasValue)
             entity.Metadata.Add("ViewedByMe", file.ViewedByMe);
-        
+
         entity.Metadata.Add("FolderColorRgb", file.FolderColorRgb);
 
         entity.Metadata.Add("Description", file.Description);

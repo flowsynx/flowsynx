@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace FlowSynx.Connectors.Storage.Google.Drive;
+namespace FlowSynx.Connectors.Storage.Google.Drive.Models;
 
 internal enum GoogleDriveScope
 {
