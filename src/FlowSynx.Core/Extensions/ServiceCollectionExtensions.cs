@@ -78,7 +78,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<Connector, AzureFileConnector>();
         services.AddScoped<Connector, AzureBlobConnector>();
         services.AddScoped<Connector, AmazonS3Connector>();
-        services.AddScoped<Connector, GoogleStorageConnector>();
+        services.AddScoped<Connector, GoogleCloudConnector>();
         services.AddScoped<Connector, GoogleDriveConnector>();
         services.AddScoped<Connector, CsvConnector>();
         services.AddScoped<Connector, JsonConnector>();

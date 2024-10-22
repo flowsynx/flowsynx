@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Connectors.Abstractions;
 
-namespace FlowSynx.Connectors.Storage.Google.Cloud;
+namespace FlowSynx.Connectors.Storage.Google.Cloud.Models;
 
-internal class GoogleCloudStorageSpecifications: Specifications
+public class GoogleCloudSpecifications : Specifications
 {
     [RequiredMember]
     public string ProjectId { get; set; } = string.Empty;

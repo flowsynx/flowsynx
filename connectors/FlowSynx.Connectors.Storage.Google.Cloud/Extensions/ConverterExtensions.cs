@@ -1,9 +1,9 @@
 ﻿using FlowSynx.IO;
 using Object = Google.Apis.Storage.v1.Data.Object;
 
-namespace FlowSynx.Connectors.Storage.Google.Cloud;
+namespace FlowSynx.Connectors.Storage.Google.Cloud.Extensions;
 
-static class GoogleCloudStorageConverter
+static class ConverterExtensions
 {
     public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
     {
@@ -20,7 +20,7 @@ static class GoogleCloudStorageConverter
         return entity;
     }
 
-    public static StorageEntity ToEntity(this Object googleObject, bool isDirectory, 
+    public static StorageEntity ToEntity(this Object googleObject, bool isDirectory,
         bool? includeMetadata)
     {
         StorageEntity entity;
@@ -47,14 +47,15 @@ static class GoogleCloudStorageConverter
                 ModifiedTime = googleObject.UpdatedDateTimeOffset,
             };
 
-            if (includeMetadata is true) {
+            if (includeMetadata is true)
+            {
                 AddProperties(entity, googleObject);
             }
         }
 
         return entity;
     }
-    
+
     private static void AddProperties(StorageEntity entity, Object googleObject)
     {
         entity.Metadata.Add("ContentType", googleObject.ContentType);
@@ -62,7 +63,7 @@ static class GoogleCloudStorageConverter
 
         if (googleObject.ComponentCount.HasValue)
             entity.Metadata.Add("ComponentControl", googleObject.ComponentCount);
-        
+
         entity.Metadata.Add("ContentDisposition", googleObject.ContentDisposition);
         entity.Metadata.Add("ContentEncoding", googleObject.ContentEncoding);
         entity.Metadata.Add("ContentLanguage", googleObject.ContentLanguage);
