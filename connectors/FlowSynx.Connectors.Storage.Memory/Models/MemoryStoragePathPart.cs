@@ -1,20 +1,20 @@
-﻿namespace FlowSynx.Connectors.Storage.Memory;
+﻿namespace FlowSynx.Connectors.Storage.Memory.Models;
 
-internal class MemoryStorageBucketPathPart
+internal class MemoryStoragePathPart
 {
-    public MemoryStorageBucketPathPart()
+    public MemoryStoragePathPart()
         : this(string.Empty, string.Empty)
     {
 
     }
 
-    public MemoryStorageBucketPathPart(string bucketName)
+    public MemoryStoragePathPart(string bucketName)
         : this(bucketName, string.Empty)
     {
 
     }
 
-    public MemoryStorageBucketPathPart(string bucketName, string relativePath)
+    public MemoryStoragePathPart(string bucketName, string relativePath)
     {
         BucketName = bucketName;
         RelativePath = relativePath;

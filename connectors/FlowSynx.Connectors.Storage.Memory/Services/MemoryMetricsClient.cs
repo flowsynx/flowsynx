@@ -1,15 +1,17 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using FlowSynx.Connectors.Storage.Memory.Models;
 
-namespace FlowSynx.Connectors.Storage.Memory;
+namespace FlowSynx.Connectors.Storage.Memory.Services;
 
-public class MemoryMetricsClient
+public class MemoryMetricsClient: IMemoryMetricsClient
 {
     public MemoryMetrics GetMetrics()
     {
         return IsUnix() ? GetUnixMetrics() : GetWindowsMetrics();
     }
 
+    #region internal methods
     private bool IsUnix()
     {
         return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ||
@@ -29,7 +31,7 @@ public class MemoryMetricsClient
 
         using (var process = Process.Start(info))
         {
-            if (process != null) 
+            if (process != null)
                 output = process.StandardOutput.ReadToEnd();
         }
 
@@ -60,7 +62,7 @@ public class MemoryMetricsClient
 
         using (var process = Process.Start(info))
         {
-            if (process != null) 
+            if (process != null)
                 output = process.StandardOutput.ReadToEnd();
         }
 
@@ -74,4 +76,5 @@ public class MemoryMetricsClient
             Free = long.Parse(memory[3]) * 1024
         };
     }
+    #endregion
 }

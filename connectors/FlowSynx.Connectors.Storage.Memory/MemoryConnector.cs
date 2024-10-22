@@ -10,6 +10,8 @@ using FlowSynx.Connectors.Storage.Options;
 using Microsoft.Extensions.Logging;
 using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
+using FlowSynx.Connectors.Storage.Memory.Models;
+using FlowSynx.Connectors.Storage.Memory.Services;
 
 namespace FlowSynx.Connectors.Storage.Memory;
 
@@ -18,7 +20,8 @@ public class MemoryConnector : Connector
     private readonly ILogger<MemoryConnector> _logger;
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
-    private readonly Dictionary<string, Dictionary<string, MemoryEntity>> _entities;
+    private readonly IMemoryMetricsClient _memoryMetricsClient;
+    private IMemoryStorageBrowser? _browser;
 
     public MemoryConnector(ILogger<MemoryConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -28,7 +31,7 @@ public class MemoryConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
+        _memoryMetricsClient = new MemoryMetricsClient();
     }
 
     public override Guid Id => Guid.Parse("ac220180-021e-4150-b0e1-c4d4bdbfb9f0");
@@ -40,6 +43,7 @@ public class MemoryConnector : Connector
 
     public override Task Initialize()
     {
+        _browser = new MemoryStorageBrowser(_logger);
         return Task.CompletedTask;
     }
 
@@ -52,9 +56,7 @@ public class MemoryConnector : Connector
         long totalSpace, usedSpace, freeSpace;
         try
         {
-            var client = new MemoryMetricsClient();
-            var metrics = client.GetMetrics();
-
+            var metrics = _memoryMetricsClient.GetMetrics();
             totalSpace = metrics.Total;
             usedSpace = metrics.Used;
             freeSpace = metrics.Free;
@@ -78,31 +80,37 @@ public class MemoryConnector : Connector
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var createOptions = options.ToObject<CreateOptions>();
-        await CreateEntityAsync(context.Entity, createOptions).ConfigureAwait(false);
+        await browser.CreateAsync(context.Entity, createOptions).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
         object dataOptions, CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeOptions = options.ToObject<WriteOptions>();
-        await WriteEntityAsync(context.Entity, writeOptions, dataOptions).ConfigureAwait(false);
+        await browser.WriteAsync(context.Entity, writeOptions, dataOptions).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var readOptions = options.ToObject<ReadOptions>();
-        return await ReadEntityAsync(context.Entity, readOptions).ConfigureAwait(false);
+        return await browser.ReadAsync(context.Entity, readOptions).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
@@ -114,6 +122,8 @@ public class MemoryConnector : Connector
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
@@ -133,41 +143,22 @@ public class MemoryConnector : Connector
             if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            DeleteEntityAsync(storageEntity.FullPath);
+            await browser.DeleteAsync(storageEntity.FullPath);
         }
 
         if (deleteOptions.Purge is true)
-        {
-            var pathParts = GetPartsAsync(path);
-            if (!string.IsNullOrEmpty(pathParts.RelativePath))
-            {
-                var bucket = _entities[pathParts.BucketName];
-                var itemToDelete = bucket.Keys.Where(x => x.StartsWith(pathParts.RelativePath)).Select(p => p);
-
-                var toDelete = itemToDelete.ToList();
-                if (toDelete.Any())
-                {
-                    foreach (var item in toDelete)
-                    {
-                        bucket.Remove(item);
-                    }
-                }
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(pathParts.RelativePath) || PathHelper.IsRootPath(pathParts.RelativePath))
-                    _entities.Remove(pathParts.BucketName);
-            }
-        }
+            await browser.PurgeAsync(path);
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        return await ExistEntityAsync(context.Entity, options).ConfigureAwait(false);
+        return await browser.ExistAsync(context.Entity).ConfigureAwait(false);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
@@ -201,6 +192,8 @@ public class MemoryConnector : Connector
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         var createOptions = options.ToObject<CreateOptions>();
         var writeOptions = options.ToObject<WriteOptions>();
 
@@ -211,8 +204,8 @@ public class MemoryConnector : Connector
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-                await WriteEntityAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
+                await browser.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
+                await browser.WriteAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -224,7 +217,7 @@ public class MemoryConnector : Connector
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        await CreateEntityAsync(item.Key, createOptions).ConfigureAwait(false);
+                        await browser.CreateAsync(item.Key, createOptions).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -233,8 +226,8 @@ public class MemoryConnector : Connector
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-                        await WriteEntityAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
+                        await browser.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
+                        await browser.WriteAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -245,12 +238,14 @@ public class MemoryConnector : Connector
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await EntitiesAsync(path, listOptions);
+        var storageEntities = await browser.ListAsync(path, listOptions);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -268,7 +263,7 @@ public class MemoryConnector : Connector
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
+                var content = await browser.ReadAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -286,269 +281,12 @@ public class MemoryConnector : Connector
     }
 
     #region private methods
-    private Task<List<string>> ListBucketsAsync()
-    {
-        var buckets = _entities.Keys;
-        var result = buckets
-            .Where(bucket => !string.IsNullOrEmpty(bucket))
-            .Select(bucket => bucket).ToList();
-
-        return Task.FromResult(result);
-    }
-
-    private Task ListAsync(ICollection<StorageEntity> result, string bucketName, string path,
-        ListOptions listOptions)
-    {
-        if (!_entities.ContainsKey(bucketName))
-            throw new Exception(string.Format(Resources.BucketNotExist, bucketName));
-
-        var bucket = _entities[bucketName];
-
-        foreach (var (key, _) in bucket)
-        {
-            if (key.StartsWith(path))
-            {
-                var memEntity = bucket[key];
-                result.Add(memEntity.ToEntity(bucketName, listOptions.IncludeMetadata));
-            }
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private bool ObjectExists(string bucketName, string path)
-    {
-        try
-        {
-            if (!BucketExists(bucketName))
-                return false;
-
-            var bucket = _entities[bucketName];
-            return bucket.ContainsKey(path);
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-
-    private bool FolderExistAsync(string bucketName, string path)
-    {
-        if (!BucketExists(bucketName))
-            return false;
-
-        var bucket = _entities[bucketName];
-        var folderPrefix = path + PathHelper.PathSeparator;
-        return bucket.Keys.Any(x=>x.StartsWith(folderPrefix));
-    }
-
-    private bool BucketExists(string bucketName)
-    {
-        try
-        {
-            return _entities.ContainsKey(bucketName);
-        }
-        catch (Exception)
-        {
-            return false;
-        }
-    }
-    
-    private MemoryStorageBucketPathPart GetPartsAsync(string fullPath)
-    {
-        if (string.IsNullOrEmpty(fullPath))
-            return new MemoryStorageBucketPathPart();
-
-        string bucketName, relativePath;
-        fullPath = PathHelper.Normalize(fullPath);
-        var symbolIndex = fullPath.IndexOf('/');
-
-        if (symbolIndex < 0)
-        {
-            bucketName = fullPath;
-            relativePath = string.Empty;
-        }
-        else
-        {
-            bucketName = fullPath[..(symbolIndex)];
-            relativePath = fullPath[(symbolIndex + 1)..];
-        }
-
-        return new MemoryStorageBucketPathPart(bucketName, relativePath);
-    }
-
-
-    private Task<string> AddFolder(string bucketName, string folderName)
-    {
-        var memoryEntity = new MemoryEntity(folderName);
-        var bucket = _entities[bucketName];
-
-        if (!folderName.EndsWith(PathHelper.PathSeparator))
-            folderName += PathHelper.PathSeparator;
-
-        bucket[folderName] = memoryEntity;
-        _logger.LogInformation($"Folder '{folderName}' was created successfully.");
-        return Task.FromResult(memoryEntity.Id);
-    }
-
-    private void DeleteEntityAsync(string path)
-    {
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        var pathParts = GetPartsAsync(path);
-        var bucket = _entities[pathParts.BucketName];
-
-        if (PathHelper.IsFile(path))
-        {
-            var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-            if (!isExist)
-            {
-                _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-                return;
-            }
-
-            bucket.Remove(pathParts.RelativePath);
-            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
-            return;
-        }
-
-        var folderPrefix = !pathParts.RelativePath.EndsWith(PathHelper.PathSeparator) 
-            ? pathParts.RelativePath + PathHelper.PathSeparator 
-            : pathParts.RelativePath;
-
-        var folderExist = bucket.Keys.Any(x => x.StartsWith(folderPrefix));
-
-        if (!folderExist)
-        {
-            _logger.LogWarning(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-            return;
-        }
-
-        var itemToDelete = bucket.Keys.Where(x => x.StartsWith(folderPrefix)).Select(p=>p);
-        foreach (var item in itemToDelete)
-        {
-            bucket.Remove(item);
-            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, item));
-        }
-    }
-
-    private async Task CreateEntityAsync(string entity, CreateOptions options)
-    {
-        var path = PathHelper.ToUnixPath(entity);
-
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (string.IsNullOrEmpty(path))
-            path += PathHelper.PathSeparator;
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var pathParts = GetPartsAsync(path);
-        var isBucketExist = BucketExists(pathParts.BucketName);
-        if (!isBucketExist)
-        {
-            _entities.Add(pathParts.BucketName, new Dictionary<string, MemoryEntity>());
-            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
-        }
-
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-            if (!isExist)
-            {
-                await AddFolder(pathParts.BucketName, pathParts.RelativePath).ConfigureAwait(false);
-            }
-            else
-            {
-                _logger.LogInformation($"Directory '{pathParts.RelativePath}' is already exist.");
-            }
-        }
-    }
-
-    private Task WriteEntityAsync(string entity, WriteOptions options, 
-        object dataOptions)
-    {
-        var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
-
-        var pathParts = GetPartsAsync(path);
-        var isBucketExist = BucketExists(pathParts.BucketName);
-        if (!isBucketExist)
-        {
-            _entities.Add(pathParts.BucketName, new Dictionary<string, MemoryEntity>());
-        }
-
-        var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-        if (isExist && options.Overwrite is false)
-            throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-        var name = Path.GetFileName(path);
-        var bucket = _entities[pathParts.BucketName];
-        var memoryEntity = new MemoryEntity(name, dataStream);
-        bucket[pathParts.RelativePath] = memoryEntity;
-
-        return Task.CompletedTask;
-    }
-
-    private Task<ReadResult> ReadEntityAsync(string entity, ReadOptions options)
-    {
-        var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var pathParts = GetPartsAsync(path);
-        var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
-
-        if (!isExist)
-            throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-        var bucket = _entities[pathParts.BucketName];
-        var memoryEntity = bucket[pathParts.RelativePath];
-
-        var result = new ReadResult
-        {
-            Content = memoryEntity.Content ?? Array.Empty<byte>()
-        };
-
-        return Task.FromResult(result);
-    }
-
-    private Task<bool> ExistEntityAsync(string entity, ConnectorOptions? options)
-    {
-        var path = PathHelper.ToUnixPath(entity);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        var pathParts = GetPartsAsync(path);
-        if (PathHelper.IsFile(path))
-        {
-            return Task.FromResult(ObjectExists(pathParts.BucketName, pathParts.RelativePath));
-        }
-
-        var folderExist = FolderExistAsync(pathParts.BucketName, pathParts.RelativePath);
-        return Task.FromResult(folderExist);
-    }
-
     private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options)
     {
+        var browser = GetBrowser();
+
         var path = PathHelper.ToUnixPath(entity);
-        var storageEntities = await EntitiesAsync(path, options);
+        var storageEntities = await browser.ListAsync(path, options);
 
         var dataFilterOptions = GetDataFilterOptions(options);
         var dataTable = storageEntities.ToDataTable();
@@ -557,49 +295,17 @@ public class MemoryConnector : Connector
         return result;
     }
 
-    private async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options)
-    {
-        var path = PathHelper.ToUnixPath(entity);
-
-        if (string.IsNullOrEmpty(path))
-            path += PathHelper.PathSeparator;
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var storageEntities = new List<StorageEntity>();
-        var buckets = new List<string>();
-
-        var pathParts = GetPartsAsync(path);
-
-        if (pathParts.BucketName == "")
-        {
-            if (pathParts.RelativePath != "")
-                throw new StorageException(Resources.BucketNameIsRequired);
-
-            buckets.AddRange(await ListBucketsAsync().ConfigureAwait(false));
-            storageEntities.AddRange(buckets.Select(b => b.ToEntity(options.IncludeMetadata)));
-            return storageEntities;
-        }
-
-        buckets.Add(pathParts.BucketName);
-
-        await Task.WhenAll(buckets.Select(b =>
-            ListAsync(storageEntities, b, pathParts.RelativePath, options))
-        ).ConfigureAwait(false);
-
-        return storageEntities;
-    }
-
     private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
         ReadOptions readOptions)
     {
+        var browser = GetBrowser();
+
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
 
-        var storageEntities = await EntitiesAsync(path, listOptions);
+        var storageEntities = await browser.ListAsync(path, listOptions);
 
         var fields = DeserializeToStringArray(listOptions.Fields);
         var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -627,7 +333,7 @@ public class MemoryConnector : Connector
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var read = await ReadEntityAsync(context.Entity, readOptions).ConfigureAwait(false);
+                    var read = await browser.ReadAsync(context.Entity, readOptions).ConfigureAwait(false);
                     content = read.Content.ToBase64String();
                 }
             }
@@ -691,6 +397,11 @@ public class MemoryConnector : Connector
         }
 
         return result;
+    }
+
+    private IMemoryStorageBrowser GetBrowser()
+    {
+        return _browser ?? new MemoryStorageBrowser(_logger);
     }
     #endregion
 }

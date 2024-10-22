@@ -1,8 +1,9 @@
-﻿using FlowSynx.IO;
+﻿using FlowSynx.Connectors.Storage.Memory.Models;
+using FlowSynx.IO;
 
-namespace FlowSynx.Connectors.Storage.Memory;
+namespace FlowSynx.Connectors.Storage.Memory.Extensions;
 
-static class MemoryStorageConverter
+static class ConverterExtensions
 {
     public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
     {

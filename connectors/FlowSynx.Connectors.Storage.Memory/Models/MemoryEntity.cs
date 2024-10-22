@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Connectors.Storage.Memory;
+﻿namespace FlowSynx.Connectors.Storage.Memory.Models;
 
-public class MemoryEntity: StorageEntity
+public class MemoryEntity : StorageEntity
 {
     public byte[]? Content { get; }
 

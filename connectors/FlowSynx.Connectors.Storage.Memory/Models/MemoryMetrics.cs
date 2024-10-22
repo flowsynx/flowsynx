@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Connectors.Storage.Memory;
+﻿namespace FlowSynx.Connectors.Storage.Memory.Models;
 
 public class MemoryMetrics
 {
