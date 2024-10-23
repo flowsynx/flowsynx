@@ -23,8 +23,8 @@ public class AmazonS3Connector : Connector
     private readonly IDeserializer _deserializer;
     private AmazonS3Specifications? _s3Specifications;
     private AmazonS3Client _client = null!;
-    private readonly IAmazonS3ClientHandler _clientHandler;
-    private IAmazonS3Browser? _browser;
+    private readonly IAmazonS3Connection _connection;
+    private IAmazonS3Manager? _browser;
 
     public AmazonS3Connector(ILogger<AmazonS3Connector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -35,7 +35,7 @@ public class AmazonS3Connector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _clientHandler = new AmazonS3ClientHandler();
+        _connection = new AmazonS3Connection();
     }
 
     public override Guid Id => Guid.Parse("b961131b-04cb-48df-9554-4252dc66c04c");
@@ -48,8 +48,8 @@ public class AmazonS3Connector : Connector
     public override Task Initialize()
     {
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
-        _client = _clientHandler.GetClient(_s3Specifications);
-        _browser = new AmazonS3Browser(_logger, _client);
+        _client = _connection.GetClient(_s3Specifications);
+        _browser = new AmazonS3Manager(_logger, _client);
         return Task.CompletedTask;
     }
 
@@ -386,9 +386,9 @@ public class AmazonS3Connector : Connector
         return dataFilterOptions;
     }
 
-    private IAmazonS3Browser GetBrowser()
+    private IAmazonS3Manager GetBrowser()
     {
-        return _browser ?? new AmazonS3Browser(_logger, _client);
+        return _browser ?? new AmazonS3Manager(_logger, _client);
     }
     #endregion
 }

@@ -5,7 +5,7 @@ using FlowSynx.Connectors.Storage.Amazon.S3.Models;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
-public class AmazonS3ClientHandler : IAmazonS3ClientHandler
+public class AmazonS3Connection : IAmazonS3Connection
 {
     public AmazonS3Client GetClient(AmazonS3Specifications specifications)
     {

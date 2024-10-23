@@ -14,13 +14,13 @@ using FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
-public class AmazonS3Browser : IAmazonS3Browser, IDisposable
+public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 {
     private readonly ILogger _logger;
     private readonly AmazonS3Client _client;
     private readonly TransferUtility _fileTransferUtility;
 
-    public AmazonS3Browser(ILogger logger, AmazonS3Client client)
+    public AmazonS3Manager(ILogger logger, AmazonS3Client client)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));

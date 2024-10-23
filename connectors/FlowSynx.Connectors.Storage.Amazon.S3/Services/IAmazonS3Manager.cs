@@ -3,7 +3,7 @@ using FlowSynx.Connectors.Storage.Options;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
-public interface IAmazonS3Browser
+public interface IAmazonS3Manager
 {
     Task CreateAsync(string entity, CreateOptions options, CancellationToken cancellationToken);
     Task WriteAsync(string entity, WriteOptions options, object dataOptions, CancellationToken cancellationToken);
