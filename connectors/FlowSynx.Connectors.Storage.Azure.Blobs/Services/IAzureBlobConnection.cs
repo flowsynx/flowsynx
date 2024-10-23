@@ -3,7 +3,7 @@ using FlowSynx.Connectors.Storage.Azure.Blobs.Models;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
-public interface IAzureBlobClientHandler
+public interface IAzureBlobConnection
 {
     BlobServiceClient GetClient(AzureBlobSpecifications specifications);
 }

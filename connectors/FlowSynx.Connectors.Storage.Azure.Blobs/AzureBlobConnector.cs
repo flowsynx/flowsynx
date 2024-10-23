@@ -23,8 +23,8 @@ public class AzureBlobConnector : Connector
     private readonly IDeserializer _deserializer;
     private AzureBlobSpecifications? _azureBlobSpecifications;
     private BlobServiceClient _client = null!;
-    private readonly IAzureBlobClientHandler _clientHandler;
-    private IAzureBlobBrowser? _browser;
+    private readonly IAzureBlobConnection _connection;
+    private IAzureBlobManager? _browser;
 
     public AzureBlobConnector(ILogger<AzureBlobConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -35,7 +35,7 @@ public class AzureBlobConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _clientHandler = new AzureBlobClientHandler();
+        _connection = new AzureBlobConnection();
     }
 
     public override Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
@@ -48,8 +48,8 @@ public class AzureBlobConnector : Connector
     public override Task Initialize()
     {
         _azureBlobSpecifications = Specifications.ToObject<AzureBlobSpecifications>();
-        _client = _clientHandler.GetClient(_azureBlobSpecifications);
-        _browser = new AzureBlobBrowser(_logger, _client);
+        _client = _connection.GetClient(_azureBlobSpecifications);
+        _browser = new AzureBlobManager(_logger, _client);
         return Task.CompletedTask;
     }
 
@@ -387,9 +387,9 @@ public class AzureBlobConnector : Connector
         return result;
     }
 
-    private IAzureBlobBrowser GetBrowser()
+    private IAzureBlobManager GetBrowser()
     {
-        return _browser ?? new AzureBlobBrowser(_logger, _client);
+        return _browser ?? new AzureBlobManager(_logger, _client);
     }
     #endregion
 }

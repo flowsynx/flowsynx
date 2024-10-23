@@ -5,7 +5,7 @@ using FlowSynx.Connectors.Storage.Exceptions;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
-public class AzureBlobClientHandler: IAzureBlobClientHandler
+public class AzureBlobConnection: IAzureBlobConnection
 {
    public BlobServiceClient GetClient(AzureBlobSpecifications specifications)
     {

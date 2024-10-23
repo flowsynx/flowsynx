@@ -3,7 +3,7 @@ using FlowSynx.Connectors.Storage.Options;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
-public interface IAzureBlobBrowser
+public interface IAzureBlobManager
 {
     Task CreateAsync(string entity, CreateOptions options, CancellationToken cancellationToken);
     Task WriteAsync(string entity, WriteOptions options, object dataOptions, CancellationToken cancellationToken);

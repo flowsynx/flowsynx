@@ -14,12 +14,12 @@ using EnsureThat;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
-public class AzureBlobBrowser : IAzureBlobBrowser, IDisposable
+public class AzureBlobManager : IAzureBlobManager, IDisposable
 {
     private readonly ILogger _logger;
     private readonly BlobServiceClient _client;
 
-    public AzureBlobBrowser(ILogger logger, BlobServiceClient client)
+    public AzureBlobManager(ILogger logger, BlobServiceClient client)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
