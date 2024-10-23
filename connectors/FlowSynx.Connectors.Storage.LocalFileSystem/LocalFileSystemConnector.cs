@@ -20,7 +20,7 @@ public class LocalFileSystemConnector : Connector
     private readonly ILogger<LocalFileSystemConnector> _logger;
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
-    private ILocalFileBrowser? _browser;
+    private ILocalFileManager? _browser;
 
     public LocalFileSystemConnector(ILogger<LocalFileSystemConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -42,7 +42,7 @@ public class LocalFileSystemConnector : Connector
 
     public override Task Initialize()
     {
-        _browser = new LocalFileBrowser(_logger);
+        _browser = new LocalFileManager(_logger);
         return Task.CompletedTask;
     }
 
@@ -407,9 +407,9 @@ public class LocalFileSystemConnector : Connector
         return result;
     }
 
-    private ILocalFileBrowser GetBrowser()
+    private ILocalFileManager GetBrowser()
     {
-        return _browser ?? new LocalFileBrowser(_logger);
+        return _browser ?? new LocalFileManager(_logger);
     }
     #endregion
 }

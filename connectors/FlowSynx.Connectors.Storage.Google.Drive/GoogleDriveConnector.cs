@@ -24,8 +24,8 @@ public class GoogleDriveConnector : Connector
     private readonly IDeserializer _deserializer;
     private GoogleDriveSpecifications? _googleDriveSpecifications;
     private DriveService _client = null!;
-    private readonly IGoogleDriveClientHandler _clientHandler;
-    private IGoogleDriveBrowser? _browser;
+    private readonly IGoogleDriveConnection _connection;
+    private IGoogleDriveManager? _browser;
 
     public GoogleDriveConnector(ILogger<GoogleDriveConnector> logger, IDataFilter dataFilter, 
         ISerializer serializer, IDeserializer deserializer)
@@ -35,7 +35,7 @@ public class GoogleDriveConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _clientHandler = new GoogleDriveClientHandler(serializer);
+        _connection = new GoogleDriveConnection(serializer);
     }
 
     public override Guid Id => Guid.Parse("359e62f0-8ccf-41c4-a1f5-4e34d6790e84");
@@ -48,8 +48,8 @@ public class GoogleDriveConnector : Connector
     public override Task Initialize()
     {
         _googleDriveSpecifications = Specifications.ToObject<GoogleDriveSpecifications>();
-        _client = _clientHandler.GetClient(_googleDriveSpecifications);
-        _browser = new GoogleDriveBrowser(_logger, _client, _googleDriveSpecifications);
+        _client = _connection.GetClient(_googleDriveSpecifications);
+        _browser = new GoogleDriveManager(_logger, _client, _googleDriveSpecifications);
         return Task.CompletedTask;
     }
 
@@ -409,9 +409,9 @@ CancellationToken cancellationToken)
         return result;
     }
 
-    private IGoogleDriveBrowser GetBrowser()
+    private IGoogleDriveManager GetBrowser()
     {
-        return _browser ?? new GoogleDriveBrowser(_logger, _client, _googleDriveSpecifications);
+        return _browser ?? new GoogleDriveManager(_logger, _client, _googleDriveSpecifications);
     }
     #endregion
 }

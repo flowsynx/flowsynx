@@ -12,6 +12,7 @@ using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
 using FlowSynx.Connectors.Storage.Memory.Models;
 using FlowSynx.Connectors.Storage.Memory.Services;
+using MemoryMetrics = FlowSynx.Connectors.Storage.Memory.Services.MemoryMetrics;
 
 namespace FlowSynx.Connectors.Storage.Memory;
 
@@ -20,8 +21,8 @@ public class MemoryConnector : Connector
     private readonly ILogger<MemoryConnector> _logger;
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
-    private readonly IMemoryMetricsClient _memoryMetricsClient;
-    private IMemoryStorageBrowser? _browser;
+    private readonly IMemoryMetrics _memoryMetrics;
+    private IMemoryManager? _browser;
 
     public MemoryConnector(ILogger<MemoryConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -31,7 +32,7 @@ public class MemoryConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _memoryMetricsClient = new MemoryMetricsClient();
+        _memoryMetrics = new MemoryMetrics();
     }
 
     public override Guid Id => Guid.Parse("ac220180-021e-4150-b0e1-c4d4bdbfb9f0");
@@ -43,7 +44,7 @@ public class MemoryConnector : Connector
 
     public override Task Initialize()
     {
-        _browser = new MemoryStorageBrowser(_logger);
+        _browser = new MemoryManager(_logger);
         return Task.CompletedTask;
     }
 
@@ -56,7 +57,7 @@ public class MemoryConnector : Connector
         long totalSpace, usedSpace, freeSpace;
         try
         {
-            var metrics = _memoryMetricsClient.GetMetrics();
+            var metrics = _memoryMetrics.GetMetrics();
             totalSpace = metrics.Total;
             usedSpace = metrics.Used;
             freeSpace = metrics.Free;
@@ -399,9 +400,9 @@ public class MemoryConnector : Connector
         return result;
     }
 
-    private IMemoryStorageBrowser GetBrowser()
+    private IMemoryManager GetBrowser()
     {
-        return _browser ?? new MemoryStorageBrowser(_logger);
+        return _browser ?? new MemoryManager(_logger);
     }
     #endregion
 }

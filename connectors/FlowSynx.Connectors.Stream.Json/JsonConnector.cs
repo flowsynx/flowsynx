@@ -11,7 +11,8 @@ using FlowSynx.Data.Extensions;
 using FlowSynx.Connectors.Stream.Exceptions;
 using Newtonsoft.Json;
 using System.Text;
-using FlowSynx.Connectors.Stream.Json.Options;
+using FlowSynx.Connectors.Stream.Json.Models;
+using FlowSynx.Connectors.Stream.Json.Services;
 
 namespace FlowSynx.Connectors.Stream.Json;
 
@@ -21,7 +22,8 @@ public class JsonConnector : Connector
     private readonly IDeserializer _deserializer;
     private readonly ISerializer _serializer;
     private readonly IDataFilter _dataFilter;
-    private readonly JsonHandler _jsonHandler;
+    private readonly IJsonManager _jsonManager;
+
     public JsonConnector(ILogger<JsonConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
     {
@@ -29,7 +31,7 @@ public class JsonConnector : Connector
         _deserializer = deserializer;
         _serializer = serializer;
         _dataFilter = dataFilter;
-        _jsonHandler = new JsonHandler(serializer);
+        _jsonManager = new JsonManager(serializer);
     }
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");
@@ -37,7 +39,7 @@ public class JsonConnector : Connector
     public override Namespace Namespace => Namespace.Stream;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(JsonStreamSpecifications);
+    public override Type SpecificationsType => typeof(JsonSpecifications);
 
     public override Task Initialize()
     {
@@ -162,21 +164,21 @@ public class JsonConnector : Connector
                     newRow.ItemArray = row.Items;
                     dataTable.Rows.Add(newRow);
 
-                    var data = _jsonHandler.ToJson(newRow, indentedOptions.Indented);
+                    var data = _jsonManager.ToJson(newRow, indentedOptions.Indented);
                     var clonedContext = (Context)context.Clone();
                     var newPath = transferData.Namespace == Namespace.Storage
                         ? row.Key
                         : PathHelper.Combine(path, row.Key);
 
-                    if (Path.GetExtension(newPath) != _jsonHandler.Extension)
+                    if (Path.GetExtension(newPath) != _jsonManager.Extension)
                     {
                         _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
-                                           $"So its extension will be automatically changed to {_jsonHandler.Extension}");
+                                           $"So its extension will be automatically changed to {_jsonManager.Extension}");
 
-                        newPath = Path.ChangeExtension(path, _jsonHandler.Extension);
+                        newPath = Path.ChangeExtension(path, _jsonManager.Extension);
                     }
 
-                    clonedContext.Entity = Path.ChangeExtension(newPath, _jsonHandler.Extension);
+                    clonedContext.Entity = Path.ChangeExtension(newPath, _jsonManager.Extension);
 
                     await WriteAsync(clonedContext, options, data, cancellationToken);
                 }
@@ -195,16 +197,16 @@ public class JsonConnector : Connector
                 }
             }
 
-            var data = _jsonHandler.ToJson(dataTable, indentedOptions.Indented);
+            var data = _jsonManager.ToJson(dataTable, indentedOptions.Indented);
             var clonedContext = (Context)context.Clone();
 
             var newPath = path;
-            if (Path.GetExtension(path) != _jsonHandler.Extension)
+            if (Path.GetExtension(path) != _jsonManager.Extension)
             {
                 _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
-                                   $"So its extension will be automatically changed to {_jsonHandler.Extension}");
+                                   $"So its extension will be automatically changed to {_jsonManager.Extension}");
 
-                newPath = Path.ChangeExtension(path, _jsonHandler.Extension);
+                newPath = Path.ChangeExtension(path, _jsonManager.Extension);
             }
             clonedContext.Entity = newPath;
 
@@ -236,11 +238,11 @@ public class JsonConnector : Connector
 
         if (compressOptions.SeparateJsonPerRow is false)
         {
-            var rowContent = _jsonHandler.ToJson(filteredData, indentedOptions.Indented);
+            var rowContent = _jsonManager.ToJson(filteredData, indentedOptions.Indented);
             compressEntries.Add(new CompressEntry
             {
-                Name = $"{Guid.NewGuid().ToString()}{_jsonHandler.Extension}",
-                ContentType =_jsonHandler.ContentType,
+                Name = $"{Guid.NewGuid().ToString()}{_jsonManager.Extension}",
+                ContentType =_jsonManager.ContentType,
                 Content = rowContent.ToByteArray(),
             });
 
@@ -252,11 +254,11 @@ public class JsonConnector : Connector
         {
             try
             {
-                var rowContent = _jsonHandler.ToJson(row, indentedOptions.Indented);
+                var rowContent = _jsonManager.ToJson(row, indentedOptions.Indented);
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = $"{Guid.NewGuid().ToString()}{_jsonHandler.Extension}",
-                    ContentType = _jsonHandler.ContentType,
+                    Name = $"{Guid.NewGuid().ToString()}{_jsonManager.Extension}",
+                    ContentType = _jsonManager.ContentType,
                     Content = rowContent.ToByteArray(),
                 });
             }
@@ -310,7 +312,7 @@ public class JsonConnector : Connector
         var result = new DataTable();
         foreach (var row in token)
         {
-            var dict = _jsonHandler.Flatten(row);
+            var dict = _jsonManager.Flatten(row);
             if (includeMetaData is true)
             {
                 var metadataObject = GetMetaData(dict);
@@ -339,7 +341,7 @@ public class JsonConnector : Connector
     private DataTable JObjectToDataTable(JToken token, bool? includeMetaData)
     {
         var result = new DataTable();
-        var dict = _jsonHandler.Flatten(token);
+        var dict = _jsonManager.Flatten(token);
 
         if (includeMetaData is true)
         {
@@ -367,7 +369,7 @@ public class JsonConnector : Connector
     private DataTable JPropertyToDataTable(JToken token, bool? includeMetaData)
     {
         var result = new DataTable();
-        var dict = _jsonHandler.Flatten(token);
+        var dict = _jsonManager.Flatten(token);
 
         if (includeMetaData is true)
         {
@@ -461,7 +463,7 @@ public class JsonConnector : Connector
         {
             <= 0 => throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter)),
             > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
-            _ => new ReadResult { Content = _jsonHandler.ToJson(entities, true).ToByteArray() }
+            _ => new ReadResult { Content = _jsonManager.ToJson(entities, true).ToByteArray() }
         };
     }
 
@@ -522,7 +524,7 @@ public class JsonConnector : Connector
         var transferKind = GetTransferKind(transferOptions.TransferKind);
         if (!isSeparateJsonPerRow)
         {
-            var jsonContent = _jsonHandler.ToJson(filteredData, indentedOptions.Indented);
+            var jsonContent = _jsonManager.ToJson(filteredData, indentedOptions.Indented);
             jsonContentBase64 = jsonContent.ToBase64String();
         }
 
@@ -531,10 +533,10 @@ public class JsonConnector : Connector
             Namespace = Namespace,
             ConnectorType = Type,
             Kind = transferKind,
-            ContentType = isSeparateJsonPerRow ? string.Empty : _jsonHandler.ContentType,
+            ContentType = isSeparateJsonPerRow ? string.Empty : _jsonManager.ContentType,
             Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
-            Columns = _jsonHandler.GetColumnNames(filteredData),
-            Rows = _jsonHandler.GenerateTransferDataRow(filteredData, indentedOptions.Indented)
+            Columns = _jsonManager.GetColumnNames(filteredData),
+            Rows = _jsonManager.GenerateTransferDataRow(filteredData, indentedOptions.Indented)
         };
 
         return result;

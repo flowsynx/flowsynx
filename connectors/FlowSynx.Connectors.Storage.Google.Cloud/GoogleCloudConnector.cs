@@ -23,8 +23,8 @@ public class GoogleCloudConnector : Connector
     private readonly IDeserializer _deserializer;
     private GoogleCloudSpecifications? _googleCloudSpecifications;
     private StorageClient _client = null!;
-    private readonly IGoogleCloudClientHandler _clientHandler;
-    private IGoogleCloudBrowser? _browser;
+    private readonly IGoogleCloudConnection _connection;
+    private IGoogleCloudManager? _browser;
 
     public GoogleCloudConnector(ILogger<GoogleCloudConnector> logger, IDataFilter dataFilter, 
         ISerializer serializer, IDeserializer deserializer)
@@ -36,7 +36,7 @@ public class GoogleCloudConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _clientHandler = new GoogleCloudClientHandler(serializer);
+        _connection = new GoogleCloudConnection(serializer);
     }
 
     public override Guid Id => Guid.Parse("d3c52770-f001-4ea3-93b7-f113a956a091");
@@ -49,8 +49,8 @@ public class GoogleCloudConnector : Connector
     public override Task Initialize()
     {
         _googleCloudSpecifications = Specifications.ToObject<GoogleCloudSpecifications>();
-        _client = _clientHandler.GetClient(_googleCloudSpecifications);
-        _browser = new GoogleCloudBrowser(_logger, _client, _googleCloudSpecifications);
+        _client = _connection.GetClient(_googleCloudSpecifications);
+        _browser = new GoogleCloudManager(_logger, _client, _googleCloudSpecifications);
         return Task.CompletedTask;
     }
 
@@ -385,9 +385,9 @@ public class GoogleCloudConnector : Connector
         return result;
     }
 
-    private IGoogleCloudBrowser GetBrowser()
+    private IGoogleCloudManager GetBrowser()
     {
-        return _browser ?? new GoogleCloudBrowser(_logger, _client, _googleCloudSpecifications);
+        return _browser ?? new GoogleCloudManager(_logger, _client, _googleCloudSpecifications);
     }
     #endregion
 }
