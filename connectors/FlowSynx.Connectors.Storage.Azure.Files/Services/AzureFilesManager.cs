@@ -12,12 +12,12 @@ using FlowSynx.Connectors.Storage.Azure.Files.Extensions;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
-public class AzureFilesBrowser: IAzureFilesBrowser
+public class AzureFilesManager: IAzureFilesManager
 {
     private readonly ILogger _logger;
     private readonly ShareClient _client;
 
-    public AzureFilesBrowser(ILogger logger, ShareClient client)
+    public AzureFilesManager(ILogger logger, ShareClient client)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));

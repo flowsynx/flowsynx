@@ -3,7 +3,7 @@ using FlowSynx.Connectors.Storage.Options;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
-public interface IAzureFilesBrowser
+public interface IAzureFilesManager
 {
     Task CreateAsync(string entity, CreateOptions options, CancellationToken cancellationToken);
     Task WriteAsync(string entity, WriteOptions options, object dataOptions, CancellationToken cancellationToken);

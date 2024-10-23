@@ -5,7 +5,7 @@ using FlowSynx.Connectors.Storage.Exceptions;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
-public class AzureFilesClientHandler: IAzureFilesClientHandler
+public class AzureFilesConnection: IAzureFilesConnection
 {
     public ShareClient GetClient(AzureFilesSpecifications specifications)
     {

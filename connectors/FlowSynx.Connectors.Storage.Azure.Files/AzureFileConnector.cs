@@ -23,8 +23,8 @@ public class AzureFileConnector : Connector
     private readonly IDeserializer _deserializer;
     private AzureFilesSpecifications? _azureFilesSpecifications;
     private ShareClient _client = null!;
-    private readonly IAzureFilesClientHandler _clientHandler;
-    private IAzureFilesBrowser? _browser;
+    private readonly IAzureFilesConnection _connection;
+    private IAzureFilesManager? _browser;
 
     public AzureFileConnector(ILogger<AzureFileConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -35,7 +35,7 @@ public class AzureFileConnector : Connector
         _logger = logger;
         _dataFilter = dataFilter;
         _deserializer = deserializer;
-        _clientHandler = new AzureFilesClientHandler();
+        _connection = new AzureFilesConnection();
     }
 
     public override Guid Id => Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d");
@@ -48,8 +48,8 @@ public class AzureFileConnector : Connector
     public override Task Initialize()
     {
         _azureFilesSpecifications = Specifications.ToObject<AzureFilesSpecifications>();
-        _client = _clientHandler.GetClient(_azureFilesSpecifications);
-        _browser = new AzureFilesBrowser(_logger, _client);
+        _client = _connection.GetClient(_azureFilesSpecifications);
+        _browser = new AzureFilesManager(_logger, _client);
         return Task.CompletedTask;
     }
 
@@ -400,9 +400,9 @@ public class AzureFileConnector : Connector
         return result;
     }
 
-    private IAzureFilesBrowser GetBrowser()
+    private IAzureFilesManager GetBrowser()
     {
-        return _browser ?? new AzureFilesBrowser(_logger, _client);
+        return _browser ?? new AzureFilesManager(_logger, _client);
     }
     #endregion
 }
