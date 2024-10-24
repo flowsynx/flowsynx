@@ -1,5 +1,4 @@
-﻿using Amazon.S3;
-using EnsureThat;
+﻿using EnsureThat;
 using FlowSynx.Connectors.Abstractions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.IO;
@@ -20,11 +19,11 @@ public class AmazonS3Connector : Connector
 {
     private readonly ILogger<AmazonS3Connector> _logger;
     private readonly IDataFilter _dataFilter;
-    private readonly IDeserializer _deserializer;
-    private AmazonS3Specifications? _s3Specifications;
-    private AmazonS3Client _client = null!;
     private readonly IAmazonS3Connection _connection;
-    private IAmazonS3Manager? _browser;
+    private IAmazonS3Manager _browser = null!;
+    private readonly IFilterOption _filterOption;
+    private IPrepareData _prepareData = null!;
+    private AmazonS3Specifications _s3Specifications = null!;
 
     public AmazonS3Connector(ILogger<AmazonS3Connector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -34,8 +33,8 @@ public class AmazonS3Connector : Connector
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _dataFilter = dataFilter;
-        _deserializer = deserializer;
         _connection = new AmazonS3Connection();
+        _filterOption = new FilterOption(deserializer);
     }
 
     public override Guid Id => Guid.Parse("b961131b-04cb-48df-9554-4252dc66c04c");
@@ -48,8 +47,11 @@ public class AmazonS3Connector : Connector
     public override Task Initialize()
     {
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
-        _client = _connection.GetClient(_s3Specifications);
-        _browser = new AmazonS3Manager(_logger, _client);
+
+        var client = _connection.GetClient(_s3Specifications);
+        _browser = new AmazonS3Manager(_logger, client);
+        _prepareData = new PrepareData(_browser, _dataFilter, _filterOption);
+
         return Task.CompletedTask;
     }
 
@@ -65,37 +67,31 @@ public class AmazonS3Connector : Connector
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var createOptions = options.ToObject<CreateOptions>();
-        await browser.CreateAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
+        await _browser.CreateAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
         object dataOptions, CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeFilters = options.ToObject<WriteOptions>();
-        await browser.WriteAsync(context.Entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
+        await _browser.WriteAsync(context.Entity, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var readOptions = options.ToObject<ReadOptions>();
-        return await browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+        return await _browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
@@ -107,8 +103,6 @@ public class AmazonS3Connector : Connector
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
@@ -128,22 +122,20 @@ public class AmazonS3Connector : Connector
             if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            await browser.DeleteAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
+            await _browser.DeleteAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
         }
 
         if (deleteFilters.Purge is true)
-            await browser.PurgeAsync(path, cancellationToken);
+            await _browser.PurgeAsync(path, cancellationToken);
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        return await browser.ExistAsync(context.Entity, cancellationToken).ConfigureAwait(false);
+        return await _browser.ExistAsync(context.Entity, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
@@ -166,7 +158,7 @@ public class AmazonS3Connector : Connector
         var listOptions = options.ToObject<ListOptions>();
         var readOptions = options.ToObject<ReadOptions>();
 
-        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions, cancellationToken);
+        var transferData = await _prepareData.PrepareTransferring(Namespace, Type, sourceContext.Entity, listOptions, readOptions, cancellationToken);
 
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
@@ -177,8 +169,6 @@ public class AmazonS3Connector : Connector
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         var createOptions = options.ToObject<CreateOptions>();
         var writeOptions = options.ToObject<WriteOptions>();
 
@@ -189,8 +179,8 @@ public class AmazonS3Connector : Connector
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                await browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                await browser.WriteAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
+                await _browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                await _browser.WriteAsync(path, writeOptions, transferData.Content, cancellationToken).ConfigureAwait(false);
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -202,7 +192,7 @@ public class AmazonS3Connector : Connector
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        await browser.CreateAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+                        await _browser.CreateAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -211,8 +201,8 @@ public class AmazonS3Connector : Connector
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-                        await browser.WriteAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
+                        await _browser.CreateAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                        await _browser.WriteAsync(item.Key, writeOptions, item.Content, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -223,15 +213,13 @@ public class AmazonS3Connector : Connector
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
         ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
 
-        var storageEntities = await browser.ListAsync(path, listOptions, cancellationToken);
+        var storageEntities = await _browser.ListAsync(path, listOptions, cancellationToken);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -249,7 +237,7 @@ public class AmazonS3Connector : Connector
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await browser.ReadAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await _browser.ReadAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -267,128 +255,17 @@ public class AmazonS3Connector : Connector
     }
 
     #region private methods
-    private string[] DeserializeToStringArray(string? fields)
-    {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
-        {
-            result = _deserializer.Deserialize<string[]>(fields);
-        }
-
-        return result;
-    }
-
     private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options,
     CancellationToken cancellationToken)
     {
-        var browser = GetBrowser();
-
         var path = PathHelper.ToUnixPath(entity);
-        var storageEntities = await browser.ListAsync(path, options, cancellationToken);
+        var storageEntities = await _browser.ListAsync(path, options, cancellationToken);
 
-        var dataFilterOptions = GetDataFilterOptions(options);
+        var dataFilterOptions = _filterOption.GetFilterOptions(options);
         var dataTable = storageEntities.ToDataTable();
         var result = _dataFilter.Filter(dataTable, dataFilterOptions);
 
         return result;
-    }
-
-    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
-        ReadOptions readOptions, CancellationToken cancellationToken = default)
-    {
-        var browser = GetBrowser();
-
-        if (context.Connector is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var path = PathHelper.ToUnixPath(context.Entity);
-
-        var storageEntities = await browser.ListAsync(path, listOptions, cancellationToken);
-
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
-
-        if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
-
-        if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
-
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var transferDataRow = new List<TransferDataRow>();
-
-        foreach (DataRow row in filteredData.Rows)
-        {
-            var content = string.Empty;
-            var contentType = string.Empty;
-            var fullPath = row["FullPath"].ToString() ?? string.Empty;
-
-            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                if (!string.IsNullOrEmpty(fullPath))
-                {
-                    var read = await browser.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
-                    content = read.Content.ToBase64String();
-                }
-            }
-
-            if (!kindFieldExist)
-                row["Kind"] = DBNull.Value;
-
-            if (!fullPathFieldExist)
-                row["FullPath"] = DBNull.Value;
-
-            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
-            transferDataRow.Add(new TransferDataRow
-            {
-                Key = fullPath,
-                ContentType = contentType,
-                Content = content,
-                Items = itemArray
-            });
-        }
-
-        if (!kindFieldExist)
-            filteredData.Columns.Remove("Kind");
-
-        if (!fullPathFieldExist)
-            filteredData.Columns.Remove("FullPath");
-
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        var result = new TransferData
-        {
-            Namespace = Namespace,
-            ConnectorType = Type,
-            Kind = TransferKind.Copy,
-            Columns = columnNames,
-            Rows = transferDataRow
-        };
-
-        return result;
-    }
-
-    private DataFilterOptions GetDataFilterOptions(ListOptions options)
-    {
-        var fields = DeserializeToStringArray(options.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = options.Filter,
-            SortExpression = options.Sort,
-            CaseSensitive = options.CaseSensitive,
-            Limit = options.Limit,
-        };
-
-        return dataFilterOptions;
-    }
-
-    private IAmazonS3Manager GetBrowser()
-    {
-        return _browser ?? new AmazonS3Manager(_logger, _client);
     }
     #endregion
 }
