@@ -1,5 +1,4 @@
 ﻿using EnsureThat;
-using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Filter;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
@@ -8,7 +7,6 @@ using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Storage.Options;
 using Microsoft.Extensions.Logging;
-using System.Data;
 using FlowSynx.Connectors.Storage.Exceptions;
 using FlowSynx.Connectors.Storage.Memory.Models;
 using FlowSynx.Connectors.Storage.Memory.Services;
@@ -22,7 +20,7 @@ public class MemoryConnector : Connector
     private readonly IDataFilter _dataFilter;
     private readonly IDeserializer _deserializer;
     private readonly IMemoryMetrics _memoryMetrics;
-    private IMemoryManager? _browser;
+    private IMemoryManager _manager = null!;
 
     public MemoryConnector(ILogger<MemoryConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer)
@@ -44,7 +42,7 @@ public class MemoryConnector : Connector
 
     public override Task Initialize()
     {
-        _browser = new MemoryManager(_logger);
+        _manager = new MemoryManager(_logger, _dataFilter, _deserializer, _memoryMetrics);
         return Task.CompletedTask;
     }
 
@@ -53,65 +51,38 @@ public class MemoryConnector : Connector
     {
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
-        
-        long totalSpace, usedSpace, freeSpace;
-        try
-        {
-            var metrics = _memoryMetrics.GetMetrics();
-            totalSpace = metrics.Total;
-            usedSpace = metrics.Used;
-            freeSpace = metrics.Free;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex.Message);
-            totalSpace = 0;
-            usedSpace = 0;
-            freeSpace = 0;
-        }
 
-        return Task.FromResult<object>(new
-        {
-            Total = totalSpace, 
-            Free = freeSpace, 
-            Used = usedSpace
-        });
+        return _manager.GetStatisticsAsync();
     }
 
     public override async Task CreateAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var createOptions = options.ToObject<CreateOptions>();
-        await browser.CreateAsync(context.Entity, createOptions).ConfigureAwait(false);
+        await _manager.CreateAsync(context.Entity, createOptions).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, ConnectorOptions? options, 
         object dataOptions, CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var writeOptions = options.ToObject<WriteOptions>();
-        await browser.WriteAsync(context.Entity, writeOptions, dataOptions).ConfigureAwait(false);
+        await _manager.WriteAsync(context.Entity, writeOptions, dataOptions).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var readOptions = options.ToObject<ReadOptions>();
-        return await browser.ReadAsync(context.Entity, readOptions).ConfigureAwait(false);
+        return await _manager.ReadAsync(context.Entity, readOptions).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, ConnectorOptions? options, 
@@ -123,8 +94,6 @@ public class MemoryConnector : Connector
     public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
@@ -132,34 +101,30 @@ public class MemoryConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
         var deleteOptions = options.ToObject<DeleteOptions>();
 
-        var dataTable = await FilteredEntitiesAsync(path, listOptions).ConfigureAwait(false);
-        var entities = dataTable.CreateListFromTable();
-        var storageEntities = entities.ToList();
+        var entities = await _manager.FilteredEntitiesAsync(path, listOptions).ConfigureAwait(false);
 
-        if (!storageEntities.Any())
+        if (!entities.Any())
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
         
-        foreach (var entityItem in storageEntities)
+        foreach (var entityItem in entities)
         {
             if (entityItem is not StorageEntity storageEntity)
                 continue;
 
-            await browser.DeleteAsync(storageEntity.FullPath);
+            await _manager.DeleteAsync(storageEntity.FullPath);
         }
 
         if (deleteOptions.Purge is true)
-            await browser.PurgeAsync(path);
+            await _manager.PurgeAsync(path);
     }
 
     public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        return await browser.ExistAsync(context.Entity).ConfigureAwait(false);
+        return await _manager.ExistAsync(context.Entity).ConfigureAwait(false);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
@@ -169,8 +134,7 @@ public class MemoryConnector : Connector
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var listOptions = options.ToObject<ListOptions>();
-        var filteredData = await FilteredEntitiesAsync(context.Entity, listOptions);
-        return filteredData.CreateListFromTable();
+        return await _manager.FilteredEntitiesAsync(context.Entity, listOptions);
     }
 
     public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
@@ -182,7 +146,7 @@ public class MemoryConnector : Connector
         var listOptions = options.ToObject<ListOptions>();
         var readOptions = options.ToObject<ReadOptions>();
 
-        var transferData = await PrepareTransferring(sourceContext, listOptions, readOptions);
+        var transferData = await _manager.PrepareDataForTransferring(Namespace, Type, sourceContext.Entity, listOptions, readOptions);
 
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourceContext.Entity, destinationContext.Entity);
@@ -193,8 +157,6 @@ public class MemoryConnector : Connector
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         ConnectorOptions? options, CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         var createOptions = options.ToObject<CreateOptions>();
         var writeOptions = options.ToObject<WriteOptions>();
 
@@ -205,8 +167,8 @@ public class MemoryConnector : Connector
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                await browser.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
-                await browser.WriteAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
+                await _manager.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
+                await _manager.WriteAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -218,7 +180,7 @@ public class MemoryConnector : Connector
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        await browser.CreateAsync(item.Key, createOptions).ConfigureAwait(false);
+                        await _manager.CreateAsync(item.Key, createOptions).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -227,8 +189,8 @@ public class MemoryConnector : Connector
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        await browser.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
-                        await browser.WriteAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
+                        await _manager.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
+                        await _manager.WriteAsync(item.Key, writeOptions, item.Content).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -239,14 +201,12 @@ public class MemoryConnector : Connector
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
         CancellationToken cancellationToken = default)
     {
-        var browser = GetBrowser();
-
         if (context.Connector is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var path = PathHelper.ToUnixPath(context.Entity);
         var listOptions = options.ToObject<ListOptions>();
-        var storageEntities = await browser.ListAsync(path, listOptions);
+        var storageEntities = await _manager.EntitiesAsync(path, listOptions);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -264,7 +224,7 @@ public class MemoryConnector : Connector
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await browser.ReadAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
+                var content = await _manager.ReadAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -280,129 +240,4 @@ public class MemoryConnector : Connector
 
         return compressEntries;
     }
-
-    #region private methods
-    private async Task<DataTable> FilteredEntitiesAsync(string entity, ListOptions options)
-    {
-        var browser = GetBrowser();
-
-        var path = PathHelper.ToUnixPath(entity);
-        var storageEntities = await browser.ListAsync(path, options);
-
-        var dataFilterOptions = GetDataFilterOptions(options);
-        var dataTable = storageEntities.ToDataTable();
-        var result = _dataFilter.Filter(dataTable, dataFilterOptions);
-
-        return result;
-    }
-
-    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
-        ReadOptions readOptions)
-    {
-        var browser = GetBrowser();
-
-        if (context.Connector is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var path = PathHelper.ToUnixPath(context.Entity);
-
-        var storageEntities = await browser.ListAsync(path, listOptions);
-
-        var fields = DeserializeToStringArray(listOptions.Fields);
-        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
-
-        if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
-
-        if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
-
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var transferDataRows = new List<TransferDataRow>();
-
-        foreach (DataRow row in filteredData.Rows)
-        {
-            var content = string.Empty;
-            var contentType = string.Empty;
-            var fullPath = row["FullPath"].ToString() ?? string.Empty;
-
-            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                if (!string.IsNullOrEmpty(fullPath))
-                {
-                    var read = await browser.ReadAsync(context.Entity, readOptions).ConfigureAwait(false);
-                    content = read.Content.ToBase64String();
-                }
-            }
-
-            if (!kindFieldExist)
-                row["Kind"] = DBNull.Value;
-
-            if (!fullPathFieldExist)
-                row["FullPath"] = DBNull.Value;
-
-            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
-            transferDataRows.Add(new TransferDataRow
-            {
-                Key = fullPath,
-                ContentType = contentType,
-                Content = content,
-                Items = itemArray
-            });
-        }
-
-        if (!kindFieldExist)
-            filteredData.Columns.Remove("Kind");
-
-        if (!fullPathFieldExist)
-            filteredData.Columns.Remove("FullPath");
-
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        var result = new TransferData
-        {
-            Namespace = Namespace,
-            ConnectorType = Type,
-            Kind = TransferKind.Copy,
-            Columns = columnNames,
-            Rows = transferDataRows
-        };
-
-        return result;
-    }
-
-    private DataFilterOptions GetDataFilterOptions(ListOptions options)
-    {
-        var fields = DeserializeToStringArray(options.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = fields,
-            FilterExpression = options.Filter,
-            SortExpression = options.Sort,
-            CaseSensitive = options.CaseSensitive,
-            Limit = options.Limit,
-        };
-
-        return dataFilterOptions;
-    }
-
-    private string[] DeserializeToStringArray(string? fields)
-    {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
-        {
-            result = _deserializer.Deserialize<string[]>(fields);
-        }
-
-        return result;
-    }
-
-    private IMemoryManager GetBrowser()
-    {
-        return _browser ?? new MemoryManager(_logger);
-    }
-    #endregion
 }

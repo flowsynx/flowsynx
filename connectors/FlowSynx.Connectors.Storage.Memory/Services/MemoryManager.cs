@@ -5,21 +5,60 @@ using FlowSynx.Connectors.Storage.Exceptions;
 using FlowSynx.Connectors.Storage.Memory.Extensions;
 using FlowSynx.Connectors.Storage.Memory.Models;
 using FlowSynx.Connectors.Storage.Options;
+using FlowSynx.Data.Extensions;
+using FlowSynx.Data.Filter;
 using FlowSynx.IO;
+using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
+using System.Data;
 
 namespace FlowSynx.Connectors.Storage.Memory.Services;
 
 public class MemoryManager: IMemoryManager
 {
     private readonly ILogger _logger;
+    private readonly IDataFilter _dataFilter;
+    private readonly IDeserializer _deserializer;
+    private readonly IMemoryMetrics _memoryMetrics;
     private readonly Dictionary<string, Dictionary<string, MemoryEntity>> _entities;
 
-    public MemoryManager(ILogger logger)
+    public MemoryManager(ILogger logger, IDataFilter dataFilter, IDeserializer deserializer, IMemoryMetrics memoryMetrics)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
+        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
+        EnsureArg.IsNotNull(memoryMetrics, nameof(memoryMetrics));
         _logger = logger;
+        _dataFilter = dataFilter;
+        _deserializer = deserializer;
         _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
+        _memoryMetrics = memoryMetrics;
+    }
+
+    public Task<object> GetStatisticsAsync()
+    {
+        long totalSpace, usedSpace, freeSpace;
+        try
+        {
+            var metrics = _memoryMetrics.GetMetrics();
+            totalSpace = metrics.Total;
+            usedSpace = metrics.Used;
+            freeSpace = metrics.Free;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            totalSpace = 0;
+            usedSpace = 0;
+            freeSpace = 0;
+        }
+
+        return Task.FromResult<object>(new
+        {
+            Total = totalSpace,
+            Free = freeSpace,
+            Used = usedSpace
+        });
     }
 
     public async Task CreateAsync(string entity, CreateOptions options)
@@ -205,7 +244,7 @@ public class MemoryManager: IMemoryManager
         return Task.FromResult(folderExist);
     }
 
-    public async Task<IEnumerable<StorageEntity>> ListAsync(string entity, ListOptions listOptions)
+    public async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions listOptions)
     {
         var path = PathHelper.ToUnixPath(entity);
 
@@ -237,6 +276,91 @@ public class MemoryManager: IMemoryManager
         ).ConfigureAwait(false);
 
         return storageEntities;
+    }
+
+    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string entity, ListOptions listOptions)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await EntitiesAsync(path, listOptions);
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataTable = entities.ToDataTable();
+        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        return filteredEntities.CreateListFromTable();
+    }
+
+    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string entity,
+        ListOptions listOptions, ReadOptions readOptions)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
+        var storageEntities = await EntitiesAsync(path, listOptions);
+
+        var fields = GetFields(listOptions.Fields);
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+
+        if (!kindFieldExist)
+            fields = fields.Append("Kind").ToArray();
+
+        if (!fullPathFieldExist)
+            fields = fields.Append("FullPath").ToArray();
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var transferDataRows = new List<TransferDataRow>();
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
+
+            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    var read = await ReadAsync(fullPath, readOptions).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
+                }
+            }
+
+            if (!kindFieldExist)
+                row["Kind"] = DBNull.Value;
+
+            if (!fullPathFieldExist)
+                row["FullPath"] = DBNull.Value;
+
+            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = fullPath,
+                ContentType = contentType,
+                Content = content,
+                Items = itemArray
+            });
+        }
+
+        if (!kindFieldExist)
+            filteredData.Columns.Remove("Kind");
+
+        if (!fullPathFieldExist)
+            filteredData.Columns.Remove("FullPath");
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var result = new TransferData
+        {
+            Namespace = @namespace,
+            ConnectorType = type,
+            Kind = TransferKind.Copy,
+            Columns = columnNames,
+            Rows = transferDataRows
+        };
+
+        return result;
     }
 
     #region internal methods
@@ -342,6 +466,33 @@ public class MemoryManager: IMemoryManager
         }
 
         return Task.CompletedTask;
+    }
+
+
+    private DataFilterOptions GetFilterOptions(ListOptions options)
+    {
+        var fields = GetFields(options.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = options.Filter,
+            SortExpression = options.Sort,
+            CaseSensitive = options.CaseSensitive,
+            Limit = options.Limit,
+        };
+
+        return dataFilterOptions;
+    }
+
+    private string[] GetFields(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
     #endregion
 }
