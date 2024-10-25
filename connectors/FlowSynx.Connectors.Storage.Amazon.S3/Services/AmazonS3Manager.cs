@@ -11,21 +11,31 @@ using Amazon.S3.Transfer;
 using EnsureThat;
 using FlowSynx.Connectors.Storage.Amazon.S3.Models;
 using FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
+using FlowSynx.Data.Filter;
+using FlowSynx.Data.Extensions;
+using System.Data;
+using FlowSynx.IO.Serialization;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
 public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 {
     private readonly ILogger _logger;
+    private readonly IDataFilter _dataFilter;
+    private readonly IDeserializer _deserializer;
     private readonly AmazonS3Client _client;
     private readonly TransferUtility _fileTransferUtility;
 
-    public AmazonS3Manager(ILogger logger, AmazonS3Client client)
+    public AmazonS3Manager(ILogger logger, AmazonS3Client client, IDataFilter dataFilter, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
+        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _client = client;
+        _dataFilter = dataFilter;
+        _deserializer = deserializer;
         _fileTransferUtility = CreateTransferUtility(_client);
     }
 
@@ -180,7 +190,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    public async Task<IEnumerable<StorageEntity>> ListAsync(string entity, ListOptions options,
+    public async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
         CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -216,6 +226,93 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         ).ConfigureAwait(false);
 
         return storageEntities;
+    }
+
+    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string entity, ListOptions listOptions,
+        CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await EntitiesAsync(path, listOptions, cancellationToken);
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataTable = entities.ToDataTable();
+        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        return filteredEntities.CreateListFromTable();
+    }
+
+    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string entity,
+        ListOptions listOptions,
+        ReadOptions readOptions, CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
+        var entities = await EntitiesAsync(path, listOptions, cancellationToken);
+
+        var fields = GetFields(listOptions.Fields);
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+
+        if (!kindFieldExist)
+            fields = fields.Append("Kind").ToArray();
+
+        if (!fullPathFieldExist)
+            fields = fields.Append("FullPath").ToArray();
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+
+        var dataTable = entities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var transferDataRow = new List<TransferDataRow>();
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
+
+            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    var read = await ReadAsync(path, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
+                }
+            }
+
+            if (!kindFieldExist)
+                row["Kind"] = DBNull.Value;
+
+            if (!fullPathFieldExist)
+                row["FullPath"] = DBNull.Value;
+
+            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
+            transferDataRow.Add(new TransferDataRow
+            {
+                Key = fullPath,
+                ContentType = contentType,
+                Content = content,
+                Items = itemArray
+            });
+        }
+
+        if (!kindFieldExist)
+            filteredData.Columns.Remove("Kind");
+
+        if (!fullPathFieldExist)
+            filteredData.Columns.Remove("FullPath");
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var result = new TransferData
+        {
+            Namespace = @namespace,
+            ConnectorType = type,
+            Kind = TransferKind.Copy,
+            Columns = columnNames,
+            Rows = transferDataRow
+        };
+
+        return result;
     }
 
     public void Dispose() { }
@@ -359,6 +456,32 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         };
         await _client.PutObjectAsync(request, cancellationToken);
         _logger.LogInformation($"Folder '{folderName}' was created successfully.");
+    }
+
+    private DataFilterOptions GetFilterOptions(ListOptions options)
+    {
+        var fields = GetFields(options.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = options.Filter,
+            SortExpression = options.Sort,
+            CaseSensitive = options.CaseSensitive,
+            Limit = options.Limit,
+        };
+
+        return dataFilterOptions;
+    }
+
+    private string[] GetFields(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
     }
 
     private TransferUtility CreateTransferUtility(AmazonS3Client client)
