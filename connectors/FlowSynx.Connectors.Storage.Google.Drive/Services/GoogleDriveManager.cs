@@ -13,27 +13,46 @@ using FlowSynx.Net;
 using Google.Apis.Upload;
 using FlowSynx.Connectors.Abstractions;
 using EnsureThat;
+using FlowSynx.Data.Filter;
+using FlowSynx.IO.Serialization;
+using FlowSynx.Data.Extensions;
+using System.Data;
+using Google.Apis.Drive.v3.Data;
 
 namespace FlowSynx.Connectors.Storage.Google.Drive.Services;
 
 internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
 {
     private readonly ILogger _logger;
+    private readonly IDataFilter _dataFilter;
+    private readonly IDeserializer _deserializer;
     private readonly DriveService _client;
     private readonly string _rootFolderId;
     private readonly Dictionary<string, string> _pathDictionary;
     private readonly GoogleDriveSpecifications? _specifications;
 
-    public GoogleDriveManager(ILogger logger, DriveService client, GoogleDriveSpecifications? specifications)
+    public GoogleDriveManager(ILogger logger, DriveService client, GoogleDriveSpecifications? specifications,
+        IDataFilter dataFilter, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
         EnsureArg.IsNotNull(specifications, nameof(specifications));
+        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _client = client;
         _specifications = specifications;
+        _dataFilter = dataFilter;
+        _deserializer = deserializer;
         _rootFolderId = specifications.FolderId;
         _pathDictionary = new Dictionary<string, string> { { PathHelper.PathSeparatorString, _rootFolderId }, { "", _rootFolderId } };
+    }
+
+    public async Task<About> GetStatisticsAsync(CancellationToken cancellationToken)
+    {
+        var request = _client.About.Get();
+        request.Fields = "storageQuota";
+        return await request.ExecuteAsync(cancellationToken);
     }
 
     public async Task CreateAsync(string entity, CreateOptions options, CancellationToken cancellationToken)
@@ -234,7 +253,7 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         }
     }
 
-    public async Task<IEnumerable<StorageEntity>> ListAsync(string entity, ListOptions listOptions,
+    public async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
@@ -251,6 +270,92 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         var storageEntities = await ListObjectsAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
 
         return storageEntities;
+    }
+
+    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string entity, ListOptions listOptions,
+    CancellationToken cancellationToken)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+        var entities = await EntitiesAsync(path, listOptions, cancellationToken);
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataTable = entities.ToDataTable();
+        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        return filteredEntities.CreateListFromTable();
+    }
+
+    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string entity, ListOptions listOptions,
+        ReadOptions readOptions, CancellationToken cancellationToken = default)
+    {
+        var path = PathHelper.ToUnixPath(entity);
+
+        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
+
+        var fields = GetFields(listOptions.Fields);
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+
+        if (!kindFieldExist)
+            fields = fields.Append("Kind").ToArray();
+
+        if (!fullPathFieldExist)
+            fields = fields.Append("FullPath").ToArray();
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var transferDataRows = new List<TransferDataRow>();
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
+
+            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    var read = await ReadAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
+                }
+            }
+
+            if (!kindFieldExist)
+                row["Kind"] = DBNull.Value;
+
+            if (!fullPathFieldExist)
+                row["FullPath"] = DBNull.Value;
+
+            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = fullPath,
+                ContentType = contentType,
+                Content = content,
+                Items = itemArray
+            });
+        }
+
+        if (!kindFieldExist)
+            filteredData.Columns.Remove("Kind");
+
+        if (!fullPathFieldExist)
+            filteredData.Columns.Remove("FullPath");
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var result = new TransferData
+        {
+            Namespace = @namespace,
+            ConnectorType = type,
+            Kind = TransferKind.Copy,
+            Columns = columnNames,
+            Rows = transferDataRows
+        };
+
+        return result;
     }
 
     public void Dispose() { }
@@ -413,5 +518,30 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
             _pathDictionary.Remove(path);
     }
 
+    private DataFilterOptions GetFilterOptions(ListOptions options)
+    {
+        var fields = GetFields(options.Fields);
+        var dataFilterOptions = new DataFilterOptions
+        {
+            Fields = fields,
+            FilterExpression = options.Filter,
+            SortExpression = options.Sort,
+            CaseSensitive = options.CaseSensitive,
+            Limit = options.Limit,
+        };
+
+        return dataFilterOptions;
+    }
+
+    private string[] GetFields(string? fields)
+    {
+        var result = Array.Empty<string>();
+        if (!string.IsNullOrEmpty(fields))
+        {
+            result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
+    }
     #endregion
 }

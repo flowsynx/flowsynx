@@ -58,8 +58,8 @@ public class AzureFileConnector : Connector
         long totalUsed;
         try
         {
-            var state = await _manager.GetStatisticsAsync(cancellationToken);
-            totalUsed = state.ShareUsageInBytes;
+            var statistics = await _manager.GetStatisticsAsync(cancellationToken);
+            totalUsed = statistics.ShareUsageInBytes;
         }
         catch (Exception ex)
         {
