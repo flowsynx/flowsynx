@@ -33,6 +33,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Stream.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Stream.Json", "connectors\FlowSynx.Connectors.Stream.Json\FlowSynx.Connectors.Stream.Json.csproj", "{B5AA204A-DADB-49E8-A9CA-67C2C798C10C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{09F60EE1-C041-4F8E-88D1-6010FD9A8B70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Connectors.Database.MySql", "connectors\FlowSynx.Connectors.Database.MySql\FlowSynx.Connectors.Database.MySql.csproj", "{64267797-D93B-4647-A81C-0A773E8CFEB6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +87,10 @@ Global
 		{B5AA204A-DADB-49E8-A9CA-67C2C798C10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B5AA204A-DADB-49E8-A9CA-67C2C798C10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B5AA204A-DADB-49E8-A9CA-67C2C798C10C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64267797-D93B-4647-A81C-0A773E8CFEB6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64267797-D93B-4647-A81C-0A773E8CFEB6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64267797-D93B-4647-A81C-0A773E8CFEB6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64267797-D93B-4647-A81C-0A773E8CFEB6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,6 +109,8 @@ Global
 		{5FED1243-9767-427C-886B-D2070468FA3B} = {F0C26331-6C4A-4389-80E3-7580C3977871}
 		{D1100A18-09CB-4EF2-AEC7-77B5D77F0918} = {5FED1243-9767-427C-886B-D2070468FA3B}
 		{B5AA204A-DADB-49E8-A9CA-67C2C798C10C} = {5FED1243-9767-427C-886B-D2070468FA3B}
+		{09F60EE1-C041-4F8E-88D1-6010FD9A8B70} = {F0C26331-6C4A-4389-80E3-7580C3977871}
+		{64267797-D93B-4647-A81C-0A773E8CFEB6} = {09F60EE1-C041-4F8E-88D1-6010FD9A8B70}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}
