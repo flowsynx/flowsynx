@@ -16,7 +16,7 @@ public class GoogleDriveConnection: IGoogleDriveConnection
         _serializer = serializer;
     }
 
-    public DriveService GetClient(GoogleDriveSpecifications specifications)
+    public DriveService Connect(GoogleDriveSpecifications specifications)
     {
         var jsonObject = new
         {

@@ -44,7 +44,7 @@ public class AmazonS3Connector : Connector
     public override Task Initialize()
     {
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
-        var client = _connection.GetClient(_s3Specifications);
+        var client = _connection.Connect(_s3Specifications);
         _manager = new AmazonS3Manager(_logger, client, _dataFilter, _deserializer);
         return Task.CompletedTask;
     }

@@ -7,7 +7,7 @@ namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
 public class AzureBlobConnection: IAzureBlobConnection
 {
-   public BlobServiceClient GetClient(AzureBlobSpecifications specifications)
+   public BlobServiceClient Connect(AzureBlobSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName))
             throw new StorageException(Resources.PropertiesShouldHaveValue);

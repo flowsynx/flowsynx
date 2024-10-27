@@ -46,7 +46,7 @@ public class GoogleDriveConnector : Connector
     public override Task Initialize()
     {
         _googleDriveSpecifications = Specifications.ToObject<GoogleDriveSpecifications>();
-        var client = _connection.GetClient(_googleDriveSpecifications);
+        var client = _connection.Connect(_googleDriveSpecifications);
         _manager = new GoogleDriveManager(_logger, client, _googleDriveSpecifications, _dataFilter, _deserializer);
         return Task.CompletedTask;
     }

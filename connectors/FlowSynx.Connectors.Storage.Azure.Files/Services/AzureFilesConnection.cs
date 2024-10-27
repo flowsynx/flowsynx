@@ -7,7 +7,7 @@ namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
 public class AzureFilesConnection: IAzureFilesConnection
 {
-    public ShareClient GetClient(AzureFilesSpecifications specifications)
+    public ShareClient Connect(AzureFilesSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.ShareName))
             throw new StorageException(Resources.ShareNameInSpecificationShouldBeNotEmpty);

@@ -5,5 +5,5 @@ namespace FlowSynx.Connectors.Storage.Google.Cloud.Services;
 
 public interface IGoogleCloudConnection
 {
-    StorageClient GetClient(GoogleCloudSpecifications specifications);
+    StorageClient Connect(GoogleCloudSpecifications specifications);
 }

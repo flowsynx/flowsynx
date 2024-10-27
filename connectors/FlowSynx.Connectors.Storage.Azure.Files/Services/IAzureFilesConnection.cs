@@ -5,6 +5,6 @@ namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
 public interface IAzureFilesConnection
 {
-    ShareClient GetClient(AzureFilesSpecifications specifications);
+    ShareClient Connect(AzureFilesSpecifications specifications);
 
 }

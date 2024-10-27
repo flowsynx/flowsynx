@@ -44,7 +44,7 @@ public class AzureFileConnector : Connector
     public override Task Initialize()
     {
         _azureFilesSpecifications = Specifications.ToObject<AzureFilesSpecifications>();
-        var client = _connection.GetClient(_azureFilesSpecifications);
+        var client = _connection.Connect(_azureFilesSpecifications);
         _manager = new AzureFilesManager(_logger, client, _dataFilter, _deserializer);
         return Task.CompletedTask;
     }

@@ -45,7 +45,7 @@ public class GoogleCloudConnector : Connector
     public override Task Initialize()
     {
         _googleCloudSpecifications = Specifications.ToObject<GoogleCloudSpecifications>();
-        var client = _connection.GetClient(_googleCloudSpecifications);
+        var client = _connection.Connect(_googleCloudSpecifications);
         _manager = new GoogleCloudManager(_logger, client, _googleCloudSpecifications, _dataFilter, _deserializer);
         return Task.CompletedTask;
     }

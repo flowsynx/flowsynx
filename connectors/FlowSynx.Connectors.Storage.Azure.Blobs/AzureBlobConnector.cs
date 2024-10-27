@@ -45,7 +45,7 @@ public class AzureBlobConnector : Connector
     public override Task Initialize()
     {
         _azureBlobSpecifications = Specifications.ToObject<AzureBlobSpecifications>();
-        var client = _connection.GetClient(_azureBlobSpecifications);
+        var client = _connection.Connect(_azureBlobSpecifications);
         _manager = new AzureBlobManager(_logger, client, _dataFilter, _deserializer);
         return Task.CompletedTask;
     }

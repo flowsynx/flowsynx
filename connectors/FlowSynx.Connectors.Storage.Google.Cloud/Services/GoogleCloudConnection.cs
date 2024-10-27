@@ -14,7 +14,7 @@ public class GoogleCloudConnection: IGoogleCloudConnection
         _serializer = serializer;
     }
 
-    public StorageClient GetClient(GoogleCloudSpecifications specifications)
+    public StorageClient Connect(GoogleCloudSpecifications specifications)
     {
         var jsonObject = new
         {

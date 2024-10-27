@@ -5,5 +5,5 @@ namespace FlowSynx.Connectors.Storage.Google.Drive.Services;
 
 public interface IGoogleDriveConnection
 {
-    DriveService GetClient(GoogleDriveSpecifications specifications);
+    DriveService Connect(GoogleDriveSpecifications specifications);
 }
