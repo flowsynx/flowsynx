@@ -22,6 +22,7 @@ using FlowSynx.Connectors.Storage.Memory;
 using FlowSynx.Connectors.Stream.Csv;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Connectors.Stream.Json;
+using FlowSynx.Connectors.Database.MySql;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -82,6 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<Connector, GoogleDriveConnector>();
         services.AddScoped<Connector, CsvConnector>();
         services.AddScoped<Connector, JsonConnector>();
+        services.AddScoped<Connector, MySqlConnector>();
         return services;
     }
 }

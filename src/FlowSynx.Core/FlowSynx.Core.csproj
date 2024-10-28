@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Database.MySql\FlowSynx.Connectors.Database.MySql.csproj" />
     <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Amazon.S3\FlowSynx.Connectors.Storage.Amazon.S3.csproj" />
     <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Azure.Blobs\FlowSynx.Connectors.Storage.Azure.Blobs.csproj" />
     <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Azure.Files\FlowSynx.Connectors.Storage.Azure.Files.csproj" />
