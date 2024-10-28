@@ -3,7 +3,7 @@ using MySql.Data.MySqlClient;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
-public interface IMySqlConnection
+public interface IMySqlDatabaseConnection
 {
     MySqlConnection Connect(MySqlpecifications specifications);
 }
