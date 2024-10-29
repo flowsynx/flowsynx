@@ -2,30 +2,32 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Parers.Contex;
+using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
+using FlowSynx.Core.Parers.Connector;
 
 namespace FlowSynx.Core.Features.About.Query;
 
 internal class AboutHandler : IRequestHandler<AboutRequest, Result<object>>
 {
     private readonly ILogger<AboutHandler> _logger;
-    private readonly IContextParser _contextParser;
+    private readonly IConnectorParser _connectorParser;
 
-    public AboutHandler(ILogger<AboutHandler> logger, IContextParser contextParser)
+    public AboutHandler(ILogger<AboutHandler> logger, IConnectorParser connectorParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
-        _contextParser = contextParser;
+        _connectorParser = connectorParser;
     }
 
     public async Task<Result<object>> Handle(AboutRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _contextParser.Parse(request.Entity);
+            var connectorContext = _connectorParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
-            var response = await contex.Connector.About(contex.Context, options, cancellationToken);
+            var context = new Context(options, connectorContext);
+            var response = await connectorContext.Current.About(context, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

@@ -28,7 +28,7 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
     {
         try
         {
-            var contex = _contextParser.Parse(request.Entity);
+            var contex = _contextParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
 
             var compressType = string.IsNullOrEmpty(request.CompressType)

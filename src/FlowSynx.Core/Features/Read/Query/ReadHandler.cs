@@ -24,7 +24,7 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResult>>
     {
         try
         {
-            var contex = _contextParser.Parse(request.Entity);
+            var contex = _contextParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
             var response = await contex.Connector.ReadAsync(contex.Context, options, cancellationToken);
             return await Result<ReadResult>.SuccessAsync(response);

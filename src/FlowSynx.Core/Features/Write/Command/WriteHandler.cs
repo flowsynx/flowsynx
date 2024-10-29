@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Parers.Contex;
+using FlowSynx.Core.Parers.Context;
 using FlowSynx.Connectors.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Write.Command;
@@ -23,7 +23,7 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<Unit>>
     {
         try
         {
-            var contex = _contexParser.Parse(request.Entity);
+            var contex = _contexParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
             await contex.Connector.WriteAsync(contex.Context, options, request.Data, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);

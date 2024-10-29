@@ -11,24 +11,23 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Manager;
 using FlowSynx.Connectors.Abstractions;
 
-namespace FlowSynx.Core.Parers.Contex;
+namespace FlowSynx.Core.Parers.Connector;
 
-internal class ContextParser : IContextParser
+internal class ConnectorParser : IConnectorParser
 {
-    private readonly ILogger<ContextParser> _logger;
+    private readonly ILogger<ConnectorParser> _logger;
     private readonly IConfigurationManager _configurationManager;
     private readonly IConnectorsManager _connectorsManager;
     private readonly ILogger<LocalFileSystemConnector> _localStorageLogger;
     private readonly INamespaceParser _namespaceParser;
-    private readonly ICache<string, Connector> _cache;
+    private readonly ICache<string, FlowSynx.Connectors.Abstractions.Connector> _cache;
     private readonly ISerializer _serializer;
     private readonly IServiceProvider _serviceProvider;
-    private const string ParserSeparator = "://";
-    private const string PipelineSeparator = "|";
+    private const string ParserSeparator = "|";
 
-    public ContextParser(ILogger<ContextParser> logger, IConfigurationManager configurationManager,
+    public ConnectorParser(ILogger<ConnectorParser> logger, IConfigurationManager configurationManager,
         IConnectorsManager connectorsManager, ILogger<LocalFileSystemConnector> localStorageLogger,
-        INamespaceParser namespaceParser, ICache<string, Connector> cache, 
+        INamespaceParser namespaceParser, ICache<string, FlowSynx.Connectors.Abstractions.Connector> cache, 
         ISerializer serializer, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
@@ -49,43 +48,39 @@ internal class ContextParser : IContextParser
         _serviceProvider = serviceProvider;
     }
 
-    public ConnectorContext Parse(string path)
+    public ConnectorContext Parse(string? connectorInput)
     {
         try
         {
-            var entity = string.Empty;
-            var segments = path.Split(ParserSeparator);
-
-            if (segments.Length != 2)
+            if (string.IsNullOrEmpty(connectorInput))
             {
                 var localFileSystemConnector = GetConnector(LocalFileSystemConnector(), "LocalFileSystem", null);
-                return CreateConnectorContext(localFileSystemConnector, path, null);
+                return CreateConnectorContext(localFileSystemConnector, null);
             }
 
-            entity = segments[1];
-            var pipelineSegments = segments[0].Split(PipelineSeparator);
-            if (pipelineSegments.Length > 2)
+            var connectors = connectorInput.Split(ParserSeparator);
+            if (connectors.Length > 2)
                 throw new StorageNormsParserException("Pipeline is not applied correctly.");
 
-            string currentConfigName = string.Empty;
+            string currentConfigName;
             string nextConfigName = string.Empty;
-            if (pipelineSegments.Length == 1)
+            if (connectors.Length == 1)
             {
-                currentConfigName = pipelineSegments[0];
+                currentConfigName = connectors[0];
             }
             else
             {
-                currentConfigName = pipelineSegments[0];
-                nextConfigName = pipelineSegments[1];
+                currentConfigName = connectors[0];
+                nextConfigName = connectors[1];
             }
 
-            var primaryConfigNameExist = _configurationManager.IsExist(currentConfigName);
+            var currentConfigExist = _configurationManager.IsExist(currentConfigName);
 
-            if (!primaryConfigNameExist)
+            if (!currentConfigExist)
                 throw new StorageNormsParserException($"{currentConfigName} is not exist.");
 
-            var primaryConfig = _configurationManager.Get(currentConfigName);
-            if (_namespaceParser.Parse(primaryConfig.Type) == FlowSynx.Connectors.Abstractions.Namespace.Stream)
+            var currentConfig = _configurationManager.Get(currentConfigName);
+            if (_namespaceParser.Parse(currentConfig.Type) == FlowSynx.Connectors.Abstractions.Namespace.Stream)
             {
                 if (!string.IsNullOrEmpty(nextConfigName))
                 {
@@ -95,7 +90,7 @@ internal class ContextParser : IContextParser
                 }
             }
 
-            Connector? nextConnector = null;
+            FlowSynx.Connectors.Abstractions.Connector? nextConnector = null;
             if (!string.IsNullOrEmpty(nextConfigName))
             {
                 var secondaryConfig = _configurationManager.Get(nextConfigName);
@@ -103,10 +98,10 @@ internal class ContextParser : IContextParser
                 nextConnector = GetConnector(getNextConnector, nextConfigName, secondaryConfig.Specifications.ToSpecifications());
             }
 
-            var getCurrentConnector = _connectorsManager.Get(primaryConfig.Type);
-            var currentConnector = GetConnector(getCurrentConnector, currentConfigName, primaryConfig.Specifications.ToSpecifications());
+            var getCurrentConnector = _connectorsManager.Get(currentConfig.Type);
+            var currentConnector = GetConnector(getCurrentConnector, currentConfigName, currentConfig.Specifications.ToSpecifications());
 
-            return CreateConnectorContext(currentConnector, entity, nextConnector);
+            return CreateConnectorContext(currentConnector, nextConnector);
         }
         catch (Exception ex)
         {
@@ -117,12 +112,12 @@ internal class ContextParser : IContextParser
 
     private LocalFileSystemConnector LocalFileSystemConnector()
     {
-        var iConnectorsServices = _serviceProvider.GetServices<Connector>();
+        var iConnectorsServices = _serviceProvider.GetServices<FlowSynx.Connectors.Abstractions.Connector>();
         var localFileSystem = iConnectorsServices.First(o => o.GetType() == typeof(LocalFileSystemConnector));
         return (LocalFileSystemConnector)localFileSystem;
     }
 
-    private Connector GetConnector(Connector connector, string configName, Connectors.Abstractions.Specifications? specifications)
+    private FlowSynx.Connectors.Abstractions.Connector GetConnector(FlowSynx.Connectors.Abstractions.Connector connector, string configName, Connectors.Abstractions.Specifications? specifications)
     {
         var key = GenerateKey(connector.Id, configName, specifications);
         var cachedConnectorContext = _cache.Get(key);
@@ -139,10 +134,14 @@ internal class ContextParser : IContextParser
         return connector;
     }
 
-    private ConnectorContext CreateConnectorContext(Connector currentConnector, string entity, Connector? nextConnector)
+    private ConnectorContext CreateConnectorContext(FlowSynx.Connectors.Abstractions.Connector currentConnector, 
+        FlowSynx.Connectors.Abstractions.Connector? nextConnector)
     {
-        var context = nextConnector is null ? new Context(entity) : new Context(entity, nextConnector);
-        return new ConnectorContext(currentConnector, context);
+        var nextConnectorContext = nextConnector is null ? null : new ConnectorContext(nextConnector);
+        return new ConnectorContext(currentConnector)
+        {
+            Next = nextConnectorContext
+        };
     }
 
     private string GenerateKey(Guid connectorId, string configName, object? connectorSpecifications)

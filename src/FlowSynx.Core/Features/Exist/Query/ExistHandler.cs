@@ -23,7 +23,7 @@ internal class ExistHandler : IRequestHandler<ExistRequest, Result<object>>
     {
         try
         {
-            var contex = _contextParser.Parse(request.Entity);
+            var contex = _contextParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
             var response = await contex.Connector.ExistAsync(contex.Context, options, cancellationToken);
             return await Result<object>.SuccessAsync(response);
