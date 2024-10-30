@@ -2,32 +2,38 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Parers.Contex;
+using FlowSynx.Core.Parers.Connector;
+using FlowSynx.Connectors.Abstractions;
+using FlowSynx.Connectors.Abstractions.Extensions;
 
 namespace FlowSynx.Core.Features.Transfer.Command;
 
 internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
 {
     private readonly ILogger<TransferHandler> _logger;
-    private readonly IContextParser _contextParser;
+    private readonly IConnectorParser _connectorParser;
 
-    public TransferHandler(ILogger<TransferHandler> logger, IContextParser contextParser)
+    public TransferHandler(ILogger<TransferHandler> logger, IConnectorParser connectorParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(contextParser, nameof(contextParser));
+        EnsureArg.IsNotNull(connectorParser, nameof(connectorParser));
         _logger = logger;
-        _contextParser = contextParser;
+        _connectorParser = connectorParser;
     }
 
     public async Task<Result<Unit>> Handle(TransferRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var sourceContext = _contextParser.Parse(request.SourceEntity);
-            var destinationContext = _contextParser.Parse(request.DestinationEntity);
+            var sourceConnectorContext = _connectorParser.Parse(request.Source.Connector);
+            var sourceOptions = request.Source.Options.ToConnectorOptions();
+            var sourceContext = new Context(sourceOptions, sourceConnectorContext.Next);
 
-            await sourceContext.Connector.TransferAsync(sourceContext.Context, destinationContext.Connector,
-                destinationContext.Context, request.Options, cancellationToken);
+            var destinationConnectorContext = _connectorParser.Parse(request.Destination.Connector);
+            var destinationOptions = request.Destination.Options.ToConnectorOptions();
+            var destinationContext = new Context(destinationOptions, destinationConnectorContext);
+
+            await sourceConnectorContext.Current.TransferAsync(sourceContext, destinationContext,cancellationToken);
 
             return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }

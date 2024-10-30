@@ -6,7 +6,7 @@ public class ReadValidator : AbstractValidator<ReadRequest>
 {
     public ReadValidator()
     {
-        RuleFor(request => request.Entity)
+        RuleFor(request => request)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.ReadValidatorEntityValueShouldNotNullOrEmptyMessage);

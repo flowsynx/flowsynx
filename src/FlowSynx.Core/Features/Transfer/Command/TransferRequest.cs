@@ -6,7 +6,6 @@ namespace FlowSynx.Core.Features.Transfer.Command;
 
 public class TransferRequest : IRequest<Result<Unit>>
 {
-    public required string SourceEntity { get; set; }
-    public required string DestinationEntity { get; set; }
-    public ConnectorOptions? Options { get; set; } = new ConnectorOptions();
+    public required BaseRequest Source { get; set; }
+    public required BaseRequest Destination { get; set; }
 }

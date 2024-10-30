@@ -155,7 +155,7 @@ public class AmazonS3Connector : Connector
     public override async Task TransferAsync(Context sourceContext, Context destinationContext,
         CancellationToken cancellationToken = default)
     {
-        if (destinationContext.ConnectorContext?.Current is not null)
+        if (destinationContext.ConnectorContext?.Current is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var sourcePathOptions = sourceContext.Options.ToObject<PathOptions>();
@@ -170,16 +170,17 @@ public class AmazonS3Connector : Connector
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
         
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         CancellationToken cancellationToken = default)
     {
-        var createOptions = options.ToObject<CreateOptions>();
-        var writeOptions = options.ToObject<WriteOptions>();
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var createOptions = context.Options.ToObject<CreateOptions>();
+        var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        var path = PathHelper.ToUnixPath(context.Entity);
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
 
         if (!string.IsNullOrEmpty(transferData.Content))
         {
@@ -223,8 +224,9 @@ public class AmazonS3Connector : Connector
         if (context.ConnectorContext?.Current is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
 
         var storageEntities = await _manager.EntitiesAsync(path, listOptions, cancellationToken);
 

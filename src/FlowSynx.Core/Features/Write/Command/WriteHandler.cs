@@ -2,30 +2,32 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Parers.Context;
 using FlowSynx.Connectors.Abstractions.Extensions;
+using FlowSynx.Connectors.Abstractions;
+using FlowSynx.Core.Parers.Connector;
 
 namespace FlowSynx.Core.Features.Write.Command;
 
 internal class WriteHandler : IRequestHandler<WriteRequest, Result<Unit>>
 {
     private readonly ILogger<WriteHandler> _logger;
-    private readonly IContextParser _contexParser;
+    private readonly IConnectorParser _connectorParser;
 
-    public WriteHandler(ILogger<WriteHandler> logger, IContextParser contextParser)
+    public WriteHandler(ILogger<WriteHandler> logger, IConnectorParser connectorParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
-        _contexParser = contextParser;
+        _connectorParser = connectorParser;
     }
 
     public async Task<Result<Unit>> Handle(WriteRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _contexParser.Parse(request.Connector);
+            var connectorContext = _connectorParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
-            await contex.Connector.WriteAsync(contex.Context, options, request.Data, cancellationToken);
+            var context = new Context(options, connectorContext.Next);
+            await connectorContext.Current.WriteAsync(context, request.Data, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)

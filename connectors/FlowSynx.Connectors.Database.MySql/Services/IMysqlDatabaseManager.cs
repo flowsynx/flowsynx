@@ -17,9 +17,9 @@ public interface IMysqlDatabaseManager
 
     Task<bool> ExistAsync(string sql, CancellationToken cancellationToken);
 
-    Task<IEnumerable<object>> EntitiesAsync(string sql, QueryOptions queryOptions,
+    Task<IEnumerable<object>> EntitiesAsync(string sql, ListOptions listOptions,
         CancellationToken cancellationToken);
 
-    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string sql, QueryOptions queryOptions,
+    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, SqlOptions sqlOptions, 
         ReadOptions readOptions, CancellationToken cancellationToken = default);
 }

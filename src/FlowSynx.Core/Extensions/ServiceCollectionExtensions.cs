@@ -13,7 +13,6 @@ using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Extensions;
 using FlowSynx.Connectors.Storage.Amazon.S3;
 using FlowSynx.Connectors.Storage.LocalFileSystem;
-using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Connectors.Storage.Azure.Blobs;
 using FlowSynx.Connectors.Storage.Azure.Files;
 using FlowSynx.Connectors.Storage.Google.Cloud;
@@ -23,6 +22,7 @@ using FlowSynx.Connectors.Stream.Csv;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Connectors.Stream.Json;
 using FlowSynx.Connectors.Database.MySql;
+using FlowSynx.Core.Parers.Connector;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -49,7 +49,7 @@ public static class ServiceCollectionExtensions
             .AddCompressions()
             .AddDatFilter()
             .AddCache<string, Connector>()
-            .AddScoped<IContextParser, ContextParser>()
+            .AddScoped<IConnectorParser, ConnectorParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>();
 

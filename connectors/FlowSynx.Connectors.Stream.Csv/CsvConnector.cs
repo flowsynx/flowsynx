@@ -43,66 +43,66 @@ public class CsvConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(Context context, ConnectorOptions? options, 
+    public override Task<object> About(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override Task CreateAsync(Context context, ConnectorOptions? options, 
+    public override Task CreateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
-    public override async Task WriteAsync(Context context, ConnectorOptions? options, 
-        object dataOptions, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(Context context, object dataOptions, 
+        CancellationToken cancellationToken = default)
     {
-        var writeOptions = options.ToObject<WriteOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var writeOptions = context.Options.ToObject<WriteOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
         var content = PrepareDataForWrite(writeOptions, delimiterOptions, dataOptions);
-        if (context.Connector != null) 
-        { 
-            await context.Connector.WriteAsync(new Context(context.Entity), options, content, cancellationToken).ConfigureAwait(false);
+        if (context.ConnectorContext?.Current != null)
+        {
+            var newContext = new Context(context.Options, context.ConnectorContext.Next);
+            await context.ConnectorContext.Current.WriteAsync(newContext, content, cancellationToken);
             return;
         }
 
         var append = writeOptions.OverWrite is false;
-        await WriteEntityAsync(context.Entity, content, append, cancellationToken).ConfigureAwait(false);
+        await WriteEntityAsync(pathOptions.Path, content, append, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
+    public override async Task<ReadResult> ReadAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var readOptions = options.ToObject<ReadOptions>();
-        var listOptions = options.ToObject<ListOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var readOptions = context.Options.ToObject<ReadOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
 
         return await ReadEntityAsync(content, readOptions, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(Context context, ConnectorOptions? options, 
+    public override Task UpdateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(Context context, ConnectorOptions? options, 
+    public override async Task DeleteAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
 
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
-        var listOptions = options.ToObject<ListOptions>();
         listOptions.Fields = string.Empty;
         listOptions.IncludeMetadata = false;
         var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
         var dataFilterOptions = GetDataFilterOptions(listOptions);
 
         var dataTable = GetDataTable(content, delimiter, listOptions.IncludeMetadata, cancellationToken);
@@ -111,58 +111,52 @@ public class CsvConnector : Connector
 
         var data = _csvManager.ToCsv(dataTable, delimiter);
 
-        await WriteContent(path, data, context.Connector, options, cancellationToken).ConfigureAwait(false);
+        await WriteContent(context, data, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
+    public override async Task<bool> ExistAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
         var filteredData = await FilteredEntitiesAsync(content, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
 
         return filteredData.Rows.Count > 0;
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
+    public override async Task<IEnumerable<object>> ListAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
         var filteredData = await FilteredEntitiesAsync(content, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
         var result = filteredData.CreateListFromTable();
 
         return result;
     }
 
-    public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
-        Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
+    public override async Task TransferAsync(Context sourceContext, Context destinationContext,
+        CancellationToken cancellationToken = default)
     {
-        if (destinationConnector is null)
+        if (destinationContext.ConnectorContext?.Current is null)
             throw new StreamException(Resources.CalleeConnectorNotSupported);
 
-        var listOptions = options.ToObject<ListOptions>();
-        var transferOptions = options.ToObject<TransferOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var transferData = await PrepareTransferring(sourceContext, cancellationToken);
 
-        var transferData = await PrepareTransferring(sourceContext, listOptions, transferOptions, delimiterOptions, cancellationToken);
-
-        await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
-        ConnectorOptions? options, CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-
-        var transferOptions = options.ToObject<TransferOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var transferOptions = context.Options.ToObject<TransferOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
 
         var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
@@ -185,7 +179,6 @@ public class CsvConnector : Connector
                     dataTable.Rows.Add(newRow);
 
                     var data = _csvManager.ToCsv(newRow, transferData.Columns.ToArray(), delimiter);
-                    var clonedContext = (Context)context.Clone();
                     var newPath = transferData.Namespace == Namespace.Storage
                         ? row.Key
                         : PathHelper.Combine(path, row.Key);
@@ -198,9 +191,10 @@ public class CsvConnector : Connector
                         newPath = Path.ChangeExtension(path, _csvManager.Extension);
                     }
 
-                    clonedContext.Entity = Path.ChangeExtension(newPath, _csvManager.Extension);
-
-                    await WriteAsync(clonedContext, options, data, cancellationToken);
+                    var clonedOptions = (ConnectorOptions)context.Options.Clone();
+                    clonedOptions["Path"] = Path.ChangeExtension(newPath, _csvManager.Extension);
+                    var newContext = new Context(clonedOptions);
+                    await WriteAsync(newContext, data, cancellationToken);
                 }
             }
         }
@@ -218,7 +212,6 @@ public class CsvConnector : Connector
             }
 
             var data = _csvManager.ToCsv(dataTable, delimiter);
-            var clonedContext = (Context)context.Clone();
 
             var newPath = path;
             if (Path.GetExtension(path) != _csvManager.Extension)
@@ -228,16 +221,20 @@ public class CsvConnector : Connector
 
                 newPath = Path.ChangeExtension(path, _csvManager.Extension);
             }
-            clonedContext.Entity = newPath;
+
+            var clonedOptions = (ConnectorOptions)context.Options.Clone();
+            clonedOptions["Path"] = newPath;
+            var newContext = new Context(clonedOptions);
             
-            await WriteAsync(clonedContext, options, data, cancellationToken);
+            await WriteAsync(newContext, data, cancellationToken);
         }
     }
 
-    public override Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
+    public override Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -247,9 +244,9 @@ public class CsvConnector : Connector
         if (!string.Equals(Path.GetExtension(path), _csvManager.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        var listOptions = options.ToObject<ListOptions>();
-        var compressOptions = options.ToObject<CompressOptions>();
-        var delimiterOptions = options.ToObject<DelimiterOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var compressOptions = context.Options.ToObject<CompressOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
         var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
@@ -367,10 +364,10 @@ public class CsvConnector : Connector
         return sb.ToString();
     }
 
-    private Task WriteEntityAsync(string entity, string content, bool append,
+    private Task WriteEntityAsync(string path, string content, bool append,
         CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -421,10 +418,11 @@ public class CsvConnector : Connector
         return Task.FromResult(dataTable);
     }
 
-    private async Task<string> ReadContent(string entity, Connector? connector,
-    CancellationToken cancellationToken)
+    private async Task<string> ReadContent(Context context, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -434,23 +432,23 @@ public class CsvConnector : Connector
         if (!string.Equals(Path.GetExtension(path), _csvManager.Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        if (connector is not null)
+        if (context.ConnectorContext is not null)
         {
-            var content = await connector.ReadAsync(new Context(path), null, cancellationToken);
+            var content = await context.ConnectorContext.Current.ReadAsync(new Context(context.Options), cancellationToken);
             return Encoding.UTF8.GetString(content.Content);
         }
 
         return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
-    private async Task WriteContent(string entity, string content, Connector? connector,
-        ConnectorOptions? options, CancellationToken cancellationToken)
+    private async Task WriteContent(Context context, string content, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
 
-        if (connector != null)
+        if (context.ConnectorContext != null)
         {
-            await connector.WriteAsync(new Context(path), options, content, cancellationToken).ConfigureAwait(false);
+            await context.ConnectorContext.Current.WriteAsync(new Context(context.Options), content, cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -472,11 +470,14 @@ public class CsvConnector : Connector
         return _csvManager.Load(content, delimiter, includeMetadata);
     }
 
-    private Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
-        TransferOptions transferOptions, DelimiterOptions delimiterOptions,
-        CancellationToken cancellationToken = default)
+    private Task<TransferData> PrepareTransferring(Context context, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var transferOptions = context.Options.ToObject<TransferOptions>();
+        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
+
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 

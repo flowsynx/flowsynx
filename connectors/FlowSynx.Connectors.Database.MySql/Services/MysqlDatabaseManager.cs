@@ -39,7 +39,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
 
         var command = new MySqlCommand(sql, _connection);
-        int rowsAffected = await command.ExecuteNonQueryAsync();
+        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Inserted {rowsAffected} row(s)!");
     }
 
@@ -63,7 +63,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return Task.FromResult(true);
     }
 
-    public async Task<IEnumerable<object>> EntitiesAsync(string sql, QueryOptions queryOptions,
+    public async Task<IEnumerable<object>> EntitiesAsync(string sql, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(sql))
@@ -76,7 +76,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return dataTable.CreateListFromTable();
     }
 
-    public Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string sql, QueryOptions queryOptions,
+    public Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, SqlOptions sqlOptions,
         ReadOptions readOptions, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();

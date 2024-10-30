@@ -6,7 +6,7 @@ public class ExistValidator : AbstractValidator<ExistRequest>
 {
     public ExistValidator()
     {
-        RuleFor(request => request.Entity)
+        RuleFor(request => request)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.ExistValidatorEntityValueShouldNotNullOrEmptyMessage);

@@ -8,7 +8,7 @@ public class CompressValidator : AbstractValidator<CompressRequest>
 {
     public CompressValidator()
     {
-        RuleFor(request => request.Entity)
+        RuleFor(request => request)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.CompressValidatorEntityShouldNotBeNullOrEmptyMessage);

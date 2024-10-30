@@ -46,105 +46,99 @@ public class JsonConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(Context context, ConnectorOptions? options, 
+    public override Task<object> About(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.AboutOperrationNotSupported);
     }
 
-    public override Task CreateAsync(Context context, ConnectorOptions? options,
+    public override Task CreateAsync(Context context,
         CancellationToken cancellationToken = default)
     {
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
-    public override async Task WriteAsync(Context context, ConnectorOptions? options,
-        object dataOptions, CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(Context context, object dataOptions, 
+        CancellationToken cancellationToken = default)
     {
-        var writeOptions = options.ToObject<WriteOptions>();
-        var indentedOptions = options.ToObject<IndentedOptions>();
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var writeOptions = context.Options.ToObject<WriteOptions>();
+        var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
         var content = PrepareDataForWrite(writeOptions, indentedOptions, dataOptions);
-        if (context.Connector != null)
+        if (context.ConnectorContext?.Current != null)
         {
-            await context.Connector.WriteAsync(new Context(context.Entity), options, content, cancellationToken).ConfigureAwait(false);
+            var newContext = new Context(context.Options, context.ConnectorContext.Next);
+            await context.ConnectorContext.Current.WriteAsync(newContext, content, cancellationToken).ConfigureAwait(false);
             return;
         }
 
         var append = writeOptions.OverWrite is false;
-        await WriteEntityAsync(context.Entity, content, append).ConfigureAwait(false);
+        await WriteEntityAsync(pathOptions.Path, content, append).ConfigureAwait(false);
     }
 
-    public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options, 
+    public override async Task<ReadResult> ReadAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
-
-        var content = await ReadContent(path, context.Connector, cancellationToken);
-
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var content = await ReadContent(context, cancellationToken);
         return await ReadEntityAsync(content, listOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(Context context, ConnectorOptions? options, 
+    public override Task UpdateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override Task DeleteAsync(Context context, ConnectorOptions? options, 
+    public override Task DeleteAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options, 
+    public override async Task<bool> ExistAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
         var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
 
         return filteredData.Rows.Count > 0;
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options, 
+    public override async Task<IEnumerable<object>> ListAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-        var listOptions = options.ToObject<ListOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
         var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
         var result = filteredData.CreateListFromTable();
 
         return result;
     }
 
-    public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
-        Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
+    public override async Task TransferAsync(Context sourceContext, Context destinationContext, 
+        CancellationToken cancellationToken = default)
     {
-        if (destinationConnector is null)
+        if (destinationContext.ConnectorContext?.Current is null)
             throw new StreamException(Resources.CalleeConnectorNotSupported);
 
-        var listOptions = options.ToObject<ListOptions>();
-        var transferOptions = options.ToObject<TransferOptions>();
-        var indentedOptions = options.ToObject<IndentedOptions>();
+        var transferData = await PrepareTransferring(sourceContext, cancellationToken);
 
-        var transferData = await PrepareTransferring(sourceContext, listOptions, transferOptions, indentedOptions, cancellationToken);
-
-        await destinationConnector.ProcessTransferAsync(destinationContext, transferData, options, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
-        ConnectorOptions? options, CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
 
-        var transferOptions = options.ToObject<TransferOptions>();
-        var indentedOptions = options.ToObject<IndentedOptions>();
+        var transferOptions = context.Options.ToObject<TransferOptions>();
+        var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
         var dataTable = new DataTable();
 
@@ -165,7 +159,6 @@ public class JsonConnector : Connector
                     dataTable.Rows.Add(newRow);
 
                     var data = _jsonManager.ToJson(newRow, indentedOptions.Indented);
-                    var clonedContext = (Context)context.Clone();
                     var newPath = transferData.Namespace == Namespace.Storage
                         ? row.Key
                         : PathHelper.Combine(path, row.Key);
@@ -177,10 +170,12 @@ public class JsonConnector : Connector
 
                         newPath = Path.ChangeExtension(path, _jsonManager.Extension);
                     }
+                    
+                    var clonedOptions = (ConnectorOptions)context.Options.Clone();
+                    clonedOptions["Path"] = Path.ChangeExtension(newPath, _jsonManager.Extension);
+                    var newContext = new Context(clonedOptions);
 
-                    clonedContext.Entity = Path.ChangeExtension(newPath, _jsonManager.Extension);
-
-                    await WriteAsync(clonedContext, options, data, cancellationToken);
+                    await WriteAsync(newContext, data, cancellationToken);
                 }
             }
         }
@@ -198,8 +193,6 @@ public class JsonConnector : Connector
             }
 
             var data = _jsonManager.ToJson(dataTable, indentedOptions.Indented);
-            var clonedContext = (Context)context.Clone();
-
             var newPath = path;
             if (Path.GetExtension(path) != _jsonManager.Extension)
             {
@@ -208,27 +201,31 @@ public class JsonConnector : Connector
 
                 newPath = Path.ChangeExtension(path, _jsonManager.Extension);
             }
-            clonedContext.Entity = newPath;
 
-            await WriteAsync(clonedContext, options, data, cancellationToken);
+            var clonedOptions = (ConnectorOptions)context.Options.Clone();
+            clonedOptions["Path"] = newPath;
+            var newContext = new Context(clonedOptions);
+
+            await WriteAsync(newContext, data, cancellationToken);
         }
     }
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, ConnectorOptions? options, 
+    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        var listOptions = options.ToObject<ListOptions>();
-        var compressOptions = options.ToObject<CompressOptions>();
-        var indentedOptions = options.ToObject<IndentedOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var compressOptions = context.Options.ToObject<CompressOptions>();
+        var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
         var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
 
         if (filteredData.Rows.Count <= 0)
@@ -467,10 +464,10 @@ public class JsonConnector : Connector
         };
     }
 
-    private async Task<string> ReadContent(string entity, Connector? connector, 
-        CancellationToken cancellationToken)
+    private async Task<string> ReadContent(Context context, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
 
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -478,15 +475,13 @@ public class JsonConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (connector is not null)
+        if (context.ConnectorContext?.Current is not null)
         {
-            var content = await connector.ReadAsync(new Context(path), null, cancellationToken);
+            var content = await context.ConnectorContext.Current.ReadAsync(new Context(context.Options), cancellationToken);
             return Encoding.UTF8.GetString(content.Content);
         }
-        else
-        {
-            return await File.ReadAllTextAsync(path, cancellationToken);
-        }
+
+        return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
     private async Task<DataTable> FilteredEntitiesAsync(string content, ListOptions listOptions)
@@ -509,13 +504,13 @@ public class JsonConnector : Connector
         return Task.FromResult(dataTable);
     }
 
-    private async Task<TransferData> PrepareTransferring(Context context, ListOptions listOptions,
-        TransferOptions transferOptions, IndentedOptions indentedOptions,
-        CancellationToken cancellationToken = default)
+    private async Task<TransferData> PrepareTransferring(Context context, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(context.Entity);
-
-        var content = await ReadContent(path, context.Connector, cancellationToken);
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var transferOptions = context.Options.ToObject<TransferOptions>();
+        var indentedOptions = context.Options.ToObject<IndentedOptions>();
+        
+        var content = await ReadContent(context, cancellationToken);
         var filteredData = await FilteredEntitiesAsync(content, listOptions).ConfigureAwait(false);
 
         var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow;

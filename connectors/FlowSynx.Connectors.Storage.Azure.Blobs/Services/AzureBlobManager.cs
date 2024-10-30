@@ -37,10 +37,10 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         _deserializer = deserializer;
     }
 
-    public async Task CreateAsync(string entity, CreateOptions options,
+    public async Task CreateAsync(string path, CreateOptions options,
         CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -82,10 +82,10 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         }
     }
 
-    public async Task WriteAsync(string entity, WriteOptions options,
+    public async Task WriteAsync(string path, WriteOptions options,
         object dataOptions, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -137,10 +137,10 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         }
     }
 
-    public async Task<ReadResult> ReadAsync(string entity, ReadOptions options,
+    public async Task<ReadResult> ReadAsync(string path, ReadOptions options,
         CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -193,9 +193,9 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         }
     }
 
-    public async Task DeleteAsync(string entity, CancellationToken cancellationToken)
+    public async Task DeleteAsync(string path, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -246,9 +246,9 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         }
     }
 
-    public async Task PurgeAsync(string entity, CancellationToken cancellationToken)
+    public async Task PurgeAsync(string path, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         var pathParts = GetPartsAsync(path);
         var directory = pathParts.RelativePath;
         var container = await GetBlobContainerClient(pathParts.ContainerName).ConfigureAwait(false);
@@ -271,9 +271,9 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         }
     }
 
-    public async Task<bool> ExistAsync(string entity, CancellationToken cancellationToken)
+    public async Task<bool> ExistAsync(string path, CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -317,10 +317,10 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         }
     }
 
-    public async Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions options,
+    public async Task<IEnumerable<StorageEntity>> EntitiesAsync(string path, ListOptions options,
         CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             path += PathHelper.PathSeparator;
 
@@ -356,10 +356,10 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         return storageEntities;
     }
 
-    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string entity, ListOptions listOptions,
+    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string path, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         var entities = await EntitiesAsync(path, listOptions, cancellationToken);
 
         var dataFilterOptions = GetFilterOptions(listOptions);
@@ -369,10 +369,10 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         return filteredEntities.CreateListFromTable();
     }
 
-    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string entity, ListOptions listOptions,
+    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path, ListOptions listOptions,
         ReadOptions readOptions, CancellationToken cancellationToken = default)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
 
         var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
 

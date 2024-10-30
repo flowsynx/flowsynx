@@ -2,30 +2,32 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Parers.Contex;
 using FlowSynx.Connectors.Abstractions.Extensions;
+using FlowSynx.Core.Parers.Connector;
+using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Core.Features.Create.Command;
 
 internal class CreateHandler : IRequestHandler<CreateRequest, Result<Unit>>
 {
     private readonly ILogger<CreateHandler> _logger;
-    private readonly IContextParser _contextParser;
+    private readonly IConnectorParser _connectorParser;
 
-    public CreateHandler(ILogger<CreateHandler> logger, IContextParser contextParser)
+    public CreateHandler(ILogger<CreateHandler> logger, IConnectorParser connectorParser)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
-        _contextParser = contextParser;
+        _connectorParser = connectorParser;
     }
 
     public async Task<Result<Unit>> Handle(CreateRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var contex = _contextParser.Parse(request.Connector);
+            var connectorContext = _connectorParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
-            await contex.Connector.CreateAsync(contex.Context, options, cancellationToken);
+            var context = new Context(options, connectorContext.Next);
+            await connectorContext.Current.CreateAsync(context, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.CreateHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

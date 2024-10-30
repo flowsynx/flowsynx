@@ -6,7 +6,7 @@ public class CreateValidator : AbstractValidator<CreateRequest>
 {
     public CreateValidator()
     {
-        RuleFor(request => request.Entity)
+        RuleFor(request => request)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.CreateValidatorEntityShouldNotBeNullOrEmptyMessage);

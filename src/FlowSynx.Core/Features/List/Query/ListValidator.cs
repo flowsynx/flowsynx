@@ -6,7 +6,7 @@ public class ListValidator : AbstractValidator<ListRequest>
 {
     public ListValidator()
     {
-        RuleFor(request => request.Entity)
+        RuleFor(request => request)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.ListValidatorEntityValueShouldNotNullOrEmptyMessage);

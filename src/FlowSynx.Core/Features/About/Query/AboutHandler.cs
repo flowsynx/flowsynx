@@ -26,7 +26,7 @@ internal class AboutHandler : IRequestHandler<AboutRequest, Result<object>>
         {
             var connectorContext = _connectorParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext);
+            var context = new Context(options, connectorContext.Next);
             var response = await connectorContext.Current.About(context, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }

@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Reflections;
 using FlowSynx.Abstractions.Attributes;
 using FlowSynx.Connectors.Manager;
-using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Core.Parers.Specifications;
 
@@ -16,7 +15,7 @@ public class SpecificationsParser : ISpecificationsParser
 
     public SpecificationsResult Parse(string type, Dictionary<string, string?>? specifications)
     {
-        Connector connector = _connectorsManager.Get(type);
+        Connectors.Abstractions.Connector connector = _connectorsManager.Get(type);
         var specificationsType = connector.SpecificationsType;
         var requiredProperties = specificationsType
             .Properties()

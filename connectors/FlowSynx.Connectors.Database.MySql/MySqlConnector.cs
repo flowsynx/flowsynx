@@ -38,92 +38,97 @@ public class MySqlConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(Context context, ConnectorOptions? options,
+    public override Task<object> About(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task CreateAsync(Context context, ConnectorOptions? options,
+    public override async Task CreateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.Connector is not null)
+        if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");
 
-        var createOptions = options.ToObject<CreateOptions>();
-        await _manager.CreateAsync(context.Entity, createOptions, cancellationToken).ConfigureAwait(false);
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var createOptions = context.Options.ToObject<CreateOptions>();
+        await _manager.CreateAsync(sqlOptions.Sql, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(Context context, ConnectorOptions? options,
-        object dataOptions, CancellationToken cancellationToken = default)
-    {
-        if (context.Connector is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var writeFilters = options.ToObject<WriteOptions>();
-        var queryOption = options.ToObject<QueryOptions>();
-        await _manager.WriteAsync(queryOption.Sql, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
-    }
-
-    public override async Task<ReadResult> ReadAsync(Context context, ConnectorOptions? options,
+    public override async Task WriteAsync(Context context, object dataOptions, 
         CancellationToken cancellationToken = default)
     {
-        if (context.Connector is not null)
+        if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");
 
-        var readOptions = options.ToObject<ReadOptions>();
-        return await _manager.ReadAsync(context.Entity, readOptions, cancellationToken).ConfigureAwait(false);
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var writeFilters = context.Options.ToObject<WriteOptions>();
+        await _manager.WriteAsync(sqlOptions.Sql, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override Task UpdateAsync(Context context, ConnectorOptions? options,
+    public override async Task<ReadResult> ReadAsync(Context context, 
+        CancellationToken cancellationToken = default)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var readOptions = context.Options.ToObject<ReadOptions>();
+        return await _manager.ReadAsync(sqlOptions.Sql, readOptions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public override Task UpdateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public override async Task DeleteAsync(Context context, ConnectorOptions? options,
+    public override async Task DeleteAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.Connector is not null)
+        if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");
 
-        var deleteOptions = options.ToObject<DeleteOptions>();
-        await _manager.DeleteAsync(context.Entity, deleteOptions, cancellationToken).ConfigureAwait(false);
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var deleteOptions = context.Options.ToObject<DeleteOptions>();
+        await _manager.DeleteAsync(sqlOptions.Sql, deleteOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<bool> ExistAsync(Context context, ConnectorOptions? options,
+    public override async Task<bool> ExistAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.Connector is not null)
+        if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");
 
-        return await _manager.ExistAsync(context.Entity, cancellationToken).ConfigureAwait(false);
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        return await _manager.ExistAsync(sqlOptions.Sql, cancellationToken).ConfigureAwait(false);
     }
 
-    public override async Task<IEnumerable<object>> ListAsync(Context context, ConnectorOptions? options,
+    public override async Task<IEnumerable<object>> ListAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.Connector is not null)
+        if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");
 
-        var queryOptions = options.ToObject<QueryOptions>();
-        return await _manager.EntitiesAsync(queryOptions.Sql, queryOptions, cancellationToken);
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        return await _manager.EntitiesAsync(sqlOptions.Sql, listOptions, cancellationToken);
     }
 
-    public override async Task TransferAsync(Context sourceContext, Connector destinationConnector,
-        Context destinationContext, ConnectorOptions? options, CancellationToken cancellationToken = default)
+    public override async Task TransferAsync(Context sourceContext, Context destinationContext,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
-        ConnectorOptions? options, CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
-        ConnectorOptions? options, CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

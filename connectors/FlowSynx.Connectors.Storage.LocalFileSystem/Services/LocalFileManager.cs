@@ -60,9 +60,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult<object>(result);
     }
 
-    public Task CreateAsync(string entity, CreateOptions options)
+    public Task CreateAsync(string path, CreateOptions options)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -76,9 +76,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    public Task WriteAsync(string entity, WriteOptions options, object dataOptions)
+    public Task WriteAsync(string path, WriteOptions options, object dataOptions)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -105,9 +105,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    public Task<ReadResult> ReadAsync(string entity, ReadOptions options)
+    public Task<ReadResult> ReadAsync(string path, ReadOptions options)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -128,9 +128,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult(result);
     }
 
-    public Task DeleteAsync(string entity)
+    public Task DeleteAsync(string path)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -161,9 +161,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    public Task PurgeAsync(string entity)
+    public Task PurgeAsync(string path)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         var directoryInfo = new DirectoryInfo(path);
         if (!directoryInfo.Exists)
             throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
@@ -172,9 +172,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    public Task<bool> ExistAsync(string entity)
+    public Task<bool> ExistAsync(string path)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrWhiteSpace(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -182,9 +182,9 @@ public class LocalFileManager : ILocalFileManager
     }
 
 
-    public Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions listOptions)
+    public Task<IEnumerable<StorageEntity>> EntitiesAsync(string path, ListOptions listOptions)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
@@ -206,9 +206,9 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult<IEnumerable<StorageEntity>>(storageEntities);
     }
 
-    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string entity, ListOptions listOptions)
+    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string path, ListOptions listOptions)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
         var entities = await EntitiesAsync(path, listOptions);
 
         var dataFilterOptions = GetFilterOptions(listOptions);
@@ -218,10 +218,10 @@ public class LocalFileManager : ILocalFileManager
         return filteredEntities.CreateListFromTable();
     }
 
-   public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string entity, 
+   public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path, 
        ListOptions listOptions, ReadOptions readOptions)
     {
-        var path = PathHelper.ToUnixPath(entity);
+        path = PathHelper.ToUnixPath(path);
 
         var storageEntities = await EntitiesAsync(path, listOptions);
 

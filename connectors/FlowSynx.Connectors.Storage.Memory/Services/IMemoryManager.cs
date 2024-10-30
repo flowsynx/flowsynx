@@ -7,22 +7,22 @@ public interface IMemoryManager
 {
     Task<object> GetStatisticsAsync();
 
-    Task CreateAsync(string entity, CreateOptions options);
+    Task CreateAsync(string path, CreateOptions options);
 
-    Task WriteAsync(string entity, WriteOptions options, object dataOptions);
+    Task WriteAsync(string path, WriteOptions options, object dataOptions);
 
-    Task<ReadResult> ReadAsync(string entity, ReadOptions options);
+    Task<ReadResult> ReadAsync(string path, ReadOptions options);
 
-    Task DeleteAsync(string entity);
+    Task DeleteAsync(string path);
 
-    Task PurgeAsync(string entity);
+    Task PurgeAsync(string path);
 
-    Task<bool> ExistAsync(string entity);
+    Task<bool> ExistAsync(string path);
 
-    Task<IEnumerable<StorageEntity>> EntitiesAsync(string entity, ListOptions listOptions);
+    Task<IEnumerable<StorageEntity>> EntitiesAsync(string path, ListOptions listOptions);
 
-    Task<IEnumerable<object>> FilteredEntitiesAsync(string entity, ListOptions listOptions);
+    Task<IEnumerable<object>> FilteredEntitiesAsync(string path, ListOptions listOptions);
 
-    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string entity,
+    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path,
         ListOptions listOptions, ReadOptions readOptions);
 }
