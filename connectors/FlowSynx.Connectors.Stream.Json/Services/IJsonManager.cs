@@ -1,18 +1,35 @@
 ﻿using System.Data;
 using FlowSynx.Connectors.Abstractions;
-using Newtonsoft.Json.Linq;
+using FlowSynx.Connectors.Stream.Json.Models;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Stream.Json.Services;
 
 public interface IJsonManager
 {
-    string ContentType { get; }
-    string Extension { get; }
-    byte[] Load(string fullPath);
-    string ToJson(DataTable dataTable, bool? indented);
-    string ToJson(DataRow dataRow, bool? indented);
-    IDictionary<string, object?> Flatten(JToken token, string prefix = "");
-    IEnumerable<string> GetColumnNames(DataTable dataTable);
-    void Delete(DataTable allRows, DataTable rowsToDelete);
-    IEnumerable<TransferDataRow> GenerateTransferDataRow(DataTable dataTable, bool? indented = false);
+    Task<object> About(Context context, CancellationToken cancellationToken);
+
+    Task CreateAsync(Context context, CancellationToken cancellationToken);
+
+    Task WriteAsync(Context context, object dataOptions, CancellationToken cancellationToken);
+
+    Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken);
+
+    Task DeleteAsync(Context context, CancellationToken cancellationToken);
+
+    Task PurgeAsync(Context context, CancellationToken cancellationToken);
+
+    Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
+
+    Task<DataTable> EntitiesAsync(Context context, CancellationToken cancellationToken);
+
+    Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
+
+    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, Context context, CancellationToken cancellationToken);
+
+    Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable, bool? indented);
+
+    Task<IEnumerable<CompressEntry>> CompressDataRows(DataRowCollection dataRows, bool? indented);
+
+    Task TransferData(Context context, TransferData transferData, CancellationToken cancellationToken);
 }
