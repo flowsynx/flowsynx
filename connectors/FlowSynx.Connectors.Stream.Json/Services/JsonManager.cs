@@ -95,7 +95,7 @@ public class JsonManager: IJsonManager
     {
         var listOptions = context.Options.ToObject<ListOptions>();
         var dataTable = await EntitiesAsync(context, cancellationToken);
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
+        var dataFilterOptions = GetFilterOptions(listOptions);
         return _dataFilter.Filter(dataTable, dataFilterOptions);
     }
 
@@ -342,7 +342,7 @@ public class JsonManager: IJsonManager
     private async Task<DataTable> FilteredDataAsync(string content, ListOptions listOptions)
     {
         var dataTable = await JsonDataDataTableAsync(content, listOptions);
-        var dataFilterOptions = GetDataFilterOptions(listOptions);
+        var dataFilterOptions = GetFilterOptions(listOptions);
         return _dataFilter.Filter(dataTable, dataFilterOptions);
     }
 
@@ -359,7 +359,7 @@ public class JsonManager: IJsonManager
         return Task.FromResult(dataTable);
     }
 
-    private DataFilterOptions GetDataFilterOptions(ListOptions options)
+    private DataFilterOptions GetFilterOptions(ListOptions options)
     {
         var fields = GetFields(options.Fields);
         var dataFilterOptions = new DataFilterOptions
