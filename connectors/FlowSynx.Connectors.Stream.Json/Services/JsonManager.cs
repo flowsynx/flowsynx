@@ -11,8 +11,6 @@ using System.Text;
 using FlowSynx.Data.Filter;
 using FlowSynx.IO.Compression;
 using Microsoft.Extensions.Logging;
-using System.IO;
-using System.Threading;
 
 namespace FlowSynx.Connectors.Stream.Json.Services;
 
@@ -83,18 +81,12 @@ public class JsonManager: IJsonManager
         var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
         return filteredData.Rows.Count > 0;
     }
-
-    public async Task<DataTable> EntitiesAsync(Context context, CancellationToken cancellationToken)
-    {
-        var listOptions = context.Options.ToObject<ListOptions>();
-        var content = await ReadContent(context, cancellationToken);
-        return await JsonDataDataTableAsync(content, listOptions);
-    }
-
+    
     public async Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
-        var dataTable = await EntitiesAsync(context, cancellationToken);
+        var content = await ReadContent(context, cancellationToken);
+        var dataTable = await JsonDataDataTableAsync(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
         return _dataFilter.Filter(dataTable, dataFilterOptions);
     }
@@ -494,12 +486,7 @@ public class JsonManager: IJsonManager
 
         throw new StreamException("Transfer Kind is not supported. Its value should be Copy or Move.");
     }
-    
-    private byte[] Load(string fullPath)
-    {
-        return File.ReadAllBytes(fullPath);
-    }
-
+ 
     private string ToJson(DataTable dataTable, bool? indented)
     {
         var jsonString = string.Empty;
@@ -559,35 +546,7 @@ public class JsonManager: IJsonManager
 
         return result;
     }
-
-    private JObject UnFlattenJson(Dictionary<string, string> flatJson)
-    {
-        var result = new JObject();
-
-        foreach (var kvp in flatJson)
-        {
-            AddToJObject(result, kvp.Key.Split('.'), kvp.Value);
-        }
-
-        return result;
-    }
-
-    private void AddToJObject(JObject current, IReadOnlyList<string> keys, string value)
-    {
-        for (var i = 0; i < keys.Count; i++)
-        {
-            if (i == keys.Count - 1)
-            {
-                current[keys[i]] = value;
-            }
-            else
-            {
-                current[keys[i]] ??= new JObject();
-                current = (JObject)current[keys[i]];
-            }
-        }
-    }
-
+    
     private IEnumerable<string> GetColumnNames(DataTable dataTable)
     {
         return dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName);

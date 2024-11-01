@@ -1,6 +1,5 @@
 ﻿using System.Data;
 using FlowSynx.Connectors.Abstractions;
-using FlowSynx.Connectors.Stream.Json.Models;
 using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Stream.Json.Services;
@@ -20,8 +19,6 @@ public interface IJsonManager
     Task PurgeAsync(Context context, CancellationToken cancellationToken);
 
     Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
-
-    Task<DataTable> EntitiesAsync(Context context, CancellationToken cancellationToken);
 
     Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
 
