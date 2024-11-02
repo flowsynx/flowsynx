@@ -14,12 +14,12 @@ namespace FlowSynx.Connectors.Stream.Json;
 
 public class JsonConnector : Connector
 {
-    private readonly IJsonManager _jsonManager;
+    private readonly IJsonManager _manager;
 
     public JsonConnector(ILogger<JsonConnector> logger, IDataFilter dataFilter,
         IDeserializer deserializer, ISerializer serializer)
     {
-        _jsonManager = new JsonManager(logger, dataFilter, deserializer, serializer);
+        _manager = new JsonManager(logger, dataFilter, deserializer, serializer);
     }
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");
@@ -37,25 +37,25 @@ public class JsonConnector : Connector
     public override Task<object> About(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return _jsonManager.About(context, cancellationToken);
+        return _manager.About(context, cancellationToken);
     }
 
     public override Task CreateAsync(Context context,
         CancellationToken cancellationToken = default)
     {
-        return _jsonManager.CreateAsync(context, cancellationToken);
+        return _manager.CreateAsync(context, cancellationToken);
     }
 
     public override async Task WriteAsync(Context context, object dataOptions, 
         CancellationToken cancellationToken = default)
     {
-        await _jsonManager.WriteAsync(context, dataOptions, cancellationToken);
+        await _manager.WriteAsync(context, dataOptions, cancellationToken);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return await _jsonManager.ReadAsync(context, cancellationToken);
+        return await _manager.ReadAsync(context, cancellationToken);
     }
 
     public override Task UpdateAsync(Context context, 
@@ -67,19 +67,19 @@ public class JsonConnector : Connector
     public override Task DeleteAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return _jsonManager.DeleteAsync(context, cancellationToken);
+        return _manager.DeleteAsync(context, cancellationToken);
     }
 
     public override async Task<bool> ExistAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return await _jsonManager.ExistAsync(context, cancellationToken);
+        return await _manager.ExistAsync(context, cancellationToken);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var filteredData = await _jsonManager.FilteredEntitiesAsync(context, cancellationToken);
+        var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken);
         return filteredData.CreateListFromTable();
     }
 
@@ -89,7 +89,7 @@ public class JsonConnector : Connector
         if (destinationContext.ConnectorContext?.Current is null)
             throw new StreamException(Resources.CalleeConnectorNotSupported);
 
-        var transferData = await _jsonManager.PrepareDataForTransferring(Namespace, Type, sourceContext, cancellationToken);
+        var transferData = await _manager.PrepareDataForTransferring(Namespace, Type, sourceContext, cancellationToken);
 
         await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
@@ -97,7 +97,7 @@ public class JsonConnector : Connector
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         CancellationToken cancellationToken = default)
     {
-        await _jsonManager.TransferData(context, transferData, cancellationToken);
+        await _manager.TransferData(context, transferData, cancellationToken);
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
@@ -114,14 +114,14 @@ public class JsonConnector : Connector
         var compressOptions = context.Options.ToObject<CompressOptions>();
         var indentedOptions = context.Options.ToObject<IndentedOptions>();
         
-        var filteredData = await _jsonManager.FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+        var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
 
         if (filteredData.Rows.Count <= 0)
             throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
         
         if (compressOptions.SeparateJsonPerRow is false)
-            return await _jsonManager.CompressDataTable(filteredData, indentedOptions.Indented);
+            return await _manager.CompressDataTable(filteredData, indentedOptions.Indented);
         
-        return await _jsonManager.CompressDataRows(filteredData.Rows, indentedOptions.Indented);
+        return await _manager.CompressDataRows(filteredData.Rows, indentedOptions.Indented);
     }
 }

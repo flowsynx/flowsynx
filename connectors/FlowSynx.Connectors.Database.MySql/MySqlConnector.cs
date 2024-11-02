@@ -5,6 +5,7 @@ using FlowSynx.Connectors.Database.MySql.Exceptions;
 using FlowSynx.Connectors.Database.MySql.Models;
 using FlowSynx.Connectors.Database.MySql.Services;
 using FlowSynx.IO.Compression;
+using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Connectors.Database.MySql;
@@ -12,14 +13,16 @@ namespace FlowSynx.Connectors.Database.MySql;
 public class MySqlConnector : Connector
 {
     private readonly ILogger<MySqlConnector> _logger;
+    private readonly ISerializer _serializer;
     private readonly IMySqlDatabaseConnection _connection;
     private IMysqlDatabaseManager _manager = null!;
     private MySqlpecifications _mysqlSpecifications = null!;
 
-    public MySqlConnector(ILogger<MySqlConnector> logger)
+    public MySqlConnector(ILogger<MySqlConnector> logger, ISerializer serializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
+        _serializer = serializer;
         _connection = new MySqlDatabaseConnection();
     }
 
@@ -34,47 +37,32 @@ public class MySqlConnector : Connector
     {
         _mysqlSpecifications = Specifications.ToObject<MySqlpecifications>();
         var connection = _connection.Connect(_mysqlSpecifications);
-        _manager = new MysqlDatabaseManager(_logger, connection);
+        _manager = new MysqlDatabaseManager(_logger, connection, _serializer);
         return Task.CompletedTask;
     }
 
-    public override Task<object> About(Context context, 
+    public override async Task<object> About(Context context, 
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return await _manager.About(context, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task CreateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var createOptions = context.Options.ToObject<CreateOptions>();
-        await _manager.CreateAsync(sqlOptions.Sql, createOptions, cancellationToken).ConfigureAwait(false);
+        await _manager.CreateAsync(context, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task WriteAsync(Context context, object dataOptions, 
         CancellationToken cancellationToken = default)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var writeFilters = context.Options.ToObject<WriteOptions>();
-        await _manager.WriteAsync(sqlOptions.Sql, writeFilters, dataOptions, cancellationToken).ConfigureAwait(false);
+        await _manager.WriteAsync(context, dataOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var readOptions = context.Options.ToObject<ReadOptions>();
-        return await _manager.ReadAsync(sqlOptions.Sql, readOptions, cancellationToken).ConfigureAwait(false);
+        return await _manager.ReadAsync(context, cancellationToken).ConfigureAwait(false);
     }
 
     public override Task UpdateAsync(Context context, 
@@ -86,33 +74,19 @@ public class MySqlConnector : Connector
     public override async Task DeleteAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var deleteOptions = context.Options.ToObject<DeleteOptions>();
-        await _manager.DeleteAsync(sqlOptions.Sql, deleteOptions, cancellationToken).ConfigureAwait(false);
+        await _manager.DeleteAsync(context, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<bool> ExistAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
-        return await _manager.ExistAsync(sqlOptions.Sql, cancellationToken).ConfigureAwait(false);
+        return await _manager.ExistAsync(context, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
-        return await _manager.EntitiesAsync(sqlOptions.Sql, listOptions, cancellationToken);
+        return await _manager.EntitiesAsync(context, cancellationToken).ConfigureAwait(false);
     }
 
     public override async Task TransferAsync(Context sourceContext, Context destinationContext,

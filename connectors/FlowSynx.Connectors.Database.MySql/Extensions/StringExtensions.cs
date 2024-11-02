@@ -9,4 +9,12 @@ public static class StringExtensions
 
         return statement.Contains("CREATE DATABASE", StringComparison.OrdinalIgnoreCase);
     }
+
+    public static bool IsInsertStatement(this string statement)
+    {
+        if (string.IsNullOrWhiteSpace(statement))
+            return false;
+
+        return statement.Contains("INSERT INTO", StringComparison.OrdinalIgnoreCase);
+    }
 }

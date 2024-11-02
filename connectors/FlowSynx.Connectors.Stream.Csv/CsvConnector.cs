@@ -17,7 +17,7 @@ public class CsvConnector : Connector
     private CsvSpecifications? _csvStreamSpecifications;
     private readonly IDeserializer _deserializer;
     private readonly IDataFilter _dataFilter;
-    private ICsvManager _csvManager = null!;
+    private ICsvManager _manager = null!;
 
     public CsvConnector(ILogger<CsvConnector> logger, IDataFilter dataFilter, IDeserializer deserializer)
     {
@@ -36,32 +36,32 @@ public class CsvConnector : Connector
     public override Task Initialize()
     {
         _csvStreamSpecifications = Specifications.ToObject<CsvSpecifications>();
-        _csvManager = new CsvManager(_logger, _dataFilter, _deserializer, _csvStreamSpecifications);
+        _manager = new CsvManager(_logger, _dataFilter, _deserializer, _csvStreamSpecifications);
         return Task.CompletedTask;
     }
 
     public override Task<object> About(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return _csvManager.About(context, cancellationToken);
+        return _manager.About(context, cancellationToken);
     }
 
     public override Task CreateAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return _csvManager.CreateAsync(context, cancellationToken);
+        return _manager.CreateAsync(context, cancellationToken);
     }
 
     public override async Task WriteAsync(Context context, object dataOptions, 
         CancellationToken cancellationToken = default)
     {
-        await _csvManager.WriteAsync(context, dataOptions, cancellationToken);
+        await _manager.WriteAsync(context, dataOptions, cancellationToken);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return await _csvManager.ReadAsync(context, cancellationToken);
+        return await _manager.ReadAsync(context, cancellationToken);
     }
 
     public override Task UpdateAsync(Context context, 
@@ -73,19 +73,19 @@ public class CsvConnector : Connector
     public override async Task DeleteAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        await _csvManager.DeleteAsync(context, cancellationToken);
+        await _manager.DeleteAsync(context, cancellationToken);
     }
 
     public override async Task<bool> ExistAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        return await _csvManager.ExistAsync(context, cancellationToken);
+        return await _manager.ExistAsync(context, cancellationToken);
     }
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var filteredData = await _csvManager.FilteredEntitiesAsync(context, cancellationToken);
+        var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken);
         return filteredData.CreateListFromTable();
     }
 
@@ -95,14 +95,14 @@ public class CsvConnector : Connector
         if (destinationContext.ConnectorContext?.Current is null)
             throw new StreamException(Resources.CalleeConnectorNotSupported);
 
-        var transferData = await _csvManager.PrepareDataForTransferring(Namespace, Type, sourceContext, cancellationToken);
+        var transferData = await _manager.PrepareDataForTransferring(Namespace, Type, sourceContext, cancellationToken);
         await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
         CancellationToken cancellationToken = default)
     {
-        await _csvManager.TransferData(context, transferData, cancellationToken);
+        await _manager.TransferData(context, transferData, cancellationToken);
     }
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
@@ -116,10 +116,10 @@ public class CsvConnector : Connector
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!_csvManager.IsCsvFile(path))
+        if (!_manager.IsCsvFile(path))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        var filteredData = await _csvManager.FilteredEntitiesAsync(context, cancellationToken);
+        var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken);
 
         if (filteredData.Rows.Count <= 0)
             throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
@@ -128,8 +128,8 @@ public class CsvConnector : Connector
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
         if (compressOptions.SeparateCsvPerRow is false)
-            return await _csvManager.CompressDataTable(filteredData, delimiterOptions);
+            return await _manager.CompressDataTable(filteredData, delimiterOptions);
 
-        return await _csvManager.CompressDataRows(filteredData.Rows, delimiterOptions);
+        return await _manager.CompressDataRows(filteredData.Rows, delimiterOptions);
     }
 }
