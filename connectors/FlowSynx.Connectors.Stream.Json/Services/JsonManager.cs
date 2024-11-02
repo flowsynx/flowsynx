@@ -41,13 +41,13 @@ public class JsonManager: IJsonManager
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
-    public async Task WriteAsync(Context context, object dataOptions, CancellationToken cancellationToken)
+    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
         var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
-        var content = PrepareDataForWrite(writeOptions, indentedOptions, dataOptions);
+        var content = PrepareDataForWrite(writeOptions, indentedOptions);
         if (context.ConnectorContext?.Current != null)
         {
             var newContext = new Context(context.Options, context.ConnectorContext.Next);
@@ -240,10 +240,9 @@ public class JsonManager: IJsonManager
     }
 
     #region internal methods
-    private dynamic PrepareDataForWrite(WriteOptions writeOptions, IndentedOptions indentedOptions,
-        object dataOptions)
+    private dynamic PrepareDataForWrite(WriteOptions writeOptions, IndentedOptions indentedOptions)
     {
-        var dataValue = dataOptions.GetObjectValue();
+        var dataValue = writeOptions.Data.GetObjectValue();
 
         if (dataValue is null)
             throw new StreamException(Resources.ForWritingDataMustHaveValue);

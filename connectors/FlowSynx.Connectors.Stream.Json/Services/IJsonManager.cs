@@ -10,7 +10,7 @@ public interface IJsonManager
 
     Task CreateAsync(Context context, CancellationToken cancellationToken);
 
-    Task WriteAsync(Context context, object dataOptions, CancellationToken cancellationToken);
+    Task WriteAsync(Context context, CancellationToken cancellationToken);
 
     Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken);
 

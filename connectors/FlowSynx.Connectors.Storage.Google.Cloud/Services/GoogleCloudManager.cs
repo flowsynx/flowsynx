@@ -15,6 +15,7 @@ using FlowSynx.IO.Serialization;
 using EnsureThat;
 using FlowSynx.Data.Extensions;
 using System.Data;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Storage.Google.Cloud.Services;
 
@@ -40,7 +41,227 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         _deserializer = deserializer;
     }
 
-    public async Task CreateAsync(string path, CreateOptions options, CancellationToken cancellationToken)
+    public Task<object> About(Context context, CancellationToken cancellationToken = default)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        throw new StorageException(Resources.AboutOperrationNotSupported);
+    }
+
+    public async Task CreateAsync(Context context, CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var createOptions = context.Options.ToObject<CreateOptions>();
+
+        await CreateEntityAsync(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var writeOptions = context.Options.ToObject<WriteOptions>();
+
+        await WriteEntityAsync(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var readOptions = context.Options.ToObject<ReadOptions>();
+
+        return await ReadEntityAsync(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public Task UpdateAsync(Context context, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var deleteOptions = context.Options.ToObject<DeleteOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+        var entities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+
+        var storageEntities = entities.ToList();
+        if (!storageEntities.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        foreach (var entityItem in storageEntities)
+        {
+            if (entityItem is not StorageEntity storageEntity)
+                continue;
+
+            await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (deleteOptions.Purge is true)
+            await PurgeEntityAsync(path, cancellationToken);
+    }
+
+    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+
+        return await ExistEntityAsync(pathOptions.Path, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<IEnumerable<object>> FilteredEntitiesAsync(Context context,
+    CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+
+        return await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    CancellationToken cancellationToken)
+    {
+        if (destinationContext.ConnectorContext?.Current is null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var sourcePathOptions = sourceContext.Options.ToObject<PathOptions>();
+        var sourceListOptions = sourceContext.Options.ToObject<ListOptions>();
+        var sourceReadOptions = sourceContext.Options.ToObject<ReadOptions>();
+
+        var transferData = await PrepareDataForTransferring(@namespace, type, sourcePathOptions.Path,
+            sourceListOptions, sourceReadOptions, cancellationToken);
+
+        var destinationPathOptions = destinationContext.Options.ToObject<PathOptions>();
+
+        foreach (var row in transferData.Rows)
+            row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
+
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
+    }
+
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
+    {
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var createOptions = context.Options.ToObject<CreateOptions>();
+        var writeOptions = context.Options.ToObject<WriteOptions>();
+
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+
+        if (!string.IsNullOrEmpty(transferData.Content))
+        {
+            var parentPath = PathHelper.GetParent(path);
+            if (!PathHelper.IsRootPath(parentPath))
+            {
+                var newWriteOption = new WriteOptions
+                {
+                    Data = transferData.Content,
+                    Overwrite = writeOptions.Overwrite
+                };
+
+                await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                await WriteEntityAsync(path, newWriteOption, cancellationToken).ConfigureAwait(false);
+                _logger.LogInformation($"Copy operation done for entity '{path}'");
+            }
+        }
+        else
+        {
+            foreach (var item in transferData.Rows)
+            {
+                if (string.IsNullOrEmpty(item.Content))
+                {
+                    if (transferData.Namespace == Namespace.Storage)
+                    {
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                    }
+                }
+                else
+                {
+                    var parentPath = PathHelper.GetParent(item.Key);
+                    if (!PathHelper.IsRootPath(parentPath))
+                    {
+                        var newWriteOption = new WriteOptions
+                        {
+                            Data = item.Content,
+                            Overwrite = writeOptions.Overwrite,
+                        };
+
+                        await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+                        await WriteEntityAsync(item.Key, newWriteOption, cancellationToken).ConfigureAwait(false);
+                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
+                    }
+                }
+            }
+        }
+    }
+
+    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    {
+        if (context.ConnectorContext?.Current is not null)
+            throw new StorageException(Resources.CalleeConnectorNotSupported);
+
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+        var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
+
+        var entityItems = storageEntities.ToList();
+        if (!entityItems.Any())
+            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
+
+        var compressEntries = new List<CompressEntry>();
+        foreach (var entityItem in entityItems)
+        {
+            if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning($"The item '{entityItem.Name}' is not a file.");
+                continue;
+            }
+
+            try
+            {
+                var readOptions = new ReadOptions { Hashing = false };
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                compressEntries.Add(new CompressEntry
+                {
+                    Name = entityItem.Name,
+                    ContentType = entityItem.ContentType,
+                    Content = content.Content,
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+            }
+        }
+
+        return compressEntries;
+    }
+
+    public void Dispose()
+    {
+    }
+
+    #region internal methods
+    private async Task CreateEntityAsync(string path, CreateOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -65,8 +286,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
             await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(string path, WriteOptions options, object dataOptions, 
-        CancellationToken cancellationToken)
+    private async Task WriteEntityAsync(string path, WriteOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -75,7 +295,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         if (!PathHelper.IsFile(path))
             throw new StorageException(Resources.ThePathIsNotFile);
 
-        var dataValue = dataOptions.GetObjectValue();
+        var dataValue = options.Data.GetObjectValue();
         if (dataValue is not string data)
             throw new StorageException(Resources.EnteredDataIsNotValid);
 
@@ -98,7 +318,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    public async Task<ReadResult> ReadAsync(string path, ReadOptions options, CancellationToken cancellationToken)
+    private async Task<ReadResult> ReadEntityAsync(string path, ReadOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -133,7 +353,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    public async Task DeleteAsync(string path, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync(string path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -165,7 +385,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    public async Task PurgeAsync(string path, CancellationToken cancellationToken)
+    private async Task PurgeEntityAsync(string path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -175,7 +395,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         await DeleteAllAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> ExistAsync(string path, CancellationToken cancellationToken)
+    private async Task<bool> ExistEntityAsync(string path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -199,7 +419,20 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    public async Task<IEnumerable<StorageEntity>> EntitiesAsync(string path, ListOptions listOptions,
+    private async Task<IEnumerable<object>> FilteredEntitiesListAsync(string path, 
+        ListOptions listOptions, CancellationToken cancellationToken)
+    {
+        path = PathHelper.ToUnixPath(path);
+        var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataTable = entities.ToDataTable();
+        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
+
+        return filteredEntities.CreateListFromTable();
+    }
+
+    private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -212,7 +445,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
 
         var storageEntities = new List<StorageEntity>();
         var buckets = new List<string>();
-        
+
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
             buckets.AddRange(await ListBucketsAsync().ConfigureAwait(false));
@@ -236,97 +469,6 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         return storageEntities;
     }
 
-    public async Task<IEnumerable<object>> FilteredEntitiesAsync(string path, ListOptions listOptions,
-    CancellationToken cancellationToken)
-    {
-        path = PathHelper.ToUnixPath(path);
-        var entities = await EntitiesAsync(path, listOptions, cancellationToken);
-
-        var dataFilterOptions = GetFilterOptions(listOptions);
-        var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
-
-        return filteredEntities.CreateListFromTable();
-    }
-
-    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path, ListOptions listOptions,
-        ReadOptions readOptions, CancellationToken cancellationToken = default)
-    {
-        path = PathHelper.ToUnixPath(path);
-
-        var storageEntities = await EntitiesAsync(path, listOptions, cancellationToken);
-
-        var fields = GetFields(listOptions.Fields);
-        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
-
-        if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
-
-        if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
-
-        var dataFilterOptions = GetFilterOptions(listOptions);
-
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
-        var transferDataRows = new List<TransferDataRow>();
-
-        foreach (DataRow row in filteredData.Rows)
-        {
-            var content = string.Empty;
-            var contentType = string.Empty;
-            var fullPath = row["FullPath"].ToString() ?? string.Empty;
-
-            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                if (!string.IsNullOrEmpty(fullPath))
-                {
-                    var read = await ReadAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
-                    content = read.Content.ToBase64String();
-                }
-            }
-
-            if (!kindFieldExist)
-                row["Kind"] = DBNull.Value;
-
-            if (!fullPathFieldExist)
-                row["FullPath"] = DBNull.Value;
-
-            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
-            transferDataRows.Add(new TransferDataRow
-            {
-                Key = fullPath,
-                ContentType = contentType,
-                Content = content,
-                Items = itemArray
-            });
-        }
-
-        if (!kindFieldExist)
-            filteredData.Columns.Remove("Kind");
-
-        if (!fullPathFieldExist)
-            filteredData.Columns.Remove("FullPath");
-
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
-        var result = new TransferData
-        {
-            Namespace = @namespace,
-            ConnectorType = type,
-            Kind = TransferKind.Copy,
-            Columns = columnNames,
-            Rows = transferDataRows
-        };
-
-        return result;
-    }
-
-    public void Dispose()
-    {
-    }
-
-    #region internal methods
     private async Task ListObjectsAsync(string bucketName, List<StorageEntity> result, string path,
         ListOptions listOptions, CancellationToken cancellationToken)
     {
@@ -475,6 +617,79 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         {
             return false;
         }
+    }
+
+    private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path, 
+        ListOptions listOptions, ReadOptions readOptions, CancellationToken cancellationToken = default)
+    {
+        path = PathHelper.ToUnixPath(path);
+
+        var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
+
+        var fields = GetFields(listOptions.Fields);
+        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+
+        if (!kindFieldExist)
+            fields = fields.Append("Kind").ToArray();
+
+        if (!fullPathFieldExist)
+            fields = fields.Append("FullPath").ToArray();
+
+        var dataFilterOptions = GetFilterOptions(listOptions);
+
+        var dataTable = storageEntities.ToDataTable();
+        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var transferDataRows = new List<TransferDataRow>();
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var content = string.Empty;
+            var contentType = string.Empty;
+            var fullPath = row["FullPath"].ToString() ?? string.Empty;
+
+            if (string.Equals(row["Kind"].ToString(), StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                    content = read.Content.ToBase64String();
+                }
+            }
+
+            if (!kindFieldExist)
+                row["Kind"] = DBNull.Value;
+
+            if (!fullPathFieldExist)
+                row["FullPath"] = DBNull.Value;
+
+            var itemArray = row.ItemArray.Where(x => x != DBNull.Value).ToArray();
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = fullPath,
+                ContentType = contentType,
+                Content = content,
+                Items = itemArray
+            });
+        }
+
+        if (!kindFieldExist)
+            filteredData.Columns.Remove("Kind");
+
+        if (!fullPathFieldExist)
+            filteredData.Columns.Remove("FullPath");
+
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        var result = new TransferData
+        {
+            Namespace = @namespace,
+            ConnectorType = type,
+            Kind = TransferKind.Copy,
+            Columns = columnNames,
+            Rows = transferDataRows
+        };
+
+        return result;
     }
 
     private GoogleCloudPathPart GetPartsAsync(string fullPath)

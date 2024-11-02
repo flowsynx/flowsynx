@@ -9,7 +9,7 @@ public interface IMemoryManager
 
     Task CreateAsync(string path, CreateOptions options);
 
-    Task WriteAsync(string path, WriteOptions options, object dataOptions);
+    Task WriteAsync(string path, WriteOptions options);
 
     Task<ReadResult> ReadAsync(string path, ReadOptions options);
 

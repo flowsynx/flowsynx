@@ -51,7 +51,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         _logger.LogInformation($"Created {rowsAffected} row(s)!");
     }
 
-    public async Task WriteAsync(Context context, object dataOptions, CancellationToken cancellationToken)
+    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");

@@ -52,8 +52,8 @@ public class AmazonS3Connector : Connector
     public override async Task CreateAsync(Context context, CancellationToken cancellationToken = default) =>
         await _manager.CreateAsync(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task WriteAsync(Context context, object dataOptions, CancellationToken cancellationToken = default) => 
-        await _manager.WriteAsync(context, dataOptions, cancellationToken).ConfigureAwait(false);
+    public override async Task WriteAsync(Context context, CancellationToken cancellationToken = default) => 
+        await _manager.WriteAsync(context, cancellationToken).ConfigureAwait(false);
 
     public override async Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken = default) => 
         await _manager.ReadAsync(context,cancellationToken).ConfigureAwait(false);

@@ -1,28 +1,31 @@
 ﻿using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Storage.Options;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 
 public interface IAzureBlobManager
 {
-    Task CreateAsync(string path, CreateOptions options, CancellationToken cancellationToken);
+    Task<object> About(Context context, CancellationToken cancellationToken);
 
-    Task WriteAsync(string path, WriteOptions options, object dataOptions, CancellationToken cancellationToken);
+    Task CreateAsync(Context context, CancellationToken cancellationToken);
 
-    Task<ReadResult> ReadAsync(string path, ReadOptions options, CancellationToken cancellationToken);
+    Task WriteAsync(Context context, CancellationToken cancellationToken);
 
-    Task DeleteAsync(string path, CancellationToken cancellationToken);
+    Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken);
 
-    Task PurgeAsync(string path, CancellationToken cancellationToken);
+    Task UpdateAsync(Context context, CancellationToken cancellationToken);
 
-    Task<bool> ExistAsync(string path, CancellationToken cancellationToken);
+    Task DeleteAsync(Context context, CancellationToken cancellationToken);
 
-    Task<IEnumerable<StorageEntity>> EntitiesAsync(string path, ListOptions listOptions,
+    Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
+
+    Task<IEnumerable<object>> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
+
+    Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
         CancellationToken cancellationToken);
 
-    Task<IEnumerable<object>> FilteredEntitiesAsync(string path, ListOptions listOptions,
-        CancellationToken cancellationToken);
+    Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken);
 
-    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path, ListOptions listOptions,
-        ReadOptions readOptions, CancellationToken cancellationToken = default);
+    Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

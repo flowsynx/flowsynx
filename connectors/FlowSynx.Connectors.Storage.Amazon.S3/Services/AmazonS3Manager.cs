@@ -56,31 +56,10 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsDirectory(path))
-            throw new StorageException(Resources.ThePathIsNotDirectory);
-
-        var pathParts = GetPartsAsync(path);
-        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
-        if (!isExist)
-        {
-            await _client.PutBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
-        }
-
-        if (!string.IsNullOrEmpty(pathParts.RelativePath))
-        {
-            var isFolderExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-            if (!isFolderExist)
-                await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
+        await CreateEntityAsync(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(Context context,
-        object dataOptions, CancellationToken cancellationToken)
+    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -88,38 +67,10 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        var dataValue = dataOptions.GetObjectValue();
-        if (dataValue is not string data)
-            throw new StorageException(Resources.EnteredDataIsNotValid);
-
-        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
-            if (isExist && writeOptions.Overwrite is false)
-                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
-
-            await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName,
-                pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        await WriteEntityAsync(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ReadResult> ReadAsync(Context context,
-        CancellationToken cancellationToken)
+    public async Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -127,38 +78,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        if (string.IsNullOrEmpty(path))
-            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
-
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
-
-        try
-        {
-            var pathParts = GetPartsAsync(path);
-            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
-
-            if (!isExist)
-                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
-
-            var request = new GetObjectRequest { BucketName = pathParts.BucketName, Key = pathParts.RelativePath };
-            var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
-
-            var ms = new MemoryStream();
-            await response.ResponseStream.CopyToAsync(ms, cancellationToken);
-            ms.Seek(0, SeekOrigin.Begin);
-
-            return new ReadResult
-            {
-                Content = ms.ToArray(),
-                ContentHash = readOptions.Hashing is true ? response.ETag.Trim('\"') : string.Empty,
-            };
-        }
-        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
-        }
+        return await ReadEntityAsync(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
     public Task UpdateAsync(Context context, CancellationToken cancellationToken)
@@ -303,10 +223,12 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
             var parentPath = PathHelper.GetParent(path);
             if (!PathHelper.IsRootPath(parentPath))
             {
-                var createContext = CloneContextAndChangePath(context, new KeyValuePair<string, object>("path", parentPath));
-                var writeContext = CloneContextAndChangePath(context, new KeyValuePair<string, object>("path", path));
-                await CreateAsync(createContext, cancellationToken).ConfigureAwait(false);
-                await WriteAsync(writeContext, transferData.Content, cancellationToken).ConfigureAwait(false);
+                await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+
+                var clonedWriteOptions = (WriteOptions)writeOptions.Clone();
+                clonedWriteOptions.Data = transferData.Content;
+                await WriteEntityAsync(path, clonedWriteOptions, cancellationToken).ConfigureAwait(false);
+
                 _logger.LogInformation($"Copy operation done for entity '{path}'");
             }
         }
@@ -318,8 +240,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
                 {
                     if (transferData.Namespace == Namespace.Storage)
                     {
-                        var createContext = CloneContextAndChangePath(context, new KeyValuePair<string, object>("path", item.Key));
-                        await CreateAsync(createContext, cancellationToken).ConfigureAwait(false);
+                        await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -328,10 +249,12 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
                     var parentPath = PathHelper.GetParent(item.Key);
                     if (!PathHelper.IsRootPath(parentPath))
                     {
-                        var createContext = CloneContextAndChangePath(context, new KeyValuePair<string, object>("path", parentPath));
-                        var writeContext = CloneContextAndChangePath(context, new KeyValuePair<string, object>("path", item.Key));
-                        await CreateAsync(createContext, cancellationToken).ConfigureAwait(false);
-                        await WriteAsync(writeContext, item.Content, cancellationToken).ConfigureAwait(false);
+                        await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+
+                        var clonedWriteOptions = (WriteOptions)writeOptions.Clone();
+                        clonedWriteOptions.Data = item.Content;
+                        await WriteEntityAsync(item.Key, clonedWriteOptions, cancellationToken).ConfigureAwait(false);
+
                         _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
                     }
                 }
@@ -364,11 +287,8 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
             try
             {
-                var newContext = CloneContextAndChangePath(context, 
-                    new KeyValuePair<string, object>("path", entityItem.FullPath), 
-                    new KeyValuePair<string, object>("hashing", false));
-
-                var content = await ReadAsync(newContext, cancellationToken).ConfigureAwait(false);
+                var readOptions = new ReadOptions { Hashing = false };
+                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -388,6 +308,99 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     public void Dispose() { }
 
     #region internal methods
+    private async Task CreateEntityAsync(string path, CreateOptions createOptions, CancellationToken cancellationToken)
+    {
+        path = PathHelper.ToUnixPath(path);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsDirectory(path))
+            throw new StorageException(Resources.ThePathIsNotDirectory);
+
+        var pathParts = GetPartsAsync(path);
+        var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
+        if (!isExist)
+        {
+            await _client.PutBucketAsync(pathParts.BucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
+            _logger.LogInformation($"Bucket '{pathParts.BucketName}' was created successfully.");
+        }
+
+        if (!string.IsNullOrEmpty(pathParts.RelativePath))
+        {
+            var isFolderExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+            if (!isFolderExist)
+                await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task WriteEntityAsync(string path, WriteOptions writeOptions, CancellationToken cancellationToken)
+    {
+        path = PathHelper.ToUnixPath(path);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        var dataValue = writeOptions.Data.GetObjectValue();
+        if (dataValue is not string data)
+            throw new StorageException(Resources.EnteredDataIsNotValid);
+
+        var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+
+            if (isExist && writeOptions.Overwrite is false)
+                throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+            await _fileTransferUtility.UploadAsync(dataStream, pathParts.BucketName,
+                pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
+    private async Task<ReadResult> ReadEntityAsync(string path, ReadOptions readOptions, CancellationToken cancellationToken)
+    {
+        path = PathHelper.ToUnixPath(path);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        try
+        {
+            var pathParts = GetPartsAsync(path);
+            var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+
+            if (!isExist)
+                throw new StorageException(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+
+            var request = new GetObjectRequest { BucketName = pathParts.BucketName, Key = pathParts.RelativePath };
+            var response = await _client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
+
+            var ms = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(ms, cancellationToken);
+            ms.Seek(0, SeekOrigin.Begin);
+
+            return new ReadResult
+            {
+                Content = ms.ToArray(),
+                ContentHash = readOptions.Hashing is true ? response.ETag.Trim('\"') : string.Empty,
+            };
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            throw new StorageException(string.Format(Resources.ResourceNotExist, path));
+        }
+    }
+
     private async Task<bool> ObjectExists(string bucketName, string key, CancellationToken cancellationToken)
     {
         try
@@ -602,8 +615,8 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
             {
                 if (!string.IsNullOrEmpty(fullPath))
                 {
-                    var newContext = CloneContextAndChangePath(context, new KeyValuePair<string, object>("path", fullPath));
-                    var read = await ReadAsync(newContext, cancellationToken).ConfigureAwait(false);
+                    var readOptions = new ReadOptions { Hashing = false };
+                    var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
                     content = read.Content.ToBase64String();
                 }
             }
@@ -667,18 +680,6 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
 
         return result;
-    }
-
-    private Context CloneContextAndChangePath(Context context, params KeyValuePair<string, object>[] keyValuePair)
-    {
-        var clonedOption = (ConnectorOptions)context.Options.Clone();
-
-        foreach (var kvp in keyValuePair) 
-        {
-            clonedOption[kvp.Key] = kvp.Value;
-        }
-
-        return new Context(clonedOption);
     }
 
     private TransferUtility CreateTransferUtility(AmazonS3Client client)

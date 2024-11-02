@@ -40,13 +40,13 @@ internal class CsvManager: ICsvManager
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
-    public async Task WriteAsync(Context context, object dataOptions, CancellationToken cancellationToken)
+    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        var content = PrepareDataForWrite(writeOptions, delimiterOptions, dataOptions);
+        var content = PrepareDataForWrite(writeOptions, delimiterOptions);
         if (context.ConnectorContext?.Current != null)
         {
             var newContext = new Context(context.Options, context.ConnectorContext.Next);
@@ -301,9 +301,9 @@ internal class CsvManager: ICsvManager
     }
 
     #region internal methods
-    private string PrepareDataForWrite(WriteOptions writeOptions, DelimiterOptions delimiterOptions, object dataOptions)
+    private string PrepareDataForWrite(WriteOptions writeOptions, DelimiterOptions delimiterOptions)
     {
-        var dataValue = dataOptions.GetObjectValue();
+        var dataValue = writeOptions.Data.GetObjectValue();
 
         if (dataValue is null)
             throw new StreamException(Resources.ForWritingDataMustHaveValue);

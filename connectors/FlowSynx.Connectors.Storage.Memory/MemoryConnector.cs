@@ -66,15 +66,14 @@ public class MemoryConnector : Connector
         await _manager.CreateAsync(pathOptions.Path, createOptions).ConfigureAwait(false);
     }
 
-    public override async Task WriteAsync(Context context, object dataOptions, 
-        CancellationToken cancellationToken = default)
+    public override async Task WriteAsync(Context context, CancellationToken cancellationToken = default)
     {
         if (context.ConnectorContext?.Current is not null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
 
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
-        await _manager.WriteAsync(pathOptions.Path, writeOptions, dataOptions).ConfigureAwait(false);
+        await _manager.WriteAsync(pathOptions.Path, writeOptions).ConfigureAwait(false);
     }
 
     public override async Task<ReadResult> ReadAsync(Context context, 

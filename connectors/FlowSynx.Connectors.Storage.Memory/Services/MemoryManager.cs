@@ -96,7 +96,7 @@ public class MemoryManager: IMemoryManager
         }
     }
 
-    public Task WriteAsync(string path, WriteOptions options, object dataOptions)
+    public Task WriteAsync(string path, WriteOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -105,7 +105,7 @@ public class MemoryManager: IMemoryManager
         if (!PathHelper.IsFile(path))
             throw new StorageException(Resources.ThePathIsNotFile);
 
-        var dataValue = dataOptions.GetObjectValue();
+        var dataValue = options.Data.GetObjectValue();
         if (dataValue is not string data)
             throw new StorageException(Resources.EnteredDataIsNotValid);
 
