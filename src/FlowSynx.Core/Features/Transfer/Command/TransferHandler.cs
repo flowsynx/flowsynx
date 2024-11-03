@@ -25,12 +25,12 @@ internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
     {
         try
         {
-            var sourceConnectorContext = _connectorParser.Parse(request.Source.Connector);
-            var sourceOptions = request.Source.Options.ToConnectorOptions();
+            var sourceConnectorContext = _connectorParser.Parse(request.From.Connector);
+            var sourceOptions = request.From.Options.ToConnectorOptions();
             var sourceContext = new Context(sourceOptions, sourceConnectorContext.Next);
 
-            var destinationConnectorContext = _connectorParser.Parse(request.Destination.Connector);
-            var destinationOptions = request.Destination.Options.ToConnectorOptions();
+            var destinationConnectorContext = _connectorParser.Parse(request.To.Connector);
+            var destinationOptions = request.To.Options.ToConnectorOptions();
             var destinationContext = new Context(destinationOptions, destinationConnectorContext);
 
             await sourceConnectorContext.Current.TransferAsync(sourceContext, destinationContext,cancellationToken);
