@@ -50,8 +50,11 @@ public class JsonManager: IJsonManager
         var content = PrepareDataForWrite(writeOptions, indentedOptions);
         if (context.ConnectorContext?.Current != null)
         {
-            var newContext = new Context(context.Options, context.ConnectorContext.Next);
-            await context.ConnectorContext.Current.WriteAsync(newContext, content, cancellationToken).ConfigureAwait(false);
+            var clonedOptions = (ConnectorOptions)context.Options.Clone();
+            clonedOptions["Data"] = content;
+            var newContext = new Context(clonedOptions, context.ConnectorContext.Next);
+
+            await context.ConnectorContext.Current.WriteAsync(newContext, cancellationToken).ConfigureAwait(false);
             return;
         }
 
@@ -66,12 +69,12 @@ public class JsonManager: IJsonManager
         return await ReadLocallyAsync(content, listOptions).ConfigureAwait(false);
     }
 
-    public Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task PurgeAsync(Context context, CancellationToken cancellationToken)
+    public Task DeleteAsync(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
@@ -91,77 +94,17 @@ public class JsonManager: IJsonManager
         return _dataFilter.Filter(dataTable, dataFilterOptions);
     }
 
-    public async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, Context context,
-        CancellationToken cancellationToken)
+    public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    CancellationToken cancellationToken)
     {
-        var transferOptions = context.Options.ToObject<TransferOptions>();
-        var indentedOptions = context.Options.ToObject<IndentedOptions>();
-        
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+        if (destinationContext.ConnectorContext?.Current is null)
+            throw new StreamException(Resources.CalleeConnectorNotSupported);
 
-        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow;
-        var jsonContentBase64 = string.Empty;
-
-        var transferKind = GetTransferKind(transferOptions.TransferKind);
-        if (!isSeparateJsonPerRow)
-        {
-            var jsonContent = ToJson(filteredData, indentedOptions.Indented);
-            jsonContentBase64 = jsonContent.ToBase64String();
-        }
-
-        var result = new TransferData
-        {
-            Namespace = @namespace,
-            ConnectorType = type,
-            Kind = transferKind,
-            ContentType = isSeparateJsonPerRow ? string.Empty : ContentType,
-            Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
-            Columns = GetColumnNames(filteredData),
-            Rows = GenerateTransferDataRow(filteredData, indentedOptions.Indented)
-        };
-
-        return result;
+        var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
 
-    public Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable, bool? indented)
-    {
-        var compressEntries = new List<CompressEntry>();
-        var rowContent = ToJson(dataTable, indented);
-        compressEntries.Add(new CompressEntry
-        {
-            Name = $"{Guid.NewGuid().ToString()}{Extension}",
-            ContentType = ContentType,
-            Content = rowContent.ToByteArray(),
-        });
-
-        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
-    }
-
-    public Task<IEnumerable<CompressEntry>> CompressDataRows(DataRowCollection dataRows, bool? indented)
-    {
-        var compressEntries = new List<CompressEntry>();
-        foreach (DataRow row in dataRows)
-        {
-            try
-            {
-                var rowContent = ToJson(row, indented);
-                compressEntries.Add(new CompressEntry
-                {
-                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
-                    ContentType = ContentType,
-                    Content = rowContent.ToByteArray(),
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex.Message);
-            }
-        }
-
-        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
-    }
-
-    public async Task TransferData(Context context, TransferData transferData,CancellationToken cancellationToken)
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
@@ -202,9 +145,10 @@ public class JsonManager: IJsonManager
 
                     var clonedOptions = (ConnectorOptions)context.Options.Clone();
                     clonedOptions["Path"] = Path.ChangeExtension(newPath, Extension);
+                    clonedOptions["Data"] = data;
                     var newContext = new Context(clonedOptions);
 
-                    await WriteAsync(newContext, data, cancellationToken);
+                    await WriteAsync(newContext, cancellationToken);
                 }
             }
         }
@@ -233,10 +177,35 @@ public class JsonManager: IJsonManager
 
             var clonedOptions = (ConnectorOptions)context.Options.Clone();
             clonedOptions["Path"] = newPath;
+            clonedOptions["Data"] = data;
             var newContext = new Context(clonedOptions);
 
-            await WriteAsync(newContext, data, cancellationToken);
+            await WriteAsync(newContext, cancellationToken);
         }
+    }
+
+    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    {
+        var pathOptions = context.Options.ToObject<PathOptions>();
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+        if (string.IsNullOrEmpty(path))
+            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StreamException(Resources.ThePathIsNotFile);
+
+        var compressOptions = context.Options.ToObject<CompressOptions>();
+        var indentedOptions = context.Options.ToObject<IndentedOptions>();
+
+        var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+
+        if (filteredData.Rows.Count <= 0)
+            throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
+
+        if (compressOptions.SeparateJsonPerRow is false)
+            return await CompressDataTable(filteredData, indentedOptions.Indented);
+
+        return await CompressDataRows(filteredData.Rows, indentedOptions.Indented);
     }
 
     #region internal methods
@@ -485,7 +454,77 @@ public class JsonManager: IJsonManager
 
         throw new StreamException("Transfer Kind is not supported. Its value should be Copy or Move.");
     }
- 
+
+    private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, Context context,
+        CancellationToken cancellationToken)
+    {
+        var transferOptions = context.Options.ToObject<TransferOptions>();
+        var indentedOptions = context.Options.ToObject<IndentedOptions>();
+
+        var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+
+        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow;
+        var jsonContentBase64 = string.Empty;
+
+        var transferKind = GetTransferKind(transferOptions.TransferKind);
+        if (!isSeparateJsonPerRow)
+        {
+            var jsonContent = ToJson(filteredData, indentedOptions.Indented);
+            jsonContentBase64 = jsonContent.ToBase64String();
+        }
+
+        var result = new TransferData
+        {
+            Namespace = @namespace,
+            ConnectorType = type,
+            Kind = transferKind,
+            ContentType = isSeparateJsonPerRow ? string.Empty : ContentType,
+            Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
+            Columns = GetColumnNames(filteredData),
+            Rows = GenerateTransferDataRow(filteredData, indentedOptions.Indented)
+        };
+
+        return result;
+    }
+
+    private Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable, bool? indented)
+    {
+        var compressEntries = new List<CompressEntry>();
+        var rowContent = ToJson(dataTable, indented);
+        compressEntries.Add(new CompressEntry
+        {
+            Name = $"{Guid.NewGuid().ToString()}{Extension}",
+            ContentType = ContentType,
+            Content = rowContent.ToByteArray(),
+        });
+
+        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
+    }
+
+    private Task<IEnumerable<CompressEntry>> CompressDataRows(DataRowCollection dataRows, bool? indented)
+    {
+        var compressEntries = new List<CompressEntry>();
+        foreach (DataRow row in dataRows)
+        {
+            try
+            {
+                var rowContent = ToJson(row, indented);
+                compressEntries.Add(new CompressEntry
+                {
+                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                    ContentType = ContentType,
+                    Content = rowContent.ToByteArray(),
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+            }
+        }
+
+        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
+    }
+
     private string ToJson(DataTable dataTable, bool? indented)
     {
         var jsonString = string.Empty;

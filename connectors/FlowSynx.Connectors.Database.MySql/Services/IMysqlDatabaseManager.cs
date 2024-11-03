@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Database.MySql.Models;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -13,6 +14,8 @@ public interface IMysqlDatabaseManager
 
     Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken);
 
+    Task UpdateAsync(Context context, CancellationToken cancellationToken);
+
     Task DeleteAsync(Context context, CancellationToken cancellationToken);
 
     Task PurgeAsync(Context context, CancellationToken cancellationToken);
@@ -21,6 +24,10 @@ public interface IMysqlDatabaseManager
 
     Task<IEnumerable<object>> EntitiesAsync(Context context, CancellationToken cancellationToken);
 
-    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, 
-        Context context, CancellationToken cancellationToken = default);
+    Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+        CancellationToken cancellationToken);
+
+    Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken);
+
+    Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

@@ -6,9 +6,6 @@ public class WriteValidator : AbstractValidator<WriteRequest>
 {
     public WriteValidator()
     {
-        RuleFor(request => request.Data)
-            .NotNull()
-            .NotEmpty()
-            .WithMessage(Resources.WriteValidatorDataValueShouldNotNullOrEmptyMessage);
+
     }
 }

@@ -5,6 +5,7 @@ using FlowSynx.Connectors.Database.MySql.Extensions;
 using FlowSynx.Connectors.Database.MySql.Models;
 using FlowSynx.Data.Extensions;
 using FlowSynx.IO;
+using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
@@ -98,6 +99,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         };
     }
 
+    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
+    {
+        return Task.CompletedTask;
+    }
+
     public Task DeleteAsync(Context context, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
@@ -133,13 +139,29 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return dataTable.CreateListFromTable();
     }
 
-    public Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, 
-        Context context, CancellationToken cancellationToken = default)
+    public Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
     #region internal methods
+    private Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type,
+    Context context, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
     private string ToString(DataTable dataTable, bool? indented)
     {
         var jsonString = string.Empty;

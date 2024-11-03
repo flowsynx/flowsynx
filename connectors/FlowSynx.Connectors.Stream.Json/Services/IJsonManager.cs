@@ -14,19 +14,18 @@ public interface IJsonManager
 
     Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken);
 
-    Task DeleteAsync(Context context, CancellationToken cancellationToken);
+    Task UpdateAsync(Context context, CancellationToken cancellationToken);
 
-    Task PurgeAsync(Context context, CancellationToken cancellationToken);
+    Task DeleteAsync(Context context, CancellationToken cancellationToken);
 
     Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
 
     Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
 
-    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, Context context, CancellationToken cancellationToken);
+    Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+        CancellationToken cancellationToken);
 
-    Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable, bool? indented);
+    Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken);
 
-    Task<IEnumerable<CompressEntry>> CompressDataRows(DataRowCollection dataRows, bool? indented);
-
-    Task TransferData(Context context, TransferData transferData, CancellationToken cancellationToken);
+    Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

@@ -1,15 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Connectors.Abstractions;
-using FlowSynx.IO;
-using FlowSynx.Connectors.Storage.Options;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Data.Filter;
-using FlowSynx.Connectors.Storage.Exceptions;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Models;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Services;
-using FlowSynx.Connectors.Abstractions.Extensions;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem;
 
@@ -45,216 +41,46 @@ public class LocalFileSystemConnector : Connector
     }
 
     public override async Task<object> About(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-        
-        return await _manager.GetStatisticsAsync();
-    }
+        CancellationToken cancellationToken = default) =>
+        await _manager.About(context).ConfigureAwait(false);
 
     public override async Task CreateAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
+        CancellationToken cancellationToken = default) =>
+        await _manager.CreateAsync(context).ConfigureAwait(false);
 
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var createOptions = context.Options.ToObject<CreateOptions>();
-        await _manager.CreateAsync(pathOptions.Path, createOptions).ConfigureAwait(false);
-    }
-
-    public override async Task WriteAsync(Context context, object dataOptions, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var writeOptions = context.Options.ToObject<WriteOptions>();
-        await _manager.WriteAsync(pathOptions.Path, writeOptions, dataOptions).ConfigureAwait(false);
-    }
+    public override async Task WriteAsync(Context context, 
+        CancellationToken cancellationToken = default) =>
+        await _manager.WriteAsync(context).ConfigureAwait(false);
 
     public override async Task<ReadResult> ReadAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
+        CancellationToken cancellationToken = default) =>
+        await _manager.ReadAsync(context).ConfigureAwait(false);
 
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var readOptions = context.Options.ToObject<ReadOptions>();
-        return await _manager.ReadAsync(pathOptions.Path, readOptions).ConfigureAwait(false);
-    }
-
-    public override Task UpdateAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
-    }
+    public override async Task UpdateAsync(Context context, 
+        CancellationToken cancellationToken = default) =>
+        await _manager.UpdateAsync(context).ConfigureAwait(false);
 
     public override async Task DeleteAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
+        CancellationToken cancellationToken = default) =>
+        await _manager.DeleteAsync(context).ConfigureAwait(false);
 
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
-        var deleteOptions = context.Options.ToObject<DeleteOptions>();
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-
-        var entities = await _manager.FilteredEntitiesAsync(path, listOptions).ConfigureAwait(false);
-
-        var entityItems = entities.ToList();
-        if (!entityItems.Any())
-            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-        
-        foreach (var entityItem in entityItems)
-        {
-            if (entityItem is not StorageEntity storageEntity) 
-                continue;
-
-            await _manager.DeleteAsync(storageEntity.FullPath);
-        }
-
-        if (deleteOptions.Purge is true)
-            await _manager.PurgeAsync(path);
-    }
-
-    public override Task<bool> ExistAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        return _manager.ExistAsync(pathOptions.Path);
-    }
+    public override async Task<bool> ExistAsync(Context context, 
+        CancellationToken cancellationToken = default) =>
+        await _manager.ExistAsync(context);
 
     public override async Task<IEnumerable<object>> ListAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
+        CancellationToken cancellationToken = default) =>
+        await _manager.FilteredEntitiesAsync(context).ConfigureAwait(false);
 
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
-        return await _manager.FilteredEntitiesAsync(pathOptions.Path, listOptions);
-    }
-
-    public override async Task TransferAsync(Context sourceContext, Context destinationContext,
-        CancellationToken cancellationToken = default)
-    {
-        if (destinationContext.ConnectorContext?.Current is null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var sourcePathOptions = sourceContext.Options.ToObject<PathOptions>();
-        var sourceListOptions = sourceContext.Options.ToObject<ListOptions>();
-        var sourceReadOptions = sourceContext.Options.ToObject<ReadOptions>();
-
-        var transferData = await _manager.PrepareDataForTransferring(Namespace, Type, sourcePathOptions.Path,
-            sourceListOptions, sourceReadOptions);
-
-        var destinationPathOptions = destinationContext.Options.ToObject<PathOptions>();
-
-        foreach (var row in transferData.Rows)
-            row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
-
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
-    }
+    public override async Task TransferAsync(Context sourceContext, Context destinationContext, 
+        CancellationToken cancellationToken = default) =>
+        await _manager.TransferAsync(Namespace, Type, sourceContext, destinationContext, cancellationToken).ConfigureAwait(false);
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
-        CancellationToken cancellationToken = default)
-    {
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var createOptions = context.Options.ToObject<CreateOptions>();
-        var writeOptions = context.Options.ToObject<WriteOptions>();
-
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-
-        if (!string.IsNullOrEmpty(transferData.Content))
-        {
-            var parentPath = PathHelper.GetParent(path);
-            if (!PathHelper.IsRootPath(parentPath))
-            {
-                await _manager.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
-                await _manager.WriteAsync(path, writeOptions, transferData.Content).ConfigureAwait(false);
-                _logger.LogInformation($"Copy operation done for entity '{path}'");
-            }
-        }
-        else
-        {
-            foreach (var item in transferData.Rows)
-            {
-                if (string.IsNullOrEmpty(item.Content))
-                {
-                    if (transferData.Namespace == Namespace.Storage)
-                    {
-                        await _manager.CreateAsync(item.Key, createOptions).ConfigureAwait(false);
-                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-                    }
-                }
-                else
-                {
-                    var newPath = item.Key;
-                    if (transferData.Namespace != Namespace.Storage)
-                    {
-                        newPath = Path.Combine(path, item.Key);
-                    }
-
-                    var parentPath = PathHelper.GetParent(newPath);
-                    if (!PathHelper.IsRootPath(parentPath))
-                    {
-                        await _manager.CreateAsync(parentPath, createOptions).ConfigureAwait(false);
-                        await _manager.WriteAsync(newPath, writeOptions, item.Content).ConfigureAwait(false);
-                        _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
-                    }
-                }
-            }
-        }
-    }
+        CancellationToken cancellationToken = default) =>
+        await _manager.ProcessTransferAsync(context, transferData, cancellationToken).ConfigureAwait(false);
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
-        CancellationToken cancellationToken = default)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var storageEntities = await _manager.EntitiesAsync(path, listOptions);
-
-        var entityItems = storageEntities.ToList();
-        if (!entityItems.Any())
-            throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
-
-        var compressEntries = new List<CompressEntry>();
-        foreach (var entityItem in entityItems)
-        {
-            if (!string.Equals(entityItem.Kind, StorageEntityItemKind.File, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning($"The item '{entityItem.Name}' is not a file.");
-                continue;
-            }
-
-            try
-            {
-                var readOptions = new ReadOptions { Hashing = false };
-                var content = await _manager.ReadAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
-                compressEntries.Add(new CompressEntry
-                {
-                    Name = entityItem.Name,
-                    ContentType = entityItem.ContentType,
-                    Content = content.Content,
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex.Message);
-            }
-        }
-
-        return compressEntries;
-    }
+        CancellationToken cancellationToken = default) =>
+        await _manager.CompressAsync(context, cancellationToken).ConfigureAwait(false);
 }

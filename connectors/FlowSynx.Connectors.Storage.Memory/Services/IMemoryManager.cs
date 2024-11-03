@@ -1,28 +1,31 @@
 ﻿using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Storage.Options;
+using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Storage.Memory.Services;
 
 public interface IMemoryManager
 {
-    Task<object> GetStatisticsAsync();
+    Task<object> About(Context context);
 
-    Task CreateAsync(string path, CreateOptions options);
+    Task CreateAsync(Context context);
 
-    Task WriteAsync(string path, WriteOptions options);
+    Task WriteAsync(Context context);
 
-    Task<ReadResult> ReadAsync(string path, ReadOptions options);
+    Task<ReadResult> ReadAsync(Context context);
 
-    Task DeleteAsync(string path);
+    Task UpdateAsync(Context context);
 
-    Task PurgeAsync(string path);
+    Task DeleteAsync(Context context);
 
-    Task<bool> ExistAsync(string path);
+    Task<bool> ExistAsync(Context context);
 
-    Task<IEnumerable<StorageEntity>> EntitiesAsync(string path, ListOptions listOptions);
+    Task<IEnumerable<object>> FilteredEntitiesAsync(Context context);
 
-    Task<IEnumerable<object>> FilteredEntitiesAsync(string path, ListOptions listOptions);
+    Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+        CancellationToken cancellationToken);
 
-    Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, string path,
-        ListOptions listOptions, ReadOptions readOptions);
+    Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken);
+
+    Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }
