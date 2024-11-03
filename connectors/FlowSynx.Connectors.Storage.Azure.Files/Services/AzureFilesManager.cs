@@ -102,20 +102,18 @@ public class AzureFilesManager: IAzureFilesManager
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var entities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
 
-        var storageEntities = entities.ToList();
-        if (!storageEntities.Any())
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+        listOptions.Fields = null;
+
+        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+
+        var entityItems = filteredEntities.Rows;
+        if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
-        foreach (var entityItem in storageEntities)
-        {
-            if (entityItem is not StorageEntity storageEntity)
-                continue;
-
-            await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
-        }
+        foreach (DataRow entityItem in entityItems)
+            await DeleteEntityAsync(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
 
         if (deleteOptions.Purge is true)
             await PurgeEntityAsync(path, cancellationToken);
@@ -140,7 +138,8 @@ public class AzureFilesManager: IAzureFilesManager
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        return await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+        return result.CreateListFromTable();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -412,7 +411,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -454,7 +453,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task PurgeEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task PurgeEntityAsync(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
@@ -519,7 +518,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task<IEnumerable<object>> FilteredEntitiesListAsync(string path, ListOptions listOptions,
+    private async Task<DataTable> FilteredEntitiesListAsync(string path, ListOptions listOptions,
        CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -529,7 +528,7 @@ public class AzureFilesManager: IAzureFilesManager
         var dataTable = entities.ToDataTable();
         var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
 
-        return filteredEntities.CreateListFromTable();
+        return filteredEntities;
     }
 
     private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions,
@@ -609,8 +608,7 @@ public class AzureFilesManager: IAzureFilesManager
 
         var dataFilterOptions = GetFilterOptions(listOptions);
 
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var filteredData = _dataFilter.Filter(storageEntities, dataFilterOptions);
         var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)

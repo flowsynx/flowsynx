@@ -129,20 +129,18 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var entities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
 
-        var entityItems = entities.ToList();
-        if (!entityItems.Any())
+        var path = PathHelper.ToUnixPath(pathOptions.Path);
+        listOptions.Fields = null;
+
+        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+
+        var entityItems = filteredEntities.Rows;
+        if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
-        foreach (var entityItem in entityItems)
-        {
-            if (entityItem is not StorageEntity storageEntity)
-                continue;
-
-            await DeleteEntityAsync(storageEntity.FullPath, cancellationToken).ConfigureAwait(false);
-        }
+        foreach (DataRow entityItem in entityItems)
+            await DeleteEntityAsync(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
 
         if (deleteOptions.Purge is true)
             await PurgeEntityAsync(path, cancellationToken);
@@ -167,7 +165,8 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        return await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+        return result.CreateListFromTable();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -424,7 +423,7 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         }
     }
 
-    private async Task DeleteEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task DeleteEntityAsync(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -463,7 +462,7 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         }
     }
 
-    private async Task PurgeEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task PurgeEntityAsync(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -511,7 +510,7 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         }
     }
 
-    private async Task<IEnumerable<object>> FilteredEntitiesListAsync(string path, 
+    private async Task<DataTable> FilteredEntitiesListAsync(string path, 
         ListOptions listOptions, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -521,7 +520,7 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         var dataTable = entities.ToDataTable();
         var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
 
-        return filteredEntities.CreateListFromTable();
+        return filteredEntities;
     }
 
     private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, 

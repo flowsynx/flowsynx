@@ -109,21 +109,18 @@ public class LocalFileManager : ILocalFileManager
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
+
         var path = PathHelper.ToUnixPath(pathOptions.Path);
+        listOptions.Fields = null;
 
-        var entities = await FilteredEntitiesListAsync(path, listOptions).ConfigureAwait(false);
+        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions).ConfigureAwait(false);
 
-        var entityItems = entities.ToList();
-        if (!entityItems.Any())
+        var entityItems = filteredEntities.Rows;
+        if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
-        foreach (var entityItem in entityItems)
-        {
-            if (entityItem is not StorageEntity storageEntity)
-                continue;
-
-            await DeleteEntityAsync(storageEntity.FullPath);
-        }
+        foreach (DataRow entityItem in entityItems)
+            await DeleteEntityAsync(entityItem["FullPath"].ToString());
 
         if (deleteOptions.Purge is true)
             await PurgeEntityAsync(path);
@@ -147,7 +144,8 @@ public class LocalFileManager : ILocalFileManager
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        return await FilteredEntitiesListAsync(pathOptions.Path, listOptions).ConfigureAwait(false);
+        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions).ConfigureAwait(false);
+        return result.CreateListFromTable();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -345,7 +343,7 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult(result);
     }
 
-    private Task DeleteEntityAsync(string path)
+    private Task DeleteEntityAsync(string? path)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -378,7 +376,7 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task PurgeEntityAsync(string path)
+    private Task PurgeEntityAsync(string? path)
     {
         path = PathHelper.ToUnixPath(path);
         var directoryInfo = new DirectoryInfo(path);
@@ -411,7 +409,7 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult(PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path));
     }
 
-    private async Task<IEnumerable<object>> FilteredEntitiesListAsync(string path, ListOptions listOptions)
+    private async Task<DataTable> FilteredEntitiesListAsync(string path, ListOptions listOptions)
     {
         path = PathHelper.ToUnixPath(path);
         var entities = await EntitiesListAsync(path, listOptions);
@@ -420,7 +418,7 @@ public class LocalFileManager : ILocalFileManager
         var dataTable = entities.ToDataTable();
         var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
 
-        return filteredEntities.CreateListFromTable();
+        return filteredEntities;
     }
 
     private Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions)

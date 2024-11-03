@@ -19,8 +19,6 @@ public interface IAmazonS3Manager
 
     Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
 
-    Task<IEnumerable<StorageEntity>> EntitiesAsync(Context context, CancellationToken cancellationToken);
-
     Task<IEnumerable<object>> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
 
     Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
