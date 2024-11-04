@@ -125,7 +125,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
             throw new DatabaseException("Resources.CalleeConnectorNotSupported");
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var readOptions = context.Options.ToObject<ReadOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
 
         var sql = sqlOptions.Sql;
 

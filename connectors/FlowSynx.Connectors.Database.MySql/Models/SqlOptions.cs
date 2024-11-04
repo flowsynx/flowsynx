@@ -2,5 +2,5 @@
 
 public class SqlOptions
 {
-    public string Sql { get; set; } = string.Empty;
+    public string? Sql { get; set; }
 }
