@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlowSynx.Connectors.Abstractions" Version="1.4.15" />
-    <PackageReference Include="FlowSynx.Data" Version="1.4.15" />
+    <PackageReference Include="FlowSynx.Connectors.Abstractions" Version="1.4.16" />
+    <PackageReference Include="FlowSynx.Data" Version="1.4.16" />
     <PackageReference Include="MySql.Data" Version="9.1.0" />
     <PackageReference Include="SqlKata" Version="2.4.0" />
   </ItemGroup>
