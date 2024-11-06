@@ -816,12 +816,11 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
 
     private DataFilterOptions GetFilterOptions(ListOptions options)
     {
-        var fields = GetFields(options.Fields);
         var dataFilterOptions = new DataFilterOptions
         {
-            Fields = fields,
+            Fields = GetFields(options.Fields),
             FilterExpression = options.Filter,
-            SortExpression = options.Sort,
+            Sort = GetSorts(options.Sort),
             CaseSensitive = options.CaseSensitive,
             Limit = options.Limit,
         };
@@ -835,6 +834,17 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         if (!string.IsNullOrEmpty(fields))
         {
             result = _deserializer.Deserialize<string[]>(fields);
+        }
+
+        return result;
+    }
+
+    private Sort[] GetSorts(string? sorts)
+    {
+        var result = Array.Empty<Sort>();
+        if (!string.IsNullOrEmpty(sorts))
+        {
+            result = _deserializer.Deserialize<Sort[]>(sorts);
         }
 
         return result;

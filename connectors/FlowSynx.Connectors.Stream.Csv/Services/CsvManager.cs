@@ -473,12 +473,11 @@ internal class CsvManager: ICsvManager
 
     private DataFilterOptions GetFilterOptions(ListOptions options)
     {
-        var fields = GetFields(options.Fields);
         var dataFilterOptions = new DataFilterOptions
         {
-            Fields = fields,
+            Fields = GetFields(options.Fields),
             FilterExpression = options.Filter,
-            SortExpression = options.Sort,
+            Sort = GetSorts(options.Sort),
             CaseSensitive = options.CaseSensitive,
             Limit = options.Limit,
         };
@@ -497,12 +496,20 @@ internal class CsvManager: ICsvManager
         return result;
     }
 
+    private Sort[] GetSorts(string? sorts)
+    {
+        var result = Array.Empty<Sort>();
+        if (!string.IsNullOrEmpty(sorts))
+        {
+            result = _deserializer.Deserialize<Sort[]>(sorts);
+        }
+
+        return result;
+    }
+
     private string GetDelimiter(string delimiter)
     {
-        var defaultDelimiter = ",";
-        if (_specifications is null)
-            return defaultDelimiter;
-
+        const string defaultDelimiter = ",";
         var configDelimiter = string.IsNullOrEmpty(_specifications.Delimiter)
             ? defaultDelimiter
             : _specifications.Delimiter;

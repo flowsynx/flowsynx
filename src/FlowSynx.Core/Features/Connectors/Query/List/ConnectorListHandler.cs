@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Connectors.Manager;
+using FlowSynx.Data.Filter;
 
 namespace FlowSynx.Core.Features.Connectors.Query.List;
 
@@ -25,10 +26,10 @@ internal class ConnectorListHandler : IRequestHandler<ConnectorListRequest, Resu
         {
             var listOptions = new ConnectorListOptions()
             {
-                Fields = request.Fields ?? [],
+                Fields = request.Fields ?? Array.Empty<string>(),
                 Filter = request.Filter ?? string.Empty,
                 CaseSensitive = request.CaseSensitive ?? false,
-                Sort = request.Sort ?? string.Empty,
+                Sort = request.Sort ?? Array.Empty<Sort>(),
                 Limit = request.Limit ?? string.Empty
             };
 
