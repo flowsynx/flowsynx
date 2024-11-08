@@ -17,13 +17,16 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
 {
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
+    private readonly IDeserializer _deserializer;
     private readonly MySqlConnection _connection;
 
-    public MysqlDatabaseManager(ILogger logger, MySqlConnection connection, ISerializer serializer)
+    public MysqlDatabaseManager(ILogger logger, MySqlConnection connection, 
+        ISerializer serializer, IDeserializer deserializer)
     {
         _logger = logger;
         _connection = connection;
         _serializer = serializer;
+        _deserializer = deserializer;
     }
 
     public Task<object> About(Context context, CancellationToken cancellationToken)
@@ -127,7 +130,10 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var sql = sqlOptions.Sql;
+        var sqlSelectParser = new SqlSelectParser();
+
+        var queryData = ParseQuery(listOptions);
+        var sql = sqlOptions.Sql ?? sqlSelectParser.GetSql(queryData);
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -173,6 +179,33 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         }
 
         return jsonString;
+    }
+
+    private QueryData ParseQuery(ListOptions options)
+    {
+        var query = new QueryData
+        {
+            Table = ParseTable(options.Table),
+            Fields = ParseFields(options.Fields),
+        };
+
+        return query;
+    }
+
+    private Table ParseTable(string json)
+    {
+        return _deserializer.Deserialize<Table>(json);
+    }
+
+    private List<Field> ParseFields(string? json)
+    {
+        var result = new List<Field>();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<List<Field>>(json);
+        }
+
+        return result;
     }
     #endregion
 }

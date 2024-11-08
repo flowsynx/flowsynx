@@ -13,15 +13,17 @@ public class MySqlConnector : Connector
 {
     private readonly ILogger<MySqlConnector> _logger;
     private readonly ISerializer _serializer;
+    private readonly IDeserializer _deserializer;
     private readonly IMySqlDatabaseConnection _connection;
     private IMysqlDatabaseManager _manager = null!;
     private MySqlpecifications _mysqlSpecifications = null!;
 
-    public MySqlConnector(ILogger<MySqlConnector> logger, ISerializer serializer)
+    public MySqlConnector(ILogger<MySqlConnector> logger, ISerializer serializer, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
         _serializer = serializer;
+        _deserializer = deserializer;
         _connection = new MySqlDatabaseConnection();
     }
 
@@ -36,7 +38,7 @@ public class MySqlConnector : Connector
     {
         _mysqlSpecifications = Specifications.ToObject<MySqlpecifications>();
         var connection = _connection.Connect(_mysqlSpecifications);
-        _manager = new MysqlDatabaseManager(_logger, connection, _serializer);
+        _manager = new MysqlDatabaseManager(_logger, connection, _serializer, _deserializer);
         return Task.CompletedTask;
     }
 
