@@ -2,23 +2,13 @@
 
 public class Table
 {
-    public Table(string tableName) : this(tableName, string.Empty)
-    {
-    }
-
-    public Table(string tableName, string aliasName)
-    {
-        Name = tableName;
-        Alias = aliasName;
-    }
-    
-    public string Name { get; }
-    public string Alias { get; }
+    public required string Name { get; set; }
+    public string? Alias { get; set; }
 
     public override string ToString()
     {
         return string.IsNullOrEmpty(Alias) 
-            ? $"{Name.ToUpper()}" 
-            : $"{Name.ToUpper()} AS {Alias.ToUpper()}";
+            ? $"{Name}" 
+            : $"{Name} AS {Alias}";
     }
 }

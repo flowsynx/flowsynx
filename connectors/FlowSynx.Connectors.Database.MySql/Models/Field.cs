@@ -8,7 +8,7 @@ public class Field
     public override string ToString()
     {
         return string.IsNullOrEmpty(Alias) 
-            ? $"{Name.ToUpper()}" 
-            : $"{Name.ToUpper()} AS {Alias.ToUpper()}";
+            ? $"{Name}" 
+            : $"{Name} AS {Alias}";
     }
 }
