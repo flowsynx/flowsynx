@@ -15,10 +15,9 @@ public class Table
         if (!string.IsNullOrEmpty(Alias))
             tableAlias = SqlBuilder.FormatTableAlias(Alias, Parameters);
 
-        if (string.IsNullOrEmpty(tableAlias))
-            return table;
-
-        return table + Parameters.AliasOperator + tableAlias;
+        return string.IsNullOrEmpty(tableAlias) 
+            ? table 
+            : $"{table}{Parameters.AliasOperator}{tableAlias}";
     }
 
     public override string ToString()

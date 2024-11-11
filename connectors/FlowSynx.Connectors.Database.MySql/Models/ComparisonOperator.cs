@@ -10,6 +10,8 @@ public enum ComparisonOperator
     NotEqual,
     Like,
     NotLike,
+    IsNull,
+    IsNotNull,
     In,
     NotIn,
     Between,

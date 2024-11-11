@@ -185,6 +185,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         {
             Table = ParseTable(options.Table),
             Fields = ParseFields(options.Fields),
+            Filters = ParseFilters(options.Filter)
         };
 
         return query;
@@ -201,6 +202,17 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         if (!string.IsNullOrEmpty(json))
         {
             result = _deserializer.Deserialize<FieldsList>(json);
+        }
+
+        return result;
+    }
+
+    private FiltersList ParseFilters(string? json)
+    {
+        var result = new FiltersList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<FiltersList>(json);
         }
 
         return result;
