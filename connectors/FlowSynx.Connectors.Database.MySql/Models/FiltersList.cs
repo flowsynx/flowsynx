@@ -7,15 +7,15 @@ public class FiltersList: List<Filter>
 {
     public MySqlFormat Parameters = new MySqlFormat();
 
-    private string GetLogicOperator(LogicOperator? logicOperator)
+    private string GetFilterOperator(FilterOperator? filterOperator)
     {
-        switch (logicOperator)
+        switch (filterOperator)
         {
-            case LogicOperator.AndNot:
+            case FilterOperator.AndNot:
                 return "AND NOT";
-            case LogicOperator.Or:
+            case FilterOperator.Or:
                 return "OR";
-            case LogicOperator.And:
+            case FilterOperator.And:
             default:
                 return "AND";
         }
@@ -47,17 +47,9 @@ public class FiltersList: List<Filter>
         return $"{name} NOT IN (" + sb.ToString() + ")";
     }
 
-    private string EqualValue(string name, string? value, string? tableAlias = "")
+    private string EqualValue(string name, string? value)
     {
-        var sb = new StringBuilder();
-        if (!string.IsNullOrEmpty(tableAlias))
-            sb.Append(SqlBuilder.FormatTableAlias(tableAlias, Parameters) + '.');
-
-        sb.Append(SqlBuilder.FormatColumn(name, Parameters));
-        sb.Append("=");
-        sb.Append(value);
-        
-        return sb.ToString();
+        return $"{name}={value}";
     }
 
     private string NotEqualValue(string name, string value)
@@ -95,12 +87,12 @@ public class FiltersList: List<Filter>
         return $"{name} IS NOT NULL";
     }
 
-    private string Between(string name, string begin, string end)
+    private string Between(string name, string begin, string? end)
     {
         return $" BETWEEN {begin} AND {end}";
     }
 
-    private string NotBetween(string name, string begin, string end)
+    private string NotBetween(string name, string begin, string? end)
     {
         return $" NOT BETWEEN {begin} AND {end}";
     }
@@ -115,6 +107,17 @@ public class FiltersList: List<Filter>
         return $"{name} NOT LIKE '{value}'";
     }
 
+    private string GetFieldName(string name, string? tableAlias = "")
+    {
+        var sb = new StringBuilder();
+        if (!string.IsNullOrEmpty(tableAlias))
+            sb.Append(SqlBuilder.FormatTableAlias(tableAlias, Parameters) + '.');
+
+        sb.Append(SqlBuilder.FormatColumn(name, Parameters));
+
+        return sb.ToString();
+    }
+
     public string GetSql(string? tableAlias = "")
     {
         var sb = new StringBuilder();
@@ -123,54 +126,57 @@ public class FiltersList: List<Filter>
             if (sb.Length > 0)
             {
                 sb.Append(' ');
-                sb.Append(GetLogicOperator(filter.Operator));
+                sb.Append(GetFilterOperator(filter.Operator));
                 sb.Append(' ');
             }
 
             sb.Append('(');
-            switch (filter.Comparison)
+
+            var fieldName = GetFieldName(filter.Name, tableAlias);
+
+            switch (filter.Type)
             {
-                case ComparisonOperator.Equals:
-                    sb.Append(EqualValue(filter.Name, filter.Value, tableAlias));
+                case FilterType.Equals:
+                    sb.Append(EqualValue(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.GreaterOrEqual:
-                    sb.Append(EqualGreaterValue(filter.Name, filter.Value));
+                case FilterType.GreaterOrEqual:
+                    sb.Append(EqualGreaterValue(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.GreaterThan:
-                    sb.Append(GreaterValue(filter.Name, filter.Value));
+                case FilterType.GreaterThan:
+                    sb.Append(GreaterValue(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.LessOrEqual:
-                    sb.Append(EqualLessValue(filter.Name, filter.Value));
+                case FilterType.LessOrEqual:
+                    sb.Append(EqualLessValue(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.LessThan:
-                    sb.Append(LessValue(filter.Name, filter.Value));
+                case FilterType.LessThan:
+                    sb.Append(LessValue(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.NotEqual:
-                    sb.Append(NotEqualValue(filter.Name, filter.Value));
+                case FilterType.NotEqual:
+                    sb.Append(NotEqualValue(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.Like:
-                    sb.Append(Like(filter.Name, filter.Value));
+                case FilterType.Like:
+                    sb.Append(Like(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.NotLike:
-                    sb.Append(NotLike(filter.Name, filter.Value));
+                case FilterType.NotLike:
+                    sb.Append(NotLike(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.In:
-                    sb.Append(In(filter.Name, filter.Value));
+                case FilterType.In:
+                    sb.Append(In(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.NotIn:
-                    sb.Append(NotIn(filter.Name, filter.Value));
+                case FilterType.NotIn:
+                    sb.Append(NotIn(fieldName, filter.Value));
                     break;
-                case ComparisonOperator.IsNull:
-                    sb.Append(IsNull(filter.Name));
+                case FilterType.IsNull:
+                    sb.Append(IsNull(fieldName));
                     break;
-                case ComparisonOperator.IsNotNull:
-                    sb.Append(IsNotNull(filter.Name));
+                case FilterType.IsNotNull:
+                    sb.Append(IsNotNull(fieldName));
                     break;
-                case ComparisonOperator.Between:
-                    sb.Append(Between(filter.Name, filter.Value, filter.ValueMax));
+                case FilterType.Between:
+                    sb.Append(Between(fieldName, filter.Value, filter.ValueMax));
                     break;
-                case ComparisonOperator.NotBetween:
-                    sb.Append(NotBetween(filter.Name, filter.Value, filter.ValueMax));
+                case FilterType.NotBetween:
+                    sb.Append(NotBetween(fieldName, filter.Value, filter.ValueMax));
                     break;
             }
             sb.Append(')');

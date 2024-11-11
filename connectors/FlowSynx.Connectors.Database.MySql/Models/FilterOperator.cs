@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Connectors.Database.MySql.Models;
 
-public enum LogicOperator
+public enum FilterOperator
 {
     And,
     Or,

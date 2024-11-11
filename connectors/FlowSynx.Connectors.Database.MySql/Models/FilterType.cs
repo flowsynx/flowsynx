@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Connectors.Database.MySql.Models;
 
-public enum ComparisonOperator
+public enum FilterType
 {
     Equals,
     GreaterThan,
