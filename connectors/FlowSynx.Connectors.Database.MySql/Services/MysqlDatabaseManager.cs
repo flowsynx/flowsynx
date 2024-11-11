@@ -130,10 +130,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var sqlSelectParser = new SqlSelectParser();
-
         var queryData = ParseQuery(listOptions);
-        var sql = sqlOptions.Sql ?? sqlSelectParser.GetSql(queryData);
+        var sql = sqlOptions.Sql ?? queryData.GetSql();
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -181,9 +179,9 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return jsonString;
     }
 
-    private QueryData ParseQuery(ListOptions options)
+    private SelectQuery ParseQuery(ListOptions options)
     {
-        var query = new QueryData
+        var query = new SelectQuery
         {
             Table = ParseTable(options.Table),
             Fields = ParseFields(options.Fields),
@@ -197,12 +195,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return _deserializer.Deserialize<Table>(json);
     }
 
-    private List<Field> ParseFields(string? json)
+    private FieldsList ParseFields(string? json)
     {
-        var result = new List<Field>();
+        var result = new FieldsList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<List<Field>>(json);
+            result = _deserializer.Deserialize<FieldsList>(json);
         }
 
         return result;

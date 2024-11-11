@@ -73,12 +73,12 @@ public class Filter
         return $"{name}>{value}";
     }
 
-    private string IsNULL(string name)
+    private string IsNull(string name)
     {
         return $"{name} IS NULL";
     }
 
-    private string IsNotNULL(string name)
+    private string IsNotNull(string name)
     {
         return $"{name} IS NOT NULL";
     }
