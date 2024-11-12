@@ -3,10 +3,8 @@ using System.Text;
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
-public class SortList: List<Sort>
+public class SortsList: List<Sort>
 {
-    public MySqlFormat Parameters = new MySqlFormat();
-
     public string GetSql(string? tableAlias = "")
     {
         var sb = new StringBuilder();
@@ -18,7 +16,8 @@ public class SortList: List<Sort>
                 sb.Append(", ");
             else
                 sep = true;
-            sb.Append(SqlBuilder.FormatColumn(sort.Name, Parameters, tableAlias) + " " + sort.GetDirection());
+
+            sb.Append(sort.GetSql(tableAlias));
         }
 
         return sb.ToString();

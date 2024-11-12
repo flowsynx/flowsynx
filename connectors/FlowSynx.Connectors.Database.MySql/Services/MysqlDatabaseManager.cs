@@ -185,7 +185,9 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         {
             Table = ParseTable(options.Table),
             Fields = ParseFields(options.Fields),
+            Joins = ParseJoins(options.Joins),
             Filters = ParseFilters(options.Filters),
+            GroupBy = ParseGroupBy(options.GroupBy),
             Sort = ParseSorts(options.Sorts)
         };
 
@@ -208,6 +210,17 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
+    private JoinsList ParseJoins(string? json)
+    {
+        var result = new JoinsList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<JoinsList>(json);
+        }
+
+        return result;
+    }
+
     private FiltersList ParseFilters(string? json)
     {
         var result = new FiltersList();
@@ -219,12 +232,23 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private SortList ParseSorts(string? json)
+    private GroupByList ParseGroupBy(string? json)
     {
-        var result = new SortList();
+        var result = new GroupByList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<SortList>(json);
+            result = _deserializer.Deserialize<GroupByList>(json);
+        }
+
+        return result;
+    }
+
+    private SortsList ParseSorts(string? json)
+    {
+        var result = new SortsList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<SortsList>(json);
         }
 
         return result;

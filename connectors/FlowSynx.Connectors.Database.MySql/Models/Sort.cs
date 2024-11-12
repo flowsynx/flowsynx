@@ -1,9 +1,19 @@
-﻿namespace FlowSynx.Connectors.Database.MySql.Models;
+﻿using FlowSynx.Connectors.Database.MySql.Extensions;
+using System.Text;
+
+namespace FlowSynx.Connectors.Database.MySql.Models;
 
 public class Sort
 {
     public required string Name { get; set; }
     public string? Direction { get; set; }
+
+    public string GetSql(string? tableAlias = "")
+    {
+        var sb = new StringBuilder();
+        sb.Append(SqlBuilder.FormatColumn(Name, tableAlias) + " " + GetDirection());
+        return sb.ToString();
+    }
 
     public string GetDirection()
     {

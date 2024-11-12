@@ -6,18 +6,17 @@ public class Table
 {
     public required string Name { get; set; }
     public string? Alias { get; set; }
-    public MySqlFormat Parameters = new MySqlFormat();
 
     public string GetSql()
     {
         var tableAlias = "";
-        var table = SqlBuilder.FormatTable(Name, Parameters);
+        var table = SqlBuilder.FormatTable(Name);
         if (!string.IsNullOrEmpty(Alias))
-            tableAlias = SqlBuilder.FormatTableAlias(Alias, Parameters);
+            tableAlias = SqlBuilder.FormatTableAlias(Alias);
 
         return string.IsNullOrEmpty(tableAlias) 
             ? table 
-            : $"{table}{Parameters.AliasOperator}{tableAlias}";
+            : $"{table}{MySqlFormat.AliasOperator}{tableAlias}";
     }
 
     public override string ToString()
