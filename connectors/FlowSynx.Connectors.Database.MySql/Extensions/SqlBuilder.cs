@@ -4,7 +4,7 @@ namespace FlowSynx.Connectors.Database.MySql.Extensions;
 
 public static class SqlBuilder
 {
-    public static string FormatColumn(string column, MySqlFormat formatter, string tableAlias = "")
+    public static string FormatColumn(string column, MySqlFormat formatter, string? tableAlias = "")
     {
         if (!string.IsNullOrEmpty(tableAlias))
             tableAlias = FormatTableAlias(tableAlias, formatter) + '.';

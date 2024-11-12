@@ -7,7 +7,7 @@ public class SelectQuery
         Fields = new FieldsList();
         Joins = new List<string>();
         Filters = new FiltersList();
-        Sort = new List<Sort>();
+        Sort = new SortList();
     }
 
     public required Table Table { get; set; }
@@ -15,7 +15,7 @@ public class SelectQuery
     public List<string>? Joins { get; set; }
     public FiltersList? Filters { get; set; }
     public string? GroupBy { get; set; }
-    public List<Sort>? Sort { get; set; }
+    public SortList? Sort { get; set; }
     public string? Limit { get; set; }
 
     public string GetSql()
@@ -27,9 +27,17 @@ public class SelectQuery
         {
             filters = Filters.GetSql(Table.Alias);
             if (!string.IsNullOrEmpty(filters))
-                filters = $"WHERE {filters}";
+                filters = $" WHERE {filters}";
         }
-        var query = $"SELECT {columns} FROM {table} {filters};";
+        var sorts = string.Empty;
+        if (Sort != null)
+        {
+            sorts = Sort.GetSql(Table.Alias);
+            if (!string.IsNullOrEmpty(sorts))
+                sorts = $" ORDERBY {sorts}";
+        }
+
+        var query = $"SELECT {columns} FROM {table}{filters}{sorts};";
         return query;
     }
 

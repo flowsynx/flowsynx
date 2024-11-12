@@ -185,7 +185,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         {
             Table = ParseTable(options.Table),
             Fields = ParseFields(options.Fields),
-            Filters = ParseFilters(options.Filter)
+            Filters = ParseFilters(options.Filters),
+            Sort = ParseSorts(options.Sorts)
         };
 
         return query;
@@ -213,6 +214,17 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         if (!string.IsNullOrEmpty(json))
         {
             result = _deserializer.Deserialize<FiltersList>(json);
+        }
+
+        return result;
+    }
+
+    private SortList ParseSorts(string? json)
+    {
+        var result = new SortList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<SortList>(json);
         }
 
         return result;
