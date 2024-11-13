@@ -2,6 +2,9 @@
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
+/// <summary>
+/// Inspired by SqlBuilder open source project (https://github.com/koshovyi/SqlBuilder/tree/master)
+/// </summary>
 public class FiltersList: List<Filter>
 {
     private string GetLogicOperator(LogicOperator? filterOperator)
@@ -18,7 +21,7 @@ public class FiltersList: List<Filter>
         }
     }
     
-    public string GetSql(string? tableAlias = "")
+    public string GetSql(ISqlFormat format, string? tableAlias = "")
     {
         var sb = new StringBuilder();
         foreach (var filter in this)
@@ -30,7 +33,7 @@ public class FiltersList: List<Filter>
                 sb.Append(' ');
             }
 
-            sb.Append(filter.GetSql(tableAlias));
+            sb.Append(filter.GetSql(format, tableAlias));
         }
 
         return sb.ToString();

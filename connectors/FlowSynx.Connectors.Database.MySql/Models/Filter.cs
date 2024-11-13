@@ -4,6 +4,9 @@ using System.Text;
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
+/// <summary>
+/// Inspired by SqlBuilder open source project (https://github.com/koshovyi/SqlBuilder/tree/master)
+/// </summary>
 public class Filter
 {
     public LogicOperator? Logic { get; set; } = LogicOperator.And;
@@ -13,13 +16,13 @@ public class Filter
     public string? ValueMax { get; set; }
     public List<Filter>? Filters { get; set; } = new List<Filter>();
 
-    public string GetSql(string? tableAlias = "")
+    public string GetSql(ISqlFormat format, string? tableAlias = "")
     {
         var sb = new StringBuilder();
 
         sb.Append('(');
 
-        var fieldName = GetFieldName(Name, tableAlias);
+        var fieldName = GetFieldName(format, Name, tableAlias);
 
         switch (Comparison)
         {
@@ -71,13 +74,13 @@ public class Filter
         return sb.ToString();
     }
 
-    private string GetFieldName(string name, string? tableAlias = "")
+    private string GetFieldName(ISqlFormat format, string name, string? tableAlias = "")
     {
         var sb = new StringBuilder();
         if (!string.IsNullOrEmpty(tableAlias))
-            sb.Append(SqlBuilder.FormatTableAlias(tableAlias) + '.');
+            sb.Append(SqlBuilder.FormatTableAlias(format, tableAlias) + '.');
 
-        sb.Append(SqlBuilder.FormatColumn(name));
+        sb.Append(SqlBuilder.FormatColumn(format, name));
 
         return sb.ToString();
     }

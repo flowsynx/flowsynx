@@ -1,8 +1,12 @@
-﻿using System.Text;
+﻿using System.Runtime.Serialization;
+using System.Text;
 using FlowSynx.Connectors.Database.MySql.Extensions;
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
+/// <summary>
+/// Inspired by SqlBuilder open source project (https://github.com/koshovyi/SqlBuilder/tree/master)
+/// </summary>
 public class Join
 {
     public JoinType Type { get; set; }
@@ -10,16 +14,16 @@ public class Join
     public string? TableAlias { get; set; }
     public List<JoinItem> Expressions { get; set; } = new List<JoinItem>();
 
-    public string GetSql(string sourceTable)
+    public string GetSql(ISqlFormat format, string sourceTable)
     {
         var sb = new StringBuilder();
         sb.Append(GetJoinType());
         sb.Append(' ');
-        sb.Append(SqlBuilder.FormatTable(Table));
+        sb.Append(SqlBuilder.FormatTable(format, Table));
         if (!string.IsNullOrEmpty(TableAlias))
         {
-            sb.Append(MySqlFormat.AliasOperator);
-            sb.Append(SqlBuilder.FormatTableAlias(TableAlias));
+            sb.Append(format.AliasOperator);
+            sb.Append(SqlBuilder.FormatTableAlias(format, TableAlias));
         }
         sb.Append(" ON ");
 
@@ -30,15 +34,15 @@ public class Join
                 ex.Append(" AND ");
             else
             {
-                ex.Append(SqlBuilder.FormatTableAlias(sourceTable));
+                ex.Append(SqlBuilder.FormatTableAlias(format, sourceTable));
                 ex.Append('.');
-                ex.Append(SqlBuilder.FormatColumn(item.Name));
+                ex.Append(SqlBuilder.FormatColumn(format, item.Name));
                 ex.Append('=');
                 ex.Append(string.IsNullOrEmpty(TableAlias)
-                    ? SqlBuilder.FormatTable(Table)
-                    : SqlBuilder.FormatTableAlias(TableAlias));
+                    ? SqlBuilder.FormatTable(format, Table)
+                    : SqlBuilder.FormatTableAlias(format, TableAlias));
                 ex.Append('.');
-                ex.Append(SqlBuilder.FormatColumn(item.Value));
+                ex.Append(SqlBuilder.FormatColumn(format, item.Value));
             }
         }
         sb.Append(ex);

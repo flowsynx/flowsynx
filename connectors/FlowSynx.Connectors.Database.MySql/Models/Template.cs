@@ -2,6 +2,9 @@
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
+/// <summary>
+/// Inspired by SqlBuilder open source project (https://github.com/koshovyi/SqlBuilder/tree/master)
+/// </summary>
 public class Template
 {
     private const string EscStart = "{{";
@@ -30,11 +33,11 @@ public class Template
         return this;
     }
 
-    public string GetSql()
+    public string GetSql(ISqlFormat format)
     {
         var pattern = Pattern;
 
-        this.Append(SnippetLibrary.End(MySqlFormat.EndOfStatement.ToString()));
+        this.Append(SnippetLibrary.End(format.EndOfStatement.ToString()));
 
         foreach (var snippet in Snippets)
         {

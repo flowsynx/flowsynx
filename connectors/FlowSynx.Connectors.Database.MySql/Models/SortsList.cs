@@ -1,11 +1,13 @@
-﻿using FlowSynx.Connectors.Database.MySql.Extensions;
-using System.Text;
+﻿using System.Text;
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
+/// <summary>
+/// Inspired by SqlBuilder open source project (https://github.com/koshovyi/SqlBuilder/tree/master)
+/// </summary>
 public class SortsList: List<Sort>
 {
-    public string GetSql(string? tableAlias = "")
+    public string GetSql(ISqlFormat format, string? tableAlias = "")
     {
         var sb = new StringBuilder();
 
@@ -17,7 +19,7 @@ public class SortsList: List<Sort>
             else
                 sep = true;
 
-            sb.Append(sort.GetSql(tableAlias));
+            sb.Append(sort.GetSql(format, tableAlias));
         }
 
         return sb.ToString();

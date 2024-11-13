@@ -4,27 +4,27 @@ namespace FlowSynx.Connectors.Database.MySql.Extensions;
 
 public static class SqlBuilder
 {
-    public static string FormatColumn(string column, string? tableAlias = "")
+    public static string FormatColumn(ISqlFormat format, string column, string? tableAlias = "")
     {
         if (!string.IsNullOrEmpty(tableAlias))
-            tableAlias = FormatTableAlias(tableAlias) + '.';
+            tableAlias = FormatTableAlias(format, tableAlias) + '.';
 
-        column = MySqlFormat.EscapeEnabled
-            ? MySqlFormat.ColumnEscapeLeft + column + MySqlFormat.ColumnEscapeRight
+        column = format.EscapeEnabled
+            ? format.ColumnEscapeLeft + column + format.ColumnEscapeRight
             : column;
 
         return tableAlias + column;
     }
 
-    public static string FormatTable(string tableName)
+    public static string FormatTable(ISqlFormat format, string tableName)
     {
-        return MySqlFormat.EscapeEnabled
-            ? MySqlFormat.TableEscapeLeft + tableName + MySqlFormat.TableEscapeRight
+        return format.EscapeEnabled
+            ? format.TableEscapeLeft + tableName + format.TableEscapeRight
             : tableName;
     }
 
-    public static string FormatTableAlias(string value)
+    public static string FormatTableAlias(ISqlFormat format, string value)
     {
-        return MySqlFormat.TableEscapeLeft + value + MySqlFormat.TableEscapeRight;
+        return format.TableEscapeLeft + value + format.TableEscapeRight;
     }
 }

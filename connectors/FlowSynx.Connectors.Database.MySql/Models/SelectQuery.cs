@@ -19,72 +19,27 @@ public class SelectQuery
     public SortsList? Sort { get; set; }
     public string? Limit { get; set; }
 
-    public string GetSql()
+    public string GetSql(ISqlFormat format)
     {
         var result = TemplateLibrary.Select;
-        result.Append(SnippetLibrary.Table(Table.Name, Table.Alias));
-        result.Append(SnippetLibrary.Fields(Fields.GetSql(Table.Alias)));
+        result.Append(SnippetLibrary.Table(format, Table.Name, Table.Alias));
+        result.Append(SnippetLibrary.Fields(Fields.GetSql(format, Table.Alias)));
 
         if (Joins is { Count: > 0 })
         {
             var joinTable = string.IsNullOrEmpty(Table.Alias) ? Table.Name : Table.Alias;
-            result.Append(SnippetLibrary.Join(Joins.GetSql(joinTable)));
+            result.Append(SnippetLibrary.Join(Joins.GetSql(format, joinTable)));
         }
 
         if (Filters is { Count: > 0 })
-            result.Append(SnippetLibrary.Filters(Filters.GetSql(Table.Alias)));
+            result.Append(SnippetLibrary.Filters(Filters.GetSql(format, Table.Alias)));
 
         if (GroupBy is { Count: > 0 })
-            result.Append(SnippetLibrary.GroupBy(GroupBy.GetSql(Table.Alias)));
+            result.Append(SnippetLibrary.GroupBy(GroupBy.GetSql(format, Table.Alias)));
 
         if (Sort is { Count: > 0 })
-            result.Append(SnippetLibrary.Sort(this.Sort.GetSql(Table.Alias)));
+            result.Append(SnippetLibrary.Sort(this.Sort.GetSql(format, Table.Alias)));
 
-        return result.GetSql();
-
-
-
-        //var table = Table.GetSql();
-        //var columns = Fields.GetSql(Table.Alias);
-        //var filters = string.Empty;
-        //if (Filters != null)
-        //{
-        //    filters = Filters.GetSql(Table.Alias);
-        //    if (!string.IsNullOrEmpty(filters))
-        //        filters = $" WHERE {filters}";
-        //}
-
-        //var joins = string.Empty;
-        //if (Joins != null)
-        //{
-        //    var joinTable = string.IsNullOrEmpty(Table.Alias) ? Table.Name : Table.Alias;
-        //    joins = Joins.GetSql(joinTable);
-        //    if (!string.IsNullOrEmpty(joins))
-        //        joins = $" {joins}";
-        //}
-
-        //var groupBy = string.Empty;
-        //if (GroupBy != null)
-        //{
-        //    groupBy = GroupBy.GetSql(Table.Alias);
-        //    if (!string.IsNullOrEmpty(groupBy))
-        //        groupBy = $" GROUP BY {groupBy}";
-        //}
-
-        //var sorts = string.Empty;
-        //if (Sort != null)
-        //{
-        //    sorts = Sort.GetSql(Table.Alias);
-        //    if (!string.IsNullOrEmpty(sorts))
-        //        sorts = $" ORDER BY {sorts}";
-        //}
-
-        //var query = $"SELECT {columns} FROM {table}{joins}{filters}{groupBy}{sorts};";
-        //return query;
-    }
-
-    public override string ToString()
-    {
-        return GetSql();
+        return result.GetSql(format);
     }
 }

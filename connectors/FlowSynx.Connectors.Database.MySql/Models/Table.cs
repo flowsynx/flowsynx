@@ -7,20 +7,15 @@ public class Table
     public required string Name { get; set; }
     public string? Alias { get; set; }
 
-    public string GetSql()
+    public string GetSql(ISqlFormat format)
     {
         var tableAlias = "";
-        var table = SqlBuilder.FormatTable(Name);
+        var table = SqlBuilder.FormatTable(format, Name);
         if (!string.IsNullOrEmpty(Alias))
-            tableAlias = SqlBuilder.FormatTableAlias(Alias);
+            tableAlias = SqlBuilder.FormatTableAlias(format, Alias);
 
         return string.IsNullOrEmpty(tableAlias) 
             ? table 
-            : $"{table}{MySqlFormat.AliasOperator}{tableAlias}";
-    }
-
-    public override string ToString()
-    {
-        return GetSql();
+            : $"{table}{format.AliasOperator}{tableAlias}";
     }
 }

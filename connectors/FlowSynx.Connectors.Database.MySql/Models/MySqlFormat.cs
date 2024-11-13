@@ -1,14 +1,14 @@
 ﻿namespace FlowSynx.Connectors.Database.MySql.Models;
 
-public static class MySqlFormat
+public class MySqlFormat: ISqlFormat
 {
-    public static char Parameter => '?';
-    public static bool EscapeEnabled => true;
-    public static char ColumnEscapeLeft => '`';
-    public static char ColumnEscapeRight => '`';
-    public static char TableEscapeLeft => '`';
-    public static char TableEscapeRight => '`';
-    public static char EndOfStatement => ';';
-    public static char AliasEscape => '\"';
-    public static string AliasOperator => " as ";
+    public char Parameter => '?';
+    public bool EscapeEnabled => true;
+    public char ColumnEscapeLeft => '`';
+    public char ColumnEscapeRight => '`';
+    public char TableEscapeLeft => '`';
+    public char TableEscapeRight => '`';
+    public char EndOfStatement => ';';
+    public char AliasEscape => '\"';
+    public string AliasOperator => " as ";
 }

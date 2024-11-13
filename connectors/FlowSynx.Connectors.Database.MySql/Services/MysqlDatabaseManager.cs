@@ -130,8 +130,9 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
+        var format = new MySqlFormat();
         var queryData = ParseQuery(listOptions);
-        var sql = sqlOptions.Sql ?? queryData.GetSql();
+        var sql = sqlOptions.Sql ?? queryData.GetSql(format);
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");

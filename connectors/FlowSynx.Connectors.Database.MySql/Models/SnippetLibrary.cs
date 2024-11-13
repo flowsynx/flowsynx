@@ -2,6 +2,9 @@
 
 namespace FlowSynx.Connectors.Database.MySql.Models;
 
+/// <summary>
+/// Inspired by SqlBuilder open source project (https://github.com/koshovyi/SqlBuilder/tree/master)
+/// </summary>
 public static class SnippetLibrary
 {
     public static Snippet End(string value)
@@ -9,15 +12,15 @@ public static class SnippetLibrary
         return new Snippet("END", value);
     }
     
-    public static Snippet Table(string table, string? tableAlias = "")
+    public static Snippet Table(ISqlFormat format, string table, string? tableAlias = "")
     {
-        table = SqlBuilder.FormatTable(table);
+        table = SqlBuilder.FormatTable(format, table);
         if (!string.IsNullOrEmpty(tableAlias))
-            tableAlias = SqlBuilder.FormatTableAlias(tableAlias);
+            tableAlias = SqlBuilder.FormatTableAlias(format, tableAlias);
 
         return string.IsNullOrEmpty(tableAlias) 
             ? new Snippet("TABLE", table) 
-            : new Snippet("TABLE", table + MySqlFormat.AliasOperator + tableAlias);
+            : new Snippet("TABLE", table + format.AliasOperator + tableAlias);
     }
 
     public static Snippet Fields(string value)
