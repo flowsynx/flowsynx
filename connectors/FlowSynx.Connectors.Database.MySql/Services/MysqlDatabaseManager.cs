@@ -18,6 +18,7 @@ using FlowSynx.Data.Sql.Joins;
 using FlowSynx.Data.Sql.Queries;
 using FlowSynx.Data.Sql.Sorting;
 using FlowSynx.Data.Sql.Tables;
+using FlowSynx.Data.Sql.Fetches;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -198,7 +199,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
             Joins = ParseJoins(options.Joins),
             Filters = ParseFilters(options.Filters),
             GroupBy = ParseGroupBy(options.GroupBy),
-            Sorts = ParseSorts(options.Sorts)
+            Sorts = ParseSorts(options.Sorts),
+            Fetch = ParseFetch(options.Fetch)
         };
 
         return query;
@@ -259,6 +261,17 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         if (!string.IsNullOrEmpty(json))
         {
             result = _deserializer.Deserialize<SortsList>(json);
+        }
+
+        return result;
+    }
+
+    private Fetch ParseFetch(string? json)
+    {
+        var result = new Fetch();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<Fetch>(json);
         }
 
         return result;

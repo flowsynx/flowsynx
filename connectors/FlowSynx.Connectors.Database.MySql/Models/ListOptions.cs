@@ -9,5 +9,5 @@ public class ListOptions
     public string? Filters { get; set; }
     public string? GroupBy { get; set; }
     public string? Sorts { get; set; }
-    public string? Limit { get; set; }
+    public string? Fetch { get; set; }
 }
