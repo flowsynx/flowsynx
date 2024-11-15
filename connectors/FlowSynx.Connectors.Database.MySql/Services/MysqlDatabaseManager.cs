@@ -10,6 +10,14 @@ using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using System.Data;
+using FlowSynx.Data.Sql;
+using FlowSynx.Data.Sql.Fields;
+using FlowSynx.Data.Sql.Filters;
+using FlowSynx.Data.Sql.Grouping;
+using FlowSynx.Data.Sql.Joins;
+using FlowSynx.Data.Sql.Queries;
+using FlowSynx.Data.Sql.Sorting;
+using FlowSynx.Data.Sql.Tables;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -19,6 +27,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
     private readonly MySqlConnection _connection;
+    private readonly Format _format;
 
     public MysqlDatabaseManager(ILogger logger, MySqlConnection connection, 
         ISerializer serializer, IDeserializer deserializer)
@@ -27,6 +36,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         _connection = connection;
         _serializer = serializer;
         _deserializer = deserializer;
+        _format = Format.MySql;
     }
 
     public Task<object> About(Context context, CancellationToken cancellationToken)
@@ -129,10 +139,9 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
-
-        var format = new MySqlFormat();
-        var queryData = ParseQuery(listOptions);
-        var sql = sqlOptions.Sql ?? queryData.GetSql(format);
+        
+        var selectStatement = ParseQuery(listOptions);
+        var sql = sqlOptions.Sql ?? selectStatement.GetSql();
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -180,16 +189,16 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return jsonString;
     }
 
-    private SelectQuery ParseQuery(ListOptions options)
+    private SelectStatement ParseQuery(ListOptions options)
     {
-        var query = new SelectQuery
+        var table = ParseTable(options.Table);
+        var query = new SelectStatement(_format, table)
         {
-            Table = ParseTable(options.Table),
             Fields = ParseFields(options.Fields),
             Joins = ParseJoins(options.Joins),
             Filters = ParseFilters(options.Filters),
             GroupBy = ParseGroupBy(options.GroupBy),
-            Sort = ParseSorts(options.Sorts)
+            Sorts = ParseSorts(options.Sorts)
         };
 
         return query;
