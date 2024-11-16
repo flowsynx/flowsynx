@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            .AddFlowSynxData()
+            .AddFlowSynxDataService()
             .AddCache<string, Connector>()
             .AddScoped<IConnectorParser, ConnectorParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
