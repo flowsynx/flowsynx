@@ -8,25 +8,30 @@ using FlowSynx.Connectors.Stream.Json.Models;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using Newtonsoft.Json;
 using System.Text;
-using FlowSynx.Data.Filter;
+using FlowSynx.Data.DataTableQuery.Pagination;
+using FlowSynx.Data.DataTableQuery.Fields;
+using FlowSynx.Data.DataTableQuery.Filters;
+using FlowSynx.Data.DataTableQuery.Queries;
 using FlowSynx.IO.Compression;
 using Microsoft.Extensions.Logging;
+using FlowSynx.Data.DataTableQuery.Queries.Select;
+using FlowSynx.Data.DataTableQuery.Sorting;
 
 namespace FlowSynx.Connectors.Stream.Json.Services;
 
 public class JsonManager: IJsonManager
 {
     private readonly ILogger _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly ISerializer _serializer;
     private string ContentType => "application/json";
     private string Extension => ".json";
 
-    public JsonManager(ILogger logger, IDataFilter dataFilter, IDeserializer deserializer, ISerializer serializer)
+    public JsonManager(ILogger logger, IDataTableService dataTableService, IDeserializer deserializer, ISerializer serializer)
     {
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _serializer = serializer;
     }
@@ -91,7 +96,7 @@ public class JsonManager: IJsonManager
         var content = await ReadContent(context, cancellationToken);
         var dataTable = await JsonDataDataTableAsync(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataFilter.Filter(dataTable, dataFilterOptions);
+        return _dataTableService.Select(dataTable, dataFilterOptions);
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -303,7 +308,7 @@ public class JsonManager: IJsonManager
     {
         var dataTable = await JsonDataDataTableAsync(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataFilter.Filter(dataTable, dataFilterOptions);
+        return _dataTableService.Select(dataTable, dataFilterOptions);
     }
 
     private Task<DataTable> JsonDataDataTableAsync(string json, ListOptions options)
@@ -319,37 +324,59 @@ public class JsonManager: IJsonManager
         return Task.FromResult(dataTable);
     }
 
-    private DataFilterOptions GetFilterOptions(ListOptions options)
+    private SelectDataTableOption GetFilterOptions(ListOptions options)
     {
-        var dataFilterOptions = new DataFilterOptions
+        var dataFilterOptions = new SelectDataTableOption()
         {
             Fields = GetFields(options.Fields),
-            FilterExpression = options.Filter,
-            Sort = GetSorts(options.Sort),
+            Filters = GetFilters(options.Filter),
+            Sorts = GetSorts(options.Sort),
             CaseSensitive = options.CaseSensitive,
-            Limit = options.Limit,
+            Paging = GetPaging(options.Paging),
         };
 
         return dataFilterOptions;
     }
 
-    private string[] GetFields(string? fields)
+    private FieldsList GetFields(string? json)
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var result = new FieldsList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            result = _deserializer.Deserialize<FieldsList>(json);
         }
 
         return result;
     }
 
-    private Sort[] GetSorts(string? sorts)
+    private FiltersList GetFilters(string? json)
     {
-        var result = Array.Empty<Sort>();
-        if (!string.IsNullOrEmpty(sorts))
+        var result = new FiltersList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<Sort[]>(sorts);
+            result = _deserializer.Deserialize<FiltersList>(json);
+        }
+
+        return result;
+    }
+
+    private SortsList GetSorts(string? json)
+    {
+        var result = new SortsList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<SortsList>(json);
+        }
+
+        return result;
+    }
+
+    private Paging GetPaging(string? json)
+    {
+        var result = new Paging();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<Paging>(json);
         }
 
         return result;

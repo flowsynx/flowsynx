@@ -3,27 +3,27 @@ using EnsureThat;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
-using FlowSynx.Data.Filter;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Models;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Services;
+using FlowSynx.Data.DataTableQuery.Queries;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem;
 
 public class LocalFileSystemConnector : Connector
 {
     private readonly ILogger<LocalFileSystemConnector> _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private ILocalFileManager _manager = null!;
 
-    public LocalFileSystemConnector(ILogger<LocalFileSystemConnector> logger, IDataFilter dataFilter,
+    public LocalFileSystemConnector(ILogger<LocalFileSystemConnector> logger, IDataTableService dataTableService,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
     }
 
@@ -36,7 +36,7 @@ public class LocalFileSystemConnector : Connector
 
     public override Task Initialize()
     {
-        _manager = new LocalFileManager(_logger, _dataFilter, _deserializer);
+        _manager = new LocalFileManager(_logger, _dataTableService, _deserializer);
         return Task.CompletedTask;
     }
 

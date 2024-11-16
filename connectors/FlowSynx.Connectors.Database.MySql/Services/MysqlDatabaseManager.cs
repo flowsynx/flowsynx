@@ -3,22 +3,23 @@ using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Database.MySql.Exceptions;
 using FlowSynx.Connectors.Database.MySql.Extensions;
 using FlowSynx.Connectors.Database.MySql.Models;
-using FlowSynx.Data.Extensions;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using System.Data;
-using FlowSynx.Data.Sql;
-using FlowSynx.Data.Sql.Fields;
-using FlowSynx.Data.Sql.Filters;
-using FlowSynx.Data.Sql.Grouping;
-using FlowSynx.Data.Sql.Joins;
-using FlowSynx.Data.Sql.Queries;
-using FlowSynx.Data.Sql.Sorting;
-using FlowSynx.Data.Sql.Tables;
-using FlowSynx.Data.Sql.Fetches;
+using FlowSynx.Data.DataTableQuery.Extensions;
+using FlowSynx.Data.SqlQuery;
+using FlowSynx.Data.SqlQuery.Pagination;
+using FlowSynx.Data.SqlQuery.Fields;
+using FlowSynx.Data.SqlQuery.Filters;
+using FlowSynx.Data.SqlQuery.Grouping;
+using FlowSynx.Data.SqlQuery.Joins;
+using FlowSynx.Data.SqlQuery.Queries;
+using FlowSynx.Data.SqlQuery.Queries.Select;
+using FlowSynx.Data.SqlQuery.Sorting;
+using FlowSynx.Data.SqlQuery.Tables;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -27,16 +28,18 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
+    private readonly ISqlService _sqlService;
     private readonly MySqlConnection _connection;
     private readonly Format _format;
 
     public MysqlDatabaseManager(ILogger logger, MySqlConnection connection, 
-        ISerializer serializer, IDeserializer deserializer)
+        ISerializer serializer, IDeserializer deserializer, ISqlService sqlService)
     {
         _logger = logger;
         _connection = connection;
         _serializer = serializer;
         _deserializer = deserializer;
+        _sqlService = sqlService;
         _format = Format.MySql;
     }
 
@@ -141,8 +144,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         
-        var selectStatement = ParseQuery(listOptions);
-        var sql = sqlOptions.Sql ?? selectStatement.GetSql();
+        var selectSqlOption = GetSelectOption(listOptions);
+        var sql = sqlOptions.Sql ?? _sqlService.Select(_format, selectSqlOption);
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -190,28 +193,23 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return jsonString;
     }
 
-    private SelectStatement ParseQuery(ListOptions options)
+    private SelectSqlOption GetSelectOption(ListOptions options) => new()
     {
-        var table = ParseTable(options.Table);
-        var query = new SelectStatement(_format, table)
-        {
-            Fields = ParseFields(options.Fields),
-            Joins = ParseJoins(options.Joins),
-            Filters = ParseFilters(options.Filters),
-            GroupBy = ParseGroupBy(options.GroupBy),
-            Sorts = ParseSorts(options.Sorts),
-            Fetch = ParseFetch(options.Fetch)
-        };
+        Table = GetTable(options.Table),
+        Fields = GetFields(options.Fields),
+        Joins = GetJoins(options.Joins),
+        Filters = GetFilters(options.Filters),
+        GroupBy = GetGroupBy(options.GroupBy),
+        Sorts = GetSorts(options.Sorts),
+        Paging = GetPaging(options.Paging)
+    };
 
-        return query;
-    }
-
-    private Table ParseTable(string json)
+    private Table GetTable(string json)
     {
         return _deserializer.Deserialize<Table>(json);
     }
 
-    private FieldsList ParseFields(string? json)
+    private FieldsList GetFields(string? json)
     {
         var result = new FieldsList();
         if (!string.IsNullOrEmpty(json))
@@ -222,7 +220,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private JoinsList ParseJoins(string? json)
+    private JoinsList GetJoins(string? json)
     {
         var result = new JoinsList();
         if (!string.IsNullOrEmpty(json))
@@ -233,7 +231,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private FiltersList ParseFilters(string? json)
+    private FiltersList GetFilters(string? json)
     {
         var result = new FiltersList();
         if (!string.IsNullOrEmpty(json))
@@ -244,7 +242,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private GroupByList ParseGroupBy(string? json)
+    private GroupByList GetGroupBy(string? json)
     {
         var result = new GroupByList();
         if (!string.IsNullOrEmpty(json))
@@ -255,7 +253,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private SortsList ParseSorts(string? json)
+    private SortsList GetSorts(string? json)
     {
         var result = new SortsList();
         if (!string.IsNullOrEmpty(json))
@@ -266,12 +264,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private Fetch ParseFetch(string? json)
+    private Paging GetPaging(string? json)
     {
-        var result = new Fetch();
+        var result = new Paging();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<Fetch>(json);
+            result = _deserializer.Deserialize<Paging>(json);
         }
 
         return result;

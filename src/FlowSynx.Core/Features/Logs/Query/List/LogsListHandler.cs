@@ -2,9 +2,6 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Data.Filter;
-using FlowSynx.Logging.Extensions;
-using FlowSynx.Logging.InMemory;
 using FlowSynx.Logging.Options;
 using FlowSynx.Logging;
 
@@ -30,11 +27,11 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
         {
             var listOptions = new LogListOptions()
             {
-                Fields = request.Fields ?? Array.Empty<string>(),
-                Filter = request.Filter ?? string.Empty,
+                Fields = request.Fields ?? string.Empty,
+                Filters = request.Filters ?? string.Empty,
                 CaseSensitive = request.CaseSensitive ?? false,
-                Sort = request.Sort ?? Array.Empty<Sort>(),
-                Limit = request.Limit ?? string.Empty,
+                Sorts = request.Sorts ?? string.Empty,
+                Paging = request.Paging ?? string.Empty,
             };
 
             var response = _logManager.List(listOptions);

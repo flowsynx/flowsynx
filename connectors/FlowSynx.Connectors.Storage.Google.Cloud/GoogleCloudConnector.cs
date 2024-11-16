@@ -4,30 +4,30 @@ using FlowSynx.Connectors.Abstractions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions.Extensions;
-using FlowSynx.Data.Filter;
 using FlowSynx.Connectors.Storage.Google.Cloud.Models;
 using FlowSynx.Connectors.Storage.Google.Cloud.Services;
+using FlowSynx.Data.DataTableQuery.Queries;
 
 namespace FlowSynx.Connectors.Storage.Google.Cloud;
 
 public class GoogleCloudConnector : Connector
 {
     private readonly ILogger<GoogleCloudConnector> _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly IGoogleCloudConnection _connection;
     private IGoogleCloudManager _manager = null!;
     private GoogleCloudSpecifications _googleCloudSpecifications = null!;
 
-    public GoogleCloudConnector(ILogger<GoogleCloudConnector> logger, IDataFilter dataFilter, 
+    public GoogleCloudConnector(ILogger<GoogleCloudConnector> logger, IDataTableService dataTableService, 
         ISerializer serializer, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(serializer, nameof(serializer));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _connection = new GoogleCloudConnection(serializer);
     }
@@ -43,7 +43,7 @@ public class GoogleCloudConnector : Connector
     {
         _googleCloudSpecifications = Specifications.ToObject<GoogleCloudSpecifications>();
         var client = _connection.Connect(_googleCloudSpecifications);
-        _manager = new GoogleCloudManager(_logger, client, _googleCloudSpecifications, _dataFilter, _deserializer);
+        _manager = new GoogleCloudManager(_logger, client, _googleCloudSpecifications, _dataTableService, _deserializer);
         return Task.CompletedTask;
     }
 

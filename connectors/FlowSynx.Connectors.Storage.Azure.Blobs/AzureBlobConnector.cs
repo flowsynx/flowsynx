@@ -4,29 +4,29 @@ using EnsureThat;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
-using FlowSynx.Data.Filter;
 using FlowSynx.Connectors.Storage.Azure.Blobs.Models;
 using FlowSynx.Connectors.Storage.Azure.Blobs.Services;
+using FlowSynx.Data.DataTableQuery.Queries;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs;
 
 public class AzureBlobConnector : Connector
 {
     private readonly ILogger<AzureBlobConnector> _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly IAzureBlobConnection _connection;
     private IAzureBlobManager _manager = null!;
     private AzureBlobSpecifications _azureBlobSpecifications = null!;
 
-    public AzureBlobConnector(ILogger<AzureBlobConnector> logger, IDataFilter dataFilter,
+    public AzureBlobConnector(ILogger<AzureBlobConnector> logger, IDataTableService dataTableService,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _connection = new AzureBlobConnection();
     }
@@ -42,7 +42,7 @@ public class AzureBlobConnector : Connector
     {
         _azureBlobSpecifications = Specifications.ToObject<AzureBlobSpecifications>();
         var client = _connection.Connect(_azureBlobSpecifications);
-        _manager = new AzureBlobManager(_logger, client, _dataFilter, _deserializer);
+        _manager = new AzureBlobManager(_logger, client, _dataTableService, _deserializer);
         return Task.CompletedTask;
     }
 

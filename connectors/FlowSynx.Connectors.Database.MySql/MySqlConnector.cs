@@ -3,6 +3,7 @@ using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Database.MySql.Models;
 using FlowSynx.Connectors.Database.MySql.Services;
+using FlowSynx.Data.SqlQuery.Queries;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
@@ -14,16 +15,19 @@ public class MySqlConnector : Connector
     private readonly ILogger<MySqlConnector> _logger;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
+    private readonly SqlService _sqlService;
     private readonly IMySqlDatabaseConnection _connection;
     private IMysqlDatabaseManager _manager = null!;
     private MySqlpecifications _mysqlSpecifications = null!;
 
-    public MySqlConnector(ILogger<MySqlConnector> logger, ISerializer serializer, IDeserializer deserializer)
+    public MySqlConnector(ILogger<MySqlConnector> logger, ISerializer serializer, 
+        IDeserializer deserializer, SqlService sqlService)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
         _serializer = serializer;
         _deserializer = deserializer;
+        _sqlService = sqlService;
         _connection = new MySqlDatabaseConnection();
     }
 
@@ -38,7 +42,7 @@ public class MySqlConnector : Connector
     {
         _mysqlSpecifications = Specifications.ToObject<MySqlpecifications>();
         var connection = _connection.Connect(_mysqlSpecifications);
-        _manager = new MysqlDatabaseManager(_logger, connection, _serializer, _deserializer);
+        _manager = new MysqlDatabaseManager(_logger, connection, _serializer, _deserializer, _sqlService);
         return Task.CompletedTask;
     }
 

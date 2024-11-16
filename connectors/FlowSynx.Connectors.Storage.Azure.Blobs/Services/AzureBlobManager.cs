@@ -11,10 +11,15 @@ using FlowSynx.Connectors.Storage.Azure.Blobs.Extensions;
 using FlowSynx.Connectors.Storage.Azure.Blobs.Models;
 using FlowSynx.Connectors.Storage.Exceptions;
 using EnsureThat;
-using FlowSynx.Data.Filter;
 using FlowSynx.IO.Serialization;
-using FlowSynx.Data.Extensions;
 using System.Data;
+using FlowSynx.Data.DataTableQuery.Extensions;
+using FlowSynx.Data.DataTableQuery.Pagination;
+using FlowSynx.Data.DataTableQuery.Fields;
+using FlowSynx.Data.DataTableQuery.Filters;
+using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.DataTableQuery.Queries.Select;
+using FlowSynx.Data.DataTableQuery.Sorting;
 using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
@@ -22,19 +27,19 @@ namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
 public class AzureBlobManager : IAzureBlobManager, IDisposable
 {
     private readonly ILogger _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly BlobServiceClient _client;
 
-    public AzureBlobManager(ILogger logger, BlobServiceClient client, IDataFilter dataFilter, IDeserializer deserializer)
+    public AzureBlobManager(ILogger logger, BlobServiceClient client, IDataTableService dataTableService, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _client = client;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
     }
 
@@ -577,9 +582,9 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         path = PathHelper.ToUnixPath(path);
         var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
 
-        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var filteredEntities = _dataTableService.Select(dataTable, dataFilterOptions);
 
         return filteredEntities;
     }
@@ -697,19 +702,19 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
 
         var fields = GetFields(listOptions.Fields);
-        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+        var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
+            fields.Append("Kind");
 
         if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
+            fields.Append("FullPath");
 
-        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataFilterOptions = GetDataTableOption(listOptions);
 
         var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var filteredData = _dataTableService.Select(dataTable, dataFilterOptions);
         var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
@@ -814,37 +819,54 @@ public class AzureBlobManager : IAzureBlobManager, IDisposable
         return new AzureBlobEntityPart(containerName, relativePath);
     }
 
-    private DataFilterOptions GetFilterOptions(ListOptions options)
+    private SelectDataTableOption GetDataTableOption(ListOptions options) => new()
     {
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = GetFields(options.Fields),
-            FilterExpression = options.Filter,
-            Sort = GetSorts(options.Sort),
-            CaseSensitive = options.CaseSensitive,
-            Limit = options.Limit,
-        };
+        Fields = GetFields(options.Fields),
+        Filters = GetFilters(options.Filters),
+        Sorts = GetSorts(options.Sorts),
+        CaseSensitive = options.CaseSensitive,
+        Paging = GetPaging(options.Paging),
+    };
 
-        return dataFilterOptions;
-    }
-
-    private string[] GetFields(string? fields)
+    private FieldsList GetFields(string? json)
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var result = new FieldsList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            result = _deserializer.Deserialize<FieldsList>(json);
         }
 
         return result;
     }
 
-    private Sort[] GetSorts(string? sorts)
+    private FiltersList GetFilters(string? json)
     {
-        var result = Array.Empty<Sort>();
-        if (!string.IsNullOrEmpty(sorts))
+        var result = new FiltersList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<Sort[]>(sorts);
+            result = _deserializer.Deserialize<FiltersList>(json);
+        }
+
+        return result;
+    }
+
+    private SortsList GetSorts(string? json)
+    {
+        var result = new SortsList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<SortsList>(json);
+        }
+
+        return result;
+    }
+
+    private Paging GetPaging(string? json)
+    {
+        var result = new Paging();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<Paging>(json);
         }
 
         return result;

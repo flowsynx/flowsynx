@@ -9,30 +9,35 @@ using EnsureThat;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Storage.Azure.Files.Extensions;
-using FlowSynx.Data.Filter;
 using FlowSynx.IO.Serialization;
-using FlowSynx.Data.Extensions;
 using System.Data;
+using FlowSynx.Data.DataTableQuery.Extensions;
+using FlowSynx.Data.DataTableQuery.Pagination;
+using FlowSynx.Data.DataTableQuery.Fields;
+using FlowSynx.Data.DataTableQuery.Filters;
 using FlowSynx.IO.Compression;
+using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.DataTableQuery.Queries.Select;
+using FlowSynx.Data.DataTableQuery.Sorting;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
 public class AzureFilesManager: IAzureFilesManager
 {
     private readonly ILogger _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly ShareClient _client;
 
-    public AzureFilesManager(ILogger logger, ShareClient client, IDataFilter dataFilter, IDeserializer deserializer)
+    public AzureFilesManager(ILogger logger, ShareClient client, IDataTableService dataTableService, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _client = client;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
     }
 
@@ -524,9 +529,9 @@ public class AzureFilesManager: IAzureFilesManager
         path = PathHelper.ToUnixPath(path);
         var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
 
-        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataFilter.Filter(dataTable, dataFilterOptions);
+        var filteredEntities = _dataTableService.Select(dataTable, dataFilterOptions);
 
         return filteredEntities;
     }
@@ -597,18 +602,18 @@ public class AzureFilesManager: IAzureFilesManager
         var storageEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
 
         var fields = GetFields(listOptions.Fields);
-        var kindFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("Kind", StringComparison.OrdinalIgnoreCase));
-        var fullPathFieldExist = fields.Length == 0 || fields.Any(s => s.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
+        var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
+        var fullPathFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("FullPath", StringComparison.OrdinalIgnoreCase));
 
         if (!kindFieldExist)
-            fields = fields.Append("Kind").ToArray();
+            fields.Append("Kind");
 
         if (!fullPathFieldExist)
-            fields = fields.Append("FullPath").ToArray();
+            fields.Append("FullPath");
 
-        var dataFilterOptions = GetFilterOptions(listOptions);
+        var dataFilterOptions = GetDataTableOption(listOptions);
 
-        var filteredData = _dataFilter.Filter(storageEntities, dataFilterOptions);
+        var filteredData = _dataTableService.Select(storageEntities, dataFilterOptions);
         var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
@@ -661,38 +666,54 @@ public class AzureFilesManager: IAzureFilesManager
         return result;
     }
 
-    private DataFilterOptions GetFilterOptions(ListOptions options)
+    private SelectDataTableOption GetDataTableOption(ListOptions options) => new()
     {
-        var fields = GetFields(options.Fields);
-        var dataFilterOptions = new DataFilterOptions
-        {
-            Fields = GetFields(options.Fields),
-            FilterExpression = options.Filter,
-            Sort = GetSorts(options.Sort),
-            CaseSensitive = options.CaseSensitive,
-            Limit = options.Limit,
-        };
+        Fields = GetFields(options.Fields),
+        Filters = GetFilters(options.Filters),
+        Sorts = GetSorts(options.Sorts),
+        CaseSensitive = options.CaseSensitive,
+        Paging = GetPaging(options.Paging),
+    };
 
-        return dataFilterOptions;
-    }
-
-    private string[] GetFields(string? fields)
+    private FieldsList GetFields(string? json)
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var result = new FieldsList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            result = _deserializer.Deserialize<FieldsList>(json);
         }
 
         return result;
     }
 
-    private Sort[] GetSorts(string? sorts)
+    private FiltersList GetFilters(string? json)
     {
-        var result = Array.Empty<Sort>();
-        if (!string.IsNullOrEmpty(sorts))
+        var result = new FiltersList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<Sort[]>(sorts);
+            result = _deserializer.Deserialize<FiltersList>(json);
+        }
+
+        return result;
+    }
+
+    private SortsList GetSorts(string? json)
+    {
+        var result = new SortsList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<SortsList>(json);
+        }
+
+        return result;
+    }
+
+    private Paging GetPaging(string? json)
+    {
+        var result = new Paging();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<Paging>(json);
         }
 
         return result;

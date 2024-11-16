@@ -19,10 +19,10 @@ using FlowSynx.Connectors.Storage.Google.Cloud;
 using FlowSynx.Connectors.Storage.Google.Drive;
 using FlowSynx.Connectors.Storage.Memory;
 using FlowSynx.Connectors.Stream.Csv;
-using FlowSynx.Data.Extensions;
 using FlowSynx.Connectors.Stream.Json;
 using FlowSynx.Connectors.Database.MySql;
 using FlowSynx.Core.Parers.Connector;
+using FlowSynx.Data;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -47,7 +47,7 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            .AddDatFilter()
+            .AddFlowSynxData()
             .AddCache<string, Connector>()
             .AddScoped<IConnectorParser, ConnectorParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()

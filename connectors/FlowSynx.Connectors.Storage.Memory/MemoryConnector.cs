@@ -1,11 +1,11 @@
 ﻿using EnsureThat;
-using FlowSynx.Data.Filter;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Connectors.Abstractions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Storage.Memory.Models;
 using FlowSynx.Connectors.Storage.Memory.Services;
+using FlowSynx.Data.DataTableQuery.Queries;
 using MemoryMetrics = FlowSynx.Connectors.Storage.Memory.Services.MemoryMetrics;
 
 namespace FlowSynx.Connectors.Storage.Memory;
@@ -13,18 +13,18 @@ namespace FlowSynx.Connectors.Storage.Memory;
 public class MemoryConnector : Connector
 {
     private readonly ILogger<MemoryConnector> _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly IMemoryMetrics _memoryMetrics;
     private IMemoryManager _manager = null!;
 
-    public MemoryConnector(ILogger<MemoryConnector> logger, IDataFilter dataFilter,
+    public MemoryConnector(ILogger<MemoryConnector> logger, IDataTableService dataTableService,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _memoryMetrics = new MemoryMetrics();
     }
@@ -38,7 +38,7 @@ public class MemoryConnector : Connector
 
     public override Task Initialize()
     {
-        _manager = new MemoryManager(_logger, _dataFilter, _deserializer, _memoryMetrics);
+        _manager = new MemoryManager(_logger, _dataTableService, _deserializer, _memoryMetrics);
         return Task.CompletedTask;
     }
 

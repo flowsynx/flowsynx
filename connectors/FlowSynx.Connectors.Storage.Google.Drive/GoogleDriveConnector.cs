@@ -4,29 +4,29 @@ using FlowSynx.Connectors.Abstractions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions.Extensions;
-using FlowSynx.Data.Filter;
 using FlowSynx.Connectors.Storage.Google.Drive.Models;
 using FlowSynx.Connectors.Storage.Google.Drive.Services;
+using FlowSynx.Data.DataTableQuery.Queries;
 
 namespace FlowSynx.Connectors.Storage.Google.Drive;
 
 public class GoogleDriveConnector : Connector
 {
     private readonly ILogger<GoogleDriveConnector> _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly IGoogleDriveConnection _connection;
     private IGoogleDriveManager _manager = null!;
     private GoogleDriveSpecifications _googleDriveSpecifications = null!;
 
-    public GoogleDriveConnector(ILogger<GoogleDriveConnector> logger, IDataFilter dataFilter, 
+    public GoogleDriveConnector(ILogger<GoogleDriveConnector> logger, IDataTableService dataTableService, 
         ISerializer serializer, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _connection = new GoogleDriveConnection(serializer);
     }
@@ -42,7 +42,7 @@ public class GoogleDriveConnector : Connector
     {
         _googleDriveSpecifications = Specifications.ToObject<GoogleDriveSpecifications>();
         var client = _connection.Connect(_googleDriveSpecifications);
-        _manager = new GoogleDriveManager(_logger, client, _googleDriveSpecifications, _dataFilter, _deserializer);
+        _manager = new GoogleDriveManager(_logger, client, _googleDriveSpecifications, _dataTableService, _deserializer);
         return Task.CompletedTask;
     }
 

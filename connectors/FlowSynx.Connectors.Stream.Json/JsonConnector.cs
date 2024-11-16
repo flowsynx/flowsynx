@@ -1,11 +1,11 @@
 ﻿using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions;
-using FlowSynx.Data.Filter;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Stream.Json.Models;
 using FlowSynx.Connectors.Stream.Json.Services;
-using FlowSynx.Data.Extensions;
+using FlowSynx.Data.DataTableQuery.Extensions;
+using FlowSynx.Data.DataTableQuery.Queries;
 
 namespace FlowSynx.Connectors.Stream.Json;
 
@@ -13,10 +13,10 @@ public class JsonConnector : Connector
 {
     private readonly IJsonManager _manager;
 
-    public JsonConnector(ILogger<JsonConnector> logger, IDataFilter dataFilter,
+    public JsonConnector(ILogger<JsonConnector> logger, IDataTableService dataTableService,
         IDeserializer deserializer, ISerializer serializer)
     {
-        _manager = new JsonManager(logger, dataFilter, deserializer, serializer);
+        _manager = new JsonManager(logger, dataTableService, deserializer, serializer);
     }
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");

@@ -1,15 +1,14 @@
 ﻿using FlowSynx.Abstractions;
-using FlowSynx.Data.Filter;
 using MediatR;
 
 namespace FlowSynx.Core.Features.Logs.Query.List;
 
 public class LogsListRequest : IRequest<Result<IEnumerable<object>>>
 {
-    public string[]? Fields { get; set; }
-    public string? Filter { get; set; }
+    public string? Fields { get; set; }
+    public string? Filters { get; set; }
+    public string? Sorts { get; set; }
+    public string? Paging { get; set; }
     public bool? CaseSensitive { get; set; } = false;
-    public Sort[]? Sort { get; set; }
-    public string? Limit { get; set; }
 }
 

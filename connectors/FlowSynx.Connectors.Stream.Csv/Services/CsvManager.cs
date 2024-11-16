@@ -3,7 +3,12 @@ using System.Text;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Stream.Csv.Models;
-using FlowSynx.Data.Filter;
+using FlowSynx.Data.DataTableQuery.Pagination;
+using FlowSynx.Data.DataTableQuery.Fields;
+using FlowSynx.Data.DataTableQuery.Filters;
+using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.DataTableQuery.Queries.Select;
+using FlowSynx.Data.DataTableQuery.Sorting;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
@@ -14,18 +19,18 @@ namespace FlowSynx.Connectors.Stream.Csv.Services;
 internal class CsvManager: ICsvManager
 {
     private readonly ILogger _logger;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IDeserializer _deserializer;
     private readonly CsvSpecifications _specifications;
 
     private string ContentType => "text/csv";
     private string Extension => ".csv";
 
-    public CsvManager(ILogger logger, IDataFilter dataFilter, IDeserializer deserializer, 
+    public CsvManager(ILogger logger, IDataTableService dataTableService, IDeserializer deserializer, 
         CsvSpecifications specifications)
     {
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _specifications = specifications;
     }
@@ -355,7 +360,7 @@ internal class CsvManager: ICsvManager
     {
         var dataTable = GetData(content, delimiter, listOptions.IncludeMetadata);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataFilter.Filter(dataTable, dataFilterOptions);
+        return _dataTableService.Select(dataTable, dataFilterOptions);
     }
 
     private DataTable GetData(string content, string delimiter, bool? includeMetadata)
@@ -471,37 +476,59 @@ internal class CsvManager: ICsvManager
         return true;
     }
 
-    private DataFilterOptions GetFilterOptions(ListOptions options)
+    private SelectDataTableOption GetFilterOptions(ListOptions options)
     {
-        var dataFilterOptions = new DataFilterOptions
+        var dataFilterOptions = new SelectDataTableOption()
         {
             Fields = GetFields(options.Fields),
-            FilterExpression = options.Filter,
-            Sort = GetSorts(options.Sort),
+            Filters = GetFilters(options.Filter),
+            Sorts = GetSorts(options.Sort),
             CaseSensitive = options.CaseSensitive,
-            Limit = options.Limit,
+            Paging = GetPaging(options.Paging),
         };
 
         return dataFilterOptions;
     }
 
-    private string[] GetFields(string? fields)
+    private FieldsList GetFields(string? json)
     {
-        var result = Array.Empty<string>();
-        if (!string.IsNullOrEmpty(fields))
+        var result = new FieldsList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<string[]>(fields);
+            result = _deserializer.Deserialize<FieldsList>(json);
         }
 
         return result;
     }
 
-    private Sort[] GetSorts(string? sorts)
+    private FiltersList GetFilters(string? json)
     {
-        var result = Array.Empty<Sort>();
-        if (!string.IsNullOrEmpty(sorts))
+        var result = new FiltersList();
+        if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<Sort[]>(sorts);
+            result = _deserializer.Deserialize<FiltersList>(json);
+        }
+
+        return result;
+    }
+
+    private SortsList GetSorts(string? json)
+    {
+        var result = new SortsList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<SortsList>(json);
+        }
+
+        return result;
+    }
+
+    private Paging GetPaging(string? json)
+    {
+        var result = new Paging();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<Paging>(json);
         }
 
         return result;

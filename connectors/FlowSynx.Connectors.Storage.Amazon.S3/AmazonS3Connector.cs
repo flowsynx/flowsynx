@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.IO.Serialization;
-using FlowSynx.Data.Filter;
 using FlowSynx.Connectors.Storage.Amazon.S3.Services;
 using FlowSynx.Connectors.Storage.Amazon.S3.Models;
+using FlowSynx.Data.DataTableQuery.Queries;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3;
 
@@ -14,19 +14,19 @@ public class AmazonS3Connector : Connector
 {
     private readonly ILogger<AmazonS3Connector> _logger;
     private readonly IDeserializer _deserializer;
-    private readonly IDataFilter _dataFilter;
+    private readonly IDataTableService _dataTableService;
     private readonly IAmazonS3Connection _connection;
     private IAmazonS3Manager _manager = null!;
     private AmazonS3Specifications _s3Specifications = null!;
 
-    public AmazonS3Connector(ILogger<AmazonS3Connector> logger, IDataFilter dataFilter,
+    public AmazonS3Connector(ILogger<AmazonS3Connector> logger, IDataTableService dataTableService,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataFilter, nameof(dataFilter));
+        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataFilter = dataFilter;
+        _dataTableService = dataTableService;
         _deserializer = deserializer;
         _connection = new AmazonS3Connection();
     }
@@ -42,7 +42,7 @@ public class AmazonS3Connector : Connector
     {
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
         var client = _connection.Connect(_s3Specifications);
-        _manager = new AmazonS3Manager(_logger, client, _dataFilter, _deserializer);
+        _manager = new AmazonS3Manager(_logger, client, _dataTableService, _deserializer);
         return Task.CompletedTask;
     }
 
