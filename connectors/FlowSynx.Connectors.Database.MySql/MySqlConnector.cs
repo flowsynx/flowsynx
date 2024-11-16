@@ -15,13 +15,13 @@ public class MySqlConnector : Connector
     private readonly ILogger<MySqlConnector> _logger;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
-    private readonly SqlService _sqlService;
+    private readonly ISqlService _sqlService;
     private readonly IMySqlDatabaseConnection _connection;
     private IMysqlDatabaseManager _manager = null!;
     private MySqlpecifications _mysqlSpecifications = null!;
 
     public MySqlConnector(ILogger<MySqlConnector> logger, ISerializer serializer, 
-        IDeserializer deserializer, SqlService sqlService)
+        IDeserializer deserializer, ISqlService sqlService)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         _logger = logger;
