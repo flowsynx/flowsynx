@@ -5,6 +5,7 @@ using FlowSynx.Environment;
 using FlowSynx.Logging;
 using FlowSynx.Logging.Extensions;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
 namespace FlowSynx.Extensions;
 
@@ -92,6 +93,16 @@ public static class ServiceCollectionExtensions
                     Url = new Uri("https://opensource.org/licenses/MIT")
                 }
             });
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddHttpJsonOptions(this IServiceCollection services)
+    {
+        services.ConfigureHttpJsonOptions(options =>
+        {
+            options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
 
         return services;

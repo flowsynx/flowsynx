@@ -15,6 +15,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
 
         builder.Services
                .AddEndpointsApiExplorer()
+               .AddHttpJsonOptions()
                .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel, rootCommandOptions.LogFile)
                .AddLocation()
                .AddVersion()
@@ -27,7 +28,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
 
         if (rootCommandOptions.OpenApi)
             builder.Services.AddOpenApi();
-        
+
         var app = builder.Build();
 
         if (app.Environment.IsDevelopment())
