@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Abstractions;
 using FlowSynx.Configuration;
 using FlowSynx.Configuration.Options;
+using FlowSynx.Connectors.Manager;
 
 namespace FlowSynx.Core.Features.Config.Query.List;
 
@@ -21,12 +22,12 @@ internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEn
     {
         try
         {
-            var listOptions = new ConfigurationListOptions
+            var listOptions = new ConfigurationListOptions()
             {
-                Fields = request.Fields ?? string.Empty,
-                Filters = request.Filters ?? string.Empty,
-                Sorts = request.Sorts ?? string.Empty,
-                Paging = request.Paging ?? string.Empty,
+                Fields = request.Fields,
+                Filters = request.Filters,
+                Sorts = request.Sorts,
+                Paging = request.Paging,
                 CaseSensitive = request.CaseSensitive ?? false,
             };
 

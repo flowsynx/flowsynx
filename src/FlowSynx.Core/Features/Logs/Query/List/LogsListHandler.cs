@@ -27,11 +27,11 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
         {
             var listOptions = new LogListOptions()
             {
-                Fields = request.Fields ?? string.Empty,
-                Filters = request.Filters ?? string.Empty,
-                CaseSensitive = request.CaseSensitive ?? false,
-                Sorts = request.Sorts ?? string.Empty,
-                Paging = request.Paging ?? string.Empty,
+                Fields = request.Fields,
+                Filters = request.Filters,
+                Sorts = request.Sorts,
+                Paging = request.Paging,
+                CaseSensitive = request.CaseSensitive ?? false
             };
 
             var response = _logManager.List(listOptions);

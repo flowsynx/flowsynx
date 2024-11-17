@@ -27,7 +27,6 @@ internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result
         {
             var listOptions = new ConfigurationListOptions
             {
-                Fields = request.Fields,
                 CaseSensitive = request.CaseSensitive,
                 Filters = request.Filters,
                 Sorts = request.Sorts,

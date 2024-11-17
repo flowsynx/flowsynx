@@ -329,10 +329,10 @@ public class JsonManager: IJsonManager
         var dataFilterOptions = new SelectDataTableOption()
         {
             Fields = GetFields(options.Fields),
-            Filters = GetFilters(options.Filter),
+            Filters = GetFilters(options.Filters),
             Sorts = GetSorts(options.Sort),
-            CaseSensitive = options.CaseSensitive,
             Paging = GetPaging(options.Paging),
+            CaseSensitive = options.CaseSensitive
         };
 
         return dataFilterOptions;
