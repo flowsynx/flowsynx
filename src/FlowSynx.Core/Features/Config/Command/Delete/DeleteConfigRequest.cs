@@ -6,8 +6,8 @@ namespace FlowSynx.Core.Features.Config.Command.Delete;
 
 public class DeleteConfigRequest : IRequest<Result<IEnumerable<DeleteConfigResponse>>>
 {
-    public FiltersList? Filters { get; set; }
-    public SortsList? Sorts { get; set; }
+    public FilterList? Filter { get; set; }
+    public SortList? Sort { get; set; }
     public Paging? Paging { get; set; }
     public bool? CaseSensitive { get; set; } = false;
 }

@@ -477,8 +477,8 @@ internal class CsvManager: ICsvManager
         var dataFilterOptions = new SelectDataOption()
         {
             Fields = GetFields(options.Fields),
-            Filters = GetFilters(options.Filters),
-            Sorts = GetSorts(options.Sort),
+            Filter = GetFilterList(options.Filters),
+            Sort = GetSortList(options.Sort),
             Paging = GetPaging(options.Paging),
             CaseSensitive = options.CaseSensitive
         };
@@ -497,23 +497,23 @@ internal class CsvManager: ICsvManager
         return result;
     }
 
-    private FiltersList GetFilters(string? json)
+    private FilterList GetFilterList(string? json)
     {
-        var result = new FiltersList();
+        var result = new FilterList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FiltersList>(json);
+            result = _deserializer.Deserialize<FilterList>(json);
         }
 
         return result;
     }
 
-    private SortsList GetSorts(string? json)
+    private SortList GetSortList(string? json)
     {
-        var result = new SortsList();
+        var result = new SortList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<SortsList>(json);
+            result = _deserializer.Deserialize<SortList>(json);
         }
 
         return result;

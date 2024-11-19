@@ -28,8 +28,8 @@ internal class DeleteConfigHandler : IRequestHandler<DeleteConfigRequest, Result
             var listOptions = new ConfigurationListOptions
             {
                 CaseSensitive = request.CaseSensitive,
-                Filters = request.Filters,
-                Sorts = request.Sorts,
+                Filter = request.Filter,
+                Sort = request.Sort,
                 Paging = request.Paging
             };
 

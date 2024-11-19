@@ -189,10 +189,10 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         Table = GetTable(options.Table),
         Fields = GetFields(options.Fields),
-        Joins = GetJoins(options.Joins),
-        Filters = GetFilters(options.Filters),
+        Join = GetJoinList(options.Joins),
+        Filter = GetFilterList(options.Filters),
         GroupBy = GetGroupBy(options.GroupBy),
-        Sorts = GetSorts(options.Sorts),
+        Sort = GetSortList(options.Sorts),
         Paging = GetPaging(options.Paging)
     };
 
@@ -212,23 +212,23 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private JoinsList GetJoins(string? json)
+    private JoinList GetJoinList(string? json)
     {
-        var result = new JoinsList();
+        var result = new JoinList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<JoinsList>(json);
+            result = _deserializer.Deserialize<JoinList>(json);
         }
 
         return result;
     }
 
-    private FiltersList GetFilters(string? json)
+    private FilterList GetFilterList(string? json)
     {
-        var result = new FiltersList();
+        var result = new FilterList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FiltersList>(json);
+            result = _deserializer.Deserialize<FilterList>(json);
         }
 
         return result;
@@ -245,12 +245,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private SortsList GetSorts(string? json)
+    private SortList GetSortList(string? json)
     {
-        var result = new SortsList();
+        var result = new SortList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<SortsList>(json);
+            result = _deserializer.Deserialize<SortList>(json);
         }
 
         return result;

@@ -25,8 +25,8 @@ internal class ConfigListHandler : IRequestHandler<ConfigListRequest, Result<IEn
             var listOptions = new ConfigurationListOptions()
             {
                 Fields = request.Fields,
-                Filters = request.Filters,
-                Sorts = request.Sorts,
+                Filter = request.Filter,
+                Sort = request.Sort,
                 Paging = request.Paging,
                 CaseSensitive = request.CaseSensitive ?? false,
             };

@@ -28,8 +28,8 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
             var listOptions = new LogListOptions()
             {
                 Fields = request.Fields,
-                Filters = request.Filters,
-                Sorts = request.Sorts,
+                Filter = request.Filter,
+                Sort = request.Sort,
                 Paging = request.Paging,
                 CaseSensitive = request.CaseSensitive ?? false
             };
