@@ -8,30 +8,26 @@ using FlowSynx.Connectors.Stream.Json.Models;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using Newtonsoft.Json;
 using System.Text;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
-using FlowSynx.Data.DataTableQuery.Queries;
 using FlowSynx.IO.Compression;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Data.DataTableQuery.Queries.Select;
-using FlowSynx.Data.DataTableQuery.Sorting;
+using FlowSynx.Data;
+using FlowSynx.Data.Queries;
 
 namespace FlowSynx.Connectors.Stream.Json.Services;
 
 public class JsonManager: IJsonManager
 {
     private readonly ILogger _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly ISerializer _serializer;
     private string ContentType => "application/json";
     private string Extension => ".json";
 
-    public JsonManager(ILogger logger, IDataTableService dataTableService, IDeserializer deserializer, ISerializer serializer)
+    public JsonManager(ILogger logger, IDataService dataService, IDeserializer deserializer, ISerializer serializer)
     {
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _serializer = serializer;
     }
@@ -96,7 +92,7 @@ public class JsonManager: IJsonManager
         var content = await ReadContent(context, cancellationToken);
         var dataTable = await JsonDataDataTableAsync(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataTableService.Select(dataTable, dataFilterOptions);
+        return _dataService.Select(dataTable, dataFilterOptions);
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -308,7 +304,7 @@ public class JsonManager: IJsonManager
     {
         var dataTable = await JsonDataDataTableAsync(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataTableService.Select(dataTable, dataFilterOptions);
+        return _dataService.Select(dataTable, dataFilterOptions);
     }
 
     private Task<DataTable> JsonDataDataTableAsync(string json, ListOptions options)
@@ -324,9 +320,9 @@ public class JsonManager: IJsonManager
         return Task.FromResult(dataTable);
     }
 
-    private SelectDataTableOption GetFilterOptions(ListOptions options)
+    private SelectDataOption GetFilterOptions(ListOptions options)
     {
-        var dataFilterOptions = new SelectDataTableOption()
+        var dataFilterOptions = new SelectDataOption()
         {
             Fields = GetFields(options.Fields),
             Filters = GetFilters(options.Filters),

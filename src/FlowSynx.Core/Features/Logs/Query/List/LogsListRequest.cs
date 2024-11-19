@@ -1,8 +1,5 @@
 ﻿using FlowSynx.Abstractions;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Sorting;
+using FlowSynx.Data;
 using MediatR;
 
 namespace FlowSynx.Core.Features.Logs.Query.List;

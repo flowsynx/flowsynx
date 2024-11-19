@@ -10,32 +10,28 @@ using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using System.Data;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
-using FlowSynx.Data.DataTableQuery.Queries;
-using FlowSynx.Data.DataTableQuery.Queries.Select;
-using FlowSynx.Data.DataTableQuery.Sorting;
+using FlowSynx.Data;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Storage.Memory.Services;
 
 public class MemoryManager: IMemoryManager
 {
     private readonly ILogger _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly IMemoryMetrics _memoryMetrics;
     private readonly Dictionary<string, Dictionary<string, MemoryEntity>> _entities;
 
-    public MemoryManager(ILogger logger, IDataTableService dataTableService, IDeserializer deserializer, IMemoryMetrics memoryMetrics)
+    public MemoryManager(ILogger logger, IDataService dataService, IDeserializer deserializer, IMemoryMetrics memoryMetrics)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         EnsureArg.IsNotNull(memoryMetrics, nameof(memoryMetrics));
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _entities = new Dictionary<string, Dictionary<string, MemoryEntity>>();
         _memoryMetrics = memoryMetrics;
@@ -152,7 +148,7 @@ public class MemoryManager: IMemoryManager
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions).ConfigureAwait(false);
-        return result.CreateListFromTable();
+        return result.DataTableToList();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -465,8 +461,8 @@ public class MemoryManager: IMemoryManager
         var entities = await EntitiesListAsync(path, listOptions);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
-        var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = entities.ListToDataTable();
+        var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
 
         return filteredEntities;
     }
@@ -524,8 +520,8 @@ public class MemoryManager: IMemoryManager
 
         var dataFilterOptions = GetDataTableOption(listOptions);
 
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = storageEntities.ListToDataTable();
+        var filteredData = _dataService.Select(dataTable, dataFilterOptions);
         var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
@@ -682,7 +678,7 @@ public class MemoryManager: IMemoryManager
         return Task.CompletedTask;
     }
 
-    private SelectDataTableOption GetDataTableOption(ListOptions options) => new()
+    private SelectDataOption GetDataTableOption(ListOptions options) => new()
     {
         Fields = GetFields(options.Fields),
         Filters = GetFilters(options.Filters),

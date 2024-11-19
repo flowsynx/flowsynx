@@ -5,8 +5,8 @@ using FlowSynx.Connectors.Abstractions.Extensions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Stream.Csv.Models;
 using FlowSynx.Connectors.Stream.Csv.Services;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Stream.Csv;
 
@@ -15,14 +15,14 @@ public class CsvConnector : Connector
     private readonly ILogger _logger;
     private CsvSpecifications? _csvStreamSpecifications;
     private readonly IDeserializer _deserializer;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private ICsvManager _manager = null!;
 
-    public CsvConnector(ILogger<CsvConnector> logger, IDataTableService dataTableService, IDeserializer deserializer)
+    public CsvConnector(ILogger<CsvConnector> logger, IDataService dataService, IDeserializer deserializer)
     {
         _logger = logger;
         _deserializer = deserializer;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
     }
 
     public override Guid Id => Guid.Parse("ce2fc15b-cd5e-4eb0-a5b4-22fa714e5cc9");
@@ -35,7 +35,7 @@ public class CsvConnector : Connector
     public override Task Initialize()
     {
         _csvStreamSpecifications = Specifications.ToObject<CsvSpecifications>();
-        _manager = new CsvManager(_logger, _dataTableService, _deserializer, _csvStreamSpecifications);
+        _manager = new CsvManager(_logger, _dataService, _deserializer, _csvStreamSpecifications);
         return Task.CompletedTask;
     }
 
@@ -71,7 +71,7 @@ public class CsvConnector : Connector
         CancellationToken cancellationToken = default)
     {
         var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken);
-        return filteredData.CreateListFromTable();
+        return filteredData.DataTableToList();
     }
 
     public override async Task TransferAsync(Context sourceContext, Context destinationContext,

@@ -11,33 +11,29 @@ using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Storage.Azure.Files.Extensions;
 using FlowSynx.IO.Serialization;
 using System.Data;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
 using FlowSynx.IO.Compression;
-using FlowSynx.Data.DataTableQuery.Queries;
-using FlowSynx.Data.DataTableQuery.Queries.Select;
-using FlowSynx.Data.DataTableQuery.Sorting;
+using FlowSynx.Data;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
 
 public class AzureFilesManager: IAzureFilesManager
 {
     private readonly ILogger _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly ShareClient _client;
 
-    public AzureFilesManager(ILogger logger, ShareClient client, IDataTableService dataTableService, IDeserializer deserializer)
+    public AzureFilesManager(ILogger logger, ShareClient client, IDataService dataService, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _client = client;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
     }
 
@@ -144,7 +140,7 @@ public class AzureFilesManager: IAzureFilesManager
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
-        return result.CreateListFromTable();
+        return result.DataTableToList();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -530,8 +526,8 @@ public class AzureFilesManager: IAzureFilesManager
         var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
-        var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = entities.ListToDataTable();
+        var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
 
         return filteredEntities;
     }
@@ -613,7 +609,7 @@ public class AzureFilesManager: IAzureFilesManager
 
         var dataFilterOptions = GetDataTableOption(listOptions);
 
-        var filteredData = _dataTableService.Select(storageEntities, dataFilterOptions);
+        var filteredData = _dataService.Select(storageEntities, dataFilterOptions);
         var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
@@ -666,7 +662,7 @@ public class AzureFilesManager: IAzureFilesManager
         return result;
     }
 
-    private SelectDataTableOption GetDataTableOption(ListOptions options) => new()
+    private SelectDataOption GetDataTableOption(ListOptions options) => new()
     {
         Fields = GetFields(options.Fields),
         Filters = GetFilters(options.Filters),

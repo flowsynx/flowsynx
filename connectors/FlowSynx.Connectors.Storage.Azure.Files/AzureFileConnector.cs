@@ -6,27 +6,27 @@ using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Connectors.Storage.Azure.Files.Models;
 using FlowSynx.Connectors.Storage.Azure.Files.Services;
-using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.Queries;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files;
 
 public class AzureFileConnector : Connector
 {
     private readonly ILogger<AzureFileConnector> _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly IAzureFilesConnection _connection;
     private IAzureFilesManager _manager = null!;
     private AzureFilesSpecifications? _azureFilesSpecifications;
 
-    public AzureFileConnector(ILogger<AzureFileConnector> logger, IDataTableService dataTableService,
+    public AzureFileConnector(ILogger<AzureFileConnector> logger, IDataService dataService,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _connection = new AzureFilesConnection();
     }
@@ -42,7 +42,7 @@ public class AzureFileConnector : Connector
     {
         _azureFilesSpecifications = Specifications.ToObject<AzureFilesSpecifications>();
         var client = _connection.Connect(_azureFilesSpecifications);
-        _manager = new AzureFilesManager(_logger, client, _dataTableService, _deserializer);
+        _manager = new AzureFilesManager(_logger, client, _dataService, _deserializer);
         return Task.CompletedTask;
     }
 

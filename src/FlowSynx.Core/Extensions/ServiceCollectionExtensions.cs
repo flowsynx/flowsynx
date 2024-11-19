@@ -23,6 +23,7 @@ using FlowSynx.Connectors.Stream.Json;
 using FlowSynx.Connectors.Database.MySql;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Data;
+using FlowSynx.Data.Sql;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -47,7 +48,8 @@ public static class ServiceCollectionExtensions
             .AddFileSystem()
             .AddParsers()
             .AddCompressions()
-            .AddFlowSynxDataService()
+            .AddFlowSynxData()
+            .AddFlowSynxDataSql()
             .AddCache<string, Connector>()
             .AddScoped<IConnectorParser, ConnectorParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()

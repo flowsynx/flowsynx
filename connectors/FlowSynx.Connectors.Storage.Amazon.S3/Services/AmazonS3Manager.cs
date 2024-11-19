@@ -12,35 +12,31 @@ using EnsureThat;
 using FlowSynx.Connectors.Storage.Amazon.S3.Models;
 using FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
 using System.Data;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
-using FlowSynx.Data.DataTableQuery.Queries;
-using FlowSynx.Data.DataTableQuery.Queries.Select;
-using FlowSynx.Data.DataTableQuery.Sorting;
 using FlowSynx.IO.Serialization;
 using FlowSynx.IO.Compression;
+using FlowSynx.Data;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
 
 public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 {
     private readonly ILogger _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly AmazonS3Client _client;
     private readonly TransferUtility _fileTransferUtility;
 
-    public AmazonS3Manager(ILogger logger, AmazonS3Client client, IDataTableService dataTableService, IDeserializer deserializer)
+    public AmazonS3Manager(ILogger logger, AmazonS3Client client, IDataService dataService, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(client, nameof(client));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
         _client = client;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _fileTransferUtility = CreateTransferUtility(_client);
     }
@@ -145,7 +141,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         var filteredEntities = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken);
 
-        return filteredEntities.CreateListFromTable();
+        return filteredEntities.DataTableToList();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -431,8 +427,8 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     {
         var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
         var dataFilterOptions = GetDataTableOption(listOptions);
-        var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = entities.ListToDataTable();
+        var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
 
         return filteredEntities;
     }
@@ -609,8 +605,8 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         var dataFilterOptions = GetDataTableOption(listOptions);
 
-        var dataTable = entities.ToDataTable();
-        var filteredData = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = entities.ListToDataTable();
+        var filteredData = _dataService.Select(dataTable, dataFilterOptions);
         var transferDataRow = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
@@ -664,7 +660,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         return result;
     }
 
-    private SelectDataTableOption GetDataTableOption(ListOptions options) => new()
+    private SelectDataOption GetDataTableOption(ListOptions options) => new()
     {
         Fields = GetFields(options.Fields),
         Filters = GetFilters(options.Filters),

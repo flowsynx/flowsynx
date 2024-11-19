@@ -9,29 +9,25 @@ using FlowSynx.Security;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Extensions;
 using FlowSynx.IO.Serialization;
 using System.Data;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
-using FlowSynx.Data.DataTableQuery.Queries;
 using FlowSynx.IO.Compression;
-using FlowSynx.Data.DataTableQuery.Queries.Select;
-using FlowSynx.Data.DataTableQuery.Sorting;
+using FlowSynx.Data;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem.Services;
 
 public class LocalFileManager : ILocalFileManager
 {
     private readonly ILogger _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
-    public LocalFileManager(ILogger logger, IDataTableService dataTableService, IDeserializer deserializer)
+    public LocalFileManager(ILogger logger, IDataService dataService, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
     }
 
@@ -150,7 +146,7 @@ public class LocalFileManager : ILocalFileManager
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions).ConfigureAwait(false);
-        return result.CreateListFromTable();
+        return result.DataTableToList();
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -420,8 +416,8 @@ public class LocalFileManager : ILocalFileManager
         var entities = await EntitiesListAsync(path, listOptions);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
-        var dataTable = entities.ToDataTable();
-        var filteredEntities = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = entities.ListToDataTable();
+        var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
 
         return filteredEntities;
     }
@@ -469,8 +465,8 @@ public class LocalFileManager : ILocalFileManager
 
         var dataFilterOptions = GetDataTableOption(listOptions);
 
-        var dataTable = storageEntities.ToDataTable();
-        var filteredData = _dataTableService.Select(dataTable, dataFilterOptions);
+        var dataTable = storageEntities.ListToDataTable();
+        var filteredData = _dataService.Select(dataTable, dataFilterOptions);
         var transferDataRows = new List<TransferDataRow>();
 
         foreach (DataRow row in filteredData.Rows)
@@ -523,7 +519,7 @@ public class LocalFileManager : ILocalFileManager
         return result;
     }
 
-    private SelectDataTableOption GetDataTableOption(ListOptions options) => new()
+    private SelectDataOption GetDataTableOption(ListOptions options) => new()
     {
         Fields = GetFields(options.Fields),
         Filters = GetFilters(options.Filters),

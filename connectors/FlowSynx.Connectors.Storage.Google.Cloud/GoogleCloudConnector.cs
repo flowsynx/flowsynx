@@ -6,28 +6,28 @@ using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Storage.Google.Cloud.Models;
 using FlowSynx.Connectors.Storage.Google.Cloud.Services;
-using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.Queries;
 
 namespace FlowSynx.Connectors.Storage.Google.Cloud;
 
 public class GoogleCloudConnector : Connector
 {
     private readonly ILogger<GoogleCloudConnector> _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly IGoogleCloudConnection _connection;
     private IGoogleCloudManager _manager = null!;
     private GoogleCloudSpecifications _googleCloudSpecifications = null!;
 
-    public GoogleCloudConnector(ILogger<GoogleCloudConnector> logger, IDataTableService dataTableService, 
+    public GoogleCloudConnector(ILogger<GoogleCloudConnector> logger, IDataService dataService, 
         ISerializer serializer, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(serializer, nameof(serializer));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _connection = new GoogleCloudConnection(serializer);
     }
@@ -43,7 +43,7 @@ public class GoogleCloudConnector : Connector
     {
         _googleCloudSpecifications = Specifications.ToObject<GoogleCloudSpecifications>();
         var client = _connection.Connect(_googleCloudSpecifications);
-        _manager = new GoogleCloudManager(_logger, client, _googleCloudSpecifications, _dataTableService, _deserializer);
+        _manager = new GoogleCloudManager(_logger, client, _googleCloudSpecifications, _dataService, _deserializer);
         return Task.CompletedTask;
     }
 

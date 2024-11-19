@@ -3,34 +3,30 @@ using System.Text;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Stream.Csv.Models;
-using FlowSynx.Data.DataTableQuery.Pagination;
-using FlowSynx.Data.DataTableQuery.Fields;
-using FlowSynx.Data.DataTableQuery.Filters;
-using FlowSynx.Data.DataTableQuery.Queries;
-using FlowSynx.Data.DataTableQuery.Queries.Select;
-using FlowSynx.Data.DataTableQuery.Sorting;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data;
 
 namespace FlowSynx.Connectors.Stream.Csv.Services;
 
 internal class CsvManager: ICsvManager
 {
     private readonly ILogger _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly CsvSpecifications _specifications;
 
     private string ContentType => "text/csv";
     private string Extension => ".csv";
 
-    public CsvManager(ILogger logger, IDataTableService dataTableService, IDeserializer deserializer, 
+    public CsvManager(ILogger logger, IDataService dataService, IDeserializer deserializer, 
         CsvSpecifications specifications)
     {
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _specifications = specifications;
     }
@@ -360,7 +356,7 @@ internal class CsvManager: ICsvManager
     {
         var dataTable = GetData(content, delimiter, listOptions.IncludeMetadata);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataTableService.Select(dataTable, dataFilterOptions);
+        return _dataService.Select(dataTable, dataFilterOptions);
     }
 
     private DataTable GetData(string content, string delimiter, bool? includeMetadata)
@@ -476,9 +472,9 @@ internal class CsvManager: ICsvManager
         return true;
     }
 
-    private SelectDataTableOption GetFilterOptions(ListOptions options)
+    private SelectDataOption GetFilterOptions(ListOptions options)
     {
-        var dataFilterOptions = new SelectDataTableOption()
+        var dataFilterOptions = new SelectDataOption()
         {
             Fields = GetFields(options.Fields),
             Filters = GetFilters(options.Filters),

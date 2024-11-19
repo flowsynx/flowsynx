@@ -5,25 +5,25 @@ using FlowSynx.IO.Compression;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Models;
 using FlowSynx.Connectors.Storage.LocalFileSystem.Services;
-using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.Queries;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem;
 
 public class LocalFileSystemConnector : Connector
 {
     private readonly ILogger<LocalFileSystemConnector> _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private ILocalFileManager _manager = null!;
 
-    public LocalFileSystemConnector(ILogger<LocalFileSystemConnector> logger, IDataTableService dataTableService,
+    public LocalFileSystemConnector(ILogger<LocalFileSystemConnector> logger, IDataService dataService,
         IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
     }
 
@@ -36,7 +36,7 @@ public class LocalFileSystemConnector : Connector
 
     public override Task Initialize()
     {
-        _manager = new LocalFileManager(_logger, _dataTableService, _deserializer);
+        _manager = new LocalFileManager(_logger, _dataService, _deserializer);
         return Task.CompletedTask;
     }
 

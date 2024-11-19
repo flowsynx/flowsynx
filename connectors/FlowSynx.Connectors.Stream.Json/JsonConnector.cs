@@ -4,8 +4,8 @@ using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Connectors.Stream.Json.Models;
 using FlowSynx.Connectors.Stream.Json.Services;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.Queries;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Stream.Json;
 
@@ -13,10 +13,10 @@ public class JsonConnector : Connector
 {
     private readonly IJsonManager _manager;
 
-    public JsonConnector(ILogger<JsonConnector> logger, IDataTableService dataTableService,
+    public JsonConnector(ILogger<JsonConnector> logger, IDataService dataService,
         IDeserializer deserializer, ISerializer serializer)
     {
-        _manager = new JsonManager(logger, dataTableService, deserializer, serializer);
+        _manager = new JsonManager(logger, dataService, deserializer, serializer);
     }
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");
@@ -63,7 +63,7 @@ public class JsonConnector : Connector
         CancellationToken cancellationToken = default)
     {
         var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken);
-        return filteredData.CreateListFromTable();
+        return filteredData.DataTableToList();
     }
 
     public override async Task TransferAsync(Context sourceContext, Context destinationContext, 

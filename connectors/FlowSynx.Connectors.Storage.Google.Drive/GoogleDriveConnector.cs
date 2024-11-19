@@ -6,27 +6,27 @@ using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Storage.Google.Drive.Models;
 using FlowSynx.Connectors.Storage.Google.Drive.Services;
-using FlowSynx.Data.DataTableQuery.Queries;
+using FlowSynx.Data.Queries;
 
 namespace FlowSynx.Connectors.Storage.Google.Drive;
 
 public class GoogleDriveConnector : Connector
 {
     private readonly ILogger<GoogleDriveConnector> _logger;
-    private readonly IDataTableService _dataTableService;
+    private readonly IDataService _dataService;
     private readonly IDeserializer _deserializer;
     private readonly IGoogleDriveConnection _connection;
     private IGoogleDriveManager _manager = null!;
     private GoogleDriveSpecifications _googleDriveSpecifications = null!;
 
-    public GoogleDriveConnector(ILogger<GoogleDriveConnector> logger, IDataTableService dataTableService, 
+    public GoogleDriveConnector(ILogger<GoogleDriveConnector> logger, IDataService dataService, 
         ISerializer serializer, IDeserializer deserializer)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(dataTableService, nameof(dataTableService));
+        EnsureArg.IsNotNull(dataService, nameof(dataService));
         EnsureArg.IsNotNull(deserializer, nameof(deserializer));
         _logger = logger;
-        _dataTableService = dataTableService;
+        _dataService = dataService;
         _deserializer = deserializer;
         _connection = new GoogleDriveConnection(serializer);
     }
@@ -42,7 +42,7 @@ public class GoogleDriveConnector : Connector
     {
         _googleDriveSpecifications = Specifications.ToObject<GoogleDriveSpecifications>();
         var client = _connection.Connect(_googleDriveSpecifications);
-        _manager = new GoogleDriveManager(_logger, client, _googleDriveSpecifications, _dataTableService, _deserializer);
+        _manager = new GoogleDriveManager(_logger, client, _googleDriveSpecifications, _dataService, _deserializer);
         return Task.CompletedTask;
     }
 

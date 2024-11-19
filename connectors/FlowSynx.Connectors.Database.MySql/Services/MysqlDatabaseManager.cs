@@ -9,17 +9,9 @@ using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using System.Data;
-using FlowSynx.Data.DataTableQuery.Extensions;
-using FlowSynx.Data.SqlQuery;
-using FlowSynx.Data.SqlQuery.Pagination;
-using FlowSynx.Data.SqlQuery.Fields;
-using FlowSynx.Data.SqlQuery.Filters;
-using FlowSynx.Data.SqlQuery.Grouping;
-using FlowSynx.Data.SqlQuery.Joins;
 using FlowSynx.Data.SqlQuery.Queries;
-using FlowSynx.Data.SqlQuery.Queries.Select;
-using FlowSynx.Data.SqlQuery.Sorting;
-using FlowSynx.Data.SqlQuery.Tables;
+using FlowSynx.Data.Sql;
+using FlowSynx.Data.Extensions;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -154,7 +146,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         var dataTable = new DataTable();
         dataTable.Load(reader);
-        return dataTable.CreateListFromTable();
+        return dataTable.DataTableToList();
     }
 
     public Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
