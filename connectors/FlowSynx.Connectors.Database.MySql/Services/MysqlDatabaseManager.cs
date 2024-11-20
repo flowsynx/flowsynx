@@ -9,9 +9,9 @@ using FlowSynx.IO.Serialization;
 using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using System.Data;
-using FlowSynx.Data.SqlQuery.Queries;
 using FlowSynx.Data.Sql;
 using FlowSynx.Data.Extensions;
+using FlowSynx.Data.Sql.Builder;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -20,18 +20,18 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
-    private readonly ISqlService _sqlService;
+    private readonly ISqlBuilder _sqlBuilder;
     private readonly MySqlConnection _connection;
     private readonly Format _format;
 
     public MysqlDatabaseManager(ILogger logger, MySqlConnection connection, 
-        ISerializer serializer, IDeserializer deserializer, ISqlService sqlService)
+        ISerializer serializer, IDeserializer deserializer, ISqlBuilder sqlBuilder)
     {
         _logger = logger;
         _connection = connection;
         _serializer = serializer;
         _deserializer = deserializer;
-        _sqlService = sqlService;
+        _sqlBuilder = sqlBuilder;
         _format = Format.MySql;
     }
 
@@ -137,7 +137,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var listOptions = context.Options.ToObject<ListOptions>();
         
         var selectSqlOption = GetSelectOption(listOptions);
-        var sql = sqlOptions.Sql ?? _sqlService.Select(_format, selectSqlOption);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -185,7 +185,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return jsonString;
     }
 
-    private SelectSqlOption GetSelectOption(ListOptions options) => new()
+    private SelectOption GetSelectOption(ListOptions options) => new()
     {
         Table = GetTable(options.Table),
         Fields = GetFields(options.Fields),
