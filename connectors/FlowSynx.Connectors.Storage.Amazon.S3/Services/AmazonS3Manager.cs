@@ -663,8 +663,8 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     private SelectDataOption GetDataTableOption(ListOptions options) => new()
     {
         Fields = GetFields(options.Fields),
-        Filter = GetFilterList(options.Filters),
-        Sort = GetSortList(options.Sorts),
+        Filter = GetFilterList(options.Filter),
+        Sort = GetSortList(options.Sort),
         CaseSensitive = options.CaseSensitive,
         Paging = GetFetch(options.Paging),
     };

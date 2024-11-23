@@ -665,8 +665,8 @@ public class AzureFilesManager: IAzureFilesManager
     private SelectDataOption GetDataTableOption(ListOptions options) => new()
     {
         Fields = GetFields(options.Fields),
-        Filter = GetFilterList(options.Filters),
-        Sort = GetSortList(options.Sorts),
+        Filter = GetFilterList(options.Filter),
+        Sort = GetSortList(options.Sort),
         CaseSensitive = options.CaseSensitive,
         Paging = GetPaging(options.Paging),
     };
