@@ -49,7 +49,7 @@ public static class ServiceCollectionExtensions
             .AddParsers()
             .AddCompressions()
             .AddFlowSynxData()
-            .AddFlowSynxDataSql()
+            .AddFlowSynxSqlBuilder()
             .AddCache<string, Connector>()
             .AddScoped<IConnectorParser, ConnectorParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
