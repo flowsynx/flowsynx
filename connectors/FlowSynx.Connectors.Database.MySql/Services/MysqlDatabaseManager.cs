@@ -48,7 +48,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        var sql = sqlOptions.Sql;
+        var createTableOption = GetCreateOption(createOptions);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Create(_format, createTableOption);
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -69,13 +70,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var writeFilters = context.Options.ToObject<WriteOptions>();
 
-        var sql = sqlOptions.Sql;
+        var insertOption = GetInsertOption(writeFilters);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Insert(_format, insertOption);
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
-        if (!sql.IsInsertStatement())
-            throw new DatabaseException("The enterted sql statement is not valid Insert statement!");
 
         var command = new MySqlCommand(sql, _connection);
         int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -91,6 +90,9 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var readOptions = context.Options.ToObject<ReadOptions>();
 
         var sql = sqlOptions.Sql;
+
+        if (string.IsNullOrEmpty(sql))
+            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
 
         if (string.IsNullOrEmpty(sql))
             throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
@@ -185,20 +187,39 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return jsonString;
     }
 
+    private CreateOption GetCreateOption(CreateOptions options) => new()
+    {
+        Name = options.Name,
+        Fields = GetCreateTableFields(options.Fields)
+    };
+
+    private InsertOption GetInsertOption(WriteOptions options) => new()
+    {
+        Table = options.Table,
+        Fields = GetFields(options.Fields),
+        Values = GetValueList(options.Values)
+    };
+
     private SelectOption GetSelectOption(ListOptions options) => new()
     {
-        Table = GetTable(options.Table),
+        Table = options.Table,
         Fields = GetFields(options.Fields),
-        Join = GetJoinList(options.Joins),
-        Filter = GetFilterList(options.Filters),
+        Join = GetJoinList(options.Join),
+        Filter = GetFilterList(options.Filter),
         GroupBy = GetGroupBy(options.GroupBy),
-        Sort = GetSortList(options.Sorts),
+        Sort = GetSortList(options.Sort),
         Paging = GetPaging(options.Paging)
     };
 
-    private Table GetTable(string json)
+    private CreateTableFieldList GetCreateTableFields(string? json)
     {
-        return _deserializer.Deserialize<Table>(json);
+        var result = new CreateTableFieldList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<CreateTableFieldList>(json);
+        }
+
+        return result;
     }
 
     private FieldsList GetFields(string? json)
@@ -207,6 +228,17 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         if (!string.IsNullOrEmpty(json))
         {
             result = _deserializer.Deserialize<FieldsList>(json);
+        }
+
+        return result;
+    }
+
+    private ValueList GetValueList(string? json)
+    {
+        var result = new ValueList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<ValueList>(json);
         }
 
         return result;
