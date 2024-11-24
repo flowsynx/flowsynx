@@ -2,5 +2,6 @@
 
 public class DeleteOptions
 {
-
+    public string Table { get; set; } = string.Empty;
+    public string? Filter { get; set; }
 }

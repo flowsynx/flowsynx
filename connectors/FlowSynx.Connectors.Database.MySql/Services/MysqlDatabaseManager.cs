@@ -115,9 +115,23 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        if (context.ConnectorContext?.Current is not null)
+            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var deleteOptions = context.Options.ToObject<DeleteOptions>();
+
+        var deleteOption = GetDeleteOption(deleteOptions);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Delete(_format, deleteOption);
+
+        if (string.IsNullOrEmpty(sql))
+            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
+
+        var command = new MySqlCommand(sql, _connection);
+        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+        _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
     }
 
     public Task PurgeAsync(Context context, CancellationToken cancellationToken)
@@ -189,15 +203,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
 
     private CreateOption GetCreateOption(CreateOptions options) => new()
     {
-        Name = options.Name,
-        Fields = GetCreateTableFields(options.Fields)
-    };
-
-    private InsertOption GetInsertOption(WriteOptions options) => new()
-    {
         Table = options.Table,
-        Fields = GetFields(options.Fields),
-        Values = GetValueList(options.Values)
+        Fields = GetCreateTableFields(options.Fields)
     };
 
     private SelectOption GetSelectOption(ListOptions options) => new()
@@ -209,6 +216,19 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         GroupBy = GetGroupBy(options.GroupBy),
         Sort = GetSortList(options.Sort),
         Paging = GetPaging(options.Paging)
+    };
+
+    private InsertOption GetInsertOption(WriteOptions options) => new()
+    {
+        Table = options.Table,
+        Fields = GetFields(options.Fields),
+        Values = GetValueList(options.Values)
+    };
+
+    private DeleteOption GetDeleteOption(DeleteOptions options) => new()
+    {
+        Table = options.Table,
+        Filter = GetFilterList(options.Filter)
     };
 
     private CreateTableFieldList GetCreateTableFields(string? json)
