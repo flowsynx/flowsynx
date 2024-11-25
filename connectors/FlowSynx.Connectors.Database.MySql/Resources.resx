@@ -120,4 +120,10 @@
   <data name="ConnectorDescription" xml:space="preserve">
     <value>Connector for connect and manage the MySql RDBMS.</value>
   </data>
+  <data name="AboutOperrationNotSupported" xml:space="preserve">
+    <value>About operation is not supported for MySql database!</value>
+  </data>
+  <data name="CalleeConnectorNotSupported" xml:space="preserve">
+    <value>MySql connector doesn't support as callee connector!</value>
+  </data>
 </root>

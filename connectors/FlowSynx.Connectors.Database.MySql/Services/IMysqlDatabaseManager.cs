@@ -18,8 +18,6 @@ public interface IMysqlDatabaseManager
 
     Task DeleteAsync(Context context, CancellationToken cancellationToken);
 
-    Task PurgeAsync(Context context, CancellationToken cancellationToken);
-
     Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
 
     Task<IEnumerable<object>> EntitiesAsync(Context context, CancellationToken cancellationToken);

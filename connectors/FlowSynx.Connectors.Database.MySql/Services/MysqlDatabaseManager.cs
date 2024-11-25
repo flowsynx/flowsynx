@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Database.MySql.Exceptions;
-using FlowSynx.Connectors.Database.MySql.Extensions;
 using FlowSynx.Connectors.Database.MySql.Models;
 using FlowSynx.IO;
 using FlowSynx.IO.Compression;
@@ -37,71 +36,59 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
 
     public Task<object> About(Context context, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (context.ConnectorContext?.Current is not null)
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
+
+        throw new DatabaseException(Resources.AboutOperrationNotSupported);
     }
 
     public async Task CreateAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         var createTableOption = GetCreateOption(createOptions);
         var sql = sqlOptions.Sql ?? _sqlBuilder.Create(_format, createTableOption);
-
-        if (string.IsNullOrEmpty(sql))
-            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
-        if (sql.IsCreateDatabaseStatement())
-            throw new DatabaseException("Create database statement is not allowed!");
-
+        
         var command = new MySqlCommand(sql, _connection);
-        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Created {rowsAffected} row(s)!");
     }
 
     public async Task WriteAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var writeFilters = context.Options.ToObject<WriteOptions>();
 
         var insertOption = GetInsertOption(writeFilters);
         var sql = sqlOptions.Sql ?? _sqlBuilder.Insert(_format, insertOption);
-
-        if (string.IsNullOrEmpty(sql))
-            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
+        
         var command = new MySqlCommand(sql, _connection);
-        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Inserted {rowsAffected} row(s)!");
     }
 
     public async Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var readOptions = context.Options.ToObject<ReadOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
 
-        var sql = sqlOptions.Sql;
-
-        if (string.IsNullOrEmpty(sql))
-            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
-        if (string.IsNullOrEmpty(sql))
-            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
+        var selectSqlOption = GetSelectOption(listOptions);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
+        
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         var dataTable = new DataTable();
         dataTable.Load(reader);
-
         return dataTable.Rows.Count switch
         {
             <= 0 => throw new DatabaseException("string.Format(Resources.NoItemsFoundWithTheGivenFilter)"),
@@ -118,46 +105,49 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
 
         var deleteOption = GetDeleteOption(deleteOptions);
         var sql = sqlOptions.Sql ?? _sqlBuilder.Delete(_format, deleteOption);
-
-        if (string.IsNullOrEmpty(sql))
-            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
+        
         var command = new MySqlCommand(sql, _connection);
-        int rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
+
+        if (deleteOptions.Purge is true)
+            await PurgeAsync(deleteOptions.Table, cancellationToken);
     }
 
-    public Task PurgeAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
-    }
+        if (context.ConnectorContext?.Current is not null)
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
-    public Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(true);
+        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        var listOptions = context.Options.ToObject<ListOptions>();
+
+        var selectSqlOption = GetSelectOption(listOptions);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
+        
+        var command = new MySqlCommand(sql, _connection);
+        var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return reader.HasRows;
     }
 
     public async Task<IEnumerable<object>> EntitiesAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException("Resources.CalleeConnectorNotSupported");
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         
         var selectSqlOption = GetSelectOption(listOptions);
         var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
-
-        if (string.IsNullOrEmpty(sql))
-            throw new DatabaseException("Resources.TheSpecifiedPathMustBeNotEmpty");
-
+        
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         var dataTable = new DataTable();
@@ -186,6 +176,15 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     Context context, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
+    }
+
+    private async Task PurgeAsync(string tableName, CancellationToken cancellationToken)
+    {
+        var selectSqlOption = GetDropTableOption(tableName);
+        var sql = _sqlBuilder.DropTable(_format, selectSqlOption);
+        var command = new MySqlCommand(sql, _connection);
+        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+        _logger.LogInformation($"Drop table successfully!");
     }
 
     private string ToString(DataTable dataTable, bool? indented)
@@ -229,6 +228,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         Table = options.Table,
         Filter = GetFilterList(options.Filter)
+    };
+
+    private DropTableOption GetDropTableOption(string tableName) => new()
+    {
+        Table = tableName,
     };
 
     private CreateTableFieldList GetCreateTableFields(string? json)
