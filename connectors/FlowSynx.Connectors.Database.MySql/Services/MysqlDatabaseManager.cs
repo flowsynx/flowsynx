@@ -155,10 +155,14 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return dataTable.DataTableToList();
     }
 
-    public Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (destinationContext.ConnectorContext?.Current is null)
+            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
+        
+        var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
     }
 
     public Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
