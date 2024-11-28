@@ -273,4 +273,7 @@
   <data name="AddConfigValidatorNameValueOnlyAcceptLatingCharacters" xml:space="preserve">
     <value>The config name accepts only Latin letters and numbers, as well as underscores. Additionally, the name must begin with an alphabetic letter.</value>
   </data>
+  <data name="TransferKindValidatorTypeValueShouldBeValidMessage" xml:space="preserve">
+    <value>TransferKind value must be Copy or Move. By default it is Copy.</value>
+  </data>
 </root>

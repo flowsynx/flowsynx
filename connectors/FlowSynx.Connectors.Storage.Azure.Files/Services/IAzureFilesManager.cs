@@ -1,6 +1,4 @@
-﻿using Azure.Storage.Files.Shares.Models;
-using FlowSynx.Connectors.Abstractions;
-using FlowSynx.Connectors.Storage.Options;
+﻿using FlowSynx.Connectors.Abstractions;
 using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
@@ -24,9 +22,10 @@ public interface IAzureFilesManager
     Task<IEnumerable<object>> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
 
     Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        CancellationToken cancellationToken);
+        TransferKind transferKind, CancellationToken cancellationToken);
 
-    Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken);
+    Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+        CancellationToken cancellationToken);
 
     Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

@@ -96,16 +96,17 @@ public class JsonManager: IJsonManager
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-    CancellationToken cancellationToken)
+        TransferKind transferKind, CancellationToken cancellationToken)
     {
         if (destinationContext.ConnectorContext?.Current is null)
             throw new StreamException(Resources.CalleeConnectorNotSupported);
 
         var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     }
 
-    public async Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+        CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
@@ -510,7 +511,6 @@ public class JsonManager: IJsonManager
         {
             Namespace = @namespace,
             ConnectorType = type,
-            Kind = transferKind,
             ContentType = isSeparateJsonPerRow ? string.Empty : ContentType,
             Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
             Columns = GetColumnNames(filteredData),

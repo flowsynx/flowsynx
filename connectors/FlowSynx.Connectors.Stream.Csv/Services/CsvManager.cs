@@ -116,16 +116,17 @@ internal class CsvManager: ICsvManager
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        CancellationToken cancellationToken)
+        TransferKind transferKind, CancellationToken cancellationToken)
     {
         if (destinationContext.ConnectorContext?.Current is null)
             throw new StreamException(Resources.CalleeConnectorNotSupported);
 
         var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     }
 
-    public async Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+        CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var transferOptions = context.Options.ToObject<TransferOptions>();
@@ -414,7 +415,6 @@ internal class CsvManager: ICsvManager
         {
             Namespace = @namespace,
             ConnectorType = type,
-            Kind = TransferKind.Copy,
             ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
             Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
             Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),

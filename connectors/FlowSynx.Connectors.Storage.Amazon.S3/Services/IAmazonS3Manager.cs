@@ -22,9 +22,10 @@ public interface IAmazonS3Manager
     Task<IEnumerable<object>> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
 
     Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        CancellationToken cancellationToken);
+        TransferKind transferKind, CancellationToken cancellationToken);
 
-    Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken);
+    Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+        CancellationToken cancellationToken);
 
     Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

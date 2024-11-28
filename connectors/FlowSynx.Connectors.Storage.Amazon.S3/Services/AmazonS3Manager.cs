@@ -145,7 +145,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        CancellationToken cancellationToken = default)
+        TransferKind transferKind, CancellationToken cancellationToken = default)
     {
         if (destinationContext.ConnectorContext?.Current is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -161,11 +161,11 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     }
 
     public async Task ProcessTransferAsync(Context context, TransferData transferData,
-        CancellationToken cancellationToken = default)
+        TransferKind transferKind, CancellationToken cancellationToken = default)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
@@ -652,7 +652,6 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         {
             Namespace = @namespace,
             ConnectorType = type,
-            Kind = TransferKind.Copy,
             Columns = columnNames,
             Rows = transferDataRow
         };

@@ -144,7 +144,7 @@ public class AzureFilesManager: IAzureFilesManager
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-    CancellationToken cancellationToken)
+        TransferKind transferKind, CancellationToken cancellationToken)
     {
         if (destinationContext.ConnectorContext?.Current is null)
             throw new StorageException(Resources.CalleeConnectorNotSupported);
@@ -161,10 +161,11 @@ public class AzureFilesManager: IAzureFilesManager
         foreach (var row in transferData.Rows)
             row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     }
 
-    public async Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+        CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
@@ -654,7 +655,6 @@ public class AzureFilesManager: IAzureFilesManager
         {
             Namespace = @namespace,
             ConnectorType = type,
-            Kind = TransferKind.Copy,
             Columns = columnNames,
             Rows = transferDataRows
         };

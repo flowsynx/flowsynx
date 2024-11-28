@@ -502,6 +502,15 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to TransferKind value must be Copy or Move. By default it is Copy..
+        /// </summary>
+        internal static string TransferKindValidatorTypeValueShouldBeValidMessage {
+            get {
+                return ResourceManager.GetString("TransferKindValidatorTypeValueShouldBeValidMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The file was writen successfully..
         /// </summary>
         internal static string WriteHandlerSuccessfullyWriten {

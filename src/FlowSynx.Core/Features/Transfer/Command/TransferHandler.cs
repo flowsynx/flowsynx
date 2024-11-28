@@ -5,6 +5,7 @@ using FlowSynx.Abstractions;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
+using FlowSynx.Commons;
 
 namespace FlowSynx.Core.Features.Transfer.Command;
 
@@ -25,6 +26,10 @@ internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
     {
         try
         {
+            var transferKind = string.IsNullOrEmpty(request.TransferKind)
+                ? TransferKind.Copy
+                : EnumUtils.GetEnumValueOrDefault<TransferKind>(request.TransferKind)!.Value;
+
             var sourceConnectorContext = _connectorParser.Parse(request.From.Connector);
             var sourceOptions = request.From.Options.ToConnectorOptions();
             var sourceContext = new Context(sourceOptions, sourceConnectorContext.Next);
@@ -33,7 +38,7 @@ internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
             var destinationOptions = request.To.Options.ToConnectorOptions();
             var destinationContext = new Context(destinationOptions, destinationConnectorContext);
 
-            await sourceConnectorContext.Current.TransferAsync(sourceContext, destinationContext,cancellationToken);
+            await sourceConnectorContext.Current.TransferAsync(sourceContext, destinationContext, transferKind, cancellationToken);
 
             return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }
