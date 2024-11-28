@@ -79,12 +79,13 @@ public class MySqlConnector : Connector
         await _manager.EntitiesAsync(context, cancellationToken).ConfigureAwait(false);
 
     public override async Task TransferAsync(Context sourceContext, Context destinationContext,
-        CancellationToken cancellationToken = default) =>
-        await _manager.TransferAsync(Namespace, Type, sourceContext, destinationContext, cancellationToken).ConfigureAwait(false);
+        TransferKind transferKind, CancellationToken cancellationToken = default) =>
+        await _manager.TransferAsync(Namespace, Type, sourceContext, destinationContext, transferKind, 
+            cancellationToken).ConfigureAwait(false);
 
     public override async Task ProcessTransferAsync(Context context, TransferData transferData,
-        CancellationToken cancellationToken = default) =>
-        await _manager.ProcessTransferAsync(context, transferData, cancellationToken).ConfigureAwait(false);
+        TransferKind transferKind, CancellationToken cancellationToken = default) =>
+        await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
         CancellationToken cancellationToken = default) =>

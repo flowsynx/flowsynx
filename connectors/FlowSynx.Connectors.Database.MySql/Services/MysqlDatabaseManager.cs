@@ -11,6 +11,7 @@ using System.Data;
 using FlowSynx.Data.Sql;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Sql.Builder;
+using System.Text;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -127,10 +128,10 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var sqlOptions = context.Options.ToObject<SqlOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
+        var existOptions = context.Options.ToObject<ExistOptions>();
 
-        var selectSqlOption = GetSelectOption(listOptions);
-        var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
+        var existtSqlOption = GetExistOption(existOptions);
+        var sql = sqlOptions.Sql ?? _sqlBuilder.Exist(_format, existtSqlOption);
         
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -156,18 +157,56 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-    CancellationToken cancellationToken)
+        TransferKind transferKind, CancellationToken cancellationToken)
     {
         if (destinationContext.ConnectorContext?.Current is null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
         
         var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, cancellationToken);
+        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     }
 
-    public Task ProcessTransferAsync(Context context, TransferData transferData, CancellationToken cancellationToken)
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+        CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var createOptions = context.Options.ToObject<CreateOptions>();
+        var writeOptions = context.Options.ToObject<WriteOptions>();
+
+        await BulkInsert(transferData, "", cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task BulkInsert(TransferData transferData, string tableName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            StringBuilder sb = new StringBuilder();
+            var columnNames = transferData.Columns.ToArray();
+            var columns = string.Join(",", columnNames);
+            sb.Append($"INSERT INTO {tableName} ({columns}) VALUES ");
+
+            if (transferData.Rows.Any())
+            {
+                foreach (var dr in transferData.Rows)
+                {
+                    if (dr != null)
+                    {
+                        var row = string.Join(",", dr.Items.Select(x=>x.ToString()));
+                        sb.Append($"({row}),");
+                    }
+                }
+
+                var command = new MySqlCommand(sb.ToString(), _connection);
+                var reader = await command.ExecuteReaderAsync(cancellationToken);
+            }
+            else
+            {
+                throw new Exception("No row for insertion");
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Please attach file in Proper format.");
+        }
     }
 
     public Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
@@ -219,6 +258,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         GroupBy = GetGroupBy(options.GroupBy),
         Sort = GetSortList(options.Sort),
         Paging = GetPaging(options.Paging)
+    };
+
+    private ExistOption GetExistOption(ExistOptions options) => new()
+    {
+        Table = options.Table,
+        Filter = GetFilterList(options.Filter)
     };
 
     private InsertOption GetInsertOption(WriteOptions options) => new()
