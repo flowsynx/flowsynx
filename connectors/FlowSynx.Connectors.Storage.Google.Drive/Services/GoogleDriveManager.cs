@@ -604,12 +604,11 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         if (!fullPathFieldExist)
             filteredData.Columns.Remove("FullPath");
 
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
         var result = new TransferData
         {
             Namespace = @namespace,
             ConnectorType = type,
-            Columns = columnNames,
+            Columns = GetTransferDataColumn(filteredData),
             Rows = transferDataRows
         };
 
@@ -804,6 +803,12 @@ internal class GoogleDriveManager : IGoogleDriveManager, IDisposable
         }
 
         return result;
+    }
+
+    private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
+    {
+        return dataTable.Columns.Cast<DataColumn>()
+            .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
     }
     #endregion
 }

@@ -138,7 +138,12 @@ internal class CsvManager: ICsvManager
         var dataTable = new DataTable();
 
         foreach (var column in transferData.Columns)
-            dataTable.Columns.Add(column);
+        {
+            if (column.DataType is null)
+                dataTable.Columns.Add(column.Name);
+            else
+                dataTable.Columns.Add(column.Name, column.DataType);
+        }
 
         if (transferOptions.SeparateCsvPerRow is true)
         {
@@ -153,7 +158,7 @@ internal class CsvManager: ICsvManager
                     newRow.ItemArray = row.Items;
                     dataTable.Rows.Add(newRow);
 
-                    var data = ToCsv(newRow, transferData.Columns.ToArray(), delimiter);
+                    var data = ToCsv(newRow, transferData.Columns.Select(x=>x.Name).ToArray(), delimiter);
                     var newPath = transferData.Namespace == Namespace.Storage
                         ? row.Key
                         : PathHelper.Combine(path, row.Key);
@@ -417,7 +422,7 @@ internal class CsvManager: ICsvManager
             ConnectorType = type,
             ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
             Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
-            Columns = filteredData.Columns.Cast<DataColumn>().Select(x => x.ColumnName),
+            Columns = GetTransferDataColumn(filteredData),
             Rows = transferDataRows
         };
     }
@@ -655,6 +660,12 @@ internal class CsvManager: ICsvManager
     {
         var contentHash = Security.HashHelper.Md5.GetHash(content);
         return contentHash;
+    }
+
+    private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
+    {
+        return dataTable.Columns.Cast<DataColumn>()
+            .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
     }
     #endregion
 }

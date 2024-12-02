@@ -117,7 +117,12 @@ public class JsonManager: IJsonManager
         var dataTable = new DataTable();
 
         foreach (var column in transferData.Columns)
-            dataTable.Columns.Add(column);
+        {
+            if (column.DataType is null)
+                dataTable.Columns.Add(column.Name);
+            else
+                dataTable.Columns.Add(column.Name, column.DataType);
+        }
 
         if (transferOptions.SeparateJsonPerRow)
         {
@@ -513,7 +518,7 @@ public class JsonManager: IJsonManager
             ConnectorType = type,
             ContentType = isSeparateJsonPerRow ? string.Empty : ContentType,
             Content = isSeparateJsonPerRow ? string.Empty : jsonContentBase64,
-            Columns = GetColumnNames(filteredData),
+            Columns = GetTransferDataColumn(filteredData),
             Rows = GenerateTransferDataRow(filteredData, indentedOptions.Indented)
         };
 
@@ -618,9 +623,10 @@ public class JsonManager: IJsonManager
         return result;
     }
     
-    private IEnumerable<string> GetColumnNames(DataTable dataTable)
+    private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
     {
-        return dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName);
+        return dataTable.Columns.Cast<DataColumn>()
+            .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
     }
 
     private IEnumerable<TransferDataRow> GenerateTransferDataRow(DataTable dataTable, bool? indented = false)
