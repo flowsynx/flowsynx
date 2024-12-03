@@ -12,8 +12,6 @@ using FlowSynx.Data.Sql;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Sql.Builder;
 using System.Text;
-using System.Threading;
-using System.Runtime.ConstrainedExecution;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -312,8 +310,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     private InsertOption GetInsertOption(WriteOptions options) => new()
     {
         Table = options.Table,
-        Fields = GetFields(options.Fields),
-        Values = GetValueList(options.Values)
+        Fields = GetInsertFields(options.Fields),
+        Values = GetInsertValueList(options.Values)
     };
 
     private DeleteOption GetDeleteOption(DeleteOptions options) => new()
@@ -349,12 +347,23 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return result;
     }
 
-    private ValueList GetValueList(string? json)
+    private InsertFieldsList GetInsertFields(string? json)
     {
-        var result = new ValueList();
+        var result = new InsertFieldsList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<ValueList>(json);
+            result = _deserializer.Deserialize<InsertFieldsList>(json);
+        }
+
+        return result;
+    }
+
+    private InsertValueList GetInsertValueList(string? json)
+    {
+        var result = new InsertValueList();
+        if (!string.IsNullOrEmpty(json))
+        {
+            result = _deserializer.Deserialize<InsertValueList>(json);
         }
 
         return result;
