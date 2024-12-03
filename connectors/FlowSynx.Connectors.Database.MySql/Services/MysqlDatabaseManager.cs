@@ -47,8 +47,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         var createTableOption = GetCreateOption(createOptions);
@@ -59,12 +58,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        
         var writeFilters = context.Options.ToObject<WriteOptions>();
 
         var insertOption = GetInsertOption(writeFilters);
-        var sql = sqlOptions.Sql ?? _sqlBuilder.Insert(_format, insertOption);
+        var sql = _sqlBuilder.Insert(_format, insertOption);
         
         var command = new MySqlCommand(sql, _connection);
         var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -75,12 +73,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var selectSqlOption = GetSelectOption(listOptions);
-        var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
+        var sql = _sqlBuilder.Select(_format, selectSqlOption);
         
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -103,12 +100,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
 
         var deleteOption = GetDeleteOption(deleteOptions);
-        var sql = sqlOptions.Sql ?? _sqlBuilder.Delete(_format, deleteOption);
+        var sql = _sqlBuilder.Delete(_format, deleteOption);
         
         var command = new MySqlCommand(sql, _connection);
         var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
@@ -122,12 +118,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        
         var existOptions = context.Options.ToObject<ExistOptions>();
 
-        var existtSqlOption = GetExistRecordOption(existOptions);
-        var sql = sqlOptions.Sql ?? _sqlBuilder.ExistRecord(_format, existtSqlOption);
+        var existSqlOption = GetExistRecordOption(existOptions);
+        var sql = _sqlBuilder.ExistRecord(_format, existSqlOption);
         
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -138,12 +133,11 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var sqlOptions = context.Options.ToObject<SqlOptions>();
+        
         var listOptions = context.Options.ToObject<ListOptions>();
         
         var selectSqlOption = GetSelectOption(listOptions);
-        var sql = sqlOptions.Sql ?? _sqlBuilder.Select(_format, selectSqlOption);
+        var sql = _sqlBuilder.Select(_format, selectSqlOption);
         
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
