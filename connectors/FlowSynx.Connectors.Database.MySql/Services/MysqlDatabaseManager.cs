@@ -185,10 +185,29 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
                 Fields = tableFieldList
             };
 
-        await CreateTableAsync(tableCreateOption, cancellationToken);
+        //await CreateTableAsync(tableCreateOption, cancellationToken);
         //}
 
-        await BulkInsert(writeOptions.Table, transferData, cancellationToken).ConfigureAwait(false);
+        var columnNames = transferData.Columns.Select(x => x.Name).ToArray();
+        var columns = string.Join(",", columnNames);
+        var fields = new BulkInsertFieldsList { columns };
+
+        var insertValueList = new BulkInsertValueList();
+        foreach (var dr in transferData.Rows)
+        {
+            if (dr != null && dr.Items != null)
+            {
+                var insertValue = new InsertValueList();
+                insertValue.AddRange(dr.Items);
+                insertValueList.Add(insertValue);
+            }
+        }
+
+        var bulkInsertOptions = new BulkInsertOption { Table = writeOptions.Table, Fields = fields, Values = insertValueList };
+        var bulkInsertSqlCommand = _sqlBuilder.BulkInsert(_format, bulkInsertOptions);
+
+        var command = new MySqlCommand(bulkInsertSqlCommand, _connection);
+        var reader = await command.ExecuteReaderAsync(cancellationToken);
     }
 
     private async Task<IEnumerable<string>> GetColumnsNames(string tableName, CancellationToken cancellationToken)
@@ -210,39 +229,50 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         return listacolumnas;
     }
 
-    private async Task BulkInsert(string tableName, TransferData transferData, CancellationToken cancellationToken)
-    {
-        try
-        {
-            StringBuilder sb = new StringBuilder();
-            var columnNames = transferData.Columns.Select(x=>x.Name).ToArray();
-            var columns = string.Join(",", columnNames);
-            sb.Append($"INSERT INTO {tableName} ({columns}) VALUES ");
+    //private async Task BulkInsert(string tableName, TransferData transferData, CancellationToken cancellationToken)
+    //{
+    //    try
+    //    {
+    //        StringBuilder sb = new StringBuilder();
+    //        var columnNames = transferData.Columns.Select(x=>x.Name).ToArray();
+    //        var columns = string.Join(",", columnNames);
+    //        sb.Append($"INSERT INTO {tableName} ({columns}) VALUES ");
 
-            if (transferData.Rows.Any())
-            {
-                foreach (var dr in transferData.Rows)
-                {
-                    if (dr != null && dr.Items != null)
-                    {
-                        var row = string.Join(",", dr.Items.Select(GetValue));
-                        sb.Append($"({row}),");
-                    }
-                }
+    //        if (transferData.Rows.Any())
+    //        {
+    //            int index = 1;
+    //            foreach (var dr in transferData.Rows)
+    //            {
+    //                if (dr != null && dr.Items != null)
+    //                {
+    //                    var row = string.Join(",", dr.Items.Select(GetValue));
+    //                    if (index != transferData.Rows.Count())
+    //                    {
+    //                        sb.Append($"({row}),");
+    //                    }
+    //                    else
+    //                    {
+    //                        sb.Append($"({row})");
+    //                    }
+    //                }
+    //                index++;
+    //            }
+    //            sb.Append(";");
 
-                var command = new MySqlCommand(sb.ToString(), _connection);
-                var reader = await command.ExecuteReaderAsync(cancellationToken);
-            }
-            else
-            {
-                throw new Exception("No row for insertion");
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new Exception("Please attach file in Proper format.");
-        }
-    }
+    //            var sql = sb.ToString();
+    //            var command = new MySqlCommand(sql, _connection);
+    //            var reader = await command.ExecuteReaderAsync(cancellationToken);
+    //        }
+    //        else
+    //        {
+    //            throw new Exception("No row for insertion");
+    //        }
+    //    }
+    //    catch (Exception ex)
+    //    {
+    //        throw new Exception("Please attach file in Proper format.");
+    //    }
+    //}
 
     public Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
     {
@@ -426,9 +456,9 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         _logger.LogInformation($"Created {rowsAffected} row(s)!");
     }
 
-    private object? GetValue(object? obj)
+    private object GetValue(object obj)
     {
-        if (obj?.GetType() == typeof(string))
+        if (obj.GetType() == typeof(string))
             return $"'{obj.ToString()}'";
 
         return obj;
