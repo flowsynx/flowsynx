@@ -504,8 +504,7 @@ public class JsonManager: IJsonManager
 
         var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow;
         var jsonContentBase64 = string.Empty;
-
-        var transferKind = GetTransferKind(transferOptions.TransferKind);
+        
         if (!isSeparateJsonPerRow)
         {
             var jsonContent = ToJson(filteredData, indentedOptions.Indented);

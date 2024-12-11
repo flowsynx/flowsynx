@@ -15,7 +15,7 @@ using System.Text;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
-public class MysqlDatabaseManager: IMysqlDatabaseManager
+public class MysqlDatabaseManager : IMysqlDatabaseManager
 {
     private readonly ILogger _logger;
     private readonly ISerializer _serializer;
@@ -23,8 +23,10 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     private readonly ISqlBuilder _sqlBuilder;
     private readonly MySqlConnection _connection;
     private readonly Format _format;
+    private string ContentType => "text/csv";
+    private string Extension => ".csv";
 
-    public MysqlDatabaseManager(ILogger logger, MySqlConnection connection, 
+    public MysqlDatabaseManager(ILogger logger, MySqlConnection connection,
         ISerializer serializer, IDeserializer deserializer, ISqlBuilder sqlBuilder)
     {
         _logger = logger;
@@ -47,7 +49,7 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         var createTableOption = GetCreateOption(createOptions);
@@ -58,12 +60,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
         var writeFilters = context.Options.ToObject<WriteOptions>();
 
         var insertOption = GetInsertOption(writeFilters);
         var sql = _sqlBuilder.Insert(_format, insertOption);
-        
+
         var command = new MySqlCommand(sql, _connection);
         var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Inserted {rowsAffected} row(s)!");
@@ -73,12 +75,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var selectSqlOption = GetSelectOption(listOptions);
         var sql = _sqlBuilder.Select(_format, selectSqlOption);
-        
+
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         var dataTable = new DataTable();
@@ -100,12 +102,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
 
         var deleteOption = GetDeleteOption(deleteOptions);
         var sql = _sqlBuilder.Delete(_format, deleteOption);
-        
+
         var command = new MySqlCommand(sql, _connection);
         var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
@@ -118,12 +120,12 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
         var existOptions = context.Options.ToObject<ExistOptions>();
 
         var existSqlOption = GetExistRecordOption(existOptions);
         var sql = _sqlBuilder.ExistRecord(_format, existSqlOption);
-        
+
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         return reader.HasRows;
@@ -133,17 +135,24 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
+        var dataTable = await FilteredEntitiesAsync(context, cancellationToken);
+        return dataTable.DataTableToList();
+    }
+
+    public async Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    {
         var listOptions = context.Options.ToObject<ListOptions>();
-        
+
         var selectSqlOption = GetSelectOption(listOptions);
         var sql = _sqlBuilder.Select(_format, selectSqlOption);
-        
+
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         var dataTable = new DataTable();
         dataTable.Load(reader);
-        return dataTable.DataTableToList();
+        
+        return dataTable;
     }
 
     public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
@@ -151,42 +160,29 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
     {
         if (destinationContext.ConnectorContext?.Current is null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-        
+
         var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
         await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     }
 
-    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind,
         CancellationToken cancellationToken)
     {
-        var createOptions = context.Options.ToObject<CreateOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        //var tableExistSql = _sqlBuilder.ExistTable(_format, new ExistTableOption { Table = writeOptions.Table });
-        //var command = new MySqlCommand(tableExistSql, _connection);
-        //var reader = await command.ExecuteReaderAsync(cancellationToken);
-        //if (reader != null && reader.HasRows)
-        //{
-        //    var tableColumns = await GetColumnsNames(writeOptions.Table, cancellationToken);
-        //    var transferColumns = transferData.Columns.Select(c => c.Name).AsEnumerable();
-        //    bool allExist = transferColumns.All(item => tableColumns.Contains(item));
+        var tableFieldList = new CreateTableFieldList();
+        tableFieldList.AddRange(transferData.Columns.Select(x => new CreateTableField
+        {
+            Name = x.Name,
+            Type = _format.GetDbType(x.DataType)
+        }));
+        var tableCreateOption = new CreateOption
+        {
+            Table = writeOptions.Table,
+            Fields = tableFieldList
+        };
 
-        //    if (!allExist)
-        //        throw new DatabaseException("Table fields are not matched!");
-        //}
-        //else
-        //{
-            var tableFieldList = new CreateTableFieldList();
-            tableFieldList.AddRange(transferData.Columns.Select(x => new CreateTableField { Name = x.Name, Type = _format.GetDbType(x.DataType) }));
-
-            var tableCreateOption = new CreateOption
-            {
-                Table = writeOptions.Table,
-                Fields = tableFieldList
-            };
-
-        //await CreateTableAsync(tableCreateOption, cancellationToken);
-        //}
+        await CreateTableAsync(tableCreateOption, cancellationToken);
 
         var columnNames = transferData.Columns.Select(x => x.Name).ToArray();
         var columns = string.Join(",", columnNames);
@@ -195,95 +191,77 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var insertValueList = new BulkInsertValueList();
         foreach (var dr in transferData.Rows)
         {
-            if (dr != null && dr.Items != null)
-            {
-                var insertValue = new InsertValueList();
-                insertValue.AddRange(dr.Items);
-                insertValueList.Add(insertValue);
-            }
+            if (dr.Items == null) continue;
+            var insertValue = new InsertValueList();
+            insertValue.AddRange(dr.Items!);
+            insertValueList.Add(insertValue);
         }
 
         var bulkInsertOptions = new BulkInsertOption { Table = writeOptions.Table, Fields = fields, Values = insertValueList };
         var bulkInsertSqlCommand = _sqlBuilder.BulkInsert(_format, bulkInsertOptions);
 
         var command = new MySqlCommand(bulkInsertSqlCommand, _connection);
-        var reader = await command.ExecuteReaderAsync(cancellationToken);
+        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+        _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
     }
 
-    private async Task<IEnumerable<string>> GetColumnsNames(string tableName, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
     {
-        List<string> listacolumnas = new List<string>();
-        var tableExistSql = _sqlBuilder.TableFields(_format, new TableFieldsOption { Table = tableName });
-        var command = new MySqlCommand(tableExistSql, _connection);
-        using (var reader = await command.ExecuteReaderAsync(cancellationToken))
-        {
-            reader.Read();
+        var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
 
-            var table = reader.GetSchemaTable();
-            foreach (DataColumn column in table.Columns)
-            {
-                listacolumnas.Add(column.ColumnName);
-            }
-        }
+        if (filteredData.Rows.Count <= 0)
+            throw new DatabaseException("string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)");
 
-        return listacolumnas;
-    }
+        var compressOptions = context.Options.ToObject<CompressOptions>();
 
-    //private async Task BulkInsert(string tableName, TransferData transferData, CancellationToken cancellationToken)
-    //{
-    //    try
-    //    {
-    //        StringBuilder sb = new StringBuilder();
-    //        var columnNames = transferData.Columns.Select(x=>x.Name).ToArray();
-    //        var columns = string.Join(",", columnNames);
-    //        sb.Append($"INSERT INTO {tableName} ({columns}) VALUES ");
+        if (compressOptions.SeparateDataPerRow is false)
+            return await CompressDataTable(filteredData);
 
-    //        if (transferData.Rows.Any())
-    //        {
-    //            int index = 1;
-    //            foreach (var dr in transferData.Rows)
-    //            {
-    //                if (dr != null && dr.Items != null)
-    //                {
-    //                    var row = string.Join(",", dr.Items.Select(GetValue));
-    //                    if (index != transferData.Rows.Count())
-    //                    {
-    //                        sb.Append($"({row}),");
-    //                    }
-    //                    else
-    //                    {
-    //                        sb.Append($"({row})");
-    //                    }
-    //                }
-    //                index++;
-    //            }
-    //            sb.Append(";");
-
-    //            var sql = sb.ToString();
-    //            var command = new MySqlCommand(sql, _connection);
-    //            var reader = await command.ExecuteReaderAsync(cancellationToken);
-    //        }
-    //        else
-    //        {
-    //            throw new Exception("No row for insertion");
-    //        }
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        throw new Exception("Please attach file in Proper format.");
-    //    }
-    //}
-
-    public Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
+        return await CompressDataRows(filteredData.Rows);
     }
 
     #region internal methods
-    private Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type,
+    private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type,
     Context context, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var transferOptions = context.Options.ToObject<TransferOptions>();
+
+        const string delimiter = ",";
+        var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
+
+        var transferDataRows = new List<TransferDataRow>();
+        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+        var isSeparateDataPerRow = transferOptions.SeparateDataPerRow is true;
+        var csvContentBase64 = string.Empty;
+
+        if (!isSeparateDataPerRow)
+        {
+            var csvContent = ToCsv(filteredData, delimiter);
+            csvContentBase64 = csvContent.ToBase64String();
+        }
+
+        foreach (DataRow row in filteredData.Rows)
+        {
+            var itemArray = row.ItemArray;
+            var content = isSeparateDataPerRow ? ToCsv(row, columnNames, delimiter) : ToCsv(row, delimiter);
+            transferDataRows.Add(new TransferDataRow
+            {
+                Key = $"{Guid.NewGuid().ToString()}{Extension}",
+                ContentType = ContentType,
+                Content = content.ToBase64String(),
+                Items = itemArray
+            });
+        }
+
+        return new TransferData
+        {
+            Namespace = @namespace,
+            ConnectorType = type,
+            ContentType = isSeparateDataPerRow ? string.Empty : ContentType,
+            Content = isSeparateDataPerRow ? string.Empty : csvContentBase64,
+            Columns = GetTransferDataColumn(filteredData),
+            Rows = transferDataRows
+        };
     }
 
     private async Task PurgeAsync(string tableName, CancellationToken cancellationToken)
@@ -291,8 +269,8 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         var selectSqlOption = GetDropTableOption(tableName);
         var sql = _sqlBuilder.DropTable(_format, selectSqlOption);
         var command = new MySqlCommand(sql, _connection);
-        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
-        _logger.LogInformation($"Drop table successfully!");
+        await command.ExecuteNonQueryAsync(cancellationToken);
+        _logger.LogInformation($"Table dropped successfully!");
     }
 
     private string ToString(DataTable dataTable, bool? indented)
@@ -456,12 +434,89 @@ public class MysqlDatabaseManager: IMysqlDatabaseManager
         _logger.LogInformation($"Created {rowsAffected} row(s)!");
     }
 
-    private object GetValue(object obj)
+    private string ToCsv(DataTable dataTable, string delimiter)
     {
-        if (obj.GetType() == typeof(string))
-            return $"'{obj.ToString()}'";
+        var stringBuilder = new StringBuilder();
 
-        return obj;
+        var columnNames = dataTable.Columns.Cast<DataColumn>().Select(column => column.ColumnName);
+        stringBuilder.AppendLine(string.Join(delimiter, columnNames));
+
+        foreach (DataRow row in dataTable.Rows)
+        {
+            var fields = row.ItemArray.Select(field => field is null ? string.Empty : field.ToString());
+            stringBuilder.AppendLine(string.Join(delimiter, fields));
+        }
+
+        return stringBuilder.ToString();
     }
+
+    private string ToCsv(DataRow row, string[] headers, string delimiter)
+    {
+        var stringBuilder = new StringBuilder();
+        stringBuilder.AppendLine(string.Join(delimiter, headers));
+
+        var fields = row.ItemArray.Select(field => field is null ? string.Empty : field.ToString());
+        stringBuilder.AppendLine(string.Join(delimiter, fields));
+
+        return stringBuilder.ToString();
+    }
+
+    private string ToCsv(DataRow row, string delimiter)
+    {
+        var stringBuilder = new StringBuilder();
+        var fields = row.ItemArray.Select(field => field is null ? string.Empty : field.ToString());
+        stringBuilder.AppendLine(string.Join(delimiter, fields));
+        return stringBuilder.ToString();
+    }
+
+    private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
+    {
+        return dataTable.Columns.Cast<DataColumn>()
+            .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
+    }
+
+    private Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable)
+    {
+        var compressEntries = new List<CompressEntry>();
+        var delimiter = GetDelimiter();
+        var rowContent = ToCsv(dataTable, delimiter);
+
+        compressEntries.Add(new CompressEntry
+        {
+            Name = $"{Guid.NewGuid().ToString()}{Extension}",
+            ContentType = ContentType,
+            Content = rowContent.ToByteArray(),
+        });
+
+        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
+    }
+
+    private Task<IEnumerable<CompressEntry>> CompressDataRows(DataRowCollection dataRows)
+    {
+        var compressEntries = new List<CompressEntry>();
+        var delimiter = GetDelimiter();
+
+        foreach (DataRow row in dataRows)
+        {
+            try
+            {
+                var rowContent = ToCsv(row, delimiter);
+                compressEntries.Add(new CompressEntry
+                {
+                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                    ContentType = ContentType,
+                    Content = rowContent.ToByteArray(),
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+            }
+        }
+
+        return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
+    }
+
+    private string GetDelimiter() => ",";
     #endregion
 }
