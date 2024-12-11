@@ -226,7 +226,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     {
         var transferOptions = context.Options.ToObject<TransferOptions>();
 
-        const string delimiter = ",";
+        var delimiter = GetDelimiter();
         var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
 
         var transferDataRows = new List<TransferDataRow>();
@@ -244,9 +244,10 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         {
             var itemArray = row.ItemArray;
             var content = isSeparateDataPerRow ? ToCsv(row, columnNames, delimiter) : ToCsv(row, delimiter);
+
             transferDataRows.Add(new TransferDataRow
             {
-                Key = $"{Guid.NewGuid().ToString()}{Extension}",
+                Key = $"{GetPrimaryKeysValue(row)}{Extension}",
                 ContentType = ContentType,
                 Content = content.ToBase64String(),
                 Items = itemArray
@@ -483,7 +484,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
 
         compressEntries.Add(new CompressEntry
         {
-            Name = $"{Guid.NewGuid().ToString()}{Extension}",
+            Name = $"{dataTable.TableName}{Extension}",
             ContentType = ContentType,
             Content = rowContent.ToByteArray(),
         });
@@ -503,7 +504,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
                 var rowContent = ToCsv(row, delimiter);
                 compressEntries.Add(new CompressEntry
                 {
-                    Name = $"{Guid.NewGuid().ToString()}{Extension}",
+                    Name = $"{GetPrimaryKeysValue(row)}{Extension}",
                     ContentType = ContentType,
                     Content = rowContent.ToByteArray(),
                 });
@@ -515,6 +516,21 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         }
 
         return Task.FromResult<IEnumerable<CompressEntry>>(compressEntries);
+    }
+
+
+    private string GetPrimaryKeysValue(DataRow row)
+    {
+        var primaryKeys = row.Table.PrimaryKey;
+        var keys = new List<string>();
+
+        foreach (var key in primaryKeys)
+        {
+            var keyValue = row[key.ColumnName].ToString() ?? string.Empty;
+            keys.Add(keyValue);
+        }
+
+        return string.Join('-', keys);
     }
 
     private string GetDelimiter() => ",";
