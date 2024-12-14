@@ -12,6 +12,7 @@ using FlowSynx.Data.Sql;
 using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Sql.Builder;
 using System.Text;
+using System.Threading;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -170,19 +171,24 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     {
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        var tableFieldList = new CreateTableFieldList();
-        tableFieldList.AddRange(transferData.Columns.Select(x => new CreateTableField
+        if (!TableExist(writeOptions.Table))
         {
-            Name = x.Name,
-            Type = _format.GetDbType(x.DataType)
-        }));
-        var tableCreateOption = new CreateOption
-        {
-            Table = writeOptions.Table,
-            Fields = tableFieldList
-        };
+            var tableFieldList = new CreateTableFieldList();
+            tableFieldList.AddRange(transferData.Columns.Select(x => new CreateTableField
+            {
+                Name = x.Name,
+                Type = _format.GetDbType(x.DataType)
+            }));
 
-        await CreateTableAsync(tableCreateOption, cancellationToken);
+            var tableCreateOption = new CreateOption
+            {
+                Table = writeOptions.Table,
+                Fields = tableFieldList
+            };
+
+            await CreateTableAsync(tableCreateOption, cancellationToken);
+            _logger.LogInformation($"Table {writeOptions.Table} was not exist, then created successfully!");
+        }
 
         var columnNames = transferData.Columns.Select(x => x.Name).ToArray();
         var columns = string.Join(",", columnNames);
@@ -531,6 +537,23 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         }
 
         return string.Join('-', keys);
+    }
+
+    private bool TableExist(string tableName)
+    {
+        var selectSqlOption = new SelectOption { Table = tableName };
+        var sql = _sqlBuilder.Select(_format, selectSqlOption);
+
+        try
+        {
+            var command = new MySqlCommand(sql, _connection);
+            command.ExecuteScalar();
+            return true;
+        }
+        catch (MySqlException)
+        {
+            return false;
+        }
     }
 
     private string GetDelimiter() => ",";
