@@ -2,5 +2,5 @@
 
 public class CompressOptions
 {
-    public bool? SeparateJsonPerRow { get; set; } = false;
+    public bool? SeparateDataPerRow { get; set; } = false;
 }

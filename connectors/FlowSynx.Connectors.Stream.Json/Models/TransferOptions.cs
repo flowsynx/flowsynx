@@ -3,5 +3,5 @@
 public class TransferOptions
 {
     public string? TransferKind { get; set; }
-    public bool SeparateJsonPerRow { get; set; }
+    public bool SeparateDataPerRow { get; set; }
 }

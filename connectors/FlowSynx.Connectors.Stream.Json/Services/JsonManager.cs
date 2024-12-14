@@ -124,7 +124,7 @@ public class JsonManager: IJsonManager
                 dataTable.Columns.Add(column.Name, column.DataType);
         }
 
-        if (transferOptions.SeparateJsonPerRow)
+        if (transferOptions.SeparateDataPerRow)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new StreamException(Resources.ThePathIsNotDirectory);
@@ -209,7 +209,7 @@ public class JsonManager: IJsonManager
         if (filteredData.Rows.Count <= 0)
             throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
 
-        if (compressOptions.SeparateJsonPerRow is false)
+        if (compressOptions.SeparateDataPerRow is false)
             return await CompressDataTable(filteredData, indentedOptions.Indented);
 
         return await CompressDataRows(filteredData.Rows, indentedOptions.Indented);
@@ -502,7 +502,7 @@ public class JsonManager: IJsonManager
 
         var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
 
-        var isSeparateJsonPerRow = transferOptions.SeparateJsonPerRow;
+        var isSeparateJsonPerRow = transferOptions.SeparateDataPerRow;
         var jsonContentBase64 = string.Empty;
         
         if (!isSeparateJsonPerRow)
