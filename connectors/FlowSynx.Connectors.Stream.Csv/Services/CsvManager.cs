@@ -145,7 +145,7 @@ internal class CsvManager: ICsvManager
                 dataTable.Columns.Add(column.Name, column.DataType);
         }
 
-        if (transferOptions.SeparateCsvPerRow is true)
+        if (transferOptions.SeparateDataPerRow is true)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new StreamException(Resources.ThePathIsNotDirectory);
@@ -234,7 +234,7 @@ internal class CsvManager: ICsvManager
         var compressOptions = context.Options.ToObject<CompressOptions>();
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        if (compressOptions.SeparateCsvPerRow is false)
+        if (compressOptions.SeparateDataPerRow is false)
             return await CompressDataTable(filteredData, delimiterOptions);
 
         return await CompressDataRows(filteredData.Rows, delimiterOptions);
@@ -394,7 +394,7 @@ internal class CsvManager: ICsvManager
 
         var transferDataRows = new List<TransferDataRow>();
         var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
-        var isSeparateCsvPerRow = transferOptions.SeparateCsvPerRow is true;
+        var isSeparateCsvPerRow = transferOptions.SeparateDataPerRow is true;
         var csvContentBase64 = string.Empty;
 
         if (!isSeparateCsvPerRow)
