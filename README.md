@@ -1,4 +1,4 @@
-<div style="text-align: center"><img src="/img/flowsynx_logo.svg" height="120px">
+<div style="text-align: center"><img src="/img/flowsynx_logo.png" height="120px">
 <h2>FlowSynx</h2>
 </div>
 
