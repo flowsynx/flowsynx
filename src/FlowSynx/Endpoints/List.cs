@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Features.List.Query;
 using FlowSynx.Extensions;
+using FlowSynx.Services;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,9 +15,15 @@ public class List : EndpointGroupBase
     }
     
     public async Task<IResult> GetList([FromBody] ListRequest request, 
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+        [FromServices] IMediator mediator, IJobQueue jobQueue,
+        CancellationToken cancellationToken)
     {
-        var result = await mediator.List(request, cancellationToken);
+        var jobId = jobQueue.EnqueueTask(async token =>
+        {
+            return await mediator.List(request, cancellationToken);
+        });
+
+        var result = (Abstractions.Result<IEnumerable<object>>)await jobQueue.GetJobResultAsync(jobId);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

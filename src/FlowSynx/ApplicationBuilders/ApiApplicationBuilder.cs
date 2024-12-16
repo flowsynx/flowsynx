@@ -2,6 +2,7 @@
 using FlowSynx.Core.Extensions;
 using FlowSynx.Environment;
 using FlowSynx.Extensions;
+using FlowSynx.Services;
 
 namespace FlowSynx.ApplicationBuilders;
 
@@ -22,7 +23,10 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
                .AddFlowSynxCore()
                .AddFlowSynxConnectors()
                .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
-        
+
+        builder.Services.AddSingleton<IJobQueue, JobQueue>();
+        builder.Services.AddHostedService<JobQueueService>();
+
         if (rootCommandOptions.EnableHealthCheck)
             builder.Services.AddHealthChecker();
 
