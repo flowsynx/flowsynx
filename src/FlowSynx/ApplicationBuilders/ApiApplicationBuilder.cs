@@ -23,10 +23,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
                .AddFlowSynxCore()
                .AddFlowSynxConnectors()
                .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
-
-        builder.Services.AddSingleton<IJobQueue, JobQueue>();
-        builder.Services.AddHostedService<JobQueueService>();
-
+        
         if (rootCommandOptions.EnableHealthCheck)
             builder.Services.AddHealthChecker();
 
