@@ -4,14 +4,10 @@ using EnsureThat;
 using FlowSynx.Abstractions;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.IO.Serialization;
-using System.Text.RegularExpressions;
 using FlowSynx.Core.Services;
 using System.Text;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
-using System.Linq.Expressions;
-using System.Collections.Generic;
-using ThirdParty.Json.LitJson;
 
 namespace FlowSynx.Core.Features.Workflow.Query;
 
@@ -41,21 +37,24 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
             var variablesJObject = JObject.Parse(variablesJson);
 
             var pipelines = ExtractJson(request.WorkflowTemplate, "pipelines", JsonObjectType.JsonArray);
-            var templateEngine = new TemplateEngine(variablesJObject);// "$[", "]");
+            var templateEngine = new TemplateEngine(variablesJObject);
 
-            templateEngine.RegisterTransformation("uppercase", new TransformationFunction("uppercase", 1, 
-                args => args[0].ToString().ToUpper()));
+            templateEngine.RegisterTransformation(new TransformationFunction
+            { 
+                Name = "uppercase", 
+                ExpectedArgumentCount = 1, 
+                Apply = args => args[0].ToString().ToUpper()
+            });
 
-            templateEngine.RegisterTransformation("add", new TransformationFunction("add", 2, 
-                args => (double.TryParse(args[0].ToString(), out var val1) && double.TryParse(args[1].ToString(), out var val2)) ? val1 + val2 : 0.0));
+            templateEngine.RegisterTransformation(new TransformationFunction{
+                Name = "add", 
+                ExpectedArgumentCount = 2,
+                Apply = args => (double.TryParse(args[0].ToString(), out var val1) && double.TryParse(args[1].ToString(), out var val2)) ? val1 + val2 : 0.0
+            });
 
             var rendered = templateEngine.Render(pipelines);
 
             var workflowPipelines = _deserializer.Deserialize<WorkflowPipelines>(rendered.ToString());
-
-
-
-
 
             var workflowExecutor = new WorkflowExecutor(workflowPipelines, workflowVariables);
             var workflowValidator = new DAGValidator(workflowPipelines);
@@ -84,16 +83,6 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
             var result = await workflowExecutor.ExecuteAsync();
 
             var outputsJson = ExtractJson(request.WorkflowTemplate, "outputs", JsonObjectType.JsonObject);
-
-            //templateEngine.RegisterFunction("references", (data, args) =>
-            //{
-            //    if (args.Count > 0)
-            //    {
-            //        var value = RenderValue(data.SelectToken(args[0].ToString()));
-            //        return value;
-            //    }
-            //    return string.Empty;
-            //});
 
             var data = result
                 .Concat(workflowVariables)
@@ -185,8 +174,8 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
 
     private int FindClosingBracket(string json, int startIndex, JsonObjectType type)
     {
-        int braceCount = 0;
-        for (int i = startIndex; i < json.Length; i++)
+        var braceCount = 0;
+        for (var i = startIndex; i < json.Length; i++)
         {
             if (json[i] == type.StartBracket) braceCount++;
             else if (json[i] == type.EndBracket) braceCount--;
