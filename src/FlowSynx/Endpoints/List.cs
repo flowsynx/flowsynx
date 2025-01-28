@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Features.List.Query;
+using FlowSynx.Data.Extensions;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,6 @@ public class List : EndpointGroupBase
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.List(request, cancellationToken);
-        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+        return result.Succeeded ? Results.Ok(result.Data.DataTableToList()) : Results.NotFound(result);
     }
 }

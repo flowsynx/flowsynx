@@ -13,6 +13,8 @@ using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Sql.Builder;
 using System.Text;
 using System.Threading;
+using Org.BouncyCastle.Ocsp;
+using FlowSynx.Data;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
 
@@ -72,7 +74,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         _logger.LogInformation($"Inserted {rowsAffected} row(s)!");
     }
 
-    public async Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
@@ -90,8 +92,16 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         {
             <= 0 => throw new DatabaseException("string.Format(Resources.NoItemsFoundWithTheGivenFilter)"),
             > 1 => throw new DatabaseException("Resources.FilteringDataMustReturnASingleItem"),
-            _ => new ReadResult { Content = ToString(dataTable, true).ToByteArray() }
+            _ => ReadData(ToString(dataTable, true))
         };
+    }
+
+    private InterchangeData ReadData(string content)
+    {
+        var result = new InterchangeData();
+        result.Columns.Add("Content", typeof(byte[]));
+        result.Rows.Add(content.ToByteArray());
+        return result;
     }
 
     public Task UpdateAsync(Context context, CancellationToken cancellationToken)
@@ -132,16 +142,16 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return reader.HasRows;
     }
 
-    public async Task<IEnumerable<object>> EntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> EntitiesAsync(Context context, CancellationToken cancellationToken)
     {
         if (context.ConnectorContext?.Current is not null)
             throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
         var dataTable = await FilteredEntitiesAsync(context, cancellationToken);
-        return dataTable.DataTableToList();
+        return dataTable;
     }
 
-    public async Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
 
@@ -150,66 +160,71 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
 
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
-        var dataTable = new DataTable();
+        var dataTable = new InterchangeData();
         dataTable.Load(reader);
         
         return dataTable;
     }
 
-    public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        TransferKind transferKind, CancellationToken cancellationToken)
+    public Task TransferAsync(Context context, CancellationToken cancellationToken)
     {
-        if (destinationContext.ConnectorContext?.Current is null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+        throw new NotImplementedException();
     }
 
-    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind,
-        CancellationToken cancellationToken)
-    {
-        var writeOptions = context.Options.ToObject<WriteOptions>();
+    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //    TransferKind transferKind, CancellationToken cancellationToken)
+    //{
+    //    if (destinationContext.ConnectorContext?.Current is null)
+    //        throw new DatabaseException(Resources.CalleeConnectorNotSupported);
 
-        if (!TableExist(writeOptions.Table))
-        {
-            var tableFieldList = new CreateTableFieldList();
-            tableFieldList.AddRange(transferData.Columns.Select(x => new CreateTableField
-            {
-                Name = x.Name,
-                Type = _format.GetDbType(x.DataType)
-            }));
+    //    var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //}
 
-            var tableCreateOption = new CreateOption
-            {
-                Table = writeOptions.Table,
-                Fields = tableFieldList
-            };
+    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind,
+    //    CancellationToken cancellationToken)
+    //{
+    //    var writeOptions = context.Options.ToObject<WriteOptions>();
 
-            await CreateTableAsync(tableCreateOption, cancellationToken);
-            _logger.LogInformation($"Table {writeOptions.Table} was not exist, then created successfully!");
-        }
+    //    if (!TableExist(writeOptions.Table))
+    //    {
+    //        var tableFieldList = new CreateTableFieldList();
+    //        tableFieldList.AddRange(transferData.Columns.Select(x => new CreateTableField
+    //        {
+    //            Name = x.Name,
+    //            Type = _format.GetDbType(x.DataType)
+    //        }));
 
-        var columnNames = transferData.Columns.Select(x => x.Name).ToArray();
-        var columns = string.Join(",", columnNames);
-        var fields = new BulkInsertFieldsList { columns };
+    //        var tableCreateOption = new CreateOption
+    //        {
+    //            Table = writeOptions.Table,
+    //            Fields = tableFieldList
+    //        };
 
-        var insertValueList = new BulkInsertValueList();
-        foreach (var dr in transferData.Rows)
-        {
-            if (dr.Items == null) continue;
-            var insertValue = new InsertValueList();
-            insertValue.AddRange(dr.Items!);
-            insertValueList.Add(insertValue);
-        }
+    //        await CreateTableAsync(tableCreateOption, cancellationToken);
+    //        _logger.LogInformation($"Table {writeOptions.Table} was not exist, then created successfully!");
+    //    }
 
-        var bulkInsertOptions = new BulkInsertOption { Table = writeOptions.Table, Fields = fields, Values = insertValueList };
-        var bulkInsertSqlCommand = _sqlBuilder.BulkInsert(_format, bulkInsertOptions);
+    //    var columnNames = transferData.Columns.Select(x => x.Name).ToArray();
+    //    var columns = string.Join(",", columnNames);
+    //    var fields = new BulkInsertFieldsList { columns };
 
-        var command = new MySqlCommand(bulkInsertSqlCommand, _connection);
-        var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
-        _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
-    }
+    //    var insertValueList = new BulkInsertValueList();
+    //    foreach (var dr in transferData.Rows)
+    //    {
+    //        if (dr.Items == null) continue;
+    //        var insertValue = new InsertValueList();
+    //        insertValue.AddRange(dr.Items!);
+    //        insertValueList.Add(insertValue);
+    //    }
+
+    //    var bulkInsertOptions = new BulkInsertOption { Table = writeOptions.Table, Fields = fields, Values = insertValueList };
+    //    var bulkInsertSqlCommand = _sqlBuilder.BulkInsert(_format, bulkInsertOptions);
+
+    //    var command = new MySqlCommand(bulkInsertSqlCommand, _connection);
+    //    var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+    //    _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
+    //}
 
     public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
     {
@@ -227,49 +242,49 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     }
 
     #region internal methods
-    private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type,
-    Context context, CancellationToken cancellationToken = default)
-    {
-        var transferOptions = context.Options.ToObject<TransferOptions>();
+    //private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type,
+    //Context context, CancellationToken cancellationToken = default)
+    //{
+    //    var transferOptions = context.Options.ToObject<TransferOptions>();
 
-        var delimiter = GetDelimiter();
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
+    //    var delimiter = GetDelimiter();
+    //    var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
 
-        var transferDataRows = new List<TransferDataRow>();
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
-        var isSeparateDataPerRow = transferOptions.SeparateDataPerRow is true;
-        var csvContentBase64 = string.Empty;
+    //    var transferDataRows = new List<TransferDataRow>();
+    //    var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+    //    var isSeparateDataPerRow = transferOptions.SeparateDataPerRow is true;
+    //    var csvContentBase64 = string.Empty;
 
-        if (!isSeparateDataPerRow)
-        {
-            var csvContent = ToCsv(filteredData, delimiter);
-            csvContentBase64 = csvContent.ToBase64String();
-        }
+    //    if (!isSeparateDataPerRow)
+    //    {
+    //        var csvContent = ToCsv(filteredData, delimiter);
+    //        csvContentBase64 = csvContent.ToBase64String();
+    //    }
 
-        foreach (DataRow row in filteredData.Rows)
-        {
-            var itemArray = row.ItemArray;
-            var content = isSeparateDataPerRow ? ToCsv(row, columnNames, delimiter) : ToCsv(row, delimiter);
+    //    foreach (DataRow row in filteredData.Rows)
+    //    {
+    //        var itemArray = row.ItemArray;
+    //        var content = isSeparateDataPerRow ? ToCsv(row, columnNames, delimiter) : ToCsv(row, delimiter);
 
-            transferDataRows.Add(new TransferDataRow
-            {
-                Key = $"{GetPrimaryKeysValue(row)}{Extension}",
-                ContentType = ContentType,
-                Content = content.ToBase64String(),
-                Items = itemArray
-            });
-        }
+    //        transferDataRows.Add(new TransferDataRow
+    //        {
+    //            Key = $"{GetPrimaryKeysValue(row)}{Extension}",
+    //            ContentType = ContentType,
+    //            Content = content.ToBase64String(),
+    //            Items = itemArray
+    //        });
+    //    }
 
-        return new TransferData
-        {
-            Namespace = @namespace,
-            ConnectorType = type,
-            ContentType = isSeparateDataPerRow ? string.Empty : ContentType,
-            Content = isSeparateDataPerRow ? string.Empty : csvContentBase64,
-            Columns = GetTransferDataColumn(filteredData),
-            Rows = transferDataRows
-        };
-    }
+    //    return new TransferData
+    //    {
+    //        Namespace = @namespace,
+    //        ConnectorType = type,
+    //        ContentType = isSeparateDataPerRow ? string.Empty : ContentType,
+    //        Content = isSeparateDataPerRow ? string.Empty : csvContentBase64,
+    //        Columns = GetTransferDataColumn(filteredData),
+    //        Rows = transferDataRows
+    //    };
+    //}
 
     private async Task PurgeAsync(string tableName, CancellationToken cancellationToken)
     {
@@ -345,12 +360,12 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private FieldsList GetFields(string? json)
+    private FlowSynx.Data.Sql.FieldsList GetFields(string? json)
     {
-        var result = new FieldsList();
+        var result = new FlowSynx.Data.Sql.FieldsList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FieldsList>(json);
+            result = _deserializer.Deserialize<FlowSynx.Data.Sql.FieldsList>(json);
         }
 
         return result;
@@ -389,12 +404,12 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private FilterList GetFilterList(string? json)
+    private FlowSynx.Data.Sql.FilterList GetFilterList(string? json)
     {
-        var result = new FilterList();
+        var result = new FlowSynx.Data.Sql.FilterList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FilterList>(json);
+            result = _deserializer.Deserialize<FlowSynx.Data.Sql.FilterList>(json);
         }
 
         return result;
@@ -411,23 +426,23 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private SortList GetSortList(string? json)
+    private FlowSynx.Data.Sql.SortList GetSortList(string? json)
     {
-        var result = new SortList();
+        var result = new FlowSynx.Data.Sql.SortList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<SortList>(json);
+            result = _deserializer.Deserialize<FlowSynx.Data.Sql.SortList>(json);
         }
 
         return result;
     }
 
-    private Paging GetPaging(string? json)
+    private FlowSynx.Data.Sql.Paging GetPaging(string? json)
     {
-        var result = new Paging();
+        var result = new FlowSynx.Data.Sql.Paging();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<Paging>(json);
+            result = _deserializer.Deserialize<FlowSynx.Data.Sql.Paging>(json);
         }
 
         return result;
@@ -476,11 +491,11 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return stringBuilder.ToString();
     }
 
-    private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
-    {
-        return dataTable.Columns.Cast<DataColumn>()
-            .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
-    }
+    //private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
+    //{
+    //    return dataTable.Columns.Cast<DataColumn>()
+    //        .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
+    //}
 
     private Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable)
     {

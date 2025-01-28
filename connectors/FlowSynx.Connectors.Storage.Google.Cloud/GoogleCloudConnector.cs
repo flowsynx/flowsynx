@@ -7,6 +7,7 @@ using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Connectors.Storage.Google.Cloud.Models;
 using FlowSynx.Connectors.Storage.Google.Cloud.Services;
 using FlowSynx.Data.Queries;
+using FlowSynx.Data;
 
 namespace FlowSynx.Connectors.Storage.Google.Cloud;
 
@@ -59,7 +60,7 @@ public class GoogleCloudConnector : Connector
         CancellationToken cancellationToken = default) =>
         await _manager.WriteAsync(context, cancellationToken).ConfigureAwait(false);
 
-public override async Task<ReadResult> ReadAsync(Context context, 
+    public override async Task<InterchangeData> ReadAsync(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.ReadAsync(context, cancellationToken).ConfigureAwait(false);
 
@@ -75,18 +76,16 @@ public override async Task<ReadResult> ReadAsync(Context context,
         CancellationToken cancellationToken = default) =>
         await _manager.ExistAsync(context, cancellationToken);
 
-    public override async Task<IEnumerable<object>> ListAsync(Context context, 
+    public override async Task<InterchangeData> ListAsync(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.FilteredEntitiesAsync(context, cancellationToken);
 
-    public override async Task TransferAsync(Context sourceContext, Context destinationContext,
-        TransferKind transferKind, CancellationToken cancellationToken = default) =>
-        await _manager.TransferAsync(Namespace, Type, sourceContext, destinationContext, transferKind, 
-            cancellationToken).ConfigureAwait(false);
+    public override async Task TransferAsync(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.TransferAsync(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task ProcessTransferAsync(Context context, TransferData transferData,
-        TransferKind transferKind, CancellationToken cancellationToken = default) =>
-        await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
+    //public override async Task ProcessTransferAsync(Context context, TransferData transferData,
+    //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
+    //    await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
     public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
         CancellationToken cancellationToken = default) =>

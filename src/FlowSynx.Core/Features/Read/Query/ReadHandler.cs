@@ -5,10 +5,11 @@ using FlowSynx.Abstractions;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Core.Parers.Connector;
+using FlowSynx.Data;
 
 namespace FlowSynx.Core.Features.Read.Query;
 
-internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResult>>
+internal class ReadHandler : IRequestHandler<ReadRequest, Result<InterchangeData>>
 {
     private readonly ILogger<ReadHandler> _logger;
     private readonly IConnectorParser _connectorParser;
@@ -20,7 +21,7 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResult>>
         _connectorParser = connectorParser;
     }
 
-    public async Task<Result<ReadResult>> Handle(ReadRequest request, CancellationToken cancellationToken)
+    public async Task<Result<InterchangeData>> Handle(ReadRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -28,11 +29,11 @@ internal class ReadHandler : IRequestHandler<ReadRequest, Result<ReadResult>>
             var options = request.Options.ToConnectorOptions();
             var context = new Context(options, connectorContext.Next);
             var response = await connectorContext.Current.ReadAsync(context, cancellationToken);
-            return await Result<ReadResult>.SuccessAsync(response);
+            return await Result<InterchangeData>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
-            return await Result<ReadResult>.FailAsync(new List<string> { ex.Message });
+            return await Result<InterchangeData>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

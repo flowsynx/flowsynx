@@ -62,7 +62,7 @@ internal class CsvManager: ICsvManager
         await WriteLocallyAsync(pathOptions.Path, content, append, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
     {
         var readOptions = context.Options.ToObject<ReadOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -105,7 +105,7 @@ internal class CsvManager: ICsvManager
         return filteredData.Rows.Count > 0;
     }
 
-    public async Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
     {
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -115,103 +115,108 @@ internal class CsvManager: ICsvManager
         return GetFilteredData(content, delimiter, listOptions);
     }
 
-    public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        TransferKind transferKind, CancellationToken cancellationToken)
+    public Task TransferAsync(Context context, CancellationToken cancellationToken)
     {
-        if (destinationContext.ConnectorContext?.Current is null)
-            throw new StreamException(Resources.CalleeConnectorNotSupported);
-
-        var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-        await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+        throw new NotImplementedException();
     }
 
-    public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
-        CancellationToken cancellationToken)
-    {
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var transferOptions = context.Options.ToObject<TransferOptions>();
-        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
+    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //    TransferKind transferKind, CancellationToken cancellationToken)
+    //{
+    //    if (destinationContext.ConnectorContext?.Current is null)
+    //        throw new StreamException(Resources.CalleeConnectorNotSupported);
 
-        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+    //    var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //}
 
-        var dataTable = new DataTable();
+    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //    CancellationToken cancellationToken)
+    //{
+    //    var pathOptions = context.Options.ToObject<PathOptions>();
+    //    var transferOptions = context.Options.ToObject<TransferOptions>();
+    //    var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
+    //    var path = PathHelper.ToUnixPath(pathOptions.Path);
 
-        foreach (var column in transferData.Columns)
-        {
-            if (column.DataType is null)
-                dataTable.Columns.Add(column.Name);
-            else
-                dataTable.Columns.Add(column.Name, column.DataType);
-        }
+    //    var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
-        if (transferOptions.SeparateDataPerRow is true)
-        {
-            if (!PathHelper.IsDirectory(path))
-                throw new StreamException(Resources.ThePathIsNotDirectory);
+    //    var dataTable = new DataTable();
 
-            foreach (var row in transferData.Rows)
-            {
-                if (row.Items != null)
-                {
-                    var newRow = dataTable.NewRow();
-                    newRow.ItemArray = row.Items;
-                    dataTable.Rows.Add(newRow);
+    //    foreach (var column in transferData.Columns)
+    //    {
+    //        if (column.DataType is null)
+    //            dataTable.Columns.Add(column.Name);
+    //        else
+    //            dataTable.Columns.Add(column.Name, column.DataType);
+    //    }
 
-                    var data = ToCsv(newRow, transferData.Columns.Select(x=>x.Name).ToArray(), delimiter);
-                    var newPath = transferData.Namespace == Namespace.Storage
-                        ? row.Key
-                        : PathHelper.Combine(path, row.Key);
+    //    if (transferOptions.SeparateDataPerRow is true)
+    //    {
+    //        if (!PathHelper.IsDirectory(path))
+    //            throw new StreamException(Resources.ThePathIsNotDirectory);
 
-                    if (Path.GetExtension(newPath) != Extension)
-                    {
-                        _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
-                                           $"So its extension will be automatically changed to {Extension}");
+    //        foreach (var row in transferData.Rows)
+    //        {
+    //            if (row.Items != null)
+    //            {
+    //                var newRow = dataTable.NewRow();
+    //                newRow.ItemArray = row.Items;
+    //                dataTable.Rows.Add(newRow);
 
-                        newPath = Path.ChangeExtension(path, Extension);
-                    }
+    //                var data = ToCsv(newRow, transferData.Columns.Select(x=>x.Name).ToArray(), delimiter);
+    //                var newPath = transferData.Namespace == Namespace.Storage
+    //                    ? row.Key
+    //                    : PathHelper.Combine(path, row.Key);
 
-                    var clonedOptions = (ConnectorOptions)context.Options.Clone();
-                    clonedOptions["Path"] = Path.ChangeExtension(newPath, Extension);
-                    clonedOptions["Data"] = data;
-                    var newContext = new Context(clonedOptions);
+    //                if (Path.GetExtension(newPath) != Extension)
+    //                {
+    //                    _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
+    //                                       $"So its extension will be automatically changed to {Extension}");
 
-                    await WriteAsync(newContext, cancellationToken);
-                }
-            }
-        }
-        else
-        {
-            if (!PathHelper.IsFile(path))
-                throw new StreamException(Resources.ThePathIsNotFile);
+    //                    newPath = Path.ChangeExtension(path, Extension);
+    //                }
 
-            foreach (var row in transferData.Rows)
-            {
-                if (row.Items != null)
-                {
-                    dataTable.Rows.Add(row.Items);
-                }
-            }
+    //                var clonedOptions = (ConnectorOptions)context.Options.Clone();
+    //                clonedOptions["Path"] = Path.ChangeExtension(newPath, Extension);
+    //                clonedOptions["Data"] = data;
+    //                var newContext = new Context(clonedOptions);
 
-            var data = ToCsv(dataTable, delimiter);
+    //                await WriteAsync(newContext, cancellationToken);
+    //            }
+    //        }
+    //    }
+    //    else
+    //    {
+    //        if (!PathHelper.IsFile(path))
+    //            throw new StreamException(Resources.ThePathIsNotFile);
 
-            var newPath = path;
-            if (Path.GetExtension(path) != Extension)
-            {
-                _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
-                                   $"So its extension will be automatically changed to {Extension}");
+    //        foreach (var row in transferData.Rows)
+    //        {
+    //            if (row.Items != null)
+    //            {
+    //                dataTable.Rows.Add(row.Items);
+    //            }
+    //        }
 
-                newPath = Path.ChangeExtension(path, Extension);
-            }
+    //        var data = ToCsv(dataTable, delimiter);
 
-            var clonedOptions = (ConnectorOptions)context.Options.Clone();
-            clonedOptions["Path"] = newPath;
-            clonedOptions["Data"] = data;
-            var newContext = new Context(clonedOptions);
+    //        var newPath = path;
+    //        if (Path.GetExtension(path) != Extension)
+    //        {
+    //            _logger.LogWarning($"The target path '{newPath}' is not ended with json extension. " +
+    //                               $"So its extension will be automatically changed to {Extension}");
 
-            await WriteAsync(newContext, cancellationToken);
-        }
-    }
+    //            newPath = Path.ChangeExtension(path, Extension);
+    //        }
+
+    //        var clonedOptions = (ConnectorOptions)context.Options.Clone();
+    //        clonedOptions["Path"] = newPath;
+    //        clonedOptions["Data"] = data;
+    //        var newContext = new Context(clonedOptions);
+
+    //        await WriteAsync(newContext, cancellationToken);
+    //    }
+    //}
 
     public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
     {
@@ -307,13 +312,13 @@ internal class CsvManager: ICsvManager
         if (context.ConnectorContext is not null)
         {
             var content = await context.ConnectorContext.Current.ReadAsync(new Context(context.Options), cancellationToken);
-            return Encoding.UTF8.GetString(content.Content);
+            return Encoding.UTF8.GetString((byte[])content.Rows[0]["Content"]);
         }
 
         return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
-    private Task<ReadResult> ReadLocallyAsync(string content, ReadOptions readOptions,
+    private Task<InterchangeData> ReadLocallyAsync(string content, ReadOptions readOptions,
     ListOptions listOptions, DelimiterOptions delimiterOptions,
     CancellationToken cancellationToken)
     {
@@ -324,10 +329,18 @@ internal class CsvManager: ICsvManager
         {
             <= 0 => throw new StreamException(Resources.NoItemsFoundWithTheGivenFilter),
             > 1 => throw new StreamException(Resources.FilteringDataMustReturnASingleItem),
-            _ => new ReadResult { Content = ToCsv(entities, delimiter).ToByteArray() }
+            _ => ReadData(ToCsv(entities, delimiter))
         };
 
         return Task.FromResult(result);
+    }
+
+    private InterchangeData ReadData(string content)
+    {
+        var result = new InterchangeData();
+        result.Columns.Add("Content", typeof(byte[]));
+        result.Rows.Add(content.ToByteArray());
+        return result;
     }
 
     private async Task WriteContent(Context context, string content, CancellationToken cancellationToken)
@@ -358,74 +371,74 @@ internal class CsvManager: ICsvManager
         await File.WriteAllTextAsync(path, content, cancellationToken);
     }
 
-    private DataTable GetFilteredData(string content, string delimiter, ListOptions listOptions)
+    private InterchangeData GetFilteredData(string content, string delimiter, ListOptions listOptions)
     {
         var dataTable = GetData(content, delimiter, listOptions.IncludeMetadata);
         var dataFilterOptions = GetFilterOptions(listOptions);
-        return _dataService.Select(dataTable, dataFilterOptions);
+        return (InterchangeData)_dataService.Select(dataTable, dataFilterOptions);
     }
 
-    private DataTable GetData(string content, string delimiter, bool? includeMetadata)
+    private InterchangeData GetData(string content, string delimiter, bool? includeMetadata)
     {
         return Load(content, delimiter, includeMetadata ?? false);
     }
 
-    private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, Context context,
-        CancellationToken cancellationToken)
-    {
-        var pathOptions = context.Options.ToObject<PathOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
-        var transferOptions = context.Options.ToObject<TransferOptions>();
-        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
+    //private async Task<TransferData> PrepareDataForTransferring(Namespace @namespace, string type, Context context,
+    //    CancellationToken cancellationToken)
+    //{
+    //    var pathOptions = context.Options.ToObject<PathOptions>();
+    //    var listOptions = context.Options.ToObject<ListOptions>();
+    //    var transferOptions = context.Options.ToObject<TransferOptions>();
+    //    var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        var path = PathHelper.ToUnixPath(pathOptions.Path);
-        if (string.IsNullOrEmpty(path))
-            throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
+    //    var path = PathHelper.ToUnixPath(pathOptions.Path);
+    //    if (string.IsNullOrEmpty(path))
+    //        throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StreamException(Resources.ThePathIsNotFile);
+    //    if (!PathHelper.IsFile(path))
+    //        throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
-            throw new StreamException(Resources.ThePathIsNotCsvFile);
+    //    if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
+    //        throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        var delimiter = GetDelimiter(delimiterOptions.Delimiter);
+    //    var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
+    //    var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
 
-        var transferDataRows = new List<TransferDataRow>();
-        var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
-        var isSeparateCsvPerRow = transferOptions.SeparateDataPerRow is true;
-        var csvContentBase64 = string.Empty;
+    //    var transferDataRows = new List<TransferDataRow>();
+    //    var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();
+    //    var isSeparateCsvPerRow = transferOptions.SeparateDataPerRow is true;
+    //    var csvContentBase64 = string.Empty;
 
-        if (!isSeparateCsvPerRow)
-        {
-            var csvContent = ToCsv(filteredData, delimiter);
-            csvContentBase64 = csvContent.ToBase64String();
-        }
+    //    if (!isSeparateCsvPerRow)
+    //    {
+    //        var csvContent = ToCsv(filteredData, delimiter);
+    //        csvContentBase64 = csvContent.ToBase64String();
+    //    }
 
-        foreach (DataRow row in filteredData.Rows)
-        {
-            var itemArray = row.ItemArray;
-            var content = isSeparateCsvPerRow ? ToCsv(row, columnNames, delimiter) : ToCsv(row, delimiter);
-            transferDataRows.Add(new TransferDataRow
-            {
-                Key = $"{Guid.NewGuid().ToString()}{Extension}",
-                ContentType = ContentType,
-                Content = content.ToBase64String(),
-                Items = itemArray
-            });
-        }
+    //    foreach (DataRow row in filteredData.Rows)
+    //    {
+    //        var itemArray = row.ItemArray;
+    //        var content = isSeparateCsvPerRow ? ToCsv(row, columnNames, delimiter) : ToCsv(row, delimiter);
+    //        transferDataRows.Add(new TransferDataRow
+    //        {
+    //            Key = $"{Guid.NewGuid().ToString()}{Extension}",
+    //            ContentType = ContentType,
+    //            Content = content.ToBase64String(),
+    //            Items = itemArray
+    //        });
+    //    }
 
-        return new TransferData
-        {
-            Namespace = @namespace,
-            ConnectorType = type,
-            ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
-            Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
-            Columns = GetTransferDataColumn(filteredData),
-            Rows = transferDataRows
-        };
-    }
+    //    return new TransferData
+    //    {
+    //        Namespace = @namespace,
+    //        ConnectorType = type,
+    //        ContentType = isSeparateCsvPerRow ? string.Empty : ContentType,
+    //        Content = isSeparateCsvPerRow ? string.Empty : csvContentBase64,
+    //        Columns = GetTransferDataColumn(filteredData),
+    //        Rows = transferDataRows
+    //    };
+    //}
 
     private Task<IEnumerable<CompressEntry>> CompressDataTable(DataTable dataTable, DelimiterOptions delimiterOptions)
     {
@@ -550,9 +563,9 @@ internal class CsvManager: ICsvManager
         return File.ReadAllBytes(fullPath);
     }
 
-    private DataTable Load(string content, string delimiter, bool? includeMetaData)
+    private InterchangeData Load(string content, string delimiter, bool? includeMetaData)
     {
-        var dataTable = new DataTable();
+        var dataTable = new InterchangeData();
         var lines = content.Split(System.Environment.NewLine);
 
         if (lines.Length == 0)
@@ -662,10 +675,10 @@ internal class CsvManager: ICsvManager
         return contentHash;
     }
 
-    private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
-    {
-        return dataTable.Columns.Cast<DataColumn>()
-            .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
-    }
+    //private IEnumerable<TransferDataColumn> GetTransferDataColumn(DataTable dataTable)
+    //{
+    //    return dataTable.Columns.Cast<DataColumn>()
+    //        .Select(x => new TransferDataColumn { Name = x.ColumnName, DataType = x.DataType });
+    //}
     #endregion
 }

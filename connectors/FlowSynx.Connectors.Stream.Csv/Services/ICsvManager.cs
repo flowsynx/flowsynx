@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Connectors.Abstractions;
 using FlowSynx.Connectors.Stream.Csv.Models;
+using FlowSynx.Data;
 using FlowSynx.IO.Compression;
 using System.Data;
 
@@ -13,7 +14,7 @@ public interface ICsvManager
 
     Task WriteAsync(Context context, CancellationToken cancellationToken);
 
-    Task<ReadResult> ReadAsync(Context context, CancellationToken cancellationToken);
+    Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken);
 
     Task UpdateAsync(Context context, CancellationToken cancellationToken);
 
@@ -21,13 +22,12 @@ public interface ICsvManager
 
     Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
     
-    Task<DataTable> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
+    Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken);
 
-    Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        TransferKind transferKind, CancellationToken cancellationToken);
+    Task TransferAsync(Context context, CancellationToken cancellationToken);
 
-    Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
-        CancellationToken cancellationToken);
+    //Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //    CancellationToken cancellationToken);
 
     Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

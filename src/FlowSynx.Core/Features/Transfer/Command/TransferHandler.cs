@@ -38,7 +38,7 @@ internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
             var destinationOptions = request.To.Options.ToConnectorOptions();
             var destinationContext = new Context(destinationOptions, destinationConnectorContext);
 
-            await sourceConnectorContext.Current.TransferAsync(sourceContext, destinationContext, transferKind, cancellationToken);
+            await sourceConnectorContext.Current.TransferAsync(sourceContext, cancellationToken);
 
             return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }

@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Connectors.Abstractions;
+using FlowSynx.Data;
 using FlowSynx.IO.Compression;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem.Services;
@@ -11,7 +12,7 @@ public interface ILocalFileManager
 
     Task WriteAsync(Context context);
 
-    Task<ReadResult> ReadAsync(Context context);
+    Task<InterchangeData> ReadAsync(Context context);
 
     Task UpdateAsync(Context context);
 
@@ -19,13 +20,12 @@ public interface ILocalFileManager
 
     Task<bool> ExistAsync(Context context);
 
-    Task<IEnumerable<object>> FilteredEntitiesAsync(Context context);
+    Task<InterchangeData> FilteredEntitiesAsync(Context context);
 
-    Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-        TransferKind transferKind, CancellationToken cancellationToken);
+    Task TransferAsync(Context context, CancellationToken cancellationToken);
 
-    Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
-        CancellationToken cancellationToken);
+    //Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //    CancellationToken cancellationToken);
 
     Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
 }

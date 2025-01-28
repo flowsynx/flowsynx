@@ -19,18 +19,20 @@ using FlowSynx.Core.Features.Create.Command;
 using FlowSynx.Core.Features.Transfer.Command;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.IO.Compression;
+using FlowSynx.Data;
+using FlowSynx.Core.Features.Workflow.Query;
 
 namespace FlowSynx.Core.Extensions;
 
 public static class MediatorExtensions
 {
-    #region Storage
+    #region Connectors
     public static Task<Result<object>> About(this IMediator mediator, AboutRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<object>>> List(this IMediator mediator, ListRequest request, CancellationToken cancellationToken)
+    public static Task<Result<InterchangeData>> List(this IMediator mediator, ListRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -40,7 +42,7 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<ReadResult>> Read(this IMediator mediator, ReadRequest request, CancellationToken cancellationToken)
+    public static Task<Result<InterchangeData>> Read(this IMediator mediator, ReadRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -68,6 +70,13 @@ public static class MediatorExtensions
     public static Task<Result<CompressResult>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
+    }
+    #endregion
+
+    #region Workflow
+    public static Task<Result<object>> Workflow(this IMediator mediator, WorkflowRequest workflow, CancellationToken cancellationToken)
+    {
+        return mediator.Send(workflow, cancellationToken);
     }
     #endregion
 

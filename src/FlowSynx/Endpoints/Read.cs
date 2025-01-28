@@ -23,10 +23,10 @@ public class Read : EndpointGroupBase
         //if (resultData is not StorageRead read)
         //    return Results.BadRequest(result);
 
-        if (!string.IsNullOrEmpty(resultData.ContentHash))
-            http.Response.Headers.Append("flowsynx-md5", resultData.ContentHash);
+        if (!string.IsNullOrEmpty((string)resultData.Rows[0]["ContentHash"]))
+            http.Response.Headers.Append("flowsynx-md5", (string)resultData.Rows[0]["ContentHash"]);
 
-        return Results.Bytes(resultData.Content);
+        return Results.Bytes((byte[])resultData.Rows[0]["Content"]);
         //return read.ContentType != null ?
         //    Results.Bytes(read.Content, read.ContentType) :
         //    Results.Bytes(read.Content);
