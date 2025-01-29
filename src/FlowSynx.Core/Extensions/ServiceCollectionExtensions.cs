@@ -24,6 +24,7 @@ using FlowSynx.Connectors.Database.MySql;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Data;
 using FlowSynx.Data.Sql;
+using FlowSynx.Core.Features.Workflow.Query;
 
 namespace FlowSynx.Core.Extensions;
 
@@ -51,6 +52,8 @@ public static class ServiceCollectionExtensions
             .AddFlowSynxData()
             .AddFlowSynxSqlBuilder()
             .AddCache<string, Connector>()
+            .AddScoped<IConnectorParser, ConnectorParser>()
+            .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IConnectorParser, ConnectorParser>()
             .AddScoped<INamespaceParser, NamespaceParser>()
             .AddScoped<ISpecificationsParser, SpecificationsParser>();

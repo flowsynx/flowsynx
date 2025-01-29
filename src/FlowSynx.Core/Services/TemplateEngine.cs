@@ -8,13 +8,13 @@ public class TemplateEngine
 {
     private readonly JObject _variables;
     private readonly IDictionary<string, TransformationFunction> _functions;
-    private readonly IDictionary<string, object> _results;
+    private readonly IDictionary<string, object?> _results;
 
     public TemplateEngine(JObject variables)
     {
         _variables = variables;
         _functions = new Dictionary<string, TransformationFunction>();
-        _results = new Dictionary<string, object>();
+        _results = new Dictionary<string, object?>();
     }
 
     public void RegisterFunction(string name, TransformationFunction function)
@@ -25,7 +25,7 @@ public class TemplateEngine
         _functions.Add(name, function);
     }
 
-    public void RegisterResults(Dictionary<string, object> results)
+    public void RegisterResults(Dictionary<string, object?> results)
     {
         foreach (var keyValue in results)
         {
@@ -33,7 +33,7 @@ public class TemplateEngine
         }
     }
 
-    public void RegisterResult(string name, object result)
+    public void RegisterResult(string name, object? result)
     {
         if (!_results.ContainsKey(name))
             _results.Add(name, JsonConvert.SerializeObject(result));
@@ -46,10 +46,10 @@ public class TemplateEngine
 
         while (cursor < template.Length)
         {
-            var startIndex = template.IndexOf("$[", cursor);
+            var startIndex = template.IndexOf("$[", cursor, StringComparison.Ordinal);
             if (startIndex == -1)
             {
-                result.Append(template.Substring(cursor));
+                result.Append(template[cursor..]);
                 break;
             }
 
@@ -208,7 +208,7 @@ public class TemplateEngine
 
     private string ReplaceVariables(string expression)
     {
-        var result = new System.Text.StringBuilder();
+        var result = new StringBuilder();
         var cursor = 0;
 
         while (cursor < expression.Length)
@@ -216,7 +216,7 @@ public class TemplateEngine
             var startIndex = expression.IndexOf("variables(", cursor);
             if (startIndex == -1)
             {
-                result.Append(expression.Substring(cursor));
+                result.Append(expression[cursor..]);
                 break;
             }
 

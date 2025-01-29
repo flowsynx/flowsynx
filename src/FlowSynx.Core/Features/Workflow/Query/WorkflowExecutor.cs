@@ -1,8 +1,11 @@
 ﻿using FlowSynx.Connectors.Abstractions.Extensions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
-using System.Threading.Tasks;
+using System.Reflection;
+using Microsoft.Extensions.Logging;
+using FlowSynx.Core.Parers.Connector;
+using FlowSynx.Connectors.Abstractions;
+using System.Linq;
+using FlowSynx.Data;
 
 namespace FlowSynx.Core.Features.Workflow.Query;
 
@@ -14,30 +17,28 @@ public enum TaskStatus
     Failed
 }
 
-public class WorkflowOutput
+public interface IWorkflowExecutor
 {
-    public string? Description { get; set; }
-    public object? Value { get; set; }
+    Task<Dictionary<string, object?>> ExecuteAsync(WorkflowPipelines workflowPipelines, WorkflowVariables variables, 
+        int degreeOfParallelism, CancellationToken cancellationToken);
 }
 
-public class WorkflowExecutor
+public class WorkflowExecutor: IWorkflowExecutor
 {
-    public readonly WorkflowPipelines _workflowPipelines;
-    private Dictionary<string, object> _variables;
-    private readonly int _degreeOfParallelism;
-    private readonly ConcurrentDictionary<string, object> _taskOutputs = new();
-    public Dictionary<string, object> Outputs { get; set; } = new Dictionary<string, object>();
+    private readonly ILogger<WorkflowExecutor> _logger;
+    private readonly IConnectorParser _connectorParser;
+    private readonly ConcurrentDictionary<string, object?> _taskOutputs = new();
 
-    public WorkflowExecutor(WorkflowPipelines workflowPipelines, Dictionary<string, object> variables, int degreeOfParallelism = 3)
+    public WorkflowExecutor(ILogger<WorkflowExecutor> logger, IConnectorParser connectorParser)
     {
-        _workflowPipelines = workflowPipelines;
-        _variables = variables;
-        _degreeOfParallelism = degreeOfParallelism;
+        _logger = logger;
+        _connectorParser = connectorParser;
     }
 
-    public async Task<Dictionary<string, object>> ExecuteAsync()
+    public async Task<Dictionary<string, object?>> ExecuteAsync(WorkflowPipelines workflowPipelines, WorkflowVariables variables, 
+        int degreeOfParallelism, CancellationToken cancellationToken)
     {
-        var taskMap = _workflowPipelines.ToDictionary(t => t.Name);
+        var taskMap = workflowPipelines.ToDictionary(t => t.Name);
         var pendingTasks = new HashSet<string>(taskMap.Keys);
 
         while (pendingTasks.Any())
@@ -50,20 +51,17 @@ public class WorkflowExecutor
                 throw new InvalidOperationException("There are failed task in dependencies.");
 
             var executionTasks = readyTasks.Select(taskId => taskMap[taskId]);
-            await ProcessWithDegreeOfParallelismAsync(executionTasks, degreeOfParallelism: _degreeOfParallelism);
-
-            //var executionTasks = readyTasks.Select(taskId => ExecuteTaskAsync(taskMap[taskId]));
-            //await Task.WhenAll(executionTasks);
+            await ProcessWithDegreeOfParallelismAsync(executionTasks, degreeOfParallelism, cancellationToken);
 
             foreach (var taskId in readyTasks)
                 pendingTasks.Remove(taskId);
         }
 
-        var outputs = new Dictionary<string, object>(_taskOutputs);
+        var outputs = new Dictionary<string, object?>(_taskOutputs);
         return outputs;
     }
 
-    private async Task ProcessWithDegreeOfParallelismAsync(IEnumerable<WorkflowTask> workflowTasks, int degreeOfParallelism)
+    private async Task ProcessWithDegreeOfParallelismAsync(IEnumerable<WorkflowTask> workflowTasks, int degreeOfParallelism, CancellationToken cancellationToken)
     {
         using var semaphore = new SemaphoreSlim(degreeOfParallelism);
         var tasks = new List<Task>();
@@ -71,54 +69,97 @@ public class WorkflowExecutor
         foreach (var item in workflowTasks)
         {
             // Wait for the semaphore to allow more tasks
-            await semaphore.WaitAsync();
+            await semaphore.WaitAsync(cancellationToken);
 
             tasks.Add(Task.Run(async () =>
             {
                 try
                 {
-                    await ExecuteTaskAsync(item); // Your task logic
+                    await ExecuteTaskAsync(item, cancellationToken); // Your task logic
                 }
                 finally
                 {
                     semaphore.Release(); // Release semaphore after task is done
                 }
-            }));
+            }, cancellationToken));
         }
 
         // Wait for all tasks to complete
         await Task.WhenAll(tasks);
     }
 
-    private IEnumerable<IEnumerable<WorkflowTask>> Partition(IEnumerable<WorkflowTask> source, int size)
-    {
-        return source
-            .Select((item, index) => new { item, index })
-            .GroupBy(x => x.index / size)
-            .Select(g => g.Select(x => x.item));
-    }
-
-    private async Task ExecuteTaskAsync(WorkflowTask task)
+    private async Task ExecuteTaskAsync(WorkflowTask task, CancellationToken cancellationToken)
     {
         try
         {
+            _logger.LogInformation($"Executing task {task.Name}...");
+
             task.Status = TaskStatus.Running;
+            var connectorContext = _connectorParser.Parse(task.Type);
             var options = task.Options.ToConnectorOptions();
+            var context = new Context(options, connectorContext.Next);
 
-            Console.WriteLine($"Executing task {task.Name}...");
+            var connector = connectorContext.Current;
+            var method = connector.GetType()
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .FirstOrDefault(m => m.Name.Contains(task.Process, StringComparison.OrdinalIgnoreCase));
 
-            await Task.Delay(500);
-            var output = new { Result = $"Output of {task.Name}" };
+            if (method == null)
+                throw new Exception("Method not found!");
 
-            _taskOutputs[task.Name] = output;
-            task.Status = TaskStatus.Completed;
-            Console.WriteLine($"Task {task.Name} completed.");
+            object[] parameters = { context, cancellationToken };
+
+            Task taskToRun = (Task)method.Invoke(connector, parameters);
+
+            // Await the Task completion dynamically
+            await taskToRun;
+
+            // If the Task has a result, retrieve it using reflection
+            PropertyInfo resultProperty = task.GetType().GetProperty("Result");
+            if (resultProperty != null)
+            {
+                object response = resultProperty.GetValue(task);
+                _taskOutputs[task.Name] = response;
+                task.Status = TaskStatus.Completed;
+
+                _logger.LogInformation($"Task {task.Name} completed.");
+            }
+
+            //var taskToRun = (Task<InterchangeData>)method.Invoke(connector, parameters)!;
+            //var response = await taskToRun;
+            //var response = Task.Run(() => method.Invoke(connector, parameters), cancellationToken)
+            //    .ContinueWith(t =>
+            //    {
+            //        if (t.Exception != null)
+            //        {
+            //            Console.WriteLine("Error: " + t.Exception);
+            //        }
+            //    }, cancellationToken);
+
+            //var result = method.Invoke(connector, parameters);
+
+            //object? response = null;
+            //if (result is Task myTask)
+            //{
+            //    await myTask.WaitAsync(cancellationToken); // Ensure completion
+            //    var resultProperty = result.GetType().GetProperty("Result");
+            //    response = resultProperty?.GetValue(result);
+            //}
+
+            //object[] parameters = { context, cancellationToken };
+            //var response = (Task<FlowSynx.Data.InterchangeData>)method.Invoke(connector, parameters)!;
+
+            //var response = await connectorContext.Current.ListAsync(context, cancellationToken);
+            //_taskOutputs[task.Name] = response;
+            //task.Status = TaskStatus.Completed;
+
+            //_logger.LogInformation($"Task {task.Name} completed.");
         }
         catch (Exception ex)
         {
             task.Status = TaskStatus.Failed;
             _taskOutputs[task.Name] = null;
-            Console.WriteLine($"Task {task.Name} failed: {ex.Message}");
+            _logger.LogError($"Task {task.Name} failed: {ex.Message}");
         }
     }
 }

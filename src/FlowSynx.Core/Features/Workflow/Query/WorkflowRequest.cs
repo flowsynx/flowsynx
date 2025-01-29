@@ -4,13 +4,13 @@ using FlowSynx.Connectors.Abstractions;
 
 namespace FlowSynx.Core.Features.Workflow.Query;
 
-public class WorkflowRequest : IRequest<Result<object>>
+public class WorkflowRequest : IRequest<Result<object?>>
 {
     public string WorkflowTemplate { get; set; }
 
-    public WorkflowRequest(string worflowTemplate)
+    public WorkflowRequest(string workflowTemplate)
     {
-        WorkflowTemplate = worflowTemplate;
+        WorkflowTemplate = workflowTemplate;
     }
 }
 
@@ -45,7 +45,7 @@ public class WorkflowTask
 
     public required string Name { get; set; }
     public string? Description { get; set; }
-    public required object Type { get; set; }
+    public required string Type { get; set; }
     public required string Process { get; set; }
     public List<string> Dependencies { get; set; }
     public ConnectorOptions? Options { get; set; }

@@ -74,7 +74,7 @@ public static class MediatorExtensions
     #endregion
 
     #region Workflow
-    public static Task<Result<object>> Workflow(this IMediator mediator, WorkflowRequest workflow, CancellationToken cancellationToken)
+    public static Task<Result<object?>> Workflow(this IMediator mediator, WorkflowRequest workflow, CancellationToken cancellationToken)
     {
         return mediator.Send(workflow, cancellationToken);
     }
