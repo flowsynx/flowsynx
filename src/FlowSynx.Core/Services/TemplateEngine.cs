@@ -330,9 +330,15 @@ public class TemplateEngine
 
         var functionName = transformation.Substring(0, openParenIndex).Trim();
         var argumentsString = transformation.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1);
-        var arguments = argumentsString.Split(',').Select(arg => arg.Trim()).Cast<object>().ToList();
+        var arguments = ParseArguments(argumentsString);
 
         return Tuple.Create(functionName, arguments);
+    }
+
+    private List<object> ParseArguments(string argumentsString)
+    {
+        var arguments = argumentsString.Split(',');
+        return arguments.Select(arg => arg.Trim()).Cast<object>().ToList();
     }
 
     private object ApplyTransformation(object? value, TransformationFunction function, List<object> arguments)
