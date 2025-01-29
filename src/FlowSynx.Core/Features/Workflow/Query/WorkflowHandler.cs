@@ -34,23 +34,48 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
         {
             var variablesJson = ExtractJson(request.WorkflowTemplate, "variables", JsonObjectType.JsonObject);
             var workflowVariables = _deserializer.Deserialize<WorkflowVariables>(variablesJson);
+
             var variablesJObject = JObject.Parse(variablesJson);
+            ConvertBooleansToLowercase(variablesJObject);
+
+            //foreach (var property in variablesJObject.Properties())
+            //{
+            //    if (property.Value.Type == JTokenType.Boolean)
+            //    {
+            //        property.Value = property.Value.ToString().ToLower(); // Change the case if needed
+            //    }
+            //}
 
             var pipelines = ExtractJson(request.WorkflowTemplate, "pipelines", JsonObjectType.JsonArray);
             var templateEngine = new TemplateEngine(variablesJObject);
 
-            templateEngine.RegisterTransformation(new TransformationFunction
-            { 
-                Name = "uppercase", 
-                ExpectedArgumentCount = 1, 
-                Apply = args => args[0].ToString().ToUpper()
-            });
+            templateEngine.RegisterFunction("uppercase", new StringTransformationFunction((value, args) => value.ToString().ToUpper()));
 
-            templateEngine.RegisterTransformation(new TransformationFunction{
-                Name = "add", 
-                ExpectedArgumentCount = 2,
-                Apply = args => (double.TryParse(args[0].ToString(), out var val1) && double.TryParse(args[1].ToString(), out var val2)) ? val1 + val2 : 0.0
-            });
+            templateEngine.RegisterFunction("add", new MathTransformationFunction((value, args) =>
+            {
+                var num = Convert.ToDouble(value);
+                var addValue = Convert.ToDouble(args[0]);
+                return num + addValue;
+            }, 1));
+
+            templateEngine.RegisterFunction("concat", new StringTransformationFunction((value, args) =>
+            {
+                return value + string.Join("", args);
+            }, 1, int.MaxValue));
+
+            //templateEngine.RegisterTransformation(new TransformationFunction
+            //{ 
+            //    Name = "uppercase", 
+            //    ExpectedArgumentCount = 1, 
+            //    Apply = args => args[0].ToString().ToUpper()
+            //});
+
+            //templateEngine.RegisterTransformation(new TransformationFunction
+            //{
+            //    Name = "add", 
+            //    ExpectedArgumentCount = 2,
+            //    Apply = args => (double.TryParse(args[0].ToString(), out var val1) && double.TryParse(args[1].ToString(), out var val2)) ? val1 + val2 : 0.0
+            //});
 
             var rendered = templateEngine.Render(pipelines);
 
@@ -81,18 +106,9 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
             }
 
             var result = await workflowExecutor.ExecuteAsync();
+            templateEngine.RegisterResults(result);
 
             var outputsJson = ExtractJson(request.WorkflowTemplate, "outputs", JsonObjectType.JsonObject);
-
-            var data = result
-                .Concat(workflowVariables)
-                .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-            //var data = new Dictionary<string, object>
-            //{
-            //    { "variables", workflowVariables },
-            //    { "references", result },
-            //};
 
             var outputRendered = templateEngine.Render(outputsJson);
 
@@ -160,7 +176,7 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
         // Find the start index of the key (e.g., "address":)
         int startIndex = json.IndexOf(key);
         if (startIndex == -1)
-            return null; // Key not found
+            return string.Empty; // Key not found
 
         // Find the start of the nested object (the opening brace)
         startIndex = json.IndexOf(type.StartBracket, startIndex);
@@ -187,19 +203,83 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object>
         return -1; // Closing brace not found
     }
 
-    private string RenderValue(object value)
+    private void ConvertBooleansToLowercase(JObject jObject)
     {
-        if (value is string)
+        foreach (var property in jObject.Properties().ToList())
         {
-            return value.ToString();
+            if (property.Value.Type == JTokenType.Boolean)
+            {
+                // Convert the boolean value to lowercase "true" or "false"
+                property.Value = property.Value.ToString().ToLower();
+            }
+            else if (property.Value.Type == JTokenType.Object)
+            {
+                // Recursively handle nested objects
+                ConvertBooleansToLowercase((JObject)property.Value);
+            }
+            else if (property.Value.Type == JTokenType.Array)
+            {
+                // Handle nested arrays if needed
+                foreach (var item in property.Value)
+                {
+                    if (item.Type == JTokenType.Boolean)
+                    {
+                        item.Replace(item.ToString().ToLower());
+                    }
+                }
+            }
         }
-        else if (value is bool)
+    }
+}
+
+public class StringTransformationFunction : TransformationFunction
+{
+    private readonly Func<object?, List<object>, object> _func;
+    private readonly int _minArgs;
+    private readonly int _maxArgs;
+
+    public StringTransformationFunction(Func<object, List<object>, object> func, int minArgs = 0, int maxArgs = 0)
+    {
+        _func = func;
+        _minArgs = minArgs;
+        _maxArgs = maxArgs;
+    }
+
+    public override void ValidateArguments(List<object> arguments)
+    {
+        if (arguments.Count < _minArgs || arguments.Count > _maxArgs)
         {
-            return value.ToString().ToLower();
+            throw new ArgumentException($"This transformation requires between {_minArgs} and {_maxArgs} arguments.");
         }
-        else
+    }
+
+    public override object Transform(object? value, List<object> arguments)
+    {
+        return _func(value, arguments);
+    }
+}
+
+public class MathTransformationFunction : TransformationFunction
+{
+    private readonly Func<object?, List<object>, object> _func;
+    private readonly int _expectedArgs;
+
+    public MathTransformationFunction(Func<object, List<object>, object> func, int expectedArgs)
+    {
+        _func = func;
+        _expectedArgs = expectedArgs;
+    }
+
+    public override void ValidateArguments(List<object> arguments)
+    {
+        if (arguments.Count != _expectedArgs)
         {
-            return JsonConvert.SerializeObject(value);
+            throw new ArgumentException($"This transformation requires exactly {_expectedArgs} arguments.");
         }
+    }
+
+    public override object Transform(object? value, List<object> arguments)
+    {
+        return _func(value, arguments);
     }
 }

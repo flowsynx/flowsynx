@@ -7,20 +7,36 @@ namespace FlowSynx.Core.Services;
 public class TemplateEngine
 {
     private readonly JObject _variables;
-    private readonly List<TransformationFunction> _functions;
+    private readonly IDictionary<string, TransformationFunction> _functions;
+    private readonly IDictionary<string, object> _results;
 
     public TemplateEngine(JObject variables)
     {
         _variables = variables;
-        _functions = new List<TransformationFunction>();
+        _functions = new Dictionary<string, TransformationFunction>();
+        _results = new Dictionary<string, object>();
     }
 
-    public void RegisterTransformation(TransformationFunction transformation)
+    public void RegisterFunction(string name, TransformationFunction function)
     {
-        if (_functions.Any(_ => Equals(transformation.Name)))
+        if (_functions.ContainsKey(name))
             throw new Exception("This function is already defined!");
 
-        _functions.Add(transformation);
+        _functions.Add(name, function);
+    }
+
+    public void RegisterResults(Dictionary<string, object> results)
+    {
+        foreach (var keyValue in results)
+        {
+            RegisterResult(keyValue.Key, keyValue.Value);
+        }
+    }
+
+    public void RegisterResult(string name, object result)
+    {
+        if (!_results.ContainsKey(name))
+            _results.Add(name, JsonConvert.SerializeObject(result));
     }
 
     public string Render(string template)
@@ -30,10 +46,10 @@ public class TemplateEngine
 
         while (cursor < template.Length)
         {
-            var startIndex = template.IndexOf("$[", cursor, StringComparison.Ordinal);
+            var startIndex = template.IndexOf("$[", cursor);
             if (startIndex == -1)
             {
-                result.Append(template[cursor..]);
+                result.Append(template.Substring(cursor));
                 break;
             }
 
@@ -61,47 +77,19 @@ public class TemplateEngine
         var valueExpression = parts[0].Trim();
         var transformations = parts.Length > 1 ? parts[1..] : Array.Empty<string>();
 
-        // Resolve the base value
-        object value;
+        // First, resolve any nested references or variables in the expression
+        var value = ResolveOrEvaluate(valueExpression);
 
-        if (valueExpression.Contains("(") && valueExpression.Contains(")") && !IsVariableReference(valueExpression))
-        {
-            var (transformationName, arguments) = ParseTransformation(valueExpression);
-
-            // Recursively resolve arguments of the transformation
-            for (var i = 0; i < arguments.Count; i++)
-            {
-                if (arguments[i] is string argString)
-                {
-                    arguments[i] = EvaluateExpression(argString); // Recursively evaluate nested expressions
-                }
-            }
-
-            var func = _functions.FirstOrDefault(x => x.Name.Equals(transformationName));
-            if (func != null)
-            {
-                // Apply the transformation with arguments
-                value = ApplyTransformation(null, func, arguments);
-            }
-            else
-            {
-                throw new Exception($"Unknown functions: {transformationName}");
-            }
-        }
-        else
-        {
-            // Otherwise resolve the expression as a variable or value
-            value = ResolveOrEvaluate(valueExpression);
-        }
-
-        // Apply transformation pipeline recursively
+        // Apply transformation pipeline
         foreach (var transformation in transformations)
         {
             var trimmedTransformation = transformation.Trim();
-            var (transformationName, arguments) = ParseTransformation(trimmedTransformation);
+            var transformationParts = ParseTransformation(trimmedTransformation);
+            var transformationName = transformationParts.Item1;
+            var arguments = transformationParts.Item2;
 
             // Recursively resolve arguments of the transformation
-            for (var i = 0; i < arguments.Count; i++)
+            for (int i = 0; i < arguments.Count; i++)
             {
                 if (arguments[i] is string argString)
                 {
@@ -109,11 +97,9 @@ public class TemplateEngine
                 }
             }
 
-            var func2 = _functions.FirstOrDefault(x => x.Name.Equals(transformationName));
-
-            if (func2 != null)
+            if (_functions.TryGetValue(transformationName, out var func))
             {
-                value = ApplyTransformation(value, func2, arguments);
+                value = ApplyTransformation(value, func, arguments);
             }
             else
             {
@@ -121,12 +107,63 @@ public class TemplateEngine
             }
         }
 
-        return value.ToString() ?? string.Empty;
+        return value.ToString();
+    }
+
+    private object? ResolveOrEvaluate(string expression)
+    {
+        if (IsVariableReference(expression))
+        {
+            return ResolveVariable(expression);
+        }
+
+        if (IsReference(expression))
+        {
+            return ResolveAndEvaluateReference(expression);
+        }
+
+        // Handle complex expressions like $[variables(val)] or nested ones
+        var resolvedExpression = ReplaceVariables(expression);
+        if (IsMathExpression(resolvedExpression))
+        {
+            return EvaluateMathExpression(resolvedExpression);
+        }
+
+        return resolvedExpression;
     }
 
     private bool IsVariableReference(string expression)
     {
-        return expression.StartsWith("variables(");
+        return expression.StartsWith("variables(") && expression.EndsWith(")");
+    }
+
+    private bool IsReference(string expression)
+    {
+        return expression.StartsWith("references(") && expression.EndsWith(")");
+    }
+
+    private object? ResolveVariable(string expression)
+    {
+        var varName = expression.Substring(10, expression.Length - 11);
+        return ResolveVariablePath(varName);
+    }
+
+    private object ResolveAndEvaluateReference(string expression)
+    {
+        var resultName = expression.Substring(11, expression.Length - 12);
+        var evaluatedResultName = EvaluateExpression(resultName);
+
+        if (_results.TryGetValue(evaluatedResultName, out var result))
+        {
+            // Treat the referenced result as a new template and evaluate it
+            if (result is string resultTemplate)
+            {
+                return Render(resultTemplate);
+            }
+            return result; // Return as-is if not a string
+        }
+
+        throw new Exception($"Unknown reference: {evaluatedResultName}");
     }
 
     private object? ResolveVariablePath(string path)
@@ -137,18 +174,19 @@ public class TemplateEngine
         foreach (var segment in segments)
         {
             var isArrayAccess = segment.Contains("[");
-            var baseSegment = isArrayAccess ? segment[..segment.IndexOf('[')] : segment;
+            var baseSegment = isArrayAccess ? segment.Substring(0, segment.IndexOf('[')) : segment;
 
-            switch (current)
+            if (current is JObject jObject)
             {
-                case JObject jObject:
-                    current = jObject[baseSegment];
-                    break;
-                case IDictionary<string, object> dict:
-                    current = dict.TryGetValue(baseSegment, out var value) ? value : null;
-                    break;
-                default:
-                    return null;
+                current = jObject[baseSegment];
+            }
+            else if (current is IDictionary<string, object> dict)
+            {
+                current = dict.TryGetValue(baseSegment, out var value) ? value : null;
+            }
+            else
+            {
+                return null;
             }
 
             if (isArrayAccess)
@@ -165,44 +203,33 @@ public class TemplateEngine
             }
         }
 
-        return RenderValue(current);
-    }
-
-    private object ResolveOrEvaluate(string expression)
-    {
-        var resolvedExpression = ReplaceVariables(expression);
-        if (IsMathExpression(resolvedExpression))
-        {
-            return EvaluateMathExpression(resolvedExpression);
-        }
-
-        return resolvedExpression;
+        return current;
     }
 
     private string ReplaceVariables(string expression)
     {
-        var result = new StringBuilder();
+        var result = new System.Text.StringBuilder();
         var cursor = 0;
 
         while (cursor < expression.Length)
         {
-            var startIndex = expression.IndexOf("variables(", cursor, StringComparison.Ordinal);
+            var startIndex = expression.IndexOf("variables(", cursor);
             if (startIndex == -1)
             {
-                result.Append(expression[cursor..]);
+                result.Append(expression.Substring(cursor));
                 break;
             }
 
             result.Append(expression.Substring(cursor, startIndex - cursor));
 
-            var endIndex = expression.IndexOf(")", startIndex, StringComparison.Ordinal);
+            var endIndex = expression.IndexOf(")", startIndex);
             if (endIndex == -1)
             {
                 throw new Exception("Unmatched opening 'variables(' delimiter.");
             }
 
             var variablePath = expression.Substring(startIndex + 10, endIndex - startIndex - 10);
-            var resolvedValue = ResolveVariablePath(variablePath);
+            var resolvedValue = ResolveVariable(variablePath);
 
             result.Append(resolvedValue);
             cursor = endIndex + 1;
@@ -227,13 +254,13 @@ public class TemplateEngine
         var values = new Stack<double>();
         var operators = new Stack<char>();
 
-        for (var i = 0; i < expression.Length; i++)
+        for (int i = 0; i < expression.Length; i++)
         {
-            var currentChar = expression[i];
+            char currentChar = expression[i];
 
             if (char.IsDigit(currentChar) || currentChar == '.')
             {
-                var number = string.Empty;
+                string number = string.Empty;
 
                 while (i < expression.Length && (char.IsDigit(expression[i]) || expression[i] == '.'))
                 {
@@ -244,33 +271,25 @@ public class TemplateEngine
                 values.Push(double.Parse(number));
                 i--;
             }
-            else switch (currentChar)
+            else if (currentChar == '(')
             {
-                case '(':
-                    operators.Push(currentChar);
-                    break;
-                case ')':
+                operators.Push(currentChar);
+            }
+            else if (currentChar == ')')
+            {
+                while (operators.Peek() != '(')
                 {
-                    while (operators.Peek() != '(')
-                    {
-                        values.Push(ApplyOperator(operators.Pop(), values.Pop(), values.Pop()));
-                    }
-                    operators.Pop();
-                    break;
+                    values.Push(ApplyOperator(operators.Pop(), values.Pop(), values.Pop()));
                 }
-                default:
+                operators.Pop();
+            }
+            else if ("+-*/".Contains(currentChar))
+            {
+                while (operators.Count > 0 && HasPrecedence(currentChar, operators.Peek()))
                 {
-                    if ("+-*/".Contains(currentChar))
-                    {
-                        while (operators.Count > 0 && HasPrecedence(currentChar, operators.Peek()))
-                        {
-                            values.Push(ApplyOperator(operators.Pop(), values.Pop(), values.Pop()));
-                        }
-                        operators.Push(currentChar);
-                    }
-
-                    break;
+                    values.Push(ApplyOperator(operators.Pop(), values.Pop(), values.Pop()));
                 }
+                operators.Push(currentChar);
             }
         }
 
@@ -284,7 +303,7 @@ public class TemplateEngine
 
     private bool HasPrecedence(char currentOperator, char stackOperator)
     {
-        return currentOperator is '+' or '-' && stackOperator is '*' or '/';
+        return (currentOperator == '+' || currentOperator == '-') && (stackOperator == '*' || stackOperator == '/');
     }
 
     private double ApplyOperator(char operatorChar, double b, double a)
@@ -309,72 +328,45 @@ public class TemplateEngine
             return Tuple.Create(transformation, new List<object>());
         }
 
-        var functionName = transformation[..openParenIndex].Trim();
-        var argsString = transformation.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1);
-        var args = ParseArguments(argsString);
+        var functionName = transformation.Substring(0, openParenIndex).Trim();
+        var argumentsString = transformation.Substring(openParenIndex + 1, closeParenIndex - openParenIndex - 1);
+        var arguments = argumentsString.Split(',').Select(arg => arg.Trim()).Cast<object>().ToList();
 
-        return Tuple.Create(functionName, args);
+        return Tuple.Create(functionName, arguments);
     }
 
-    private List<object> ParseArguments(string argsString)
+    private object ApplyTransformation(object? value, TransformationFunction function, List<object> arguments)
     {
-        var segments = argsString.Split(',');
-        return segments.Select(segment => segment.Trim()).Cast<object>().ToList();
+        function.ValidateArguments(arguments);
+        return function.Transform(value, arguments);
     }
 
-    private object ApplyTransformation(object? value, TransformationFunction func, List<object> arguments)
+    private int FindClosingBracket(string text, int startIndex)
     {
-        if (value != null)
+        var depth = 0;
+
+        for (int i = startIndex; i < text.Length; i++)
         {
-            arguments.Insert(0, value);
+            if (text[i] == '[')
+            {
+                depth++;
+            }
+            else if (text[i] == ']')
+            {
+                if (depth == 0)
+                {
+                    return i;
+                }
+                depth--;
+            }
         }
 
-        ValidateArguments(func, arguments);
-
-        return func.Apply(arguments);
-    }
-
-    private void ValidateArguments(TransformationFunction func, List<object> arguments)
-    {
-        if (func.ExpectedArgumentCount != arguments.Count)
-        {
-            throw new ArgumentException($"Transformation '{func.Name}' expects {func.ExpectedArgumentCount} arguments but got {arguments.Count}.");
-        }
-    }
-
-    /// <summary>
-    /// Finds the matching closing bracket for a placeholder.
-    /// </summary>
-    private int FindClosingBracket(string input, int startIndex)
-    {
-        var depth = 1;
-        for (var i = startIndex; i < input.Length; i++)
-        {
-            if (input[i] == '[') depth++;
-            if (input[i] == ']') depth--;
-
-            if (depth == 0) return i;
-        }
-
-        return -1; // No matching closing bracket found
-    }
-
-    private string RenderValue(object? value)
-    {
-        return value switch
-        {
-            null => string.Empty,
-            string => value.ToString(),
-            bool => value.ToString().ToLower(),
-            _ => JsonConvert.SerializeObject(value)
-        };
+        return -1;
     }
 }
 
-public class TransformationFunction
+public abstract class TransformationFunction
 {
-    public required string Name { get; set; }
-    public string? Description { get; set; }
-    public required int ExpectedArgumentCount { get; set; }
-    public required Func<List<object>, object> Apply { get; set; }
+    public abstract void ValidateArguments(List<object> arguments);
+    public abstract object Transform(object? value, List<object> arguments);
 }

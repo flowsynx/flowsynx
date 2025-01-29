@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FlowSynx.Connectors.Abstractions.Extensions;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
@@ -102,6 +103,8 @@ public class WorkflowExecutor
         try
         {
             task.Status = TaskStatus.Running;
+            var options = task.Options.ToConnectorOptions();
+
             Console.WriteLine($"Executing task {task.Name}...");
 
             await Task.Delay(500);
@@ -118,32 +121,4 @@ public class WorkflowExecutor
             Console.WriteLine($"Task {task.Name} failed: {ex.Message}");
         }
     }
-
-    //private Dictionary<string, object> ReplaceWorkflowReferences(WorkflowOutputs? outputs)
-    //{
-    //    var outputsJson = _serializer.Serialize(outputs);
-    //    var updatedWorkflowJson = ReplaceReferences(outputsJson);
-
-    //    return DeserializeJsonToDictionary(updatedWorkflowJson);
-
-    //    //return JsonConvert.DeserializeObject<Dictionary<string, object>>(updatedWorkflowJson);
-    //}
-
-    //private Dictionary<string, object> DeserializeJsonToDictionary(string json)
-    //{
-    //    // Deserialize the JSON string into a dictionary
-    //    var dictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
-
-    //    // Convert any nested JSON objects into dictionaries
-    //    foreach (var key in dictionary.Keys.ToList())
-    //    {
-    //        // Handle nested objects that may need to be further deserialized
-    //        if (dictionary[key] is JObject nestedObject)
-    //        {
-    //            dictionary[key] = nestedObject.ToObject<Dictionary<string, object>>();
-    //        }
-    //    }
-
-    //    return dictionary;
-    //}
 }
