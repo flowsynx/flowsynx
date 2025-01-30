@@ -1,11 +1,8 @@
-﻿using FlowSynx.Connectors.Abstractions.Extensions;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Connectors.Abstractions;
-using System.Linq;
-using FlowSynx.Data;
 
 namespace FlowSynx.Core.Features.Workflow.Query;
 
@@ -96,7 +93,7 @@ public class WorkflowExecutor: IWorkflowExecutor
 
             task.Status = TaskStatus.Running;
             var connectorContext = _connectorParser.Parse(task.Type);
-            var options = task.Options.ToConnectorOptions();
+            var options = task.Options ?? new ConnectorOptions();//.ToConnectorOptions();
             var context = new Context(options, connectorContext.Next);
 
             var connector = connectorContext.Current;
@@ -108,54 +105,19 @@ public class WorkflowExecutor: IWorkflowExecutor
                 throw new Exception("Method not found!");
 
             object[] parameters = { context, cancellationToken };
+            Task taskToExecute = (Task)method.Invoke(connector, parameters);
+            await taskToExecute.ConfigureAwait(false);
 
-            Task taskToRun = (Task)method.Invoke(connector, parameters);
-
-            // Await the Task completion dynamically
-            await taskToRun;
-
-            // If the Task has a result, retrieve it using reflection
-            PropertyInfo resultProperty = task.GetType().GetProperty("Result");
-            if (resultProperty != null)
+            if (taskToExecute.GetType().IsGenericType)
             {
-                object response = resultProperty.GetValue(task);
+                var response = taskToExecute.GetType().GetProperty("Result").GetValue(taskToExecute);
                 _taskOutputs[task.Name] = response;
                 task.Status = TaskStatus.Completed;
 
                 _logger.LogInformation($"Task {task.Name} completed.");
             }
-
-            //var taskToRun = (Task<InterchangeData>)method.Invoke(connector, parameters)!;
-            //var response = await taskToRun;
-            //var response = Task.Run(() => method.Invoke(connector, parameters), cancellationToken)
-            //    .ContinueWith(t =>
-            //    {
-            //        if (t.Exception != null)
-            //        {
-            //            Console.WriteLine("Error: " + t.Exception);
-            //        }
-            //    }, cancellationToken);
-
-            //var result = method.Invoke(connector, parameters);
-
-            //object? response = null;
-            //if (result is Task myTask)
-            //{
-            //    await myTask.WaitAsync(cancellationToken); // Ensure completion
-            //    var resultProperty = result.GetType().GetProperty("Result");
-            //    response = resultProperty?.GetValue(result);
-            //}
-
-            //object[] parameters = { context, cancellationToken };
-            //var response = (Task<FlowSynx.Data.InterchangeData>)method.Invoke(connector, parameters)!;
-
-            //var response = await connectorContext.Current.ListAsync(context, cancellationToken);
-            //_taskOutputs[task.Name] = response;
-            //task.Status = TaskStatus.Completed;
-
-            //_logger.LogInformation($"Task {task.Name} completed.");
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is TargetInvocationException)
         {
             task.Status = TaskStatus.Failed;
             _taskOutputs[task.Name] = null;
