@@ -3,22 +3,9 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Connectors.Abstractions;
+using System.Threading.Tasks;
 
 namespace FlowSynx.Core.Features.Workflow.Query;
-
-public enum TaskStatus
-{
-    Pending,
-    Running,
-    Completed,
-    Failed
-}
-
-public interface IWorkflowExecutor
-{
-    Task<Dictionary<string, object?>> ExecuteAsync(WorkflowPipelines workflowPipelines, WorkflowVariables variables, 
-        int degreeOfParallelism, CancellationToken cancellationToken);
-}
 
 public class WorkflowExecutor: IWorkflowExecutor
 {
@@ -32,23 +19,23 @@ public class WorkflowExecutor: IWorkflowExecutor
         _connectorParser = connectorParser;
     }
 
-    public async Task<Dictionary<string, object?>> ExecuteAsync(WorkflowPipelines workflowPipelines, WorkflowVariables variables, 
-        int degreeOfParallelism, CancellationToken cancellationToken)
+    public async Task<Dictionary<string, object?>> ExecuteAsync(WorkflowExecutionDefinition executionDefinition, 
+        CancellationToken cancellationToken)
     {
-        var taskMap = workflowPipelines.ToDictionary(t => t.Name);
+        var taskMap = executionDefinition.WorkflowPipelines.ToDictionary(t => t.Name);
         var pendingTasks = new HashSet<string>(taskMap.Keys);
 
         while (pendingTasks.Any())
         {
             var readyTasks = pendingTasks
-                .Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d) && taskMap[d].Status == TaskStatus.Completed))
+                .Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d) && taskMap[d].Status == WorkflowTaskStatus.Completed))
                 .ToList();
 
             if (!readyTasks.Any())
                 throw new InvalidOperationException("There are failed task in dependencies.");
 
             var executionTasks = readyTasks.Select(taskId => taskMap[taskId]);
-            await ProcessWithDegreeOfParallelismAsync(executionTasks, degreeOfParallelism, cancellationToken);
+            await ProcessWithDegreeOfParallelismAsync(executionTasks, executionDefinition.DegreeOfParallelism, cancellationToken);
 
             foreach (var taskId in readyTasks)
                 pendingTasks.Remove(taskId);
@@ -65,23 +52,21 @@ public class WorkflowExecutor: IWorkflowExecutor
 
         foreach (var item in workflowTasks)
         {
-            // Wait for the semaphore to allow more tasks
             await semaphore.WaitAsync(cancellationToken);
 
             tasks.Add(Task.Run(async () =>
             {
                 try
                 {
-                    await ExecuteTaskAsync(item, cancellationToken); // Your task logic
+                    await ExecuteTaskAsync(item, cancellationToken);
                 }
                 finally
                 {
-                    semaphore.Release(); // Release semaphore after task is done
+                    semaphore.Release();
                 }
             }, cancellationToken));
         }
 
-        // Wait for all tasks to complete
         await Task.WhenAll(tasks);
     }
 
@@ -91,37 +76,47 @@ public class WorkflowExecutor: IWorkflowExecutor
         {
             _logger.LogInformation($"Executing task {task.Name}...");
 
-            task.Status = TaskStatus.Running;
+            task.Status = WorkflowTaskStatus.Running;
             var connectorContext = _connectorParser.Parse(task.Type);
-            var options = task.Options ?? new ConnectorOptions();//.ToConnectorOptions();
+            var options = task.Options ?? new ConnectorOptions();
             var context = new Context(options, connectorContext.Next);
 
             var connector = connectorContext.Current;
-            var method = connector.GetType()
-                .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                .FirstOrDefault(m => m.Name.Contains(task.Process, StringComparison.OrdinalIgnoreCase));
-
-            if (method == null)
-                throw new Exception("Method not found!");
-
             object[] parameters = { context, cancellationToken };
-            Task taskToExecute = (Task)method.Invoke(connector, parameters);
-            await taskToExecute.ConfigureAwait(false);
+            var executionResult = await TryExecute(connector, task.Process, parameters);
 
-            if (taskToExecute.GetType().IsGenericType)
+            if (executionResult != null)
             {
-                var response = taskToExecute.GetType().GetProperty("Result").GetValue(taskToExecute);
-                _taskOutputs[task.Name] = response;
-                task.Status = TaskStatus.Completed;
-
+                _taskOutputs[task.Name] = executionResult;
+                task.Status = WorkflowTaskStatus.Completed;
                 _logger.LogInformation($"Task {task.Name} completed.");
             }
         }
         catch (Exception ex) when (ex is TargetInvocationException)
         {
-            task.Status = TaskStatus.Failed;
+            task.Status = WorkflowTaskStatus.Failed;
             _taskOutputs[task.Name] = null;
             _logger.LogError($"Task {task.Name} failed: {ex.Message}");
         }
+    }
+
+    private async Task<object?> TryExecute(object instance, string methodName, object[] parameters)
+    {
+        var method = instance.GetType()
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(m => m.Name.Contains(methodName, StringComparison.OrdinalIgnoreCase));
+
+        if (method == null)
+            throw new Exception("Method not found!");
+
+        var taskToExecute = (Task)method?.Invoke(instance, parameters)!;
+        await taskToExecute.ConfigureAwait(false);
+
+        if (!taskToExecute.GetType().IsGenericType) 
+            return null;
+
+        var response = taskToExecute.GetType().GetProperty("Result")?.GetValue(taskToExecute);
+        return response;
+
     }
 }

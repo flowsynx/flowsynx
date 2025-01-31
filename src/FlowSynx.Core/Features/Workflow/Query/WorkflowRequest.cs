@@ -40,7 +40,7 @@ public class WorkflowTask
         Name = name;
         Options = new ConnectorOptions();
         Dependencies = new List<string>();
-        Status = TaskStatus.Pending;
+        Status = WorkflowTaskStatus.Pending;
     }
 
     public required string Name { get; set; }
@@ -49,7 +49,7 @@ public class WorkflowTask
     public required string Process { get; set; }
     public List<string> Dependencies { get; set; }
     public ConnectorOptions? Options { get; set; }
-    public TaskStatus Status { get; set; }
+    public WorkflowTaskStatus Status { get; set; }
 }
 
 public class WorkflowOutputs: Dictionary<string, object>

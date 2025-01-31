@@ -2,17 +2,11 @@
 
 namespace FlowSynx.Core.Features.Workflow.Query;
 
-public class DAGValidatorResult
-{
-    public bool Cyclic { get; set; }
-    public List<string> CyclicNodes { get; set; } = new List<string>();
-}
-
-public class DAGValidator
+public class WorkflowDagValidator
 {
     private readonly WorkflowPipelines _workflowPipelines;
 
-    public DAGValidator(WorkflowPipelines workflowPipelines)
+    public WorkflowDagValidator(WorkflowPipelines workflowPipelines)
     {
         _workflowPipelines = workflowPipelines;
     }
@@ -36,7 +30,7 @@ public class DAGValidator
         return missingDependencies.ToList();
     }
 
-    public DAGValidatorResult Check()
+    public WorkflowDagValidatorResult Check()
     {
         var inDegree = new Dictionary<string, int>();
         var graph = new Dictionary<string, List<string>>();
@@ -85,14 +79,14 @@ public class DAGValidator
         if (visitedCount < inDegree.Count)
         {
             var cyclicNodes = inDegree.Where(kv => kv.Value > 0).Select(kv => kv.Key).ToList();
-            return new DAGValidatorResult
+            return new WorkflowDagValidatorResult
             {
                 Cyclic = true,
                 CyclicNodes = cyclicNodes
             };
         }
 
-        return new DAGValidatorResult
+        return new WorkflowDagValidatorResult
         {
             Cyclic = false
         };

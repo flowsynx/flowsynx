@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using EnsureThat;
 using FlowSynx.Abstractions;
-using FlowSynx.Core.Parers.Connector;
 using FlowSynx.IO.Serialization;
 using FlowSynx.Core.Services;
 using System.Text;
@@ -53,7 +52,7 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
             var rendered = templateEngine.Render(pipelines);
 
             var workflowPipelines = _deserializer.Deserialize<WorkflowPipelines>(rendered);
-            var workflowValidator = new DAGValidator(workflowPipelines);
+            var workflowValidator = new WorkflowDagValidator(workflowPipelines);
 
             var missingDependencies = workflowValidator.AllDependenciesExist();
 
@@ -76,8 +75,14 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
                 throw new Exception(sb.ToString());
             }
 
-            var result = await _workflowExecutor.ExecuteAsync(workflowPipelines, workflowVariables, 
-                3, cancellationToken);
+            var executionDefinition = new WorkflowExecutionDefinition
+            {
+                WorkflowPipelines = workflowPipelines,
+                WorkflowVariables = workflowVariables,
+                DegreeOfParallelism = 3
+            };
+
+            var result = await _workflowExecutor.ExecuteAsync(executionDefinition, cancellationToken);
             templateEngine.RegisterResults(result);
 
             var outputsJson = ExtractJson(request.WorkflowTemplate, "outputs", JsonObjectType.JsonObject);
