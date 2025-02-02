@@ -117,9 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CalleeConnectorNotSupported" xml:space="preserve">
-    <value>Local File Storage connector doesn't support as callee connector!</value>
-  </data>
   <data name="ConnectorDescription" xml:space="preserve">
     <value>Connector for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever</value>
   </data>

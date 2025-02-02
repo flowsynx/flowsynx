@@ -41,57 +41,37 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         _fileTransferUtility = CreateTransferUtility(_client);
     }
 
-    public Task<object> About(Context context, CancellationToken cancellationToken)
+    public async Task Create(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        throw new StorageException(Resources.AboutOperrationNotSupported);
-    }
-
-    public async Task CreateAsync(Context context, CancellationToken cancellationToken)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        await CreateEntityAsync(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
+        await CreateEntity(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Write(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        await WriteEntityAsync(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntity(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntityAsync(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
+        return await ReadEntity(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
+    public Task Update(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Delete(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteFilters = context.Options.ToObject<DeleteOptions>();
@@ -99,7 +79,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         var path = PathHelper.ToUnixPath(pathOptions.Path);
         listOptions.Fields = null;
 
-        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredEntities = await FilteredEntitiesList(path, listOptions, cancellationToken).ConfigureAwait(false);
 
         var entityItems = filteredEntities.Rows;
         if (entityItems.Count <= 0)
@@ -109,14 +89,11 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
             await DeleteObject(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
 
         if (deleteFilters.Purge is true)
-            await PurgeAsync(path, cancellationToken);
+            await Purge(path, cancellationToken);
     }
 
-    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
 
         var path = PathHelper.ToUnixPath(pathOptions.Path);
@@ -125,7 +102,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
@@ -134,26 +111,23 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var filteredEntities = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken);
+        var filteredEntities = await FilteredEntitiesList(pathOptions.Path, listOptions, cancellationToken);
         return filteredEntities;
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken = default)
     //{
-    //    if (destinationContext.ConnectorContext?.Current is null)
-    //        throw new StorageException(Resources.CalleeConnectorNotSupported);
-
     //    var sourcePathOptions = sourceContext.Options.ToObject<PathOptions>();
     //    var sourceListOptions = sourceContext.Options.ToObject<ListOptions>();
     //    var sourceReadOptions = sourceContext.Options.ToObject<ReadOptions>();
@@ -165,10 +139,10 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //    foreach (var row in transferData.Rows)
     //        row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData,
+    //public async Task ProcessTransfer(Context context, TransferData transferData,
     //    TransferKind transferKind, CancellationToken cancellationToken = default)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -182,11 +156,11 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //        var parentPath = PathHelper.GetParent(path);
     //        if (!PathHelper.IsRootPath(parentPath))
     //        {
-    //            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+    //            await CreateEntity(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
 
     //            var clonedWriteOptions = (WriteOptions)writeOptions.Clone();
     //            clonedWriteOptions.Data = transferData.Content;
-    //            await WriteEntityAsync(path, clonedWriteOptions, cancellationToken).ConfigureAwait(false);
+    //            await WriteEntity(path, clonedWriteOptions, cancellationToken).ConfigureAwait(false);
 
     //            _logger.LogInformation($"Copy operation done for entity '{path}'");
     //        }
@@ -199,7 +173,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //            {
     //                if (transferData.Namespace == Namespace.Storage)
     //                {
-    //                    await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+    //                    await CreateEntity(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -208,11 +182,11 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //                var parentPath = PathHelper.GetParent(item.Key);
     //                if (!PathHelper.IsRootPath(parentPath))
     //                {
-    //                    await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+    //                    await CreateEntity(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
 
     //                    var clonedWriteOptions = (WriteOptions)writeOptions.Clone();
     //                    clonedWriteOptions.Data = item.Content;
-    //                    await WriteEntityAsync(item.Key, clonedWriteOptions, cancellationToken).ConfigureAwait(false);
+    //                    await WriteEntity(item.Key, clonedWriteOptions, cancellationToken).ConfigureAwait(false);
 
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
@@ -221,16 +195,13 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesList(path, listOptions, cancellationToken);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -248,7 +219,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await ReadEntity(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -268,7 +239,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     public void Dispose() { }
 
     #region internal methods
-    private async Task CreateEntityAsync(string path, CreateOptions createOptions, CancellationToken cancellationToken)
+    private async Task CreateEntity(string path, CreateOptions createOptions, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -277,7 +248,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
         if (!isExist)
         {
@@ -293,7 +264,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    private async Task WriteEntityAsync(string path, WriteOptions writeOptions, CancellationToken cancellationToken)
+    private async Task WriteEntity(string path, WriteOptions writeOptions, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -310,7 +281,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
             if (isExist && writeOptions.Overwrite is false)
@@ -325,7 +296,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    private async Task<InterchangeData> ReadEntityAsync(string path, ReadOptions readOptions, CancellationToken cancellationToken)
+    private async Task<InterchangeData> ReadEntity(string path, ReadOptions readOptions, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -336,7 +307,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
             if (!isExist)
@@ -399,7 +370,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
             if (!isExist)
             {
@@ -419,7 +390,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    private async Task PurgeAsync(string? path, CancellationToken cancellationToken)
+    private async Task Purge(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         var folder = path;
@@ -429,10 +400,10 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         await DeleteObject(folder, cancellationToken);
     }
 
-    private async Task<InterchangeData> FilteredEntitiesListAsync(string path, ListOptions listOptions, 
+    private async Task<InterchangeData> FilteredEntitiesList(string path, ListOptions listOptions, 
         CancellationToken cancellationToken)
     {
-        var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
+        var entities = await EntitiesList(path, listOptions, cancellationToken);
         var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ListToInterchangeData();
         var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
@@ -440,7 +411,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         return (InterchangeData)filteredEntities;
     }
 
-    private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions, 
+    private async Task<IEnumerable<StorageEntity>> EntitiesList(string path, ListOptions listOptions, 
         CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -456,7 +427,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
-            buckets.AddRange(await ListBucketsAsync(cancellationToken).ConfigureAwait(false));
+            buckets.AddRange(await ListBuckets(cancellationToken).ConfigureAwait(false));
             storageEntities.AddRange(buckets.Select(b => b.ToEntity(listOptions.IncludeMetadata)));
 
             if (!listOptions.Recurse)
@@ -464,19 +435,19 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
         else
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             path = pathParts.RelativePath;
             buckets.Add(pathParts.BucketName);
         }
 
         await Task.WhenAll(buckets.Select(b =>
-            ListObjectsAsync(b, storageEntities, path, listOptions, cancellationToken))
+            ListObjects(b, storageEntities, path, listOptions, cancellationToken))
         ).ConfigureAwait(false);
 
         return storageEntities;
     }
 
-    private async Task<IReadOnlyCollection<string>> ListBucketsAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyCollection<string>> ListBuckets(CancellationToken cancellationToken)
     {
         var buckets = await _client.ListBucketsAsync(cancellationToken).ConfigureAwait(false);
         return buckets.Buckets
@@ -484,11 +455,11 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
             .Select(bucket => bucket.BucketName).ToList();
     }
 
-    private async Task ListObjectsAsync(string bucketName, List<StorageEntity> result, string path,
+    private async Task ListObjects(string bucketName, List<StorageEntity> result, string path,
     ListOptions listOptions, CancellationToken cancellationToken)
     {
         var entities = new List<StorageEntity>();
-        await ListFolderAsync(entities, bucketName, path, listOptions, cancellationToken).ConfigureAwait(false);
+        await ListFolder(entities, bucketName, path, listOptions, cancellationToken).ConfigureAwait(false);
 
         if (entities.Count > 0)
         {
@@ -496,7 +467,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    private async Task ListFolderAsync(List<StorageEntity> entities, string bucketName, string path,
+    private async Task ListFolder(List<StorageEntity> entities, string bucketName, string path,
         ListOptions listOptions, CancellationToken cancellationToken)
     {
         var request = new ListObjectsV2Request()
@@ -524,7 +495,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         if (listOptions.Recurse)
         {
             var directories = result.Where(b => b.Kind == StorageEntityItemKind.Directory).ToList();
-            await Task.WhenAll(directories.Select(f => ListFolderAsync(entities, bucketName, GetRelativePath(f.FullPath),
+            await Task.WhenAll(directories.Select(f => ListFolder(entities, bucketName, GetRelativePath(f.FullPath),
                 listOptions, cancellationToken))).ConfigureAwait(false);
         }
     }
@@ -549,7 +520,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         return parts.Length == 1 ? string.Empty : PathHelper.Combine(parts.Skip(1));
     }
 
-    private AmazonS3EntityPart GetPartsAsync(string fullPath)
+    private AmazonS3EntityPart GetParts(string fullPath)
     {
         fullPath = PathHelper.Normalize(fullPath);
         if (fullPath == null)
@@ -598,7 +569,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //    var pathOptions = context.Options.ToObject<PathOptions>();
     //    var listOptions = context.Options.ToObject<ListOptions>();
 
-    //    var entities = await EntitiesListAsync(pathOptions.Path, listOptions, cancellationToken);
+    //    var entities = await EntitiesList(pathOptions.Path, listOptions, cancellationToken);
 
     //    var fields = GetFields(listOptions.Fields);
     //    var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -627,7 +598,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //            if (!string.IsNullOrEmpty(fullPath))
     //            {
     //                var readOptions = new ReadOptions { Hashing = false };
-    //                var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+    //                var read = await ReadEntity(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
     //                content = read.Content.ToBase64String();
     //            }
     //        }

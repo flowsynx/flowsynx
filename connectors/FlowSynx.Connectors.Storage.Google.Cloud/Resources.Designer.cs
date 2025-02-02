@@ -61,24 +61,6 @@ namespace FlowSynx.Connectors.Storage.Google.Cloud {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to About operation is not supported for Google Cloud storage!.
-        /// </summary>
-        internal static string AboutOperrationNotSupported {
-            get {
-                return ResourceManager.GetString("AboutOperrationNotSupported", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Google Cloud Storage connector doesn&apos;t support as callee connector!.
-        /// </summary>
-        internal static string CalleeConnectorNotSupported {
-            get {
-                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Connector for managing Google Cloud Storage system..
         /// </summary>
         internal static string ConnectorDescription {

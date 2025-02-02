@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Connectors.Abstractions;
 using System.Threading.Tasks;
+using Azure;
 
 namespace FlowSynx.Core.Features.Workflow.Query;
 
@@ -77,11 +78,20 @@ public class WorkflowExecutor: IWorkflowExecutor
             _logger.LogInformation($"Executing task {task.Name}...");
 
             task.Status = WorkflowTaskStatus.Running;
-            var connectorContext = _connectorParser.Parse(task.Type);
+            var connector = _connectorParser.Parse(task.Type);
             var options = task.Options ?? new ConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
 
-            var connector = connectorContext.Current;
+            List<object?> results = new();
+            foreach (var depencency in task.Dependencies)
+            {
+                if (_taskOutputs.TryGetValue(depencency, out var output))
+                {
+                    results.Add(output);
+                }
+            }
+
+            var context = new Context(options, results);
+
             object[] parameters = { context, cancellationToken };
             var executionResult = await TryExecute(connector, task.Process, parameters);
 
@@ -104,7 +114,7 @@ public class WorkflowExecutor: IWorkflowExecutor
     {
         var method = instance.GetType()
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .FirstOrDefault(m => m.Name.Contains(methodName, StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(m => m.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase));
 
         if (method == null)
             throw new Exception("Method not found!");
@@ -117,6 +127,5 @@ public class WorkflowExecutor: IWorkflowExecutor
 
         var response = taskToExecute.GetType().GetProperty("Result")?.GetValue(taskToExecute);
         return response;
-
     }
 }

@@ -40,30 +40,16 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         _format = Format.MySql;
     }
 
-    public Task<object> About(Context context, CancellationToken cancellationToken)
+    public async Task Create(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        throw new DatabaseException(Resources.AboutOperrationNotSupported);
-    }
-
-    public async Task CreateAsync(Context context, CancellationToken cancellationToken)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         var createTableOption = GetCreateOption(createOptions);
-        await CreateTableAsync(createTableOption, cancellationToken);
+        await CreateTable(createTableOption, cancellationToken);
     }
 
-    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Write(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
         var writeFilters = context.Options.ToObject<WriteOptions>();
 
         var insertOption = GetInsertOption(writeFilters);
@@ -74,11 +60,8 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         _logger.LogInformation($"Inserted {rowsAffected} row(s)!");
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var selectSqlOption = GetSelectOption(listOptions);
@@ -104,16 +87,13 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
+    public Task Update(Context context, CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Delete(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
 
         var deleteOption = GetDeleteOption(deleteOptions);
@@ -124,14 +104,11 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
 
         if (deleteOptions.Purge is true)
-            await PurgeAsync(deleteOptions.Table, cancellationToken);
+            await Purge(deleteOptions.Table, cancellationToken);
     }
 
-    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
         var existOptions = context.Options.ToObject<ExistOptions>();
 
         var existSqlOption = GetExistRecordOption(existOptions);
@@ -142,16 +119,13 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return reader.HasRows;
     }
 
-    public async Task<InterchangeData> EntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> Entities(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
-        var dataTable = await FilteredEntitiesAsync(context, cancellationToken);
+        var dataTable = await FilteredEntities(context, cancellationToken);
         return dataTable;
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
 
@@ -166,7 +140,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return dataTable;
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
@@ -174,9 +148,6 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
-    //    if (destinationContext.ConnectorContext?.Current is null)
-    //        throw new DatabaseException(Resources.CalleeConnectorNotSupported);
-
     //    var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
     //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
     //}
@@ -226,9 +197,9 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     //    _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
+        var filteredData = await FilteredEntities(context, cancellationToken);
 
         if (filteredData.Rows.Count <= 0)
             throw new DatabaseException("string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)");
@@ -286,7 +257,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     //    };
     //}
 
-    private async Task PurgeAsync(string tableName, CancellationToken cancellationToken)
+    private async Task Purge(string tableName, CancellationToken cancellationToken)
     {
         var selectSqlOption = GetDropTableOption(tableName);
         var sql = _sqlBuilder.DropTable(_format, selectSqlOption);
@@ -448,7 +419,7 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private async Task CreateTableAsync(CreateOption createOption, CancellationToken cancellationToken)
+    private async Task CreateTable(CreateOption createOption, CancellationToken cancellationToken)
     {
         var sql = _sqlBuilder.Create(_format, createOption);
         var command = new MySqlCommand(sql, _connection);

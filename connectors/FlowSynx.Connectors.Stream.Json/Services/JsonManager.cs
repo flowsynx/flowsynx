@@ -32,84 +32,79 @@ public class JsonManager : IJsonManager
         _serializer = serializer;
     }
 
-    public Task<object> About(Context context, CancellationToken cancellationToken)
-    {
-        throw new StreamException(Resources.AboutOperrationNotSupported);
-    }
-
-    public Task CreateAsync(Context context, CancellationToken cancellationToken)
+    public Task Create(Context context, CancellationToken cancellationToken)
     {
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
-    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Write(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
         var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
         var content = PrepareDataForWrite(writeOptions, indentedOptions);
-        if (context.ConnectorContext?.Current != null)
-        {
-            var clonedOptions = (ConnectorOptions)context.Options.Clone();
-            clonedOptions["Data"] = content;
-            var newContext = new Context(clonedOptions, context.ConnectorContext.Next);
+        //if (context.ConnectorContext?.Current != null)
+        //{
+        //    var clonedOptions = (ConnectorOptions)context.Options.Clone();
+        //    clonedOptions["Data"] = content;
+        //    var newContext = new Context(clonedOptions, context.ConnectorContext.Next);
 
-            await context.ConnectorContext.Current.WriteAsync(newContext, cancellationToken).ConfigureAwait(false);
-            return;
-        }
+        //    await context.ConnectorContext.Current.Write(newContext, cancellationToken).ConfigureAwait(false);
+        //    return;
+        //}
 
         var append = writeOptions.OverWrite is false;
-        await WriteLocallyAsync(pathOptions.Path, content, append).ConfigureAwait(false);
+        await WriteLocally(pathOptions.Path, content, append).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
         var content = await ReadContent(context, cancellationToken);
-        return await ReadLocallyAsync(content, listOptions).ConfigureAwait(false);
+        return await ReadLocally(content, listOptions).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
+    public Task Update(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public Task Delete(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
     {
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntities(context, cancellationToken).ConfigureAwait(false);
         return filteredData.Rows.Count > 0;
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
         var content = await ReadContent(context, cancellationToken);
-        var dataTable = await JsonDataDataTableAsync(content, listOptions);
+        var dataTable = await JsonDataDataTable(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
         return (InterchangeData)_dataService.Select(dataTable, dataFilterOptions);
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
     //    if (destinationContext.ConnectorContext?.Current is null)
     //        throw new StreamException(Resources.CalleeConnectorNotSupported);
 
     //    var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //public async Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -159,7 +154,7 @@ public class JsonManager : IJsonManager
     //                clonedOptions["Data"] = data;
     //                var newContext = new Context(clonedOptions);
 
-    //                await WriteAsync(newContext, cancellationToken);
+    //                await Write(newContext, cancellationToken);
     //            }
     //        }
     //    }
@@ -191,11 +186,11 @@ public class JsonManager : IJsonManager
     //        clonedOptions["Data"] = data;
     //        var newContext = new Context(clonedOptions);
 
-    //        await WriteAsync(newContext, cancellationToken);
+    //        await Write(newContext, cancellationToken);
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
@@ -208,7 +203,7 @@ public class JsonManager : IJsonManager
         var compressOptions = context.Options.ToObject<CompressOptions>();
         var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntities(context, cancellationToken).ConfigureAwait(false);
 
         if (filteredData.Rows.Count <= 0)
             throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
@@ -258,7 +253,7 @@ public class JsonManager : IJsonManager
         }
     }
 
-    private Task WriteLocallyAsync(string entity, string content, bool append)
+    private Task WriteLocally(string entity, string content, bool append)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrEmpty(path))
@@ -289,18 +284,18 @@ public class JsonManager : IJsonManager
         if (!PathHelper.IsFile(path))
             throw new StreamException(Resources.ThePathIsNotFile);
 
-        if (context.ConnectorContext?.Current is not null)
-        {
-            var content = await context.ConnectorContext.Current.ReadAsync(new Context(context.Options), cancellationToken);
-            return Encoding.UTF8.GetString((byte[])content.Rows[0]["Content"]);
-        }
+        //if (context.ConnectorContext?.Current is not null)
+        //{
+        //    var content = await context.ConnectorContext.Current.Read(new Context(context.Options), cancellationToken);
+        //    return Encoding.UTF8.GetString((byte[])content.Rows[0]["Content"]);
+        //}
 
         return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
-    private async Task<InterchangeData> ReadLocallyAsync(string content, ListOptions listOptions)
+    private async Task<InterchangeData> ReadLocally(string content, ListOptions listOptions)
     {
-        var entities = await FilteredDataAsync(content, listOptions).ConfigureAwait(false);
+        var entities = await FilteredData(content, listOptions).ConfigureAwait(false);
 
         return entities.Rows.Count switch
         {
@@ -318,14 +313,14 @@ public class JsonManager : IJsonManager
         return result;
     }
 
-    private async Task<DataTable> FilteredDataAsync(string content, ListOptions listOptions)
+    private async Task<DataTable> FilteredData(string content, ListOptions listOptions)
     {
-        var dataTable = await JsonDataDataTableAsync(content, listOptions);
+        var dataTable = await JsonDataDataTable(content, listOptions);
         var dataFilterOptions = GetFilterOptions(listOptions);
         return _dataService.Select(dataTable, dataFilterOptions);
     }
 
-    private Task<InterchangeData> JsonDataDataTableAsync(string json, ListOptions options)
+    private Task<InterchangeData> JsonDataDataTable(string json, ListOptions options)
     {
         var jToken = JToken.Parse(json);
         var dataTable = jToken switch
@@ -512,7 +507,7 @@ public class JsonManager : IJsonManager
     //    var transferOptions = context.Options.ToObject<TransferOptions>();
     //    var indentedOptions = context.Options.ToObject<IndentedOptions>();
 
-    //    var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+    //    var filteredData = await FilteredEntities(context, cancellationToken).ConfigureAwait(false);
 
     //    var isSeparateJsonPerRow = transferOptions.SeparateDataPerRow;
     //    var jsonContentBase64 = string.Empty;

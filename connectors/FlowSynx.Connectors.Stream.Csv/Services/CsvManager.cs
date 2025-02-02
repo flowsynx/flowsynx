@@ -31,54 +31,39 @@ internal class CsvManager: ICsvManager
         _specifications = specifications;
     }
 
-    public Task<object> About(Context context, CancellationToken cancellationToken)
-    {
-        throw new StreamException(Resources.AboutOperrationNotSupported);
-    }
-
-    public Task CreateAsync(Context context, CancellationToken cancellationToken)
+    public Task Create(Context context, CancellationToken cancellationToken)
     {
         throw new StreamException(Resources.CreateOperrationNotSupported);
     }
 
-    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Write(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
         var content = PrepareDataForWrite(writeOptions, delimiterOptions);
-        if (context.ConnectorContext?.Current != null)
-        {
-            var clonedOptions = (ConnectorOptions)context.Options.Clone();
-            clonedOptions["Data"] = content;
-            var newContext = new Context(clonedOptions, context.ConnectorContext.Next);
-
-            await context.ConnectorContext.Current.WriteAsync(newContext, cancellationToken);
-            return;
-        }
-
         var append = writeOptions.OverWrite is false;
-        await WriteLocallyAsync(pathOptions.Path, content, append, cancellationToken).ConfigureAwait(false);
+        await WriteLocally(pathOptions.Path, content, append, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
-    {
-        var readOptions = context.Options.ToObject<ReadOptions>();
-        var listOptions = context.Options.ToObject<ListOptions>();
-        var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
+    //public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
+    //{
+    //    var readOptions = context.Options.ToObject<ReadOptions>();
+    //    var listOptions = context.Options.ToObject<ListOptions>();
+    //    var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
 
-        var content = await ReadContent(context, cancellationToken);
+    //    var content = await ReadContent(context, cancellationToken);
 
-        return await ReadLocallyAsync(content, readOptions, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
-    }
+    //    return await ReadLocally(content, readOptions, listOptions, delimiterOptions, cancellationToken).ConfigureAwait(false);
+    //}
 
-    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
+    public Task Update(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Delete(Context context, CancellationToken cancellationToken)
     {
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -99,13 +84,13 @@ internal class CsvManager: ICsvManager
         await WriteContent(context, data, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
     {
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken).ConfigureAwait(false);
+        var filteredData = await FilteredEntities(context, cancellationToken).ConfigureAwait(false);
         return filteredData.Rows.Count > 0;
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken)
     {
         var delimiterOptions = context.Options.ToObject<DelimiterOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -115,22 +100,22 @@ internal class CsvManager: ICsvManager
         return GetFilteredData(content, delimiter, listOptions);
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
     //    if (destinationContext.ConnectorContext?.Current is null)
     //        throw new StreamException(Resources.CalleeConnectorNotSupported);
 
     //    var transferData = await PrepareDataForTransferring(@namespace, type, sourceContext, cancellationToken);
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //public async Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -181,7 +166,7 @@ internal class CsvManager: ICsvManager
     //                clonedOptions["Data"] = data;
     //                var newContext = new Context(clonedOptions);
 
-    //                await WriteAsync(newContext, cancellationToken);
+    //                await Write(newContext, cancellationToken);
     //            }
     //        }
     //    }
@@ -214,11 +199,11 @@ internal class CsvManager: ICsvManager
     //        clonedOptions["Data"] = data;
     //        var newContext = new Context(clonedOptions);
 
-    //        await WriteAsync(newContext, cancellationToken);
+    //        await Write(newContext, cancellationToken);
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
@@ -231,7 +216,7 @@ internal class CsvManager: ICsvManager
         if (!IsCsvFile(path))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
+        var filteredData = await FilteredEntities(context, cancellationToken);
 
         if (filteredData.Rows.Count <= 0)
             throw new StreamException(string.Format(Resources.NoItemsFoundWithTheGivenFilter, path));
@@ -274,7 +259,7 @@ internal class CsvManager: ICsvManager
         return sb.ToString();
     }
 
-    private Task WriteLocallyAsync(string path, string content, bool append,
+    private Task WriteLocally(string path, string content, bool append,
     CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -309,16 +294,16 @@ internal class CsvManager: ICsvManager
         if (!string.Equals(Path.GetExtension(path), Extension, StringComparison.OrdinalIgnoreCase))
             throw new StreamException(Resources.ThePathIsNotCsvFile);
 
-        if (context.ConnectorContext is not null)
-        {
-            var content = await context.ConnectorContext.Current.ReadAsync(new Context(context.Options), cancellationToken);
-            return Encoding.UTF8.GetString((byte[])content.Rows[0]["Content"]);
-        }
+        //if (context.ConnectorContext is not null)
+        //{
+        //    var content = await context.ConnectorContext.Current.Read(new Context(context.Options), cancellationToken);
+        //    return Encoding.UTF8.GetString((byte[])content.Rows[0]["Content"]);
+        //}
 
         return await File.ReadAllTextAsync(path, cancellationToken);
     }
 
-    private Task<InterchangeData> ReadLocallyAsync(string content, ReadOptions readOptions,
+    private Task<InterchangeData> ReadLocally(string content, ReadOptions readOptions,
     ListOptions listOptions, DelimiterOptions delimiterOptions,
     CancellationToken cancellationToken)
     {
@@ -348,16 +333,16 @@ internal class CsvManager: ICsvManager
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
 
-        if (context.ConnectorContext != null)
-        {
-            var clonedOptions = (ConnectorOptions)context.Options.Clone();
-            clonedOptions["Path"] = path;
-            clonedOptions["Data"] = content;
-            var newContext = new Context(clonedOptions);
+        //if (context.ConnectorContext != null)
+        //{
+        //    var clonedOptions = (ConnectorOptions)context.Options.Clone();
+        //    clonedOptions["Path"] = path;
+        //    clonedOptions["Data"] = content;
+        //    var newContext = new Context(clonedOptions);
 
-            await context.ConnectorContext.Current.WriteAsync(newContext, cancellationToken).ConfigureAwait(false);
-            return;
-        }
+        //    await context.ConnectorContext.Current.Write(newContext, cancellationToken).ConfigureAwait(false);
+        //    return;
+        //}
 
         if (string.IsNullOrEmpty(path))
             throw new StreamException(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -403,7 +388,7 @@ internal class CsvManager: ICsvManager
 
     //    var delimiter = GetDelimiter(delimiterOptions.Delimiter);
 
-    //    var filteredData = await FilteredEntitiesAsync(context, cancellationToken);
+    //    var filteredData = await FilteredEntities(context, cancellationToken);
 
     //    var transferDataRows = new List<TransferDataRow>();
     //    var columnNames = filteredData.Columns.Cast<DataColumn>().Select(column => column.ColumnName).ToArray();

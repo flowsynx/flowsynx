@@ -79,15 +79,6 @@ namespace FlowSynx.Connectors.Storage.Memory {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Memory Storage connector doesn&apos;t support as callee connector!.
-        /// </summary>
-        internal static string CalleeConnectorNotSupported {
-            get {
-                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Connector for managing entities in memory.
         /// </summary>
         internal static string ConnectorDescription {

@@ -24,10 +24,11 @@ internal class ExistHandler : IRequestHandler<ExistRequest, Result<object>>
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
-            var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
-            var response = await connectorContext.Current.ExistAsync(context, cancellationToken);
+            //var connectorContext = _connectorParser.Parse(request.Connector);
+            //var options = request.Options.ToConnectorOptions();
+            //var context = new Context(options, connectorContext.Next);
+            //var response = await connectorContext.Current.ExistAsync(context, cancellationToken);
+            var response = "amin";
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

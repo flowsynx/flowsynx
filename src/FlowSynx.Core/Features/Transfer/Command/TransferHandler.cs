@@ -26,19 +26,19 @@ internal class TransferHandler : IRequestHandler<TransferRequest, Result<Unit>>
     {
         try
         {
-            var transferKind = string.IsNullOrEmpty(request.TransferKind)
-                ? TransferKind.Copy
-                : EnumUtils.GetEnumValueOrDefault<TransferKind>(request.TransferKind)!.Value;
+            //var transferKind = string.IsNullOrEmpty(request.TransferKind)
+            //    ? TransferKind.Copy
+            //    : EnumUtils.GetEnumValueOrDefault<TransferKind>(request.TransferKind)!.Value;
 
-            var sourceConnectorContext = _connectorParser.Parse(request.From.Connector);
-            var sourceOptions = request.From.Options.ToConnectorOptions();
-            var sourceContext = new Context(sourceOptions, sourceConnectorContext.Next);
+            //var sourceConnectorContext = _connectorParser.Parse(request.From.Connector);
+            //var sourceOptions = request.From.Options.ToConnectorOptions();
+            //var sourceContext = new Context(sourceOptions, sourceConnectorContext.Next);
 
-            var destinationConnectorContext = _connectorParser.Parse(request.To.Connector);
-            var destinationOptions = request.To.Options.ToConnectorOptions();
-            var destinationContext = new Context(destinationOptions, destinationConnectorContext);
+            //var destinationConnectorContext = _connectorParser.Parse(request.To.Connector);
+            //var destinationOptions = request.To.Options.ToConnectorOptions();
+            //var destinationContext = new Context(destinationOptions, destinationConnectorContext);
 
-            await sourceConnectorContext.Current.TransferAsync(sourceContext, cancellationToken);
+            //await sourceConnectorContext.Current.TransferAsync(sourceContext, cancellationToken);
 
             return await Result<Unit>.SuccessAsync(Resources.CopyHandlerSuccessfullyCopy);
         }

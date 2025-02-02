@@ -61,24 +61,6 @@ namespace FlowSynx.Connectors.Database.MySql {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to About operation is not supported for MySql database!.
-        /// </summary>
-        internal static string AboutOperrationNotSupported {
-            get {
-                return ResourceManager.GetString("AboutOperrationNotSupported", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to MySql connector doesn&apos;t support as callee connector!.
-        /// </summary>
-        internal static string CalleeConnectorNotSupported {
-            get {
-                return ResourceManager.GetString("CalleeConnectorNotSupported", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Connector for connect and manage the MySql RDBMS..
         /// </summary>
         internal static string ConnectorDescription {

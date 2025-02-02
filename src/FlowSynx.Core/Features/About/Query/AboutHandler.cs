@@ -24,10 +24,10 @@ internal class AboutHandler : IRequestHandler<AboutRequest, Result<object>>
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
+            var connector = _connectorParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
-            var response = await connectorContext.Current.About(context, cancellationToken);
+            var context = new Context(options);
+            var response = connector.Description;// .About(context, cancellationToken);
             return await Result<object>.SuccessAsync(response);
         }
         catch (Exception ex)

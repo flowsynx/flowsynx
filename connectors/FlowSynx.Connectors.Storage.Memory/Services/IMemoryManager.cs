@@ -8,24 +8,24 @@ public interface IMemoryManager
 {
     Task<object> About(Context context);
 
-    Task CreateAsync(Context context);
+    Task Create(Context context);
 
-    Task WriteAsync(Context context);
+    Task Write(Context context);
 
-    Task<InterchangeData> ReadAsync(Context context);
+    Task<InterchangeData> Read(Context context);
 
-    Task UpdateAsync(Context context);
+    Task Update(Context context);
 
-    Task DeleteAsync(Context context);
+    Task Delete(Context context);
 
-    Task<bool> ExistAsync(Context context);
+    Task<bool> Exist(Context context);
 
-    Task<InterchangeData> FilteredEntitiesAsync(Context context);
+    Task<InterchangeData> FilteredEntities(Context context);
 
-    Task TransferAsync(Context context, CancellationToken cancellationToken);
+    Task Transfer(Context context, CancellationToken cancellationToken);
 
-    //Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken);
 
-    Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
+    Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken);
 }

@@ -117,12 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AboutOperrationNotSupported" xml:space="preserve">
-    <value>About operation is not supported for Amazon S3 storage!</value>
-  </data>
-  <data name="CalleeConnectorNotSupported" xml:space="preserve">
-    <value>Amazon S3 Storage connector doesn't support as callee connector!</value>
-  </data>
   <data name="ConnectorDescription" xml:space="preserve">
     <value>Connector for managing Amazon Web Service S3 Storage system.</value>
   </data>

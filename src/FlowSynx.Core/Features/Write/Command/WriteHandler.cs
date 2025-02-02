@@ -24,10 +24,10 @@ internal class WriteHandler : IRequestHandler<WriteRequest, Result<Unit>>
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
-            var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
-            await connectorContext.Current.WriteAsync(context, cancellationToken);
+            //var connectorContext = _connectorParser.Parse(request.Connector);
+            //var options = request.Options.ToConnectorOptions();
+            //var context = new Context(options, connectorContext.Next);
+            //await connectorContext.Current.WriteAsync(context, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.WriteHandlerSuccessfullyWriten);
         }
         catch (Exception ex)

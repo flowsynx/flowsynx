@@ -6,23 +6,21 @@ namespace FlowSynx.Connectors.Database.MySql.Services;
 
 public interface IMysqlDatabaseManager
 {
-    Task<object> About(Context context, CancellationToken cancellationToken);
+    Task Create(Context context, CancellationToken cancellationToken);
 
-    Task CreateAsync(Context context, CancellationToken cancellationToken);
+    Task Write(Context context, CancellationToken cancellationToken);
 
-    Task WriteAsync(Context context, CancellationToken cancellationToken);
+    Task<InterchangeData> Read(Context context, CancellationToken cancellationToken);
 
-    Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken);
+    Task Update(Context context, CancellationToken cancellationToken);
 
-    Task UpdateAsync(Context context, CancellationToken cancellationToken);
+    Task Delete(Context context, CancellationToken cancellationToken);
 
-    Task DeleteAsync(Context context, CancellationToken cancellationToken);
+    Task<bool> Exist(Context context, CancellationToken cancellationToken);
 
-    Task<bool> ExistAsync(Context context, CancellationToken cancellationToken);
+    Task<InterchangeData> Entities(Context context, CancellationToken cancellationToken);
 
-    Task<InterchangeData> EntitiesAsync(Context context, CancellationToken cancellationToken);
-
-    Task TransferAsync(Context context, CancellationToken cancellationToken);
+    Task Transfer(Context context, CancellationToken cancellationToken);
 
     //Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken);
@@ -30,5 +28,5 @@ public interface IMysqlDatabaseManager
     //Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken);
 
-    Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken);
+    Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken);
 }

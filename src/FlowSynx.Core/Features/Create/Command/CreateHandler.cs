@@ -24,10 +24,10 @@ internal class CreateHandler : IRequestHandler<CreateRequest, Result<Unit>>
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
-            var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
-            await connectorContext.Current.CreateAsync(context, cancellationToken);
+            //var connectorContext = _connectorParser.Parse(request.Connector);
+            //var options = request.Options.ToConnectorOptions();
+            //var context = new Context(options, connectorContext.Next);
+            //await connectorContext.Current.CreateAsync(context, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.CreateHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

@@ -24,10 +24,10 @@ internal class DeleteHandler : IRequestHandler<DeleteRequest, Result<Unit>>
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
-            var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
-            await connectorContext.Current.DeleteAsync(context, cancellationToken);
+            //var connectorContext = _connectorParser.Parse(request.Connector);
+            //var options = request.Options.ToConnectorOptions();
+            //var context = new Context(options, connectorContext.Next);
+            //await connectorContext.Current.DeleteAsync(context, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

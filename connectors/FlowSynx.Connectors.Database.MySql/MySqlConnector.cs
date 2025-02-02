@@ -36,7 +36,7 @@ public class MySqlConnector : Connector
 
     public override Guid Id => Guid.Parse("20fc1d0c-7fef-43e4-95bc-f99f3e5fd088");
     public override string Name => "MySql";
-    public override Namespace Namespace => Namespace.Database;
+    public override Namespace Namespace => Namespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
     public override System.Type SpecificationsType => typeof(MySqlpecifications);
@@ -49,40 +49,36 @@ public class MySqlConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override async Task<object> About(Context context, 
+    public async Task Create(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.About(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Create(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task CreateAsync(Context context, 
+    public async Task Write(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.CreateAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Write(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task WriteAsync(Context context, 
+    public async Task<InterchangeData> Read(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.WriteAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Read(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<InterchangeData> ReadAsync(Context context, 
+    public async Task Update(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.ReadAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Update(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task UpdateAsync(Context context, 
+    public async Task Delete(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.UpdateAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Delete(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task DeleteAsync(Context context, 
+    public async Task<bool> Exist(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.DeleteAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Exist(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<bool> ExistAsync(Context context, 
+    public async Task<InterchangeData> List(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.ExistAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Entities(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<InterchangeData> ListAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.EntitiesAsync(context, cancellationToken).ConfigureAwait(false);
-
-    public override async Task TransferAsync(Context context, CancellationToken cancellationToken = default) =>
-        await _manager.TransferAsync(context, cancellationToken).ConfigureAwait(false);
+    public async Task Transfer(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
 
     //public override async Task TransferAsync(Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
@@ -93,7 +89,7 @@ public class MySqlConnector : Connector
     //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
     //    await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context,
         CancellationToken cancellationToken = default) =>
-        await _manager.CompressAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }

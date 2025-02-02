@@ -39,9 +39,6 @@ public class AzureFilesManager: IAzureFilesManager
 
     public async Task<object> About(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         long totalUsed;
         try
         {
@@ -57,49 +54,37 @@ public class AzureFilesManager: IAzureFilesManager
         return new { Total = totalUsed };
     }
 
-    public async Task CreateAsync(Context context, CancellationToken cancellationToken)
+    public async Task Create(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        await CreateEntityAsync(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
+        await CreateEntity(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Write(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        await WriteEntityAsync(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntity(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntityAsync(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
+        return await ReadEntity(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(Context context, CancellationToken cancellationToken)
+    public Task Update(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Delete(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
@@ -107,48 +92,42 @@ public class AzureFilesManager: IAzureFilesManager
         var path = PathHelper.ToUnixPath(pathOptions.Path);
         listOptions.Fields = null;
 
-        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredEntities = await FilteredEntitiesList(path, listOptions, cancellationToken).ConfigureAwait(false);
 
         var entityItems = filteredEntities.Rows;
         if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         foreach (DataRow entityItem in entityItems)
-            await DeleteEntityAsync(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
+            await DeleteEntity(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
 
         if (deleteOptions.Purge is true)
-            await PurgeEntityAsync(path, cancellationToken);
+            await PurgeEntity(path, cancellationToken);
     }
 
-    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
 
-        return await ExistEntityAsync(pathOptions.Path, cancellationToken).ConfigureAwait(false);
+        return await ExistEntity(pathOptions.Path, cancellationToken).ConfigureAwait(false);
     }
     
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context,
+    public async Task<InterchangeData> FilteredEntities(Context context,
        CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+        var result = await FilteredEntitiesList(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
         return result;
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
     //    if (destinationContext.ConnectorContext?.Current is null)
@@ -166,10 +145,10 @@ public class AzureFilesManager: IAzureFilesManager
     //    foreach (var row in transferData.Rows)
     //        row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //public async Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -189,8 +168,8 @@ public class AzureFilesManager: IAzureFilesManager
     //                Overwrite = writeOptions.Overwrite
     //            };
 
-    //            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-    //            await WriteEntityAsync(path, newWriteOption, cancellationToken).ConfigureAwait(false);
+    //            await CreateEntity(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+    //            await WriteEntity(path, newWriteOption, cancellationToken).ConfigureAwait(false);
     //            _logger.LogInformation($"Copy operation done for entity '{path}'");
     //        }
     //    }
@@ -202,7 +181,7 @@ public class AzureFilesManager: IAzureFilesManager
     //            {
     //                if (transferData.Namespace == Namespace.Storage)
     //                {
-    //                    await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+    //                    await CreateEntity(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -217,8 +196,8 @@ public class AzureFilesManager: IAzureFilesManager
     //                        Overwrite = writeOptions.Overwrite,
     //                    };
 
-    //                    await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-    //                    await WriteEntityAsync(item.Key, newWriteOption, cancellationToken).ConfigureAwait(false);
+    //                    await CreateEntity(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+    //                    await WriteEntity(item.Key, newWriteOption, cancellationToken).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -226,15 +205,12 @@ public class AzureFilesManager: IAzureFilesManager
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesList(path, listOptions, cancellationToken);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -252,7 +228,7 @@ public class AzureFilesManager: IAzureFilesManager
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await ReadEntity(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -270,7 +246,7 @@ public class AzureFilesManager: IAzureFilesManager
     }
 
     #region internal methods
-    private async Task CreateEntityAsync(string path, CreateOptions options,
+    private async Task CreateEntity(string path, CreateOptions options,
         CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -313,7 +289,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task WriteEntityAsync(string path, WriteOptions options, CancellationToken cancellationToken)
+    private async Task WriteEntity(string path, WriteOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -338,7 +314,7 @@ public class AzureFilesManager: IAzureFilesManager
 
             var createOption = new CreateOptions { Hidden = false };
             var parentPath = PathHelper.GetParent(path) + PathHelper.PathSeparatorString;
-            await CreateEntityAsync(parentPath, createOption, cancellationToken);
+            await CreateEntity(parentPath, createOption, cancellationToken);
 
             await fileClient.CreateAsync(maxSize: dataStream.Length, cancellationToken: cancellationToken);
             await fileClient.UploadRangeAsync(new HttpRange(0, dataStream.Length), dataStream, cancellationToken: cancellationToken);
@@ -369,7 +345,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task<InterchangeData> ReadEntityAsync(string path, ReadOptions options,
+    private async Task<InterchangeData> ReadEntity(string path, ReadOptions options,
         CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -421,7 +397,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task DeleteEntityAsync(string? path, CancellationToken cancellationToken)
+    private async Task DeleteEntity(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -438,7 +414,7 @@ public class AzureFilesManager: IAzureFilesManager
             }
 
             ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
-            await DeleteAllAsync(directoryClient, cancellationToken: cancellationToken);
+            await DeleteAll(directoryClient, cancellationToken: cancellationToken);
             _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
@@ -463,14 +439,14 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task PurgeEntityAsync(string? path, CancellationToken cancellationToken)
+    private async Task PurgeEntity(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
         await directoryClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
     }
 
-    private async Task DeleteAllAsync(ShareDirectoryClient dirClient, CancellationToken cancellationToken)
+    private async Task DeleteAll(ShareDirectoryClient dirClient, CancellationToken cancellationToken)
     {
 
         await foreach (ShareFileItem item in dirClient.GetFilesAndDirectoriesAsync())
@@ -478,7 +454,7 @@ public class AzureFilesManager: IAzureFilesManager
             if (item.IsDirectory)
             {
                 var subDir = dirClient.GetSubdirectoryClient(item.Name);
-                await DeleteAllAsync(subDir, cancellationToken: cancellationToken);
+                await DeleteAll(subDir, cancellationToken: cancellationToken);
             }
             else
             {
@@ -489,7 +465,7 @@ public class AzureFilesManager: IAzureFilesManager
         await dirClient.DeleteAsync(cancellationToken);
     }
 
-    private async Task<bool> ExistEntityAsync(string entity, CancellationToken cancellationToken)
+    private async Task<bool> ExistEntity(string entity, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(entity);
         if (string.IsNullOrWhiteSpace(path))
@@ -528,11 +504,11 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task<InterchangeData> FilteredEntitiesListAsync(string path, ListOptions listOptions,
+    private async Task<InterchangeData> FilteredEntitiesList(string path, ListOptions listOptions,
        CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
-        var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
+        var entities = await EntitiesList(path, listOptions, cancellationToken);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ListToInterchangeData();
@@ -541,7 +517,7 @@ public class AzureFilesManager: IAzureFilesManager
         return (InterchangeData)filteredEntities;
     }
 
-    private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions,
+    private async Task<IEnumerable<StorageEntity>> EntitiesList(string path, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -604,7 +580,7 @@ public class AzureFilesManager: IAzureFilesManager
     //{
     //    path = PathHelper.ToUnixPath(path);
 
-    //    var storageEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+    //    var storageEntities = await FilteredEntitiesList(path, listOptions, cancellationToken).ConfigureAwait(false);
 
     //    var fields = GetFields(listOptions.Fields);
     //    var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -631,7 +607,7 @@ public class AzureFilesManager: IAzureFilesManager
     //        {
     //            if (!string.IsNullOrEmpty(fullPath))
     //            {
-    //                var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+    //                var read = await ReadEntity(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
     //                content = read.Content.ToBase64String();
     //            }
     //        }

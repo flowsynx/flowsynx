@@ -30,7 +30,7 @@ public class LocalFileSystemConnector : Connector
 
     public override Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
     public override string Name => "LocalFileSystem";
-    public override Namespace Namespace => Namespace.Storage;
+    public override Namespace Namespace => Namespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(LocalFileSystemSpecifications);
@@ -41,46 +41,47 @@ public class LocalFileSystemConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override async Task<object> About(Context context, 
-        CancellationToken cancellationToken = default) =>
+    [ConnectorMetadata(LinkType.Output)]
+    public async Task<object> About(Context context, CancellationToken cancellationToken = default) =>
         await _manager.About(context).ConfigureAwait(false);
 
-    public override async Task CreateAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.CreateAsync(context).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.Input)]
+    public async Task Create(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Create(context).ConfigureAwait(false);
 
-    public override async Task WriteAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.WriteAsync(context).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.Input)]
+    public async Task Write(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Write(context).ConfigureAwait(false);
 
-    public override async Task<InterchangeData> ReadAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.ReadAsync(context).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.Output)]
+    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Read(context).ConfigureAwait(false);
 
-    public override async Task UpdateAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.UpdateAsync(context).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.InputOutput)]
+    public async Task Update(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Update(context).ConfigureAwait(false);
 
-    public override async Task DeleteAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.DeleteAsync(context).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.Output)]
+    public async Task Delete(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Delete(context).ConfigureAwait(false);
 
-    public override async Task<bool> ExistAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.ExistAsync(context);
+    [ConnectorMetadata(LinkType.InputOutput)]
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Exist(context);
 
-    public override async Task<InterchangeData> ListAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.FilteredEntitiesAsync(context).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.InputOutput)]
+    public async Task<InterchangeData> List(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.FilteredEntities(context).ConfigureAwait(false);
 
-    public override async Task TransferAsync(Context context, CancellationToken cancellationToken = default) =>
-        await _manager.TransferAsync(context, cancellationToken).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.Input)]
+    public async Task Transfer(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
 
-    //public override async Task ProcessTransferAsync(Context context, TransferData transferData,
+    //public override async Task ProcessTransfer(Context context, TransferData transferData,
     //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
-    //    await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
+    //    await _manager.ProcessTransfer(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.CompressAsync(context, cancellationToken).ConfigureAwait(false);
+    [ConnectorMetadata(LinkType.Input)]
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }

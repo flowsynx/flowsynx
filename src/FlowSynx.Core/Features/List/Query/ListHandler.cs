@@ -25,10 +25,11 @@ internal class ListHandler : IRequestHandler<ListRequest, Result<InterchangeData
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
-            var options = request.Options.ToConnectorOptions();
-            var context = new Context(options, connectorContext.Next);
-            var response = await connectorContext.Current.ListAsync(context, cancellationToken);
+            //var connectorContext = _connectorParser.Parse(request.Connector);
+            //var options = request.Options.ToConnectorOptions();
+            //var context = new Context(options, connectorContext.Next);
+            //var response = await connectorContext.Current.ListAsync(context, cancellationToken);
+            var response = "s";
             return await Result<InterchangeData>.SuccessAsync(response);
         }
         catch (Exception ex)

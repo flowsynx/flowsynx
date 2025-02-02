@@ -48,60 +48,26 @@ internal class ConnectorParser : IConnectorParser
         _serviceProvider = serviceProvider;
     }
 
-    public ConnectorContext Parse(string? connectorInput)
+    public FlowSynx.Connectors.Abstractions.Connector Parse(string? connector)
     {
         try
         {
-            if (string.IsNullOrEmpty(connectorInput))
+            if (string.IsNullOrEmpty(connector))
             {
                 var localFileSystemConnector = GetConnector(LocalFileSystemConnector(), "LocalFileSystem", null);
-                return CreateConnectorContext(localFileSystemConnector, null);
+                return localFileSystemConnector;
             }
 
-            var connectors = connectorInput.Split(ParserSeparator);
-            if (connectors.Length > 2)
-                throw new StorageNormsParserException("Pipeline is not applied correctly.");
-
-            string currentConfigName;
-            string nextConfigName = string.Empty;
-            if (connectors.Length == 1)
-            {
-                currentConfigName = connectors[0];
-            }
-            else
-            {
-                currentConfigName = connectors[0];
-                nextConfigName = connectors[1];
-            }
-
-            var currentConfigExist = _configurationManager.IsExist(currentConfigName);
+            var currentConfigExist = _configurationManager.IsExist(connector);
 
             if (!currentConfigExist)
-                throw new StorageNormsParserException($"{currentConfigName} is not exist.");
+                throw new StorageNormsParserException($"{connector} is not exist.");
 
-            var currentConfig = _configurationManager.Get(currentConfigName);
-            if (_namespaceParser.Parse(currentConfig.Type) == FlowSynx.Connectors.Abstractions.Namespace.Stream)
-            {
-                if (!string.IsNullOrEmpty(nextConfigName))
-                {
-                    var secondaryConfigNameExist = _configurationManager.IsExist(nextConfigName);
-                    if (!secondaryConfigNameExist)
-                        throw new StorageNormsParserException($"{nextConfigName} is not exist.");
-                }
-            }
-
-            FlowSynx.Connectors.Abstractions.Connector? nextConnector = null;
-            if (!string.IsNullOrEmpty(nextConfigName))
-            {
-                var secondaryConfig = _configurationManager.Get(nextConfigName);
-                var getNextConnector = _connectorsManager.Get(secondaryConfig.Type);
-                nextConnector = GetConnector(getNextConnector, nextConfigName, secondaryConfig.Specifications.ToSpecifications());
-            }
-
+            var currentConfig = _configurationManager.Get(connector);
             var getCurrentConnector = _connectorsManager.Get(currentConfig.Type);
-            var currentConnector = GetConnector(getCurrentConnector, currentConfigName, currentConfig.Specifications.ToSpecifications());
+            var currentConnector = GetConnector(getCurrentConnector, connector, currentConfig.Specifications.ToSpecifications());
 
-            return CreateConnectorContext(currentConnector, nextConnector);
+            return currentConnector;
         }
         catch (Exception ex)
         {
@@ -117,7 +83,8 @@ internal class ConnectorParser : IConnectorParser
         return (LocalFileSystemConnector)localFileSystem;
     }
 
-    private FlowSynx.Connectors.Abstractions.Connector GetConnector(FlowSynx.Connectors.Abstractions.Connector connector, string configName, Connectors.Abstractions.Specifications? specifications)
+    private FlowSynx.Connectors.Abstractions.Connector GetConnector(FlowSynx.Connectors.Abstractions.Connector connector, 
+        string configName, Connectors.Abstractions.Specifications? specifications)
     {
         var key = GenerateKey(connector.Id, configName, specifications);
         var cachedConnectorContext = _cache.Get(key);
@@ -132,16 +99,6 @@ internal class ConnectorParser : IConnectorParser
         connector.Initialize();
         _cache.Set(key, connector);
         return connector;
-    }
-
-    private ConnectorContext CreateConnectorContext(FlowSynx.Connectors.Abstractions.Connector currentConnector, 
-        FlowSynx.Connectors.Abstractions.Connector? nextConnector)
-    {
-        var nextConnectorContext = nextConnector is null ? null : new ConnectorContext(nextConnector);
-        return new ConnectorContext(currentConnector)
-        {
-            Next = nextConnectorContext
-        };
     }
 
     private string GenerateKey(Guid connectorId, string configName, object? connectorSpecifications)

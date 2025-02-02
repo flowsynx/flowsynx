@@ -7,6 +7,7 @@ using FlowSynx.IO.Compression;
 using FlowSynx.Connectors.Abstractions.Extensions;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Connectors.Abstractions;
+using FlowSynx.IO;
 
 namespace FlowSynx.Core.Features.Compress.Command;
 
@@ -29,23 +30,26 @@ internal class CompressHandler : IRequestHandler<CompressRequest, Result<Compres
     {
         try
         {
-            var connectorContext = _connectorParser.Parse(request.Connector);
+            var connector = _connectorParser.Parse(request.Connector);
             var options = request.Options.ToConnectorOptions();
 
             var compressType = string.IsNullOrEmpty(request.CompressType)
                 ? CompressType.Zip
                 : EnumUtils.GetEnumValueOrDefault<CompressType>(request.CompressType)!.Value;
 
-            var context = new Context(options, connectorContext.Next);
-            var compressEntries = await connectorContext.Current.CompressAsync(context, cancellationToken);
+            //var context = new Context(options);
+            //var compressEntries = connector.Specifications;// await connector.CompressAsync(context, cancellationToken);
 
-            var enumerable = compressEntries.ToList();
-            if (!enumerable.Any())
-                throw new Exception(Resources.NoDataToCompress);
+            //var enumerable = compressEntries.ToList();
+            //if (!enumerable.Any())
+            //    throw new Exception(Resources.NoDataToCompress);
 
-            var compressResult = await _compressionFactory(compressType).Compress(enumerable);
+            //var compressResult = await _compressionFactory(compressType).Compress(enumerable);
+            //var response = new CompressResult
+            //    { Content = compressResult.Content, ContentType = compressResult.ContentType };
+
             var response = new CompressResult
-                { Content = compressResult.Content, ContentType = compressResult.ContentType };
+            { Content = "compressResult.Content".ToByteArray() };
 
             return await Result<CompressResult>.SuccessAsync(response, Resources.CompressHandlerSuccessfullyCompress);
         }

@@ -43,57 +43,37 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         _deserializer = deserializer;
     }
 
-    public Task<object> About(Context context, CancellationToken cancellationToken = default)
+    public async Task Create(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
-        throw new StorageException(Resources.AboutOperrationNotSupported);
-    }
-
-    public async Task CreateAsync(Context context, CancellationToken cancellationToken)
-    {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        await CreateEntityAsync(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
+        await CreateEntity(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Write(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        await WriteEntityAsync(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
+        await WriteEntity(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context, CancellationToken cancellationToken)
+    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntityAsync(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
+        return await ReadEntity(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(Context context, CancellationToken cancellationToken = default)
+    public Task Update(Context context, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Context context, CancellationToken cancellationToken)
+    public async Task Delete(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
@@ -101,53 +81,43 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         var path = PathHelper.ToUnixPath(pathOptions.Path);
         listOptions.Fields = null;
 
-        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions, cancellationToken).ConfigureAwait(false);
+        var filteredEntities = await FilteredEntitiesList(path, listOptions, cancellationToken).ConfigureAwait(false);
 
         var entityItems = filteredEntities.Rows;
         if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         foreach (DataRow entityItem in entityItems)
-            await DeleteEntityAsync(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
+            await DeleteEntity(entityItem["FullPath"].ToString(), cancellationToken).ConfigureAwait(false);
         
         if (deleteOptions.Purge is true)
-            await PurgeEntityAsync(path, cancellationToken);
+            await PurgeEntity(path, cancellationToken);
     }
 
-    public async Task<bool> ExistAsync(Context context, CancellationToken cancellationToken)
+    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
-
-        return await ExistEntityAsync(pathOptions.Path, cancellationToken).ConfigureAwait(false);
+        return await ExistEntity(pathOptions.Path, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context,
+    public async Task<InterchangeData> FilteredEntities(Context context,
     CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
+        var result = await FilteredEntitiesList(pathOptions.Path, listOptions, cancellationToken).ConfigureAwait(false);
         return result;
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
-    //    if (destinationContext.ConnectorContext?.Current is null)
-    //        throw new StorageException(Resources.CalleeConnectorNotSupported);
-
     //    var sourcePathOptions = sourceContext.Options.ToObject<PathOptions>();
     //    var sourceListOptions = sourceContext.Options.ToObject<ListOptions>();
     //    var sourceReadOptions = sourceContext.Options.ToObject<ReadOptions>();
@@ -160,10 +130,10 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //    foreach (var row in transferData.Rows)
     //        row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //public async Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -183,8 +153,8 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //                Overwrite = writeOptions.Overwrite
     //            };
 
-    //            await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-    //            await WriteEntityAsync(path, newWriteOption, cancellationToken).ConfigureAwait(false);
+    //            await CreateEntity(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+    //            await WriteEntity(path, newWriteOption, cancellationToken).ConfigureAwait(false);
     //            _logger.LogInformation($"Copy operation done for entity '{path}'");
     //        }
     //    }
@@ -196,7 +166,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //            {
     //                if (transferData.Namespace == Namespace.Storage)
     //                {
-    //                    await CreateEntityAsync(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
+    //                    await CreateEntity(item.Key, createOptions, cancellationToken).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -211,8 +181,8 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //                        Overwrite = writeOptions.Overwrite,
     //                    };
 
-    //                    await CreateEntityAsync(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
-    //                    await WriteEntityAsync(item.Key, newWriteOption, cancellationToken).ConfigureAwait(false);
+    //                    await CreateEntity(parentPath, createOptions, cancellationToken).ConfigureAwait(false);
+    //                    await WriteEntity(item.Key, newWriteOption, cancellationToken).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -220,15 +190,12 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
+        var storageEntities = await EntitiesList(path, listOptions, cancellationToken);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -246,7 +213,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
+                var content = await ReadEntity(entityItem.FullPath, readOptions, cancellationToken).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -268,7 +235,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     }
 
     #region internal methods
-    private async Task CreateEntityAsync(string path, CreateOptions options, CancellationToken cancellationToken)
+    private async Task CreateEntity(string path, CreateOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -280,7 +247,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         if (_specifications == null)
             throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         var isExist = await BucketExists(pathParts.BucketName, cancellationToken);
         if (!isExist)
         {
@@ -293,7 +260,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
             await AddFolder(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task WriteEntityAsync(string path, WriteOptions options, CancellationToken cancellationToken)
+    private async Task WriteEntity(string path, WriteOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -310,7 +277,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
             if (isExist && options.Overwrite is false)
@@ -325,7 +292,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    private async Task<InterchangeData> ReadEntityAsync(string path, ReadOptions options, CancellationToken cancellationToken)
+    private async Task<InterchangeData> ReadEntity(string path, ReadOptions options, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -336,7 +303,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
 
             if (!isExist)
@@ -363,7 +330,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    private async Task DeleteEntityAsync(string? path, CancellationToken cancellationToken)
+    private async Task DeleteEntity(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -371,7 +338,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             if (PathHelper.IsFile(path))
             {
                 var isExist = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
@@ -387,7 +354,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
                 return;
             }
 
-            await DeleteAllAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken);
+            await DeleteAll(pathParts.BucketName, pathParts.RelativePath, cancellationToken: cancellationToken);
         }
         catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
         {
@@ -395,17 +362,17 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    private async Task PurgeEntityAsync(string? path, CancellationToken cancellationToken)
+    private async Task PurgeEntity(string? path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        var pathParts = GetPartsAsync(path);
-        await DeleteAllAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
+        var pathParts = GetParts(path);
+        await DeleteAll(pathParts.BucketName, pathParts.RelativePath, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<bool> ExistEntityAsync(string path, CancellationToken cancellationToken)
+    private async Task<bool> ExistEntity(string path, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -413,7 +380,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
 
         try
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
 
             if (PathHelper.IsFile(path))
                 return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
@@ -421,7 +388,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
             if (PathHelper.IsRootPath(pathParts.RelativePath))
                 return await BucketExists(pathParts.BucketName, cancellationToken);
 
-            return await FolderExistAsync(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+            return await FolderExist(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
         }
         catch (GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
         {
@@ -429,11 +396,11 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    private async Task<InterchangeData> FilteredEntitiesListAsync(string path, 
+    private async Task<InterchangeData> FilteredEntitiesList(string path, 
         ListOptions listOptions, CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
-        var entities = await EntitiesListAsync(path, listOptions, cancellationToken);
+        var entities = await EntitiesList(path, listOptions, cancellationToken);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ListToInterchangeData();
@@ -442,7 +409,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         return (InterchangeData)filteredEntities;
     }
 
-    private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions,
+    private async Task<IEnumerable<StorageEntity>> EntitiesList(string path, ListOptions listOptions,
         CancellationToken cancellationToken)
     {
         path = PathHelper.ToUnixPath(path);
@@ -458,7 +425,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
         {
-            buckets.AddRange(await ListBucketsAsync().ConfigureAwait(false));
+            buckets.AddRange(await ListBuckets().ConfigureAwait(false));
             storageEntities.AddRange(buckets.Select(b => b.ToEntity(listOptions.IncludeMetadata)));
 
             if (!listOptions.Recurse)
@@ -468,22 +435,22 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
         else
         {
-            var pathParts = GetPartsAsync(path);
+            var pathParts = GetParts(path);
             path = pathParts.RelativePath;
             buckets.Add(pathParts.BucketName);
         }
         await Task.WhenAll(buckets.Select(b =>
-            ListObjectsAsync(b, storageEntities, path, listOptions, cancellationToken))
+            ListObjects(b, storageEntities, path, listOptions, cancellationToken))
         ).ConfigureAwait(false);
 
         return storageEntities;
     }
 
-    private async Task ListObjectsAsync(string bucketName, List<StorageEntity> result, string path,
+    private async Task ListObjects(string bucketName, List<StorageEntity> result, string path,
         ListOptions listOptions, CancellationToken cancellationToken)
     {
         var objects = await
-            ListFolderAsync(bucketName, path, listOptions, cancellationToken)
+            ListFolder(bucketName, path, listOptions, cancellationToken)
             .ConfigureAwait(false);
 
         if (objects.Count > 0)
@@ -492,7 +459,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         }
     }
 
-    private async Task<IReadOnlyCollection<StorageEntity>> ListFolderAsync(string bucketName, string path,
+    private async Task<IReadOnlyCollection<StorageEntity>> ListFolder(string bucketName, string path,
         ListOptions listOptions, CancellationToken cancellationToken)
     {
         var result = new List<StorageEntity>();
@@ -545,7 +512,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         _logger.LogInformation($"Folder '{folderName}' was created successfully.");
     }
 
-    private async Task<bool> FolderExistAsync(string bucketName, string path, CancellationToken cancellationToken)
+    private async Task<bool> FolderExist(string bucketName, string path, CancellationToken cancellationToken)
     {
         var folderPrefix = path + PathHelper.PathSeparator;
         var request = _client.Service.Objects.List(bucketName);
@@ -562,7 +529,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         return serviceObjects.Prefixes?.Any(x => x.StartsWith(folderPrefix)) ?? false;
     }
 
-    private async Task DeleteAllAsync(string bucketName, string folderName, CancellationToken cancellationToken)
+    private async Task DeleteAll(string bucketName, string folderName, CancellationToken cancellationToken)
     {
         var request = _client.Service.Objects.List(bucketName);
         request.Prefix = folderName;
@@ -587,7 +554,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
         while (request.PageToken != null);
     }
 
-    private async Task<IReadOnlyCollection<string>> ListBucketsAsync()
+    private async Task<IReadOnlyCollection<string>> ListBuckets()
     {
         if (_specifications == null)
             throw new StorageException(Resources.SpecificationsCouldNotBeNullOrEmpty);
@@ -634,7 +601,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //{
     //    path = PathHelper.ToUnixPath(path);
 
-    //    var storageEntities = await EntitiesListAsync(path, listOptions, cancellationToken);
+    //    var storageEntities = await EntitiesList(path, listOptions, cancellationToken);
 
     //    var fields = GetFields(listOptions.Fields);
     //    var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -662,7 +629,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //        {
     //            if (!string.IsNullOrEmpty(fullPath))
     //            {
-    //                var read = await ReadEntityAsync(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
+    //                var read = await ReadEntity(fullPath, readOptions, cancellationToken).ConfigureAwait(false);
     //                content = read.Content.ToBase64String();
     //            }
     //        }
@@ -700,7 +667,7 @@ internal class GoogleCloudManager : IGoogleCloudManager, IDisposable
     //    return result;
     //}
 
-    private GoogleCloudPathPart GetPartsAsync(string fullPath)
+    private GoogleCloudPathPart GetParts(string fullPath)
     {
         fullPath = PathHelper.Normalize(fullPath);
         if (fullPath == null)

@@ -32,7 +32,7 @@ public class MemoryConnector : Connector
 
     public override Guid Id => Guid.Parse("ac220180-021e-4150-b0e1-c4d4bdbfb9f0");
     public override string Name => "Memory";
-    public override Namespace Namespace => Namespace.Storage;
+    public override Namespace Namespace => Namespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(MemoryStorageSpecifications);
@@ -43,46 +43,46 @@ public class MemoryConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override async Task<object> About(Context context, 
+    public async Task<object> About(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.About(context).ConfigureAwait(false);
 
-    public override async Task CreateAsync(Context context,
+    public async Task Create(Context context,
         CancellationToken cancellationToken = default) =>
-        await _manager.CreateAsync(context).ConfigureAwait(false);
+        await _manager.Create(context).ConfigureAwait(false);
 
-    public override async Task WriteAsync(Context context, 
+    public async Task Write(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.WriteAsync(context).ConfigureAwait(false);
+        await _manager.Write(context).ConfigureAwait(false);
 
-    public override async Task<InterchangeData> ReadAsync(Context context, 
+    public async Task<InterchangeData> Read(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.ReadAsync(context).ConfigureAwait(false);
+        await _manager.Read(context).ConfigureAwait(false);
 
-    public override async Task UpdateAsync(Context context, 
+    public async Task Update(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.UpdateAsync(context).ConfigureAwait(false);
+        await _manager.Update(context).ConfigureAwait(false);
 
-    public override async Task DeleteAsync(Context context, 
+    public async Task Delete(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.DeleteAsync(context).ConfigureAwait(false);
+        await _manager.Delete(context).ConfigureAwait(false);
 
-    public override async Task<bool> ExistAsync(Context context, 
+    public async Task<bool> Exist(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.ExistAsync(context).ConfigureAwait(false);
+        await _manager.Exist(context).ConfigureAwait(false);
 
-    public override async Task<InterchangeData> ListAsync(Context context, 
+    public async Task<InterchangeData> List(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.FilteredEntitiesAsync(context).ConfigureAwait(false);
+        await _manager.FilteredEntities(context).ConfigureAwait(false);
 
-    public override async Task TransferAsync(Context context, CancellationToken cancellationToken = default) =>
-        await _manager.TransferAsync(context, cancellationToken).ConfigureAwait(false);
+    public async Task Transfer(Context context, CancellationToken cancellationToken = default) =>
+        await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
 
-    //public override async Task ProcessTransferAsync(Context context, TransferData transferData,
+    //public override async Task ProcessTransfer(Context context, TransferData transferData,
     //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
-    //    await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
+    //    await _manager.ProcessTransfer(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, 
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.CompressAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }

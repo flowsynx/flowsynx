@@ -40,9 +40,6 @@ public class MemoryManager: IMemoryManager
 
     public Task<object> About(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         long totalSpace, usedSpace, freeSpace;
         try
         {
@@ -67,49 +64,37 @@ public class MemoryManager: IMemoryManager
         });
     }
 
-    public async Task CreateAsync(Context context)
+    public async Task Create(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        await CreateEntityAsync(pathOptions.Path, createOptions).ConfigureAwait(false);
+        await CreateEntity(pathOptions.Path, createOptions).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(Context context)
+    public async Task Write(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        await WriteEntityAsync(pathOptions.Path, writeOptions).ConfigureAwait(false);
+        await WriteEntity(pathOptions.Path, writeOptions).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context)
+    public async Task<InterchangeData> Read(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntityAsync(pathOptions.Path, readOptions).ConfigureAwait(false);
+        return await ReadEntity(pathOptions.Path, readOptions).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(Context context)
+    public Task Update(Context context)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Context context)
+    public async Task Delete(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
@@ -117,47 +102,41 @@ public class MemoryManager: IMemoryManager
         var path = PathHelper.ToUnixPath(pathOptions.Path);
         listOptions.Fields = null;
 
-        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions).ConfigureAwait(false);
+        var filteredEntities = await FilteredEntitiesList(path, listOptions).ConfigureAwait(false);
 
         var entityItems = filteredEntities.Rows;
         if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         foreach (DataRow entityItem in entityItems)
-            await DeleteEntityAsync(entityItem["FullPath"].ToString());
+            await DeleteEntity(entityItem["FullPath"].ToString());
 
         if (deleteOptions.Purge is true)
-            await PurgeEntityAsync(path);
+            await PurgeEntity(path);
     }
 
-    public async Task<bool> ExistAsync(Context context)
+    public async Task<bool> Exist(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
 
-        return await ExistEntityAsync(pathOptions.Path).ConfigureAwait(false);
+        return await ExistEntity(pathOptions.Path).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context)
+    public async Task<InterchangeData> FilteredEntities(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions).ConfigureAwait(false);
+        var result = await FilteredEntitiesList(pathOptions.Path, listOptions).ConfigureAwait(false);
         return result;
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
     //    if (destinationContext.ConnectorContext?.Current is null)
@@ -175,10 +154,10 @@ public class MemoryManager: IMemoryManager
     //    foreach (var row in transferData.Rows)
     //        row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //public async Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -198,8 +177,8 @@ public class MemoryManager: IMemoryManager
     //                Overwrite = writeOptions.Overwrite
     //            };
 
-    //            await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-    //            await WriteEntityAsync(path, newWriteOption).ConfigureAwait(false);
+    //            await CreateEntity(parentPath, createOptions).ConfigureAwait(false);
+    //            await WriteEntity(path, newWriteOption).ConfigureAwait(false);
     //            _logger.LogInformation($"Copy operation done for entity '{path}'");
     //        }
     //    }
@@ -211,7 +190,7 @@ public class MemoryManager: IMemoryManager
     //            {
     //                if (transferData.Namespace == Namespace.Storage)
     //                {
-    //                    await CreateEntityAsync(item.Key, createOptions).ConfigureAwait(false);
+    //                    await CreateEntity(item.Key, createOptions).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -226,8 +205,8 @@ public class MemoryManager: IMemoryManager
     //                        Overwrite = writeOptions.Overwrite,
     //                    };
 
-    //                    await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-    //                    await WriteEntityAsync(item.Key, newWriteOption).ConfigureAwait(false);
+    //                    await CreateEntity(parentPath, createOptions).ConfigureAwait(false);
+    //                    await WriteEntity(item.Key, newWriteOption).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -235,15 +214,12 @@ public class MemoryManager: IMemoryManager
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var storageEntities = await EntitiesListAsync(path, listOptions);
+        var storageEntities = await EntitiesList(path, listOptions);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -261,7 +237,7 @@ public class MemoryManager: IMemoryManager
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
+                var content = await ReadEntity(entityItem.FullPath, readOptions).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -279,7 +255,7 @@ public class MemoryManager: IMemoryManager
     }
 
     #region internal methods
-    private async Task CreateEntityAsync(string path, CreateOptions options)
+    private async Task CreateEntity(string path, CreateOptions options)
     {
         path = PathHelper.ToUnixPath(path);
 
@@ -292,7 +268,7 @@ public class MemoryManager: IMemoryManager
         if (!PathHelper.IsDirectory(path))
             throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         var isBucketExist = BucketExists(pathParts.BucketName);
         if (!isBucketExist)
         {
@@ -314,7 +290,7 @@ public class MemoryManager: IMemoryManager
         }
     }
 
-    private Task WriteEntityAsync(string path, WriteOptions options)
+    private Task WriteEntity(string path, WriteOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -329,7 +305,7 @@ public class MemoryManager: IMemoryManager
 
         var dataStream = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         var isBucketExist = BucketExists(pathParts.BucketName);
         if (!isBucketExist)
         {
@@ -348,7 +324,7 @@ public class MemoryManager: IMemoryManager
         return Task.CompletedTask;
     }
 
-    private Task<InterchangeData> ReadEntityAsync(string path, ReadOptions options)
+    private Task<InterchangeData> ReadEntity(string path, ReadOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -357,7 +333,7 @@ public class MemoryManager: IMemoryManager
         if (!PathHelper.IsFile(path))
             throw new StorageException(Resources.ThePathIsNotFile);
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         var isExist = ObjectExists(pathParts.BucketName, pathParts.RelativePath);
 
         if (!isExist)
@@ -375,13 +351,13 @@ public class MemoryManager: IMemoryManager
         return Task.FromResult(result);
     }
 
-    private Task DeleteEntityAsync(string? path)
+    private Task DeleteEntity(string? path)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         var bucket = _entities[pathParts.BucketName];
 
         if (PathHelper.IsFile(path))
@@ -420,10 +396,10 @@ public class MemoryManager: IMemoryManager
         return Task.CompletedTask;
     }
 
-    private Task PurgeEntityAsync(string? path)
+    private Task PurgeEntity(string? path)
     {
         path = PathHelper.ToUnixPath(path);
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         if (!string.IsNullOrEmpty(pathParts.RelativePath))
         {
             var bucket = _entities[pathParts.BucketName];
@@ -447,26 +423,26 @@ public class MemoryManager: IMemoryManager
         return Task.CompletedTask;
     }
 
-    private Task<bool> ExistEntityAsync(string path)
+    private Task<bool> ExistEntity(string path)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
         if (PathHelper.IsFile(path))
         {
             return Task.FromResult(ObjectExists(pathParts.BucketName, pathParts.RelativePath));
         }
 
-        var folderExist = FolderExistAsync(pathParts.BucketName, pathParts.RelativePath);
+        var folderExist = FolderExist(pathParts.BucketName, pathParts.RelativePath);
         return Task.FromResult(folderExist);
     }
 
-    private async Task<InterchangeData> FilteredEntitiesListAsync(string path, ListOptions listOptions)
+    private async Task<InterchangeData> FilteredEntitiesList(string path, ListOptions listOptions)
     {
         path = PathHelper.ToUnixPath(path);
-        var entities = await EntitiesListAsync(path, listOptions);
+        var entities = await EntitiesList(path, listOptions);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ListToInterchangeData();
@@ -475,7 +451,7 @@ public class MemoryManager: IMemoryManager
         return filteredEntities;
     }
 
-    private async Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions)
+    private async Task<IEnumerable<StorageEntity>> EntitiesList(string path, ListOptions listOptions)
     {
         path = PathHelper.ToUnixPath(path);
 
@@ -488,14 +464,14 @@ public class MemoryManager: IMemoryManager
         var storageEntities = new List<StorageEntity>();
         var buckets = new List<string>();
 
-        var pathParts = GetPartsAsync(path);
+        var pathParts = GetParts(path);
 
         if (pathParts.BucketName == "")
         {
             if (pathParts.RelativePath != "")
                 throw new StorageException(Resources.BucketNameIsRequired);
 
-            buckets.AddRange(await ListBucketsAsync().ConfigureAwait(false));
+            buckets.AddRange(await ListBuckets().ConfigureAwait(false));
             storageEntities.AddRange(buckets.Select(b => b.ToEntity(listOptions.IncludeMetadata)));
             return storageEntities;
         }
@@ -503,7 +479,7 @@ public class MemoryManager: IMemoryManager
         buckets.Add(pathParts.BucketName);
 
         await Task.WhenAll(buckets.Select(b =>
-            ListAsync(storageEntities, b, pathParts.RelativePath, listOptions))
+            List(storageEntities, b, pathParts.RelativePath, listOptions))
         ).ConfigureAwait(false);
 
         return storageEntities;
@@ -514,7 +490,7 @@ public class MemoryManager: IMemoryManager
     //{
     //    path = PathHelper.ToUnixPath(path);
 
-    //    var storageEntities = await EntitiesListAsync(path, listOptions);
+    //    var storageEntities = await EntitiesList(path, listOptions);
 
     //    var fields = GetFields(listOptions.Fields);
     //    var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -542,7 +518,7 @@ public class MemoryManager: IMemoryManager
     //        {
     //            if (!string.IsNullOrEmpty(fullPath))
     //            {
-    //                var read = await ReadEntityAsync(fullPath, readOptions).ConfigureAwait(false);
+    //                var read = await ReadEntity(fullPath, readOptions).ConfigureAwait(false);
     //                content = read.Content.ToBase64String();
     //            }
     //        }
@@ -580,7 +556,7 @@ public class MemoryManager: IMemoryManager
     //    return result;
     //}
 
-    private MemoryStoragePathPart GetPartsAsync(string fullPath)
+    private MemoryStoragePathPart GetParts(string fullPath)
     {
         if (string.IsNullOrEmpty(fullPath))
             return new MemoryStoragePathPart();
@@ -603,7 +579,7 @@ public class MemoryManager: IMemoryManager
         return new MemoryStoragePathPart(bucketName, relativePath);
     }
 
-    private bool FolderExistAsync(string bucketName, string path)
+    private bool FolderExist(string bucketName, string path)
     {
         if (!BucketExists(bucketName))
             return false;
@@ -654,7 +630,7 @@ public class MemoryManager: IMemoryManager
         return Task.FromResult(memoryEntity.Id);
     }
 
-    private Task<List<string>> ListBucketsAsync()
+    private Task<List<string>> ListBuckets()
     {
         var buckets = _entities.Keys;
         var result = buckets
@@ -664,7 +640,7 @@ public class MemoryManager: IMemoryManager
         return Task.FromResult(result);
     }
 
-    private Task ListAsync(ICollection<StorageEntity> result, string bucketName, string path,
+    private Task List(ICollection<StorageEntity> result, string bucketName, string path,
         ListOptions listOptions)
     {
         if (!_entities.ContainsKey(bucketName))

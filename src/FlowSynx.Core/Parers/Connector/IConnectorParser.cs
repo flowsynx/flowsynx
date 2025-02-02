@@ -5,5 +5,5 @@ namespace FlowSynx.Core.Parers.Connector;
 
 public interface IConnectorParser : IParser
 {
-    ConnectorContext Parse(string? connectorInput);
+    FlowSynx.Connectors.Abstractions.Connector Parse(string? connector);
 }

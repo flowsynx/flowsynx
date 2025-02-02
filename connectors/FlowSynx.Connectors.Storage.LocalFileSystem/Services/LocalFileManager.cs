@@ -33,9 +33,6 @@ public class LocalFileManager : ILocalFileManager
 
     public Task<object> About(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         long totalSpace = 0, freeSpace = 0;
         try
         {
@@ -64,49 +61,40 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult<object>(result);
     }
 
-    public async Task CreateAsync(Context context)
+    public async Task Create(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
-        await CreateEntityAsync(pathOptions.Path, createOptions).ConfigureAwait(false);
+        await CreateEntity(pathOptions.Path, createOptions).ConfigureAwait(false);
     }
 
-    public async Task WriteAsync(Context context)
+    public async Task Write(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
-        await WriteEntityAsync(pathOptions.Path, writeOptions).ConfigureAwait(false);
+        if (context.Data != null && context.Data.Any())
+            await WriteEntityFromData(pathOptions.Path, context.Data, writeOptions.Overwrite);
+        else
+            await WriteEntity(pathOptions.Path, writeOptions).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> ReadAsync(Context context)
+    public async Task<InterchangeData> Read(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntityAsync(pathOptions.Path, readOptions).ConfigureAwait(false);
+        return await ReadEntity(pathOptions.Path, readOptions).ConfigureAwait(false);
     }
 
-    public Task UpdateAsync(Context context)
+    public Task Update(Context context)
     {
         throw new NotImplementedException();
     }
 
-    public async Task DeleteAsync(Context context)
+    public async Task Delete(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
@@ -114,52 +102,43 @@ public class LocalFileManager : ILocalFileManager
         var path = PathHelper.ToUnixPath(pathOptions.Path);
         listOptions.Fields = null;
 
-        var filteredEntities = await FilteredEntitiesListAsync(path, listOptions).ConfigureAwait(false);
+        var filteredEntities = await FilteredEntitiesList(path, listOptions).ConfigureAwait(false);
 
         var entityItems = filteredEntities.Rows;
         if (entityItems.Count <= 0)
             throw new StorageException(string.Format(Resources.NoFilesFoundWithTheGivenFilter, path));
 
         foreach (DataRow entityItem in entityItems)
-            await DeleteEntityAsync(entityItem["FullPath"].ToString());
+            await DeleteEntity(entityItem["FullPath"].ToString());
 
         if (deleteOptions.Purge is true)
-            await PurgeEntityAsync(path);
+            await PurgeEntity(path);
     }
 
-    public async Task<bool> ExistAsync(Context context)
+    public async Task<bool> Exist(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
 
-        return await ExistEntityAsync(pathOptions.Path).ConfigureAwait(false);
+        return await ExistEntity(pathOptions.Path).ConfigureAwait(false);
     }
 
-    public async Task<InterchangeData> FilteredEntitiesAsync(Context context)
+    public async Task<InterchangeData> FilteredEntities(Context context)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var result = await FilteredEntitiesListAsync(pathOptions.Path, listOptions).ConfigureAwait(false);
+        var result = await FilteredEntitiesList(pathOptions.Path, listOptions).ConfigureAwait(false);
         return result;
     }
 
-    public Task TransferAsync(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    //public async Task TransferAsync(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
+    //public async Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
     //    TransferKind transferKind, CancellationToken cancellationToken)
     //{
-    //    if (destinationContext.ConnectorContext?.Current is null)
-    //        throw new StorageException(Resources.CalleeConnectorNotSupported);
-
     //    var sourcePathOptions = sourceContext.Options.ToObject<PathOptions>();
     //    var sourceListOptions = sourceContext.Options.ToObject<ListOptions>();
     //    var sourceReadOptions = sourceContext.Options.ToObject<ReadOptions>();
@@ -172,10 +151,10 @@ public class LocalFileManager : ILocalFileManager
     //    foreach (var row in transferData.Rows)
     //        row.Key = row.Key.Replace(sourcePathOptions.Path, destinationPathOptions.Path);
 
-    //    await destinationContext.ConnectorContext.Current.ProcessTransferAsync(destinationContext, transferData, transferKind, cancellationToken);
+    //    await destinationContext.ConnectorContext.Current.ProcessTransfer(destinationContext, transferData, transferKind, cancellationToken);
     //}
 
-    //public async Task ProcessTransferAsync(Context context, TransferData transferData, TransferKind transferKind, 
+    //public async Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken)
     //{
     //    var pathOptions = context.Options.ToObject<PathOptions>();
@@ -195,8 +174,8 @@ public class LocalFileManager : ILocalFileManager
     //                Overwrite = writeOptions.Overwrite
     //            };
 
-    //            await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-    //            await WriteEntityAsync(path, newWriteOption).ConfigureAwait(false);
+    //            await CreateEntity(parentPath, createOptions).ConfigureAwait(false);
+    //            await WriteEntity(path, newWriteOption).ConfigureAwait(false);
     //            _logger.LogInformation($"Copy operation done for entity '{path}'");
     //        }
     //    }
@@ -208,7 +187,7 @@ public class LocalFileManager : ILocalFileManager
     //            {
     //                if (transferData.Namespace == Namespace.Storage)
     //                {
-    //                    await CreateEntityAsync(item.Key, createOptions).ConfigureAwait(false);
+    //                    await CreateEntity(item.Key, createOptions).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -229,8 +208,8 @@ public class LocalFileManager : ILocalFileManager
     //                        Overwrite = writeOptions.Overwrite,
     //                    };
 
-    //                    await CreateEntityAsync(parentPath, createOptions).ConfigureAwait(false);
-    //                    await WriteEntityAsync(newPath, newWriteOption).ConfigureAwait(false);
+    //                    await CreateEntity(parentPath, createOptions).ConfigureAwait(false);
+    //                    await WriteEntity(newPath, newWriteOption).ConfigureAwait(false);
     //                    _logger.LogInformation($"Copy operation done for entity '{item.Key}'");
     //                }
     //            }
@@ -238,15 +217,12 @@ public class LocalFileManager : ILocalFileManager
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> CompressAsync(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
-        if (context.ConnectorContext?.Current is not null)
-            throw new StorageException(Resources.CalleeConnectorNotSupported);
-
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
-        var storageEntities = await EntitiesListAsync(path, listOptions);
+        var storageEntities = await EntitiesList(path, listOptions);
 
         var entityItems = storageEntities.ToList();
         if (!entityItems.Any())
@@ -264,7 +240,7 @@ public class LocalFileManager : ILocalFileManager
             try
             {
                 var readOptions = new ReadOptions { Hashing = false };
-                var content = await ReadEntityAsync(entityItem.FullPath, readOptions).ConfigureAwait(false);
+                var content = await ReadEntity(entityItem.FullPath, readOptions).ConfigureAwait(false);
                 compressEntries.Add(new CompressEntry
                 {
                     Name = entityItem.Name,
@@ -282,7 +258,7 @@ public class LocalFileManager : ILocalFileManager
     }
 
     #region internal methods
-    private Task CreateEntityAsync(string path, CreateOptions options)
+    private Task CreateEntity(string path, CreateOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -298,7 +274,7 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task WriteEntityAsync(string path, WriteOptions options)
+    private Task WriteEntity(string path, WriteOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -317,7 +293,7 @@ public class LocalFileManager : ILocalFileManager
         var dataStream = data.IsBase64String() ? data.Base64ToStream() : data.ToStream();
 
         if (File.Exists(path) && options.Overwrite is true)
-            DeleteEntityAsync(path);
+            DeleteEntity(path);
 
         using (var fileStream = File.Create(path))
         {
@@ -327,7 +303,43 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<InterchangeData> ReadEntityAsync(string path, ReadOptions options)
+    private Task WriteEntityFromData(string path, List<object> interchangedData, bool? overwrite = false)
+    {
+        path = PathHelper.ToUnixPath(path);
+        if (string.IsNullOrEmpty(path))
+            throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
+
+        if (!PathHelper.IsFile(path))
+            throw new StorageException(Resources.ThePathIsNotFile);
+
+        if (File.Exists(path) && overwrite is false)
+            throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
+        foreach (var item in interchangedData)
+        {
+            if (item is InterchangeData interchange)
+            {
+                if (!string.IsNullOrEmpty(interchange.Metadata.Content))
+                {
+                    var dataStream = interchange.Metadata.Content.IsBase64String() ? 
+                        interchange.Metadata.Content.Base64ToStream() : 
+                        interchange.Metadata.Content.ToStream();
+
+                    if (File.Exists(path) && overwrite is true)
+                        DeleteEntity(path);
+
+                    using (var fileStream = File.Create(path))
+                    {
+                        dataStream.CopyTo(fileStream);
+                    }
+                }
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task<InterchangeData> ReadEntity(string path, ReadOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -342,16 +354,15 @@ public class LocalFileManager : ILocalFileManager
         var file = new FileInfo(path);
 
         var result = new InterchangeData();
-        result.Columns.Add("Content", typeof(byte[]));
+        result.Metadata.Content = File.ReadAllBytes(path).ToBase64String();
 
         var row = result.NewRow();
         row.Metadata.ContentHash = HashHelper.Md5.GetHash(file);
-        row["Content"] = File.ReadAllBytes(path);
 
         return Task.FromResult(result);
     }
 
-    private Task DeleteEntityAsync(string? path)
+    private Task DeleteEntity(string? path)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -384,7 +395,7 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task PurgeEntityAsync(string? path)
+    private Task PurgeEntity(string? path)
     {
         path = PathHelper.ToUnixPath(path);
         var directoryInfo = new DirectoryInfo(path);
@@ -408,7 +419,7 @@ public class LocalFileManager : ILocalFileManager
         }
     }
 
-    private Task<bool> ExistEntityAsync(string path)
+    private Task<bool> ExistEntity(string path)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrWhiteSpace(path))
@@ -417,19 +428,25 @@ public class LocalFileManager : ILocalFileManager
         return Task.FromResult(PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path));
     }
 
-    private async Task<InterchangeData> FilteredEntitiesListAsync(string path, ListOptions listOptions)
+    private async Task<InterchangeData> FilteredEntitiesList(string path, ListOptions listOptions)
     {
         path = PathHelper.ToUnixPath(path);
-        var entities = await EntitiesListAsync(path, listOptions);
+        var entities = await EntitiesList(path, listOptions);
 
         var dataFilterOptions = GetDataTableOption(listOptions);
         var dataTable = entities.ListToInterchangeData();
-        var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
 
+        foreach (InterchangeRow row in dataTable.Rows)
+        {
+            row.Metadata.Key = row["FullPath"].ToString();
+            row.Metadata.ContentType = row["ContentType"].ToString();
+        }
+
+        var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
         return filteredEntities;
     }
 
-    private Task<IEnumerable<StorageEntity>> EntitiesListAsync(string path, ListOptions listOptions)
+    private Task<IEnumerable<StorageEntity>> EntitiesList(string path, ListOptions listOptions)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -458,7 +475,7 @@ public class LocalFileManager : ILocalFileManager
     //{
     //    path = PathHelper.ToUnixPath(path);
 
-    //    var storageEntities = await EntitiesListAsync(path, listOptions);
+    //    var storageEntities = await EntitiesList(path, listOptions);
 
     //    var fields = GetFields(listOptions.Fields);
     //    var kindFieldExist = fields.Count == 0 || fields.Any(s => s.Name.Equals("Kind", StringComparison.OrdinalIgnoreCase));
@@ -486,7 +503,7 @@ public class LocalFileManager : ILocalFileManager
     //        {
     //            if (!string.IsNullOrEmpty(fullPath))
     //            {
-    //                var read = await ReadEntityAsync(fullPath, readOptions).ConfigureAwait(false);
+    //                var read = await ReadEntity(fullPath, readOptions).ConfigureAwait(false);
     //                content = read.Content.ToBase64String();
     //            }
     //        }

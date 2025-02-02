@@ -22,7 +22,7 @@ public class JsonConnector : Connector
 
     public override Guid Id => Guid.Parse("0914e754-b203-4f37-9ac2-c67d86400eb9");
     public override string Name => "Json";
-    public override Namespace Namespace => Namespace.Stream;
+    public override Namespace Namespace => Namespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
     public override Specifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(JsonSpecifications);
@@ -32,45 +32,41 @@ public class JsonConnector : Connector
         return Task.CompletedTask;
     }
 
-    public override async Task<object> About(Context context, 
+    public async Task Create(Context context,
         CancellationToken cancellationToken = default) =>
-        await _manager.About(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Create(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task CreateAsync(Context context,
+    public async Task Write(Context context,
         CancellationToken cancellationToken = default) =>
-        await _manager.CreateAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Write(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task WriteAsync(Context context,
+    public async Task<InterchangeData> Read(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.WriteAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Read(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<InterchangeData> ReadAsync(Context context, 
+    public async Task Update(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.ReadAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Update(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task UpdateAsync(Context context, 
+    public async Task Delete(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.UpdateAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Delete(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task DeleteAsync(Context context, 
+    public async Task<bool> Exist(Context context, 
         CancellationToken cancellationToken = default) =>
-        await _manager.DeleteAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Exist(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<bool> ExistAsync(Context context, 
-        CancellationToken cancellationToken = default) =>
-        await _manager.ExistAsync(context, cancellationToken).ConfigureAwait(false);
-
-    public override async Task<InterchangeData> ListAsync(Context context, 
+    public async Task<InterchangeData> List(Context context, 
         CancellationToken cancellationToken = default)
     {
-        var filteredData = await _manager.FilteredEntitiesAsync(context, cancellationToken);
+        var filteredData = await _manager.FilteredEntities(context, cancellationToken);
         return filteredData;
     }
 
-    public override async Task TransferAsync(Context context,CancellationToken cancellationToken = default) =>
-        await _manager.TransferAsync(context, cancellationToken).ConfigureAwait(false);
+    public async Task Transfer(Context context,CancellationToken cancellationToken = default) =>
+        await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
 
-    public override async Task<IEnumerable<CompressEntry>> CompressAsync(Context context,
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context,
         CancellationToken cancellationToken = default) =>
-        await _manager.CompressAsync(context, cancellationToken).ConfigureAwait(false);
+        await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }
