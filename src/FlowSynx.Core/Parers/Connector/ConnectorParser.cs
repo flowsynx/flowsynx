@@ -22,13 +22,14 @@ internal class ConnectorParser : IConnectorParser
     private readonly INamespaceParser _namespaceParser;
     private readonly ICache<string, FlowSynx.Connectors.Abstractions.Connector> _cache;
     private readonly ISerializer _serializer;
+    private readonly IDeserializer _deserializer;
     private readonly IServiceProvider _serviceProvider;
     private const string ParserSeparator = "|";
 
     public ConnectorParser(ILogger<ConnectorParser> logger, IConfigurationManager configurationManager,
         IConnectorsManager connectorsManager, ILogger<LocalFileSystemConnector> localStorageLogger,
         INamespaceParser namespaceParser, ICache<string, FlowSynx.Connectors.Abstractions.Connector> cache, 
-        ISerializer serializer, IServiceProvider serviceProvider)
+        ISerializer serializer, IDeserializer deserializer, IServiceProvider serviceProvider)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
         EnsureArg.IsNotNull(configurationManager, nameof(configurationManager));
@@ -45,27 +46,79 @@ internal class ConnectorParser : IConnectorParser
         _namespaceParser = namespaceParser;
         _cache = cache;
         _serializer = serializer;
+        _deserializer = deserializer;
         _serviceProvider = serviceProvider;
     }
 
-    public FlowSynx.Connectors.Abstractions.Connector Parse(string? connector)
+    public FlowSynx.Connectors.Abstractions.Connector Parse(object? type)
     {
         try
         {
-            if (string.IsNullOrEmpty(connector))
+            return type is string 
+                ? GetConnectorBasedOnName(type.ToString()) 
+                : GetConnectorBasedOnType(type);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            throw new StorageNormsParserException(ex.Message);
+        }
+    }
+
+    private FlowSynx.Connectors.Abstractions.Connector GetConnectorBasedOnName(string? configName)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(configName))
             {
                 var localFileSystemConnector = GetConnector(LocalFileSystemConnector(), "LocalFileSystem", null);
                 return localFileSystemConnector;
             }
 
-            var currentConfigExist = _configurationManager.IsExist(connector);
+            var currentConfigExist = _configurationManager.IsExist(configName);
 
             if (!currentConfigExist)
-                throw new StorageNormsParserException($"{connector} is not exist.");
+                throw new StorageNormsParserException($"{configName} is not exist.");
 
-            var currentConfig = _configurationManager.Get(connector);
+            var currentConfig = _configurationManager.Get(configName);
             var getCurrentConnector = _connectorsManager.Get(currentConfig.Type);
-            var currentConnector = GetConnector(getCurrentConnector, connector, currentConfig.Specifications.ToSpecifications());
+            var currentConnector = GetConnector(getCurrentConnector, configName, currentConfig.Specifications.ToSpecifications());
+
+            return currentConnector;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            throw new StorageNormsParserException(ex.Message);
+        }
+    }
+
+    private FlowSynx.Connectors.Abstractions.Connector GetConnectorBasedOnType(object? type)
+    {
+        try
+        {
+            string? connectorType;
+            Connectors.Abstractions.Specifications? specifications = null;
+
+            if (type is null)
+            {
+                connectorType = string.Empty;
+            }
+            else
+            {
+                var conn = _deserializer.Deserialize<TypeConfiguration>(type.ToString());
+                connectorType = conn.Connector;
+                specifications = conn.Specifications;
+            }
+
+            if (string.IsNullOrEmpty(connectorType))
+            {
+                var localFileSystemConnector = GetConnector(LocalFileSystemConnector(), "LocalFileSystem", specifications);
+                return localFileSystemConnector;
+            }
+            
+            var getCurrentConnector = _connectorsManager.Get(connectorType);
+            var currentConnector = GetConnector(getCurrentConnector, connectorType, specifications);
 
             return currentConnector;
         }
@@ -109,4 +162,10 @@ internal class ConnectorParser : IConnectorParser
     }
 
     public void Dispose() { }
+}
+
+public class TypeConfiguration
+{
+    public string? Connector { get; set; }
+    public Connectors.Abstractions.Specifications? Specifications { get; set; }
 }

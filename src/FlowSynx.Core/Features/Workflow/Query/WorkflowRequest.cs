@@ -45,7 +45,7 @@ public class WorkflowTask
 
     public required string Name { get; set; }
     public string? Description { get; set; }
-    public string? Type { get; set; }
+    public object? Type { get; set; }
     public required string Process { get; set; }
     public List<string> Dependencies { get; set; }
     public ConnectorOptions? Options { get; set; }
