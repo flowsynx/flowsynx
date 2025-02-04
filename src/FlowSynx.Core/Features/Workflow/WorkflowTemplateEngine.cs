@@ -2,22 +2,22 @@
 using Newtonsoft.Json.Linq;
 using System.Text;
 
-namespace FlowSynx.Core.Services;
+namespace FlowSynx.Core.Features.Workflow;
 
-public class TemplateEngine
+public class WorkflowTemplateEngine
 {
     private readonly JObject _variables;
-    private readonly IDictionary<string, TransformationFunction> _functions;
+    private readonly IDictionary<string, WorkflowFunction> _functions;
     private readonly IDictionary<string, object?> _results;
 
-    public TemplateEngine(JObject variables)
+    public WorkflowTemplateEngine(JObject variables)
     {
         _variables = variables;
-        _functions = new Dictionary<string, TransformationFunction>();
+        _functions = new Dictionary<string, WorkflowFunction>();
         _results = new Dictionary<string, object?>();
     }
 
-    public void RegisterFunction(string name, TransformationFunction function)
+    public void RegisterFunction(string name, WorkflowFunction function)
     {
         if (_functions.ContainsKey(name))
             throw new Exception("This function is already defined!");
@@ -333,7 +333,7 @@ public class TemplateEngine
         return arguments.Select(arg => arg.Trim()).Cast<object>().ToList();
     }
 
-    private object ApplyTransformation(object? value, TransformationFunction function, List<object> arguments)
+    private object ApplyTransformation(object? value, WorkflowFunction function, List<object> arguments)
     {
         function.ValidateArguments(arguments);
         return function.Transform(value, arguments);

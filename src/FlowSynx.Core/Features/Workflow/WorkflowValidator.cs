@@ -1,6 +1,6 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Core.Features.Workflow.Query;
+namespace FlowSynx.Core.Features.Workflow;
 
 public class WorkflowValidator : AbstractValidator<WorkflowRequest>
 {

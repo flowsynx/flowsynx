@@ -8,7 +8,7 @@ using System.Text;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
-namespace FlowSynx.Core.Features.Workflow.Query;
+namespace FlowSynx.Core.Features.Workflow;
 
 internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?>>
 {
@@ -16,7 +16,7 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
     private readonly IDeserializer _deserializer;
     private readonly IWorkflowExecutor _workflowExecutor;
 
-    public WorkflowHandler(ILogger<WorkflowHandler> logger, IDeserializer deserializer, 
+    public WorkflowHandler(ILogger<WorkflowHandler> logger, IDeserializer deserializer,
         IWorkflowExecutor workflowExecutor)
     {
         EnsureArg.IsNotNull(logger, nameof(logger));
@@ -29,6 +29,9 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
     {
         try
         {
+            var configurationJson = ExtractJson(request.WorkflowTemplate, "configuration", JsonObjectType.JsonObject);
+            var workflowConfiguration = _deserializer.Deserialize<WorkflowExecutionConfiguration>(configurationJson);
+
             var variablesJson = ExtractJson(request.WorkflowTemplate, "variables", JsonObjectType.JsonObject);
             var workflowVariables = _deserializer.Deserialize<WorkflowVariables>(variablesJson);
 
@@ -36,22 +39,26 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
             ConvertBooleansToLowercase(variablesJObject);
 
             var pipelines = ExtractJson(request.WorkflowTemplate, "pipelines", JsonObjectType.JsonArray);
-            var templateEngine = new TemplateEngine(variablesJObject);
+            var templateEngine = new WorkflowTemplateEngine(variablesJObject);
 
-            templateEngine.RegisterFunction("uppercase", new StringTransformationFunction((value, _) => value.ToString().ToUpper()));
+            templateEngine.RegisterFunction("uppercase", new WorkflowFunctionString((value, _) => value.ToString().ToUpper()));
 
-            templateEngine.RegisterFunction("add", new MathTransformationFunction((value, args) =>
+            templateEngine.RegisterFunction("add", new WorkflowFunctionMath((value, args) =>
             {
                 var num = Convert.ToDouble(value);
                 var addValue = Convert.ToDouble(args[0]);
                 return num + addValue;
             }, 1));
 
-            templateEngine.RegisterFunction("concat", new StringTransformationFunction((value, args) => value + string.Join("", args), 1, int.MaxValue));
+            templateEngine.RegisterFunction("concat", new WorkflowFunctionString((value, args) => value + string.Join("", args), 1, int.MaxValue));
 
             var rendered = templateEngine.Render(pipelines);
 
             var workflowPipelines = _deserializer.Deserialize<WorkflowPipelines>(rendered);
+            var hasWorkflowPipelinesDuplicateNames = new WorkflowPipelinesValidation().HasDuplicateNames(workflowPipelines);
+            if (hasWorkflowPipelinesDuplicateNames)
+                throw new Exception("There is a duplicated pipeline name in the workflow pipelines.");
+
             var workflowValidator = new WorkflowDagValidator(workflowPipelines);
 
             var missingDependencies = workflowValidator.AllDependenciesExist();
@@ -70,7 +77,7 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
             {
                 var sb = new StringBuilder();
                 sb.AppendLine("The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic:");
-                sb.AppendLine(string.Join("->", validation.CyclicNodes));
+                sb.AppendLine(string.Join(" -> ", validation.CyclicNodes));
 
                 throw new Exception(sb.ToString());
             }
@@ -79,7 +86,7 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
             {
                 WorkflowPipelines = workflowPipelines,
                 WorkflowVariables = workflowVariables,
-                DegreeOfParallelism = 3
+                Configuration = workflowConfiguration
             };
 
             var result = await _workflowExecutor.ExecuteAsync(executionDefinition, cancellationToken);
@@ -108,19 +115,19 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
         switch (token)
         {
             case JObject jObject:
-            {
-                var dictionary = new Dictionary<string, object?>();
-                foreach (var property in jObject.Properties())
                 {
-                    dictionary[property.Name] = DeserializeRecursive(property.Value);
-                }
+                    var dictionary = new Dictionary<string, object?>();
+                    foreach (var property in jObject.Properties())
+                    {
+                        dictionary[property.Name] = DeserializeRecursive(property.Value);
+                    }
 
-                return dictionary;
-            }
+                    return dictionary;
+                }
             case JArray jArray:
-            {
-                return jArray.Select(DeserializeRecursive).ToList();
-            }
+                {
+                    return jArray.Select(DeserializeRecursive).ToList();
+                }
             default:
                 return token.ToObject<object>();
         }
@@ -202,57 +209,5 @@ internal class WorkflowHandler : IRequestHandler<WorkflowRequest, Result<object?
                 }
             }
         }
-    }
-}
-
-public class StringTransformationFunction : TransformationFunction
-{
-    private readonly Func<object?, List<object>, object> _func;
-    private readonly int _minArgs;
-    private readonly int _maxArgs;
-
-    public StringTransformationFunction(Func<object?, List<object>, object> func, int minArgs = 0, int maxArgs = 0)
-    {
-        _func = func;
-        _minArgs = minArgs;
-        _maxArgs = maxArgs;
-    }
-
-    public override void ValidateArguments(List<object> arguments)
-    {
-        if (arguments.Count < _minArgs || arguments.Count > _maxArgs)
-        {
-            throw new ArgumentException($"This transformation requires between {_minArgs} and {_maxArgs} arguments.");
-        }
-    }
-
-    public override object Transform(object? value, List<object> arguments)
-    {
-        return _func(value, arguments);
-    }
-}
-
-public class MathTransformationFunction : TransformationFunction
-{
-    private readonly Func<object?, List<object>, object> _func;
-    private readonly int _expectedArgs;
-
-    public MathTransformationFunction(Func<object?, List<object>, object> func, int expectedArgs)
-    {
-        _func = func;
-        _expectedArgs = expectedArgs;
-    }
-
-    public override void ValidateArguments(List<object> arguments)
-    {
-        if (arguments.Count != _expectedArgs)
-        {
-            throw new ArgumentException($"This transformation requires exactly {_expectedArgs} arguments.");
-        }
-    }
-
-    public override object Transform(object? value, List<object> arguments)
-    {
-        return _func(value, arguments);
     }
 }

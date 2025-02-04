@@ -24,7 +24,7 @@ using FlowSynx.Connectors.Database.MySql;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Data;
 using FlowSynx.Data.Sql;
-using FlowSynx.Core.Features.Workflow.Query;
+using FlowSynx.Core.Features.Workflow;
 
 namespace FlowSynx.Core.Extensions;
 

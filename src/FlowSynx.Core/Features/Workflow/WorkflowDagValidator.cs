@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace FlowSynx.Core.Features.Workflow.Query;
+﻿namespace FlowSynx.Core.Features.Workflow;
 
 public class WorkflowDagValidator
 {
@@ -16,15 +14,10 @@ public class WorkflowDagValidator
         var allNodeNames = _workflowPipelines.Select(n => n.Name).ToHashSet();
         var missingDependencies = new HashSet<string>();
 
-        foreach (var node in _workflowPipelines)
+        foreach (var dependency in _workflowPipelines.SelectMany(node =>
+                     node.Dependencies.Where(dependency => !allNodeNames.Contains(dependency))))
         {
-            foreach (var dependency in node.Dependencies)
-            {
-                if (!allNodeNames.Contains(dependency))
-                {
-                    missingDependencies.Add(dependency);
-                }
-            }
+            missingDependencies.Add(dependency);
         }
 
         return missingDependencies.ToList();

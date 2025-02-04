@@ -6,7 +6,6 @@ using FlowSynx.Core.Features.Config.Query.List;
 using FlowSynx.Core.Features.Config.Command.Delete;
 using FlowSynx.Core.Features.Connectors.Query.Details;
 using FlowSynx.Core.Features.Connectors.Query.List;
-using FlowSynx.Core.Features.Version.Query;
 using FlowSynx.Core.Features.Logs.Query.List;
 using FlowSynx.Core.Features.List.Query;
 using FlowSynx.Core.Features.Write.Command;
@@ -20,7 +19,8 @@ using FlowSynx.Core.Features.Transfer.Command;
 using FlowSynx.Connectors.Abstractions;
 using FlowSynx.IO.Compression;
 using FlowSynx.Data;
-using FlowSynx.Core.Features.Workflow.Query;
+using FlowSynx.Core.Features.Workflow;
+using FlowSynx.Core.Features.Version.Query;
 
 namespace FlowSynx.Core.Extensions;
 

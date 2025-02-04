@@ -3,12 +3,10 @@ using System.Reflection;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Parers.Connector;
 using FlowSynx.Connectors.Abstractions;
-using System.Threading.Tasks;
-using Azure;
 
-namespace FlowSynx.Core.Features.Workflow.Query;
+namespace FlowSynx.Core.Features.Workflow;
 
-public class WorkflowExecutor: IWorkflowExecutor
+public class WorkflowExecutor : IWorkflowExecutor
 {
     private readonly ILogger<WorkflowExecutor> _logger;
     private readonly IConnectorParser _connectorParser;
@@ -20,7 +18,7 @@ public class WorkflowExecutor: IWorkflowExecutor
         _connectorParser = connectorParser;
     }
 
-    public async Task<Dictionary<string, object?>> ExecuteAsync(WorkflowExecutionDefinition executionDefinition, 
+    public async Task<Dictionary<string, object?>> ExecuteAsync(WorkflowExecutionDefinition executionDefinition,
         CancellationToken cancellationToken)
     {
         var taskMap = executionDefinition.WorkflowPipelines.ToDictionary(t => t.Name);
@@ -36,7 +34,7 @@ public class WorkflowExecutor: IWorkflowExecutor
                 throw new InvalidOperationException("There are failed task in dependencies.");
 
             var executionTasks = readyTasks.Select(taskId => taskMap[taskId]);
-            await ProcessWithDegreeOfParallelismAsync(executionTasks, executionDefinition.DegreeOfParallelism, cancellationToken);
+            await ProcessWithDegreeOfParallelismAsync(executionTasks, executionDefinition.Configuration.DegreeOfParallelism, cancellationToken);
 
             foreach (var taskId in readyTasks)
                 pendingTasks.Remove(taskId);
@@ -122,7 +120,7 @@ public class WorkflowExecutor: IWorkflowExecutor
         var taskToExecute = (Task)method?.Invoke(instance, parameters)!;
         await taskToExecute.ConfigureAwait(false);
 
-        if (!taskToExecute.GetType().IsGenericType) 
+        if (!taskToExecute.GetType().IsGenericType)
             return null;
 
         var response = taskToExecute.GetType().GetProperty("Result")?.GetValue(taskToExecute);
