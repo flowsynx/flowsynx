@@ -13,6 +13,7 @@ using FlowSynx.IO.Compression;
 using FlowSynx.Data;
 using FlowSynx.Data.Queries;
 using FlowSynx.Data.Extensions;
+using FlowSynx.Abstractions;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem.Services;
 
@@ -31,7 +32,7 @@ public class LocalFileManager : ILocalFileManager
         _deserializer = deserializer;
     }
 
-    public Task<object> About(Context context)
+    public async Task<Result<object>> About(Context context)
     {
         long totalSpace = 0, freeSpace = 0;
         try
@@ -58,18 +59,19 @@ public class LocalFileManager : ILocalFileManager
             Used = (totalSpace - freeSpace)
         };
 
-        return Task.FromResult<object>(result);
+        return await Result<object>.SuccessAsync(result);
     }
 
-    public async Task Create(Context context)
+    public async Task<Result> Create(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         await CreateEntity(pathOptions.Path, createOptions).ConfigureAwait(false);
+        return await Result<object>.SuccessAsync("The file was created successfully");
     }
 
-    public async Task Write(Context context)
+    public async Task<Result> Write(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
@@ -78,22 +80,25 @@ public class LocalFileManager : ILocalFileManager
             await WriteEntityFromData(pathOptions.Path, context.Data, writeOptions.Overwrite);
         else
             await WriteEntity(pathOptions.Path, writeOptions).ConfigureAwait(false);
+
+        return await Result<string>.SuccessAsync("The file was writed successfully");
     }
 
-    public async Task<InterchangeData> Read(Context context)
+    public async Task<Result<InterchangeData>> Read(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntity(pathOptions.Path, readOptions).ConfigureAwait(false);
+        var result = await ReadEntity(pathOptions.Path, readOptions).ConfigureAwait(false);
+        return await Result<InterchangeData>.SuccessAsync(result);
     }
 
-    public Task Update(Context context)
+    public Task<Result> Rename(Context context)
     {
         throw new NotImplementedException();
     }
 
-    public async Task Delete(Context context)
+    public async Task<Result> Delete(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -113,25 +118,28 @@ public class LocalFileManager : ILocalFileManager
 
         if (deleteOptions.Purge is true)
             await PurgeEntity(path);
+
+        return await Result<string>.SuccessAsync("The file was deleted successfully.");
     }
 
-    public async Task<bool> Exist(Context context)
+    public async Task<Result<bool>> Exist(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
 
-        return await ExistEntity(pathOptions.Path).ConfigureAwait(false);
+        var result = await ExistEntity(pathOptions.Path).ConfigureAwait(false);
+        return await Result<bool>.SuccessAsync(true);
     }
 
-    public async Task<InterchangeData> FilteredEntities(Context context)
+    public async Task<Result<InterchangeData>> FilteredEntities(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var result = await FilteredEntitiesList(pathOptions.Path, listOptions).ConfigureAwait(false);
-        return result;
+        return await Result<InterchangeData>.SuccessAsync(result);
     }
 
-    public Task Transfer(Context context, CancellationToken cancellationToken)
+    public Task<Result> Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
@@ -217,7 +225,7 @@ public class LocalFileManager : ILocalFileManager
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<CompressEntry>>> Compress(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -254,7 +262,7 @@ public class LocalFileManager : ILocalFileManager
             }
         }
 
-        return compressEntries;
+        return await Result<IEnumerable<CompressEntry>>.SuccessAsync(compressEntries);
     }
 
     #region internal methods

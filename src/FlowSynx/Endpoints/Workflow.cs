@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Core.Extensions;
-using FlowSynx.Core.Features.Workflow.Query;
+using FlowSynx.Core.Features.Workflow;
 using FlowSynx.Extensions;
 using FlowSynx.IO.Serialization;
 using MediatR;
