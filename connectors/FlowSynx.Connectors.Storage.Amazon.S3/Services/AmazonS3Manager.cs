@@ -12,6 +12,7 @@ using EnsureThat;
 using FlowSynx.Connectors.Storage.Amazon.S3.Models;
 using FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
 using System.Data;
+using FlowSynx.Abstractions;
 using FlowSynx.IO.Serialization;
 using FlowSynx.IO.Compression;
 using FlowSynx.Data;
@@ -41,36 +42,39 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         _fileTransferUtility = CreateTransferUtility(_client);
     }
 
-    public async Task Create(Context context, CancellationToken cancellationToken)
+    public async Task<Result> Create(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         await CreateEntity(pathOptions.Path, createOptions, cancellationToken).ConfigureAwait(false);
+        return await Result<string>.SuccessAsync("The object created successfully.");
     }
 
-    public async Task Write(Context context, CancellationToken cancellationToken)
+    public async Task<Result> Write(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
         await WriteEntity(pathOptions.Path, writeOptions, cancellationToken).ConfigureAwait(false);
+        return await Result<string>.SuccessAsync("The object writed successfully.");
     }
 
-    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
+    public async Task<Result<InterchangeData>> Read(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        return await ReadEntity(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
+        var result = await ReadEntity(pathOptions.Path, readOptions, cancellationToken).ConfigureAwait(false);
+        return await Result<InterchangeData>.SuccessAsync(result);
     }
 
-    public Task Update(Context context, CancellationToken cancellationToken)
+    public Task<Result> Update(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
 
-    public async Task Delete(Context context, CancellationToken cancellationToken)
+    public async Task<Result> Delete(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -90,9 +94,11 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
 
         if (deleteFilters.Purge is true)
             await Purge(path, cancellationToken);
+
+        return await Result<string>.SuccessAsync("The object deleted successfully.");
     }
 
-    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Exist(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
 
@@ -103,7 +109,8 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         try
         {
             var pathParts = GetParts(path);
-            return await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+            var result = await ObjectExists(pathParts.BucketName, pathParts.RelativePath, cancellationToken);
+            return await Result<bool>.SuccessAsync(result);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -111,16 +118,16 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
         }
     }
 
-    public async Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken)
+    public async Task<Result<InterchangeData>> FilteredEntities(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
         var filteredEntities = await FilteredEntitiesList(pathOptions.Path, listOptions, cancellationToken);
-        return filteredEntities;
+        return await Result<InterchangeData>.SuccessAsync(filteredEntities);
     }
 
-    public Task Transfer(Context context, CancellationToken cancellationToken)
+    public Task<Result> Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
@@ -195,7 +202,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
     //    }
     //}
 
-    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<CompressEntry>>> Compress(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var path = PathHelper.ToUnixPath(pathOptions.Path);
@@ -233,7 +240,7 @@ public class AmazonS3Manager : IAmazonS3Manager, IDisposable
             }
         }
 
-        return compressEntries;
+        return await Result<IEnumerable<CompressEntry>>.SuccessAsync(compressEntries);
     }
 
     public void Dispose() { }

@@ -1,4 +1,5 @@
 ﻿using EnsureThat;
+using FlowSynx.Abstractions;
 using FlowSynx.Connectors.Abstractions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.IO.Compression;
@@ -47,30 +48,30 @@ public class AmazonS3Connector : Connector
         return Task.CompletedTask;
     }
 
-    public async Task Create(Context context, CancellationToken cancellationToken = default) =>
+    public async Task<Result> Create(Context context, CancellationToken cancellationToken = default) =>
         await _manager.Create(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task Write(Context context, CancellationToken cancellationToken = default) => 
+    public async Task<Result> Write(Context context, CancellationToken cancellationToken = default) => 
         await _manager.Write(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken = default) => 
+    public async Task<Result<InterchangeData>> Read(Context context, CancellationToken cancellationToken = default) => 
         await _manager.Read(context,cancellationToken).ConfigureAwait(false);
 
-    public async Task Update(Context context, CancellationToken cancellationToken = default) =>
+    public async Task<Result> Update(Context context, CancellationToken cancellationToken = default) =>
         await _manager.Update(context, cancellationToken).ConfigureAwait (false);
 
-    public async Task Delete(Context context, CancellationToken cancellationToken = default) => 
+    public async Task<Result> Delete(Context context, CancellationToken cancellationToken = default) => 
         await _manager.Delete(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task<bool> Exist(Context context, 
+    public async Task<Result<bool>> Exist(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Exist(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task<InterchangeData> List(Context context, 
+    public async Task<Result<InterchangeData>> List(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.FilteredEntities(context, cancellationToken);
 
-    public async Task Transfer(Context context, 
+    public async Task<Result> Transfer(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
 
@@ -83,7 +84,7 @@ public class AmazonS3Connector : Connector
     //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
     //    await _manager.ProcessTransfer(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
-    public async Task<IEnumerable<CompressEntry>> Compress(Context context, 
+    public async Task<Result<IEnumerable<CompressEntry>>> Compress(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }

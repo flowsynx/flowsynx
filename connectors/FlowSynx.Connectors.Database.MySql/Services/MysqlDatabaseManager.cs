@@ -9,11 +9,9 @@ using Microsoft.Extensions.Logging;
 using MySql.Data.MySqlClient;
 using System.Data;
 using FlowSynx.Data.Sql;
-using FlowSynx.Data.Extensions;
 using FlowSynx.Data.Sql.Builder;
 using System.Text;
-using System.Threading;
-using Org.BouncyCastle.Ocsp;
+using FlowSynx.Abstractions;
 using FlowSynx.Data;
 
 namespace FlowSynx.Connectors.Database.MySql.Services;
@@ -40,15 +38,16 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         _format = Format.MySql;
     }
 
-    public async Task Create(Context context, CancellationToken cancellationToken)
+    public async Task<Result> Create(Context context, CancellationToken cancellationToken)
     {
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         var createTableOption = GetCreateOption(createOptions);
         await CreateTable(createTableOption, cancellationToken);
+        return await Result<string>.SuccessAsync("The table created successfully.");
     }
 
-    public async Task Write(Context context, CancellationToken cancellationToken)
+    public async Task<Result> Write(Context context, CancellationToken cancellationToken)
     {
         var writeFilters = context.Options.ToObject<WriteOptions>();
 
@@ -58,9 +57,10 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         var command = new MySqlCommand(sql, _connection);
         var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
         _logger.LogInformation($"Inserted {rowsAffected} row(s)!");
+        return await Result<string>.SuccessAsync($"Inserted {rowsAffected} row(s)!");
     }
 
-    public async Task<InterchangeData> Read(Context context, CancellationToken cancellationToken)
+    public async Task<Result<InterchangeData>> Read(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
 
@@ -79,20 +79,21 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         };
     }
 
-    private InterchangeData ReadData(string content)
+    private Result<InterchangeData> ReadData(string content)
     {
         var result = new InterchangeData();
         result.Columns.Add("Content", typeof(byte[]));
         result.Rows.Add(content.ToByteArray());
-        return result;
+        return Result<InterchangeData>.Success("The table created successfully.");
+
     }
 
-    public Task Update(Context context, CancellationToken cancellationToken)
+    public Task<Result> Update(Context context, CancellationToken cancellationToken)
     {
-        return Task.CompletedTask;
+        throw new NotImplementedException();
     }
 
-    public async Task Delete(Context context, CancellationToken cancellationToken)
+    public async Task<Result> Delete(Context context, CancellationToken cancellationToken)
     {
         var deleteOptions = context.Options.ToObject<DeleteOptions>();
 
@@ -105,9 +106,11 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
 
         if (deleteOptions.Purge is true)
             await Purge(deleteOptions.Table, cancellationToken);
+
+        return await Result<InterchangeData>.SuccessAsync($"Deleted {rowsAffected} row(s)!");
     }
 
-    public async Task<bool> Exist(Context context, CancellationToken cancellationToken)
+    public async Task<Result<bool>> Exist(Context context, CancellationToken cancellationToken)
     {
         var existOptions = context.Options.ToObject<ExistOptions>();
 
@@ -116,16 +119,16 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
 
         var command = new MySqlCommand(sql, _connection);
         var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return reader.HasRows;
+        return await Result<bool>.SuccessAsync(reader.HasRows);
     }
 
-    public async Task<InterchangeData> Entities(Context context, CancellationToken cancellationToken)
+    public async Task<Result<InterchangeData>> Entities(Context context, CancellationToken cancellationToken)
     {
         var dataTable = await FilteredEntities(context, cancellationToken);
         return dataTable;
     }
 
-    public async Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken)
+    public async Task<Result<InterchangeData>> FilteredEntities(Context context, CancellationToken cancellationToken)
     {
         var listOptions = context.Options.ToObject<ListOptions>();
 
@@ -136,11 +139,11 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         var reader = await command.ExecuteReaderAsync(cancellationToken);
         var dataTable = new InterchangeData();
         dataTable.Load(reader);
-        
-        return dataTable;
+
+        return await Result<InterchangeData>.SuccessAsync(dataTable);
     }
 
-    public Task Transfer(Context context, CancellationToken cancellationToken)
+    public Task<Result> Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
@@ -197,19 +200,23 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
     //    _logger.LogInformation($"Deleted {rowsAffected} row(s)!");
     //}
 
-    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
+    public async Task<Result<IEnumerable<CompressEntry>>> Compress(Context context, CancellationToken cancellationToken)
     {
         var filteredData = await FilteredEntities(context, cancellationToken);
 
-        if (filteredData.Rows.Count <= 0)
+        if (filteredData.Data.Rows.Count <= 0)
             throw new DatabaseException("string.Format(Resources.NoItemsFoundWithTheGivenFilter, path)");
 
         var compressOptions = context.Options.ToObject<CompressOptions>();
 
         if (compressOptions.SeparateDataPerRow is false)
-            return await CompressDataTable(filteredData);
+        {
+            var compressDataTableResult = await CompressDataTable(filteredData.Data);
+            return await Result<IEnumerable<CompressEntry>>.SuccessAsync(compressDataTableResult);
+        }
 
-        return await CompressDataRows(filteredData.Rows);
+        var compressDataRowsResult = await CompressDataRows(filteredData.Data.Rows);
+        return await Result<IEnumerable<CompressEntry>>.SuccessAsync(compressDataRowsResult);
     }
 
     #region internal methods
@@ -331,12 +338,12 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private FlowSynx.Data.Sql.FieldsList GetFields(string? json)
+    private Data.Sql.FieldsList GetFields(string? json)
     {
-        var result = new FlowSynx.Data.Sql.FieldsList();
+        var result = new Data.Sql.FieldsList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FlowSynx.Data.Sql.FieldsList>(json);
+            result = _deserializer.Deserialize<Data.Sql.FieldsList>(json);
         }
 
         return result;
@@ -375,12 +382,12 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private FlowSynx.Data.Sql.FilterList GetFilterList(string? json)
+    private Data.Sql.FilterList GetFilterList(string? json)
     {
-        var result = new FlowSynx.Data.Sql.FilterList();
+        var result = new Data.Sql.FilterList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FlowSynx.Data.Sql.FilterList>(json);
+            result = _deserializer.Deserialize<Data.Sql.FilterList>(json);
         }
 
         return result;
@@ -397,23 +404,23 @@ public class MysqlDatabaseManager : IMysqlDatabaseManager
         return result;
     }
 
-    private FlowSynx.Data.Sql.SortList GetSortList(string? json)
+    private Data.Sql.SortList GetSortList(string? json)
     {
-        var result = new FlowSynx.Data.Sql.SortList();
+        var result = new Data.Sql.SortList();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FlowSynx.Data.Sql.SortList>(json);
+            result = _deserializer.Deserialize<Data.Sql.SortList>(json);
         }
 
         return result;
     }
 
-    private FlowSynx.Data.Sql.Paging GetPaging(string? json)
+    private Data.Sql.Paging GetPaging(string? json)
     {
-        var result = new FlowSynx.Data.Sql.Paging();
+        var result = new Data.Sql.Paging();
         if (!string.IsNullOrEmpty(json))
         {
-            result = _deserializer.Deserialize<FlowSynx.Data.Sql.Paging>(json);
+            result = _deserializer.Deserialize<Data.Sql.Paging>(json);
         }
 
         return result;

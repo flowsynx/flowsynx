@@ -10,6 +10,7 @@ using FlowSynx.IO.Serialization;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Logging;
 using System.Threading;
+using FlowSynx.Abstractions;
 
 namespace FlowSynx.Connectors.Database.MySql;
 
@@ -49,35 +50,35 @@ public class MySqlConnector : Connector
         return Task.CompletedTask;
     }
 
-    public async Task Create(Context context, 
+    public async Task<Result> Create(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Create(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task Write(Context context, 
+    public async Task<Result> Write(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Write(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task<InterchangeData> Read(Context context, 
+    public async Task<Result<InterchangeData>> Read(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Read(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task Update(Context context, 
+    public async Task<Result> Update(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Update(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task Delete(Context context, 
+    public async Task<Result> Delete(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Delete(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task<bool> Exist(Context context, 
+    public async Task<Result<bool>> Exist(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Exist(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task<InterchangeData> List(Context context, 
+    public async Task<Result<InterchangeData>> List(Context context, 
         CancellationToken cancellationToken = default) =>
         await _manager.Entities(context, cancellationToken).ConfigureAwait(false);
 
-    public async Task Transfer(Context context, CancellationToken cancellationToken = default) =>
+    public async Task<Result> Transfer(Context context, CancellationToken cancellationToken = default) =>
         await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
 
     //public override async Task TransferAsync(Context sourceContext, Context destinationContext,
@@ -89,7 +90,7 @@ public class MySqlConnector : Connector
     //    TransferKind transferKind, CancellationToken cancellationToken = default) =>
     //    await _manager.ProcessTransferAsync(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
 
-    public async Task<IEnumerable<CompressEntry>> Compress(Context context,
+    public async Task<Result<IEnumerable<CompressEntry>>> Compress(Context context,
         CancellationToken cancellationToken = default) =>
         await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }
