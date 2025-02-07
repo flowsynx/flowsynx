@@ -13,7 +13,6 @@ using FlowSynx.IO.Compression;
 using FlowSynx.Data;
 using FlowSynx.Data.Queries;
 using FlowSynx.Data.Extensions;
-using FlowSynx.Abstractions;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem.Services;
 
@@ -32,7 +31,7 @@ public class LocalFileManager : ILocalFileManager
         _deserializer = deserializer;
     }
 
-    public async Task<Result<object>> About(Context context)
+    public Task<object> About(Context context)
     {
         long totalSpace = 0, freeSpace = 0;
         try
@@ -59,46 +58,42 @@ public class LocalFileManager : ILocalFileManager
             Used = (totalSpace - freeSpace)
         };
 
-        return await Result<object>.SuccessAsync(result);
+        return Task.FromResult<object>(result);
     }
 
-    public async Task<Result> Create(Context context)
+    public async Task Create(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var createOptions = context.Options.ToObject<CreateOptions>();
 
         await CreateEntity(pathOptions.Path, createOptions).ConfigureAwait(false);
-        return await Result<object>.SuccessAsync("The file was created successfully");
     }
 
-    public async Task<Result> Write(Context context)
+    public async Task Write(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var writeOptions = context.Options.ToObject<WriteOptions>();
 
         if (context.Data != null && context.Data.Any())
-            await WriteEntityFromData(pathOptions.Path, context.Data, writeOptions.Overwrite);
+            await WriteEntityFromData(pathOptions.Path, writeOptions, context.Data).ConfigureAwait(false);
         else
             await WriteEntity(pathOptions.Path, writeOptions).ConfigureAwait(false);
-
-        return await Result<string>.SuccessAsync("The file was writed successfully");
     }
 
-    public async Task<Result<InterchangeData>> Read(Context context)
+    public async Task<InterchangeData> Read(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var readOptions = context.Options.ToObject<ReadOptions>();
 
-        var result = await ReadEntity(pathOptions.Path, readOptions).ConfigureAwait(false);
-        return await Result<InterchangeData>.SuccessAsync(result);
+        return await ReadEntity(pathOptions.Path, readOptions).ConfigureAwait(false);
     }
 
-    public Task<Result> Rename(Context context)
+    public Task Rename(Context context)
     {
         throw new NotImplementedException();
     }
 
-    public async Task<Result> Delete(Context context)
+    public async Task Delete(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -118,28 +113,23 @@ public class LocalFileManager : ILocalFileManager
 
         if (deleteOptions.Purge is true)
             await PurgeEntity(path);
-
-        return await Result<string>.SuccessAsync("The file was deleted successfully.");
     }
 
-    public async Task<Result<bool>> Exist(Context context)
+    public async Task<bool> Exist(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
-
-        var result = await ExistEntity(pathOptions.Path).ConfigureAwait(false);
-        return await Result<bool>.SuccessAsync(true);
+        return await ExistEntity(pathOptions.Path).ConfigureAwait(false);
     }
 
-    public async Task<Result<InterchangeData>> FilteredEntities(Context context)
+    public async Task<InterchangeData> FilteredEntities(Context context)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
 
-        var result = await FilteredEntitiesList(pathOptions.Path, listOptions).ConfigureAwait(false);
-        return await Result<InterchangeData>.SuccessAsync(result);
+        return await FilteredEntitiesList(pathOptions.Path, listOptions).ConfigureAwait(false);
     }
 
-    public Task<Result> Transfer(Context context, CancellationToken cancellationToken)
+    public Task Transfer(Context context, CancellationToken cancellationToken)
     {
         throw new NotImplementedException();
     }
@@ -225,7 +215,7 @@ public class LocalFileManager : ILocalFileManager
     //    }
     //}
 
-    public async Task<Result<IEnumerable<CompressEntry>>> Compress(Context context, CancellationToken cancellationToken)
+    public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken)
     {
         var pathOptions = context.Options.ToObject<PathOptions>();
         var listOptions = context.Options.ToObject<ListOptions>();
@@ -262,7 +252,7 @@ public class LocalFileManager : ILocalFileManager
             }
         }
 
-        return await Result<IEnumerable<CompressEntry>>.SuccessAsync(compressEntries);
+        return compressEntries;
     }
 
     #region internal methods
@@ -311,17 +301,17 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task WriteEntityFromData(string path, List<object> interchangedData, bool? overwrite = false)
+    private Task WriteEntityFromData(string path, WriteOptions options, List<object> interchangedData)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
             throw new StorageException(Resources.TheSpecifiedPathMustBeNotEmpty);
 
-        if (!PathHelper.IsFile(path))
-            throw new StorageException(Resources.ThePathIsNotFile);
+        //if (!PathHelper.IsDirectory(path))
+        //    throw new StorageException(Resources.ThePathIsNotDirectory);
 
-        if (File.Exists(path) && overwrite is false)
-            throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+        //if (File.Exists(path) && overwrite is false)
+        //    throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
 
         foreach (var item in interchangedData)
         {
@@ -329,16 +319,46 @@ public class LocalFileManager : ILocalFileManager
             {
                 if (!string.IsNullOrEmpty(interchange.Metadata.Content))
                 {
+                    var parentPath = PathHelper.GetParent(path);
+                    Directory.CreateDirectory(parentPath);
+
                     var dataStream = interchange.Metadata.Content.IsBase64String() ? 
                         interchange.Metadata.Content.Base64ToStream() : 
                         interchange.Metadata.Content.ToStream();
 
-                    if (File.Exists(path) && overwrite is true)
+                    if (File.Exists(path) && options.Overwrite is true)
                         DeleteEntity(path);
 
                     using (var fileStream = File.Create(path))
                     {
                         dataStream.CopyTo(fileStream);
+                    }
+                }
+                else
+                {
+                    Directory.CreateDirectory(path);
+
+                    foreach (InterchangeRow row in interchange.Rows)
+                    {
+                        var newPath = PathHelper.Combine(path, row.Metadata.Key);
+                        if (!string.IsNullOrEmpty(row.Metadata.Content))
+                        {
+                            var dataStream = row.Metadata.Content.IsBase64String() ?
+                                row.Metadata.Content.Base64ToStream() :
+                                row.Metadata.Content.ToStream();
+
+                            if (File.Exists(newPath) && options.Overwrite is true)
+                                DeleteEntity(path);
+
+                            using (var fileStream = File.Create(newPath))
+                            {
+                                dataStream.CopyTo(fileStream);
+                            }
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(newPath);
+                        }
                     }
                 }
             }
@@ -446,8 +466,11 @@ public class LocalFileManager : ILocalFileManager
 
         foreach (InterchangeRow row in dataTable.Rows)
         {
-            row.Metadata.Key = row["FullPath"].ToString();
+            row.Metadata.Key = row["Name"].ToString();
             row.Metadata.ContentType = row["ContentType"].ToString();
+            row.Metadata.Content = PathHelper.IsFile(row["FullPath"].ToString()) 
+                ? File.ReadAllBytes(row["FullPath"].ToString()).ToBase64String()
+                : string.Empty;
         }
 
         var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
