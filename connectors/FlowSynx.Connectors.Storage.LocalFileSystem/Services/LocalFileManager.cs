@@ -319,6 +319,12 @@ public class LocalFileManager : ILocalFileManager
             {
                 if (!string.IsNullOrEmpty(interchange.Metadata.Content))
                 {
+                    if (!PathHelper.IsFile(path))
+                        throw new StorageException(Resources.ThePathIsNotFile);
+
+                    if (File.Exists(path) && options.Overwrite is false)
+                        throw new StorageException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, path));
+
                     var parentPath = PathHelper.GetParent(path);
                     Directory.CreateDirectory(parentPath);
 
@@ -348,7 +354,7 @@ public class LocalFileManager : ILocalFileManager
                                 row.Metadata.Content.ToStream();
 
                             if (File.Exists(newPath) && options.Overwrite is true)
-                                DeleteEntity(path);
+                                DeleteEntity(newPath);
 
                             using (var fileStream = File.Create(newPath))
                             {
@@ -367,7 +373,7 @@ public class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<InterchangeData> ReadEntity(string path, ReadOptions options)
+    private Task<(string, string?)> ReadEntityBytes(string path, ReadOptions options)
     {
         path = PathHelper.ToUnixPath(path);
         if (string.IsNullOrEmpty(path))
@@ -381,13 +387,27 @@ public class LocalFileManager : ILocalFileManager
 
         var file = new FileInfo(path);
 
-        var result = new InterchangeData();
-        result.Metadata.Content = File.ReadAllBytes(path).ToBase64String();
+        string content = File.ReadAllBytes(path).ToBase64String();
+        string? contentHash = string.Empty;
 
-        var row = result.NewRow();
-        row.Metadata.ContentHash = HashHelper.Md5.GetHash(file);
+        if (options.Hashing is true)
+            contentHash = HashHelper.Md5.GetHash(file);
+
+        (string, string?) result = (content, contentHash);
 
         return Task.FromResult(result);
+    }
+
+    private async Task<InterchangeData> ReadEntity(string path, ReadOptions options)
+    {
+        var result = new InterchangeData();
+        var (content, contentHash) = await ReadEntityBytes(path, options).ConfigureAwait(false);
+        result.Metadata.Content = content;
+
+        var row = result.NewRow();
+        row.Metadata.ContentHash = contentHash;
+
+        return result;
     }
 
     private Task DeleteEntity(string? path)
@@ -468,9 +488,16 @@ public class LocalFileManager : ILocalFileManager
         {
             row.Metadata.Key = row["Name"].ToString();
             row.Metadata.ContentType = row["ContentType"].ToString();
-            row.Metadata.Content = PathHelper.IsFile(row["FullPath"].ToString()) 
-                ? File.ReadAllBytes(row["FullPath"].ToString()).ToBase64String()
-                : string.Empty;
+
+            if (PathHelper.IsFile(row["FullPath"].ToString()))
+            {
+                var (content, contentHash) =
+                await ReadEntityBytes(row["FullPath"].ToString(), new ReadOptions { Hashing = false })
+                .ConfigureAwait(false);
+
+                row.Metadata.Content = content;
+                row.Metadata.ContentHash = contentHash;
+            }
         }
 
         var filteredEntities = _dataService.Select(dataTable, dataFilterOptions);
