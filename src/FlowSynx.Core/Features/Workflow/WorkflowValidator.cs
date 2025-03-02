@@ -1,11 +1,11 @@
-﻿using FluentValidation;
+﻿//using FluentValidation;
 
-namespace FlowSynx.Core.Features.Workflow;
+//namespace FlowSynx.Core.Features.Workflow;
 
-public class WorkflowValidator : AbstractValidator<WorkflowRequest>
-{
-    public WorkflowValidator()
-    {
+//public class WorkflowValidator : AbstractValidator<WorkflowRequest>
+//{
+//    public WorkflowValidator()
+//    {
 
-    }
-}
+//    }
+//}

@@ -124,6 +124,24 @@ namespace FlowSynx {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Database connection failed. Please check the connection details..
+        /// </summary>
+        internal static string FailDatabaseConnection {
+            get {
+                return ResourceManager.GetString("FailDatabaseConnection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Database initialization failed..
+        /// </summary>
+        internal static string FailedDatabaseInitialization {
+            get {
+                return ResourceManager.GetString("FailedDatabaseInitialization", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Base location not found.
         /// </summary>
         internal static string FlowSynxLocationBaseLocationNotFound {

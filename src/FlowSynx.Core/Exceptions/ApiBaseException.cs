@@ -1,9 +1,9 @@
 ﻿using System.Globalization;
-using FlowSynx.Abstractions.Exceptions;
+using FlowSynx.Domain.Exceptions;
 
 namespace FlowSynx.Core.Exceptions;
 
-public class ApiBaseException : FlowSynxException
+public class ApiBaseException : BaseException
 {
     public ApiBaseException(string message) : base(message) { }
     public ApiBaseException(string message, Exception inner) : base(message, inner) { }

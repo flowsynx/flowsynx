@@ -2,21 +2,28 @@ using System.CommandLine;
 using FlowSynx;
 using FlowSynx.ApplicationBuilders;
 using FlowSynx.Commands;
-using FlowSynx.Environment;
 using FlowSynx.Extensions;
-using FlowSynx.IO;
+using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Models;
-using FlowSynx.Services;
+using FlowSynx.Persistence.SQLite.Extensions;
 
-IHost host = GetHost();
+var cts = new CancellationTokenSource();
+var cancellationToken = cts.Token;
+IHost host = GetHost(cancellationToken);
 IServiceProvider serviceProvider = host.Services;
 
 try
 {
-    var cli = serviceProvider.GetRequiredService<ICliApplicationBuilder>();
+    serviceProvider.EnsureLogDatabaseCreated();
+    var cli = serviceProvider.GetRequiredService<ICliApplicationBuilder>() ?? 
+              throw new Exception(Resources.EntryPointErrorInExecutteApplication);
 
-    if (cli == null)
-        throw new Exception(Resources.EntryPointErrorInExecutteApplication);
+    Console.CancelKeyPress += (sender, eventArgs) =>
+    {
+        Console.WriteLine("Cancellation requested.");
+        cts.Cancel();
+        eventArgs.Cancel = true; // Don't terminate immediately
+    };
 
     return await cli.RunAsync(args);
 }
@@ -31,18 +38,22 @@ catch (Exception ex)
     return ExitCode.Error;
 }
 
-IHost GetHost()
+IHost GetHost(CancellationToken cancellationToken)
 {
-    var hostBuilder = new HostBuilder().ConfigureServices(services =>
+    var hostBuilder = new HostBuilder().ConfigureServices((hostContext, services) =>
     {
-        services.AddLocation()
-                .AddSerialization()
+        IConfiguration config = hostContext.Configuration;
+
+        services.AddHttpContextAccessor()
+                .AddSQLiteLoggerLayer()
+                .AddLocation()
+                .AddJsonSerialization()
                 .AddEndpoint()
-                .AddLoggingService()
-                .AddTransient<RootCommand, Root>()
-                .AddTransient<IOptionsVerifier, OptionsVerifier>()
-                .AddTransient<IApiApplicationBuilder, ApiApplicationBuilder>()
-                .AddTransient<ICliApplicationBuilder, CliApplicationBuilder>();
+                .AddUserService()
+                .AddLoggingService(config, cancellationToken)
+                .AddScoped<RootCommand, Root>()
+                .AddScoped<IApiApplicationBuilder, ApiApplicationBuilder>()
+                .AddScoped<ICliApplicationBuilder, CliApplicationBuilder>();
     });
     
     return hostBuilder.UseConsoleLifetime().Build();

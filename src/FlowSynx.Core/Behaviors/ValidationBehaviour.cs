@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSynx.Core.Exceptions;
+﻿using FlowSynx.Core.Exceptions;
 using FluentValidation;
 using MediatR;
 
@@ -12,7 +11,7 @@ public class ValidationBehaviour<TRequest, TResponse> : IPipelineBehavior<TReque
 
     public ValidationBehaviour(IEnumerable<IValidator<TRequest>> validators)
     {
-        EnsureArg.IsNotNull(validators, nameof(validators));
+        ArgumentNullException.ThrowIfNull(validators);
         _validators = validators;
     }
 

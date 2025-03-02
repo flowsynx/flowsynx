@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSynx.Core.Exceptions;
+﻿using FlowSynx.Core.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +10,7 @@ public class UnhandledExceptionBehaviour<TRequest, TResponse> : IPipelineBehavio
 
     public UnhandledExceptionBehaviour(ILogger<TRequest> logger)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 

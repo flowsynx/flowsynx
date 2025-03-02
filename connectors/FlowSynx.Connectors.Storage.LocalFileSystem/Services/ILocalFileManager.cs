@@ -1,32 +1,29 @@
-﻿using FlowSynx.Abstractions;
-using FlowSynx.Connectors.Abstractions;
-using FlowSynx.Data;
-using FlowSynx.IO.Compression;
+﻿using FlowSynx.PluginCore;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem.Services;
 
 public interface ILocalFileManager
 {
-    Task<object> About(Context context);
+    Task<object> About(PluginParameters parameters);
 
-    Task Create(Context context);
+    Task Create(PluginParameters parameters);
 
-    Task Write(Context context);
+    Task Write(PluginParameters parameters);
 
-    Task<InterchangeData> Read(Context context);
+    Task<object> Read(PluginParameters parameters);
 
-    Task Rename(Context context);
+    Task Rename(PluginParameters parameters);
 
-    Task Delete(Context context);
+    Task Delete(PluginParameters parameters);
 
-    Task<bool> Exist(Context context);
+    Task<bool> Exist(PluginParameters parameters);
 
-    Task<InterchangeData> FilteredEntities(Context context);
+    Task<object> List(PluginParameters parameters);
 
-    Task Transfer(Context context, CancellationToken cancellationToken);
+    //Task Transfer(Context context, CancellationToken cancellationToken);
 
     //Task ProcessTransfer(Context context, TransferData transferData, TransferKind transferKind, 
     //    CancellationToken cancellationToken);
 
-    Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken);
+    //Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken);
 }

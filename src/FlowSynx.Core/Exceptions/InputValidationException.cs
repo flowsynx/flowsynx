@@ -1,9 +1,9 @@
-﻿using FlowSynx.Abstractions.Exceptions;
+﻿using FlowSynx.Domain.Exceptions;
 using FluentValidation.Results;
 
 namespace FlowSynx.Core.Exceptions;
 
-public class InputValidationException : FlowSynxException
+public class InputValidationException : BaseException
 {
     public InputValidationException() : base(Resources.InputValidationExceptionBaseMessage)
     {

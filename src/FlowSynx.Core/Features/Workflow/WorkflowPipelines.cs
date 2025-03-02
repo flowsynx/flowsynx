@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Core.Features.Workflow;
+﻿//namespace FlowSynx.Core.Features.Workflow;
 
-public class WorkflowPipelines : List<WorkflowTask>
-{
+//public class WorkflowPipelines : List<WorkflowTask>
+//{
 
-}
+//}

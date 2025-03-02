@@ -1,41 +1,18 @@
 ﻿using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Diagnostics;
 using FlowSynx.ApplicationBuilders;
-using FlowSynx.Logging;
 using FlowSynx.Services;
 
 namespace FlowSynx.Commands;
 
 public class Root : RootCommand
 {
-    public Root(ILogger<Root> logger, IOptionsVerifier optionsVerifier, IApiApplicationBuilder apiApplicationBuilder)
+    public Root(ILogger<Root> logger, IApiApplicationBuilder apiApplicationBuilder,
+        IEndpoint endpoint)
         : base("A system for managing and synchronizing data between different repositories and storage, including cloud, local, and etc.")
     {
-        var configFileOption = new Option<string>(new[] { "--config-file" }, description: "FlowSynx configuration file");
-
-        var enableHealthCheckOption = new Option<bool>(new[] { "--enable-health-check" }, getDefaultValue: () => true,
-            description: "Enable health checks for the FlowSynx");
-
-        var enableLogOption = new Option<bool>(new[] { "--enable-log" }, getDefaultValue: () => true,
-            description: "Enable logging to records the details of events during FlowSynx running");
-
-        var logLevelOption = new Option<LoggingLevel>(new[] { "--log-level" }, getDefaultValue: () => LoggingLevel.Info,
-            description: "The log verbosity to controls the amount of detail emitted for each event that is logged");
-
-        var logFileOption = new Option<string?>(new[] { "--log-file" },
-            description: "Log file path to store system logs information");
-
-        var openApiOption = new Option<bool>(new[] { "--open-api" }, getDefaultValue: () => false,
-            description: "Enable OpenApi specification for FlowSynx");
-
-        AddOption(configFileOption);
-        AddOption(enableHealthCheckOption);
-        AddOption(enableLogOption);
-        AddOption(logLevelOption);
-        AddOption(logFileOption);
-        AddOption(openApiOption);
-
-        this.SetHandler(async (options) =>
+        this.SetHandler(async (InvocationContext context) =>
         {
             try
             {
@@ -45,16 +22,18 @@ public class Root : RootCommand
                     return;
                 }
 
-                optionsVerifier.Verify(ref options);
-                await apiApplicationBuilder.RunAsync(options);
+                var cancellationToken = context.GetCancellationToken();
+                await apiApplicationBuilder.RunAsync(logger, endpoint.HttpPort(), cancellationToken);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex.Message);
+
+                // Since SetHandler executes synchronously, if the console closes immediately,
+                // the output may not be visible. So, added await Task.Delay(500) here;
+                await Task.Delay(500);
             }
-        },
-        new RootOptionsBinder(configFileOption, enableHealthCheckOption, enableLogOption, 
-            logLevelOption, logFileOption, openApiOption));
+        });
     }
     
     private bool IsAnotherInstanceRunning()

@@ -138,6 +138,12 @@
   <data name="EntryPointErrorInExecutteApplication" xml:space="preserve">
     <value>Something wrong happen during execute the application.</value>
   </data>
+  <data name="FailDatabaseConnection" xml:space="preserve">
+    <value>Database connection failed. Please check the connection details.</value>
+  </data>
+  <data name="FailedDatabaseInitialization" xml:space="preserve">
+    <value>Database initialization failed.</value>
+  </data>
   <data name="FlowSynxLocationBaseLocationNotFound" xml:space="preserve">
     <value>Base location not found</value>
   </data>

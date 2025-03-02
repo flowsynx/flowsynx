@@ -484,24 +484,6 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specification(s) [{0}] are required and must have value..
-        /// </summary>
-        internal static string SpecificationsMustHaveValue {
-            get {
-                return ResourceManager.GetString("SpecificationsMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The value of &apos;{0}&apos; in specifications is required and must have a value..
-        /// </summary>
-        internal static string SpecificationsRequiredMemberMustHaveValue {
-            get {
-                return ResourceManager.GetString("SpecificationsRequiredMemberMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to TransferKind value must be Copy or Move. By default it is Copy..
         /// </summary>
         internal static string TransferKindValidatorTypeValueShouldBeValidMessage {

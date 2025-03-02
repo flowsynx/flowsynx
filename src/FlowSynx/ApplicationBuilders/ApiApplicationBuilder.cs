@@ -1,34 +1,38 @@
-﻿using FlowSynx.Commands;
-using FlowSynx.Core.Extensions;
-using FlowSynx.Environment;
+﻿using FlowSynx.Core.Extensions;
 using FlowSynx.Extensions;
-using FlowSynx.Services;
+using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Persistence.Postgres.Extensions;
+using FlowSynx.Persistence.SQLite.Extensions;
 
 namespace FlowSynx.ApplicationBuilders;
 
 public class ApiApplicationBuilder : IApiApplicationBuilder
 {
-    public async Task RunAsync(RootCommandOptions rootCommandOptions)
+    public async Task RunAsync(ILogger logger, int port, CancellationToken cancellationToken)
     {
         var builder = WebApplication.CreateBuilder();
+        IConfiguration config = builder.Configuration;
 
-        builder.WebHost.ConfigHttpServer(EnvironmentVariables.FlowSynxHttpPort);
+        builder.WebHost.ConfigHttpServer(port);
 
         builder.Services
+               .AddHttpContextAccessor()
                .AddEndpointsApiExplorer()
                .AddHttpJsonOptions()
-               .AddLoggingService(rootCommandOptions.EnableLog, rootCommandOptions.LogLevel, rootCommandOptions.LogFile)
+               .AddJsonSerialization()
+               .AddPostgresPersistenceLayer(config)
+               .AddSQLiteLoggerLayer()
                .AddLocation()
                .AddVersion()
-               .AddFlowSynxCore()
-               .AddFlowSynxConnectors()
-               .AddFlowSynxConfiguration(rootCommandOptions.ConfigFile);
-        
-        if (rootCommandOptions.EnableHealthCheck)
-            builder.Services.AddHealthChecker();
-
-        if (rootCommandOptions.OpenApi)
-            builder.Services.AddOpenApi();
+               .AddCore()
+               .AddInfrastructure()
+               .AddFlowSynxPlugins()
+               .AddUserService()
+               .AddSecurity(config, logger)
+               .AddLoggingService(config, cancellationToken)
+               .AddHttpClient()
+               .AddHealthChecker(config)
+               .AddOpenApi(config);
 
         var app = builder.Build();
 
@@ -37,24 +41,21 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
             app.UseDeveloperExceptionPage();
         }
 
-        if (rootCommandOptions.OpenApi)
-            app.UseOpenApi();
-        
-        app.UseCustomHeaders();
+        app.UseOpenApi()
+           .UseCustomHeaders()
+           .UseExceptionHandler(exceptionHandlerApp => 
+                                exceptionHandlerApp.Run(async context => 
+                                    await Results.Problem().ExecuteAsync(context)))
+           .UseCustomException()
+           .UseRouting()
+           .UseAuthentication()
+           .UseAuthorization()
+           .EnsureApplicationDatabaseCreated(logger)
+           .UseApplicationDataSeeder()
+           .UseHealthCheck();
 
-        app.UseExceptionHandler(exceptionHandlerApp
-            => exceptionHandlerApp.Run(async context
-                => await Results.Problem().ExecuteAsync(context)));
-
-        app.UseCustomException();
-
-        app.UseRouting();
-
-        if (rootCommandOptions.EnableHealthCheck)
-            app.UseHealthCheck();
-        
         app.MapEndpoints();
 
-        await app.RunAsync();
+        await app.RunAsync(cancellationToken);
     }
 }

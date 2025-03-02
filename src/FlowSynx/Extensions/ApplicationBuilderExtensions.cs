@@ -1,8 +1,10 @@
-﻿using FlowSynx.Environment;
+﻿using FlowSynx.Core.Configuration;
+using FlowSynx.Core.Exceptions;
+using FlowSynx.Core.Services;
 using FlowSynx.HealthCheck;
-using FlowSynx.IO.Serialization;
 using FlowSynx.Middleware;
 using FlowSynx.Models;
+using FlowSynx.Persistence.Postgres.Contexts;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -32,9 +34,14 @@ public static class ApplicationBuilderExtensions
 
     public static IApplicationBuilder UseHealthCheck(this IApplicationBuilder app)
     {
+        var serviceProvider = app.ApplicationServices;
+        var serializer = serviceProvider.GetRequiredService<IJsonSerializer>();
+        var healthCheckConfiguration = serviceProvider.GetRequiredService<HealthCheckConfiguration>();
+
+        if (!healthCheckConfiguration.Enabled)
+            return app;
+
         app.UseEndpoints(endpoints => {
-            var serviceProvider = app.ApplicationServices;
-            var serializer = serviceProvider.GetService<ISerializer>();
             if (serializer == null)
                 throw new ArgumentException(Resources.UseHealthCheckSerializerServiceCouldNotBeInitialized);
                 
@@ -48,7 +55,7 @@ public static class ApplicationBuilderExtensions
                 },
                 ResponseWriter = async (context, report) =>
                 {
-                    context.Response.ContentType = serializer.ContentMineType;
+                    context.Response.ContentType = "application/json";
                     var response = new HealthCheckResponse
                     {
                         Status = report.Status.ToString(),
@@ -69,6 +76,12 @@ public static class ApplicationBuilderExtensions
 
     public static IApplicationBuilder UseOpenApi(this IApplicationBuilder app)
     {
+        var serviceProvider = app.ApplicationServices;
+        var openApiConfiguration = serviceProvider.GetRequiredService<OpenApiConfiguration>();
+
+        if (!openApiConfiguration.Enabled)
+            return app;
+
         app.UseSwagger(options =>
         {
             options.RouteTemplate = $"open-api/{{documentName}}/specifications.json";
@@ -79,6 +92,49 @@ public static class ApplicationBuilderExtensions
             options.RoutePrefix = "open-api";
             options.SwaggerEndpoint($"flowsynx/specifications.json", $"flowsynx");
         });
+
+        return app;
+    }
+
+    public static IApplicationBuilder EnsureApplicationDatabaseCreated(this IApplicationBuilder app, ILogger logger)
+    {
+        using var serviceScope = app.ApplicationServices.CreateScope();
+        var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+        try
+        {
+            var result = context.Database.EnsureCreated();
+            if (result)
+                logger.LogInformation("Application database created successfully.");
+            else
+                logger.LogInformation("Application database already exists.");
+
+            return app;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("Error occurred while creating the application database: " + ex.Message);
+            if (ex.Message.Contains("Cannot create application database"))
+            {
+                logger.LogError("Failed to create application database due to other reasons.");
+            }
+            throw;
+        }
+    }
+
+    public static IApplicationBuilder UseApplicationDataSeeder(this IApplicationBuilder app)
+    {
+        using var serviceScope = app.ApplicationServices.CreateScope();
+        var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+        if (!context.Database.CanConnect())
+            throw new DatabaseException(Resources.FailDatabaseConnection);
+
+        var initializers = serviceScope.ServiceProvider.GetServices<IApplicationDataSeeder>();
+        foreach (var initializer in initializers)
+        {
+            initializer.Initialize();
+        }
 
         return app;
     }

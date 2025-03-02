@@ -1,8 +1,7 @@
 ﻿using System.Net;
-using EnsureThat;
-using FlowSynx.Abstractions;
 using FlowSynx.Core.Exceptions;
-using FlowSynx.IO.Serialization;
+using FlowSynx.Core.Services;
+using FlowSynx.Core.Wrapper;
 
 namespace FlowSynx.Middleware;
 
@@ -10,13 +9,13 @@ public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
-    private readonly ISerializer _serializer;
+    private readonly IJsonSerializer _serializer;
 
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, ISerializer serializer)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IJsonSerializer serializer)
     {
         this._next = next;
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(serializer, nameof(serializer));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(serializer);
         _logger = logger;
         _serializer = serializer;
     }
@@ -30,7 +29,7 @@ public class ExceptionMiddleware
         catch (Exception error)
         {
             var response = context.Response;
-            response.ContentType = _serializer.ContentMineType;
+            response.ContentType = "application/json";
             var responseModel = new Result<string>() { Succeeded = false, Messages = new List<string>() { error.Message } };
 
             switch (error)
@@ -48,6 +47,10 @@ public class ExceptionMiddleware
             }
 
             var result = _serializer.Serialize(responseModel);
+
+            if (!string.IsNullOrEmpty(result))
+                _logger.LogError(result);
+
             await response.WriteAsync(result);
         }
     }

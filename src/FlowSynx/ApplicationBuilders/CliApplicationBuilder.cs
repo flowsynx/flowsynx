@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using System.CommandLine;
+﻿using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using FlowSynx.Models;
@@ -13,13 +12,14 @@ public class CliApplicationBuilder : ICliApplicationBuilder
 
     public CliApplicationBuilder(ILogger<CliApplicationBuilder> logger, RootCommand rootCommand)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
-        EnsureArg.IsNotNull(rootCommand, nameof(rootCommand));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(rootCommand);
+
         _logger = logger;
         _rootCommand = rootCommand;
     }
 
-    public Task<int> RunAsync(string[] args)
+    public async Task<int> RunAsync(string[] args)
     {
         try
         {
@@ -34,12 +34,13 @@ public class CliApplicationBuilder : ICliApplicationBuilder
                 .UseExceptionHandler()
                 .CancelOnProcessTermination();
 
-            return commandLineBuilder.Build().InvokeAsync(args);
+            var parser = commandLineBuilder.Build();
+            return await parser.InvokeAsync(args);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex.Message);
-            return Task.FromResult(ExitCode.Error);
+            return ExitCode.Error;
         }
     }
 }

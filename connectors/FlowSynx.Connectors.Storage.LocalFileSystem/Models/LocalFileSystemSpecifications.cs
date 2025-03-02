@@ -1,8 +1,8 @@
-﻿using FlowSynx.Connectors.Abstractions;
+﻿using FlowSynx.PluginCore;
 
 namespace FlowSynx.Connectors.Storage.LocalFileSystem.Models;
 
-public class LocalFileSystemSpecifications : Specifications
+public class LocalFileSystemSpecifications : PluginSpecifications
 {
 
 }

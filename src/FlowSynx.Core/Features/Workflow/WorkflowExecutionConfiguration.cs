@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Core.Features.Workflow;
+﻿//namespace FlowSynx.Core.Features.Workflow;
 
-public class WorkflowExecutionConfiguration
-{
-    public int DegreeOfParallelism { get; set; } = 3;
-}
+//public class WorkflowExecutionConfiguration
+//{
+//    public int DegreeOfParallelism { get; set; } = 3;
+//}

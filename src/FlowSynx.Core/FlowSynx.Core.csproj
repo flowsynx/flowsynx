@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -12,31 +12,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlowSynx.Commons" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Configuration" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Environment" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Logging" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Parsers" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Connectors" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Connectors.Storage" Version="1.4.19" />
-    <PackageReference Include="FlowSynx.Reflections" Version="1.4.19" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />
     <PackageReference Include="MediatR" Version="12.2.0" />
-    <PackageReference Include="Scriban" Version="5.12.1" />
-    <PackageReference Include="SharpCompress" Version="0.36.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Database.MySql\FlowSynx.Connectors.Database.MySql.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Amazon.S3\FlowSynx.Connectors.Storage.Amazon.S3.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Azure.Blobs\FlowSynx.Connectors.Storage.Azure.Blobs.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Azure.Files\FlowSynx.Connectors.Storage.Azure.Files.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Google.Cloud\FlowSynx.Connectors.Storage.Google.Cloud.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Google.Drive\FlowSynx.Connectors.Storage.Google.Drive.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.LocalFileSystem\FlowSynx.Connectors.Storage.LocalFileSystem.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.Memory\FlowSynx.Connectors.Storage.Memory.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Stream.Csv\FlowSynx.Connectors.Stream.Csv.csproj" />
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Stream.Json\FlowSynx.Connectors.Stream.Json.csproj" />
+    <ProjectReference Include="..\FlowSynx.Domain\FlowSynx.Domain.csproj" />
+    <ProjectReference Include="..\FlowSynx.PluginCore\FlowSynx.PluginCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

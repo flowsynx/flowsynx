@@ -1,5 +1,4 @@
-﻿using EnsureThat;
-using FlowSynx.Core.Services;
+﻿using FlowSynx.Core.Services;
 
 namespace FlowSynx.Services;
 
@@ -10,7 +9,7 @@ public class FlowSynxLocation : ILocation
 
     public FlowSynxLocation(ILogger<FlowSynxLocation> logger)
     {
-        EnsureArg.IsNotNull(logger, nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
 
         if (_rootLocation == null)

@@ -1,7 +1,7 @@
-﻿namespace FlowSynx.Core.Parers.Specifications;
+﻿//namespace FlowSynx.Core.Parers.Specifications;
 
-public class SpecificationsResult
-{
-    public bool Valid { get; set; }
-    public string? Message { get; set; }
-}
+//public class PluginSpecificationsResult
+//{
+//    public bool Valid { get; set; }
+//    public string? Message { get; set; }
+//}

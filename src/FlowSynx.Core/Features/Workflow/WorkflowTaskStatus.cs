@@ -1,9 +1,9 @@
-﻿namespace FlowSynx.Core.Features.Workflow;
+﻿//namespace FlowSynx.Core.Features.Workflow;
 
-public enum WorkflowTaskStatus
-{
-    Pending,
-    Running,
-    Completed,
-    Failed
-}
+//public enum WorkflowTaskStatus
+//{
+//    Pending,
+//    Running,
+//    Completed,
+//    Failed
+//}

@@ -1,7 +1,7 @@
-﻿namespace FlowSynx.Core.Features.Workflow;
+﻿//namespace FlowSynx.Core.Features.Workflow;
 
-public interface IWorkflowExecutor
-{
-    Task<Dictionary<string, object?>> ExecuteAsync(WorkflowExecutionDefinition executionDefinition,
-        CancellationToken cancellationToken);
-}
+//public interface IWorkflowExecutor
+//{
+//    Task<Dictionary<string, object?>> ExecuteAsync(WorkflowExecutionDefinition executionDefinition,
+//        CancellationToken cancellationToken);
+//}

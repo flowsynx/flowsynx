@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Core.Features.Workflow;
+﻿//namespace FlowSynx.Core.Features.Workflow;
 
-public class WorkflowOutputs : Dictionary<string, object>
-{
+//public class WorkflowOutputs : Dictionary<string, object>
+//{
 
-}
+//}
