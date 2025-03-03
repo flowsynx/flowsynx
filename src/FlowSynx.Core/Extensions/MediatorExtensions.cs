@@ -1,4 +1,5 @@
-﻿using FlowSynx.Core.Features.PluginConfig.Query.List;
+﻿using FlowSynx.Core.Features.Config.Query.Details;
+using FlowSynx.Core.Features.PluginConfig.Query.List;
 using FlowSynx.Core.Wrapper;
 using MediatR;
 
@@ -79,17 +80,18 @@ public static class MediatorExtensions
     //}
     //#endregion
 
-    #region Config
-    public static Task<Result<IEnumerable<PluginConfigListResponse>>> PluginsConfiguration(this IMediator mediator, 
-        string userId, CancellationToken cancellationToken)
+    #region PluginConfig
+    public static Task<Result<IEnumerable<PluginConfigListResponse>>> PluginsConfiguration(this IMediator mediator,
+        PluginConfigListRequest request, CancellationToken cancellationToken)
     {
-        return mediator.Send(new PluginConfigListRequest { UserId = userId }, cancellationToken);
+        return mediator.Send(request, cancellationToken);
     }
 
-    //public static Task<Result<ConfigDetailsResponse>> ConfigDetails(this IMediator mediator, ConfigDetailsRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
+    public static Task<Result<PluginConfigDetailsResponse>> PluginConfigurationDetails(this IMediator mediator, 
+        PluginConfigDetailsRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
 
     //public static Task<Result<AddConfigResponse>> AddConfig(this IMediator mediator, AddConfigRequest request, CancellationToken cancellationToken)
     //{

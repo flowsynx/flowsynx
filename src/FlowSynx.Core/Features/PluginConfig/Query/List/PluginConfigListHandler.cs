@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Core.Features.PluginConfig.Query.List;
+using FlowSynx.Core.Services;
 using FlowSynx.Core.Wrapper;
 using FlowSynx.Domain.Interfaces;
 using MediatR;
@@ -10,19 +11,25 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
 {
     private readonly ILogger<PluginConfigListHandler> _logger;
     private readonly IPluginConfigurationService _pluginConfigurationService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public PluginConfigListHandler(ILogger<PluginConfigListHandler> logger, IPluginConfigurationService pluginConfigurationService)
+    public PluginConfigListHandler(ILogger<PluginConfigListHandler> logger, 
+        IPluginConfigurationService pluginConfigurationService, ICurrentUserService currentUserService)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(pluginConfigurationService);
+        ArgumentNullException.ThrowIfNull(currentUserService);
         _logger = logger;
         _pluginConfigurationService = pluginConfigurationService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<IEnumerable<PluginConfigListResponse>>> Handle(PluginConfigListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(request.UserId))
-                ArgumentNullException.ThrowIfNull(request.UserId);
+            if (string.IsNullOrEmpty(_currentUserService.UserId))
+                throw new UnauthorizedAccessException("User is not authenticated.");
 
             var pluginConfigs = await _pluginConfigurationService.All(request.UserId, cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
