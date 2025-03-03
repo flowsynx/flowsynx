@@ -4,7 +4,6 @@ using FlowSynx.Core.Services;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using FlowSynx.Infrastructure.Extensions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
 using FlowSynx.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -51,17 +50,15 @@ public static class ServiceCollectionExtensions
         var serviceProvider = services.BuildServiceProvider();
         var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
         var logService = serviceProvider.GetRequiredService<ILoggerService>();
-
-        const string template = "[{level} | {timestamp}] Message=\"{message}\"";
         var logLevel = loggerConfiguration.Level.ToLogLevel();
 
         services.AddLogging(c => c.ClearProviders());
         services.AddLogging(builder => builder.AddConsoleLogger(options =>
         {
-            options.OutputTemplate = template;
-            options.MinLevel = LogLevel.Information;
+            options.OutputTemplate = "[{level} | {timestamp}] Message=\"{message}\"";
+            options.MinLevel = logLevel;
             options.CancellationToken = cancellationToken;
-        }).AddFilter((category, level) => category != DbLoggerCategory.Database.Command.Name));
+        }));
 
         services.AddLogging(builder => builder.AddDatabaseLogger(options =>
         {
