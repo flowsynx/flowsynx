@@ -31,7 +31,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
 
-            var pluginConfigs = await _pluginConfigurationService.All(request.UserId, cancellationToken);
+            var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId, cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
             {
                 Name = config.Name,

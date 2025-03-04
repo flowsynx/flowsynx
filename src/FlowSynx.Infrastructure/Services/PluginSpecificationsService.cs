@@ -14,7 +14,7 @@ public class PluginSpecificationsService : IPluginSpecificationsService
         _pluginService = pluginService;
     }
 
-    public async Task<PluginSpecificationsResult> Validate(string type, Dictionary<string, string?>? specifications, 
+    public async Task<PluginSpecificationsResult> Validate(string type, Dictionary<string, object?>? specifications, 
         CancellationToken cancellationToken)
     {
         Plugin plugin = await _pluginService.Get(type, cancellationToken);
@@ -64,7 +64,7 @@ public class PluginSpecificationsService : IPluginSpecificationsService
         return new PluginSpecificationsResult { Valid = true };
     }
 
-    private Dictionary<string, object?>? ConvertKeysToLowerCase(Dictionary<string, string?>? dictionaries)
+    private Dictionary<string, object?>? ConvertKeysToLowerCase(Dictionary<string, object?>? dictionaries)
     {
         var convertedDictionary = new Dictionary<string, object?>();
 

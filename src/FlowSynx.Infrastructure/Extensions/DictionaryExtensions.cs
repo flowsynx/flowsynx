@@ -4,16 +4,11 @@ namespace FlowSynx.Infrastructure.Extensions;
 
 public static class DictionaryExtensions
 {
-    public static PluginSpecifications ToPluginParameters(this Dictionary<string, string?>? source)
+    public static PluginSpecifications ToPluginParameters(this Dictionary<string, object?>? source)
     {
-        var specifications = new PluginSpecifications();
-        if (source is null) 
-            return specifications;
+        if (source == null)
+            return new PluginSpecifications();
 
-        foreach (var item in source)
-        {
-            specifications.Add(item.Key, item.Value);
-        }
-        return specifications;
+        return new PluginSpecifications(source);
     }
 }

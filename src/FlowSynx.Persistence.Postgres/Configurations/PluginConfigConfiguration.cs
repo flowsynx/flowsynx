@@ -29,6 +29,6 @@ public class PluginConfigConfiguration : IEntityTypeConfiguration<PluginConfigur
             v => _jsonDeserializer.Deserialize<PluginConfigurationSpecifications?>(v)
         );
 
-        builder.Property(e => e.Specifications).HasConversion(dictionaryconverter);
+        builder.Property(e => e.Specifications).HasColumnType("jsonb").HasConversion(dictionaryconverter);
     }
 }

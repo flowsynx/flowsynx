@@ -97,7 +97,7 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The entered type is not valid or not exist!.
+        ///   Looks up a localized string similar to The entered type for connector &apos;{0}&apos; is not valid or not exist!.
         /// </summary>
         internal static string AddConfigValidatorTypeValueIsNotValid {
             get {

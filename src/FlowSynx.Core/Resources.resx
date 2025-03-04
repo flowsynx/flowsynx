@@ -226,7 +226,7 @@
     <value>Name should be not empty.</value>
   </data>
   <data name="AddConfigValidatorTypeValueIsNotValid" xml:space="preserve">
-    <value>The entered type is not valid or not exist!</value>
+    <value>The entered type for connector '{0}' is not valid or not exist!</value>
   </data>
   <data name="AddConfigValidatorTypeValueMustNotNullOrEmptyMessage" xml:space="preserve">
     <value>Type should be not empty.</value>

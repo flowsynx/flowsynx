@@ -4,22 +4,24 @@ using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Entities.Workflow;
 using FlowSynx.Domain.Entities.PluignConfig;
 using FlowSynx.Persistence.Postgres.Configurations;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace FlowSynx.Persistence.Postgres.Contexts;
 
 public class ApplicationContext : AuditableContext
 {
-    private readonly ICurrentUserService _currentUserService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ISystemClock _systemClock;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IJsonDeserializer _jsonDeserializer;
 
     public ApplicationContext(DbContextOptions<ApplicationContext> contextOptions,
-        ICurrentUserService currentUserService, ISystemClock systemClock,
+        IHttpContextAccessor httpContextAccessor, ISystemClock systemClock,
         IJsonSerializer jsonSerializer, IJsonDeserializer jsonDeserializer)
         : base(contextOptions)
     {
-        _currentUserService = currentUserService;
+        _httpContextAccessor = httpContextAccessor;
         _systemClock = systemClock;
         _jsonSerializer = jsonSerializer;
         _jsonDeserializer = jsonDeserializer;
@@ -32,12 +34,10 @@ public class ApplicationContext : AuditableContext
     {
         ApplyAuditing();
 
-        if ( string.IsNullOrEmpty(_currentUserService.UserId))
-        {
+        if ( string.IsNullOrEmpty(GetUserId()))
             return await base.SaveChangesAsync(cancellationToken);
-        }
 
-        return await base.SaveChangesAsync(_currentUserService.UserId, cancellationToken);
+        return await base.SaveChangesAsync(GetUserId(), cancellationToken);
     }
 
     private void ApplyAuditing()
@@ -52,16 +52,18 @@ public class ApplicationContext : AuditableContext
             if (entry.State == EntityState.Added)
             {
                 auditable.CreatedOn = _systemClock.NowUtc;
-                auditable.CreatedBy = _currentUserService.UserId;
+                auditable.CreatedBy = GetUserId();
             }
 
             if (entry.State == EntityState.Modified)
             {
                 auditable.LastModifiedOn = _systemClock.NowUtc;
-                auditable.LastModifiedBy = _currentUserService.UserId;
+                auditable.LastModifiedBy = GetUserId();
             }
         }
     }
+
+    private string GetUserId() => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

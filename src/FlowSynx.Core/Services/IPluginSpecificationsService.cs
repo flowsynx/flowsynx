@@ -4,6 +4,6 @@ namespace FlowSynx.Core.Services;
 
 public interface IPluginSpecificationsService
 {
-    Task<PluginSpecificationsResult> Validate(string type, Dictionary<string, string?>? specifications, 
+    Task<PluginSpecificationsResult> Validate(string type, Dictionary<string, object?>? specifications, 
         CancellationToken cancellationToken);
 }
