@@ -1,45 +1,79 @@
-﻿//using MediatR;
-//using Microsoft.Extensions.Logging;
-//using EnsureThat;
-//using FlowSynx.Abstractions;
-//using FlowSynx.Logging.Options;
-//using FlowSynx.Logging;
+﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using FlowSynx.Core.Wrapper;
+using FlowSynx.Domain.Interfaces;
+using FlowSynx.Core.Services;
+using FlowSynx.Domain.Entities.Logs;
+using FlowSynx.Core.Extensions;
 
-//namespace FlowSynx.Core.Features.Logs.Query.List;
+namespace FlowSynx.Core.Features.Logs.Query.List;
 
-//internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumerable<object>>>
-//{
-//    private readonly ILogger<LogsListHandler> _logger;
-//    private readonly ILogManager _logManager;
+internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumerable<LogsListResponse>>>
+{
+    private readonly ILogger<LogsListHandler> _logger;
+    private readonly ILoggerService _loggerService;
+    private readonly ICurrentUserService _currentUserService;
 
-//    public LogsListHandler(ILogger<LogsListHandler> logger, ILogManager logManager, IServiceProvider serviceProvider)
-//    {
-//        EnsureArg.IsNotNull(logger, nameof(logger));
-//        EnsureArg.IsNotNull(logManager, nameof(logManager));
-//        EnsureArg.IsNotNull(serviceProvider, nameof(serviceProvider));
-//        _logger = logger;
-//        _logManager = logManager;
-//    }
+    public LogsListHandler(ILogger<LogsListHandler> logger, ILoggerService loggerService,
+        ICurrentUserService currentUserService)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(loggerService);
+        ArgumentNullException.ThrowIfNull(currentUserService);
+        _logger = logger;
+        _loggerService = loggerService;
+        _currentUserService = currentUserService;
+    }
 
-//    public async Task<Result<IEnumerable<object>>> Handle(LogsListRequest request, CancellationToken cancellationToken)
-//    {
-//        try
-//        {
-//            var listOptions = new LogListOptions()
-//            {
-//                Fields = request.Fields,
-//                Filter = request.Filter,
-//                Sort = request.Sort,
-//                Paging = request.Paging,
-//                CaseSensitive = request.CaseSensitive ?? false
-//            };
+    public async Task<Result<IEnumerable<LogsListResponse>>> Handle(LogsListRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var predicate = PredicateBuilder.Create<Log>(p => p.UserId == _currentUserService.UserId);
 
-//            var response = _logManager.List(listOptions);
-//            return await Result<IEnumerable<object>>.SuccessAsync(response);
-//        }
-//        catch (Exception ex)
-//        {
-//            return await Result<IEnumerable<object>>.FailAsync(new List<string> { ex.Message });
-//        }
-//    }
-//}
+            if (!string.IsNullOrEmpty(request.Level))
+                predicate = predicate.And(p => p.Level == ToLogsLevel(request.Level));
+
+            if (request.FromDate != null)
+                predicate = predicate.And(p => p.TimeStamp >= request.FromDate);
+
+            if (request.ToDate != null)
+                predicate = predicate.And(p => p.TimeStamp <= request.ToDate);
+
+            if (!string.IsNullOrEmpty(request.Message))
+                predicate = predicate.And(p => p.Message.ToLower().Contains(request.Message.ToLower()));
+
+            var logs = await _loggerService.All(predicate, cancellationToken);
+            var response = logs.Select(l => new LogsListResponse
+            {
+                Id = l.Id,
+                Category = l.Category,
+                Level = l.Level,
+                TimeStamp = l.TimeStamp,
+                Message = l.Message,
+                Exception = l.Exception
+            });
+            return await Result<IEnumerable<LogsListResponse>>.SuccessAsync(response);
+        }
+        catch (Exception ex)
+        {
+            return await Result<IEnumerable<LogsListResponse>>.FailAsync(ex.Message);
+        }
+    }
+
+    private LogsLevel ToLogsLevel(string logsLevel)
+    {
+        var level = logsLevel.ToLower() switch
+        {
+            "none" => LogsLevel.None,
+            "dbug" => LogsLevel.Dbug,
+            "info" => LogsLevel.Info,
+            "warn" => LogsLevel.Warn,
+            "fail" => LogsLevel.Fail,
+            "crit" => LogsLevel.Crit,
+            _ => LogsLevel.Info,
+        };
+
+        return level;
+    }
+}

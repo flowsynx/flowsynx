@@ -1,7 +1,10 @@
 ﻿using FlowSynx.Core.Features.Config.Command.Add;
 using FlowSynx.Core.Features.Config.Command.Delete;
 using FlowSynx.Core.Features.Config.Query.Details;
+using FlowSynx.Core.Features.Logs.Query.List;
 using FlowSynx.Core.Features.PluginConfig.Query.List;
+using FlowSynx.Core.Features.Plugins.Query.Details;
+using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Wrapper;
 using MediatR;
 
@@ -70,17 +73,19 @@ public static class MediatorExtensions
     //}
     //#endregion
 
-    //#region Plugins
-    //public static Task<Result<IEnumerable<object>>> Connectors(this IMediator mediator, ConnectorListRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
+    #region Plugins
+    public static Task<Result<IEnumerable<PluginsListResponse>>> PluginsList(this IMediator mediator, 
+        PluginsListRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
 
-    //public static Task<Result<ConnectorDetailsResponse>> ConnectorDetails(this IMediator mediator, ConnectorDetailsRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-    //#endregion
+    public static Task<Result<PluginDetailsResponse>> PluginDetails(this IMediator mediator, 
+        PluginDetailsRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+    #endregion
 
     #region PluginConfig
     public static Task<Result<IEnumerable<PluginConfigListResponse>>> PluginsConfiguration(this IMediator mediator,
@@ -108,10 +113,11 @@ public static class MediatorExtensions
     }
     #endregion
 
-    //#region Logs
-    //public static Task<Result<IEnumerable<object>>> Logs(this IMediator mediator, LogsListRequest listRequest, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(listRequest, cancellationToken);
-    //}
-    //#endregion
+    #region Logs
+    public static Task<Result<IEnumerable<LogsListResponse>>> Logs(this IMediator mediator, LogsListRequest request, 
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+    #endregion
 }
