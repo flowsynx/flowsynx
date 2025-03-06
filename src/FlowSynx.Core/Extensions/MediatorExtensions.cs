@@ -5,6 +5,7 @@ using FlowSynx.Core.Features.Logs.Query.List;
 using FlowSynx.Core.Features.PluginConfig.Query.List;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
+using FlowSynx.Core.Features.Version.Query;
 using FlowSynx.Core.Wrapper;
 using MediatR;
 
@@ -66,12 +67,12 @@ public static class MediatorExtensions
     //}
     //#endregion
 
-    //#region Version
-    //public static Task<Result<VersionResponse>> Version(this IMediator mediator, VersionRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-    //#endregion
+    #region Version
+    public static Task<Result<VersionResponse>> Version(this IMediator mediator, VersionRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+    #endregion
 
     #region Plugins
     public static Task<Result<IEnumerable<PluginsListResponse>>> PluginsList(this IMediator mediator, 
