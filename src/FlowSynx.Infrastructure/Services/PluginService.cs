@@ -3,6 +3,7 @@ using FlowSynx.Core.Services;
 using FlowSynx.PluginCore;
 using FlowSynx.Core.Exceptions;
 using Microsoft.Extensions.Logging;
+using System;
 
 namespace FlowSynx.Infrastructure.Services;
 
@@ -49,6 +50,19 @@ public class PluginService : IPluginService
         catch (Exception)
         {
             return false;
+        }
+    }
+
+    public Task<bool> CheckHealthAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            Plugins().ToList();
+            return Task.FromResult(true);
+        }
+        catch
+        {
+            return Task.FromResult(false);
         }
     }
 

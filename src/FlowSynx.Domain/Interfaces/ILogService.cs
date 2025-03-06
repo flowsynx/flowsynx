@@ -8,4 +8,5 @@ public interface ILoggerService
     Task<IReadOnlyCollection<Log>> All(Expression<Func<Log, bool>>? predicate, CancellationToken cancellationToken);
     Task<Log?> Get(string userId, Guid id, CancellationToken cancellationToken);
     Task Add(Log log, CancellationToken cancellationToken);
+    Task<bool> CheckHealthAsync();
 }

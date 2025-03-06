@@ -9,4 +9,5 @@ public interface IPluginConfigurationService
     Task<bool> IsExist(string userId, string configId, CancellationToken cancellationToken);
     Task Add(PluginConfiguration configuration, CancellationToken cancellationToken);
     Task<bool> Delete(PluginConfiguration configuration, CancellationToken cancellationToken);
+    Task<bool> CheckHealthAsync(CancellationToken cancellationToken);
 }

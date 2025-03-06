@@ -64,4 +64,16 @@ public class PluginConfigurationService : IPluginConfigurationService
 
         return true;
     }
+
+    public async Task<bool> CheckHealthAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _appContext.Database.CanConnectAsync(cancellationToken);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }

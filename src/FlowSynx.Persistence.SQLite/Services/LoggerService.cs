@@ -3,6 +3,7 @@ using FlowSynx.Domain.Interfaces;
 using FlowSynx.Domain.Entities.Logs;
 using FlowSynx.Persistence.SQLite.Contexts;
 using System.Linq.Expressions;
+using System;
 
 namespace FlowSynx.Persistence.SQLite.Services;
 
@@ -46,6 +47,19 @@ public class LoggerService : ILoggerService
         {
             Console.WriteLine("An error occurred saving changes.");
             Console.WriteLine(ex.InnerException?.Message);
+        }
+    }
+
+    public async Task<bool> CheckHealthAsync()
+    {
+        try
+        {
+            using var context = _logContextFactory.CreateDbContext();
+            return await context.Database.CanConnectAsync();
+        }
+        catch
+        {
+            return false;
         }
     }
 }
