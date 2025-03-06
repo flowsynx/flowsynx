@@ -61,56 +61,47 @@ namespace FlowSynx {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configuration Registry.
+        ///   Looks up a localized string similar to Configuration service.
         /// </summary>
-        internal static string AddHealthCheckerConfigurationRegistry {
+        internal static string AddHealthCheckerConfigurationService {
             get {
-                return ResourceManager.GetString("AddHealthCheckerConfigurationRegistry", resourceCulture);
+                return ResourceManager.GetString("AddHealthCheckerConfigurationService", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Connectors Registry.
+        ///   Looks up a localized string similar to Logger service.
         /// </summary>
-        internal static string AddHealthCheckerConnectorsRegistry {
+        internal static string AddHealthCheckerLoggerService {
             get {
-                return ResourceManager.GetString("AddHealthCheckerConnectorsRegistry", resourceCulture);
+                return ResourceManager.GetString("AddHealthCheckerLoggerService", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configuration registry available.
+        ///   Looks up a localized string similar to Plugins service.
         /// </summary>
-        internal static string ConfigurationManagerHealthCheckConfigurationRegistryAvailable {
+        internal static string AddHealthCheckerPluginService {
             get {
-                return ResourceManager.GetString("ConfigurationManagerHealthCheckConfigurationRegistryAvailable", resourceCulture);
+                return ResourceManager.GetString("AddHealthCheckerPluginService", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Configuration registry failed.
+        ///   Looks up a localized string similar to Configuration service is available.
         /// </summary>
-        internal static string ConfigurationManagerHealthCheckConfigurationRegistryFailed {
+        internal static string ConfigurationServiceHealthCheckConfigurationServiceAvailable {
             get {
-                return ResourceManager.GetString("ConfigurationManagerHealthCheckConfigurationRegistryFailed", resourceCulture);
+                return ResourceManager.GetString("ConfigurationServiceHealthCheckConfigurationServiceAvailable", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Connectors registry available.
+        ///   Looks up a localized string similar to Configuration service is failed.
         /// </summary>
-        internal static string ConnectorsManagerHealthCheckConfigurationRegistryAvailable {
+        internal static string ConfigurationServiceHealthCheckConfigurationServiceFailed {
             get {
-                return ResourceManager.GetString("ConnectorsManagerHealthCheckConfigurationRegistryAvailable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Connectors registry failed.
-        /// </summary>
-        internal static string ConnectorsManagerHealthCheckConfigurationRegistryFailed {
-            get {
-                return ResourceManager.GetString("ConnectorsManagerHealthCheckConfigurationRegistryFailed", resourceCulture);
+                return ResourceManager.GetString("ConfigurationServiceHealthCheckConfigurationServiceFailed", resourceCulture);
             }
         }
         
@@ -178,6 +169,24 @@ namespace FlowSynx {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Logger service is available.
+        /// </summary>
+        internal static string LoggerServiceHealthCheckLoggerServiceAvailable {
+            get {
+                return ResourceManager.GetString("LoggerServiceHealthCheckLoggerServiceAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Logger Service is failed.
+        /// </summary>
+        internal static string LoggerServiceHealthCheckLoggerServiceFailed {
+            get {
+                return ResourceManager.GetString("LoggerServiceHealthCheckLoggerServiceFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error in reading executable application path..
         /// </summary>
         internal static string OptionsVerifierErrorInReadingExecutableApplicationPath {
@@ -192,6 +201,24 @@ namespace FlowSynx {
         internal static string OptionsVerifierTheEnteredConfigFileIsNotExist {
             get {
                 return ResourceManager.GetString("OptionsVerifierTheEnteredConfigFileIsNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugins service is available.
+        /// </summary>
+        internal static string PluginServiceHealthCheckPluginServiceAvailable {
+            get {
+                return ResourceManager.GetString("PluginServiceHealthCheckPluginServiceAvailable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugins Service is failed.
+        /// </summary>
+        internal static string PluginServiceHealthCheckPluginServiceFailed {
+            get {
+                return ResourceManager.GetString("PluginServiceHealthCheckPluginServiceFailed", resourceCulture);
             }
         }
         
