@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Core.Features.PluginConfig.Query.Details;
+namespace FlowSynx.Core.Features.Workflows.Command.Delete;
 
-public class PluginConfigDetailsValidator : AbstractValidator<PluginConfigDetailsRequest>
+public class DeleteWorkflowValidator : AbstractValidator<DeleteWorkflowRequest>
 {
-    public PluginConfigDetailsValidator()
+    public DeleteWorkflowValidator()
     {
         RuleFor(x => x.Name)
             .NotNull()

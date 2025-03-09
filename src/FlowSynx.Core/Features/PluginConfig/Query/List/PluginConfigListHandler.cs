@@ -1,11 +1,10 @@
-﻿using FlowSynx.Core.Features.PluginConfig.Query.List;
-using FlowSynx.Core.Services;
+﻿using FlowSynx.Core.Services;
 using FlowSynx.Core.Wrapper;
 using FlowSynx.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Core.Features.Config.Query.List;
+namespace FlowSynx.Core.Features.PluginConfig.Query.List;
 
 internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest, Result<IEnumerable<PluginConfigListResponse>>>
 {

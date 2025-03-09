@@ -7,35 +7,35 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx", "src\FlowSynx\Fl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Core", "src\FlowSynx.Core\FlowSynx.Core.csproj", "{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "connectors", "connectors", "{F0C26331-6C4A-4389-80E3-7580C3977871}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{F0C26331-6C4A-4389-80E3-7580C3977871}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE3-4780-9B97-FFC76E73B354}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.LocalFileSystem", "connectors\FlowSynx.Connectors.Storage.LocalFileSystem\FlowSynx.Connectors.Storage.LocalFileSystem.csproj", "{EE1A893C-E84D-4D7D-93C8-0646EC729685}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.LocalFileSystem", "plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj", "{EE1A893C-E84D-4D7D-93C8-0646EC729685}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.Azure.Blobs", "connectors\FlowSynx.Connectors.Storage.Azure.Blobs\FlowSynx.Connectors.Storage.Azure.Blobs.csproj", "{60854C55-D120-4359-BEDF-883A825B603F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Azure.Blobs", "plugins\FlowSynx.Plugins.Azure.Blobs\FlowSynx.Plugins.Azure.Blobs.csproj", "{60854C55-D120-4359-BEDF-883A825B603F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.Azure.Files", "connectors\FlowSynx.Connectors.Storage.Azure.Files\FlowSynx.Connectors.Storage.Azure.Files.csproj", "{7B41A66B-26F1-4428-9426-FDFFF1D58F75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Azure.Files", "plugins\FlowSynx.Plugins.Azure.Files\FlowSynx.Plugins.Azure.Files.csproj", "{7B41A66B-26F1-4428-9426-FDFFF1D58F75}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Storage", "Storage", "{2055D7A4-DACB-49D7-988F-E3424935388A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.Google.Cloud", "connectors\FlowSynx.Connectors.Storage.Google.Cloud\FlowSynx.Connectors.Storage.Google.Cloud.csproj", "{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Google.Cloud", "plugins\FlowSynx.Plugins.Google.Cloud\FlowSynx.Plugins.Google.Cloud.csproj", "{1FC203CA-B2DD-4162-8266-F2427F9DF8A1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.Amazon.S3", "connectors\FlowSynx.Connectors.Storage.Amazon.S3\FlowSynx.Connectors.Storage.Amazon.S3.csproj", "{69176FFB-B44F-47CE-AE0A-1D89A956D312}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Amazon.S3", "plugins\FlowSynx.Plugins.Amazon.S3\FlowSynx.Plugins.Amazon.S3.csproj", "{69176FFB-B44F-47CE-AE0A-1D89A956D312}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.Google.Drive", "connectors\FlowSynx.Connectors.Storage.Google.Drive\FlowSynx.Connectors.Storage.Google.Drive.csproj", "{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Google.Drive", "plugins\FlowSynx.Plugins.Google.Drive\FlowSynx.Plugins.Google.Drive.csproj", "{70DF5C19-586D-4F1E-AEBE-E30E9CBB214F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Storage.Memory", "connectors\FlowSynx.Connectors.Storage.Memory\FlowSynx.Connectors.Storage.Memory.csproj", "{3C553BFA-E965-42D1-805F-3DEC8C8FFA62}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Memory", "plugins\FlowSynx.Plugins.Memory\FlowSynx.Plugins.Memory.csproj", "{3C553BFA-E965-42D1-805F-3DEC8C8FFA62}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Streams", "Streams", "{5FED1243-9767-427C-886B-D2070468FA3B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Stream.Csv", "connectors\FlowSynx.Connectors.Stream.Csv\FlowSynx.Connectors.Stream.Csv.csproj", "{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Csv", "plugins\FlowSynx.Plugins.Csv\FlowSynx.Plugins.Csv.csproj", "{D1100A18-09CB-4EF2-AEC7-77B5D77F0918}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Stream.Json", "connectors\FlowSynx.Connectors.Stream.Json\FlowSynx.Connectors.Stream.Json.csproj", "{B5AA204A-DADB-49E8-A9CA-67C2C798C10C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.Json", "plugins\FlowSynx.Plugins.Json\FlowSynx.Plugins.Json.csproj", "{B5AA204A-DADB-49E8-A9CA-67C2C798C10C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Database", "Database", "{09F60EE1-C041-4F8E-88D1-6010FD9A8B70}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Connectors.Database.MySql", "connectors\FlowSynx.Connectors.Database.MySql\FlowSynx.Connectors.Database.MySql.csproj", "{64267797-D93B-4647-A81C-0A773E8CFEB6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.MySql", "plugins\FlowSynx.Plugins.MySql\FlowSynx.Plugins.MySql.csproj", "{64267797-D93B-4647-A81C-0A773E8CFEB6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Domain", "src\FlowSynx.Domain\FlowSynx.Domain.csproj", "{445387B6-23EC-4C33-8423-AA5B669779DC}"
 EndProject

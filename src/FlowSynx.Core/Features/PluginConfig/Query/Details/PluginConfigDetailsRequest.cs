@@ -1,8 +1,7 @@
-﻿using FlowSynx.Core.Features.Config.Query.Details;
-using FlowSynx.Core.Wrapper;
+﻿using FlowSynx.Core.Wrapper;
 using MediatR;
 
-namespace FlowSynx.Core.Features.PluginConfig.Query.List;
+namespace FlowSynx.Core.Features.PluginConfig.Query.Details;
 
 public class PluginConfigDetailsRequest : IRequest<Result<PluginConfigDetailsResponse>>
 {

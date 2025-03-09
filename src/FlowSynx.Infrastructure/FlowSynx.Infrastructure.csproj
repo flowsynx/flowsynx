@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\connectors\FlowSynx.Connectors.Storage.LocalFileSystem\FlowSynx.Connectors.Storage.LocalFileSystem.csproj" />
+    <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj" />
     <ProjectReference Include="..\FlowSynx.Core\FlowSynx.Core.csproj" />
   </ItemGroup>
 

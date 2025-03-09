@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using FlowSynx.Core.Wrapper;
 
-namespace FlowSynx.Core.Features.Config.Command.Delete;
+namespace FlowSynx.Core.Features.PluginConfig.Command.Delete;
 
 public class DeletePluginConfigRequest : IRequest<Result<Unit>>
 {

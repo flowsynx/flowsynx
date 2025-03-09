@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Core.Features.PluginConfig.Query.Details;
+namespace FlowSynx.Core.Features.Workflows.Query.Details;
 
-public class PluginConfigDetailsValidator : AbstractValidator<PluginConfigDetailsRequest>
+public class WorkflowDetailsValidator : AbstractValidator<WorkflowDetailsRequest>
 {
-    public PluginConfigDetailsValidator()
+    public WorkflowDetailsValidator()
     {
         RuleFor(x => x.Name)
             .NotNull()

@@ -270,4 +270,7 @@
   <data name="TransferKindValidatorTypeValueShouldBeValidMessage" xml:space="preserve">
     <value>TransferKind value must be Copy or Move. By default it is Copy.</value>
   </data>
+  <data name="AddWorkflowNameIsAlreadyExist" xml:space="preserve">
+    <value>Workflow '{Name}' is already exist.</value>
+  </data>
 </root>

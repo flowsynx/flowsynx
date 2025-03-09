@@ -1,11 +1,16 @@
-﻿using FlowSynx.Core.Features.Config.Command.Add;
-using FlowSynx.Core.Features.Config.Command.Delete;
-using FlowSynx.Core.Features.Config.Query.Details;
-using FlowSynx.Core.Features.Logs.Query.List;
+﻿using FlowSynx.Core.Features.Logs.Query.List;
+using FlowSynx.Core.Features.PluginConfig.Command.Add;
+using FlowSynx.Core.Features.PluginConfig.Command.Delete;
+using FlowSynx.Core.Features.PluginConfig.Query.Details;
 using FlowSynx.Core.Features.PluginConfig.Query.List;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Features.Version.Query;
+using FlowSynx.Core.Features.Workflows.Command.Add;
+using FlowSynx.Core.Features.Workflows.Command.Delete;
+using FlowSynx.Core.Features.Workflows.Command.Update;
+using FlowSynx.Core.Features.Workflows.Query.Details;
+using FlowSynx.Core.Features.Workflows.Query.List;
 using FlowSynx.Core.Wrapper;
 using MediatR;
 
@@ -66,6 +71,38 @@ public static class MediatorExtensions
     //    return mediator.Send(workflow, cancellationToken);
     //}
     //#endregion
+
+    #region Workflow
+    public static Task<Result<IEnumerable<WorkflowListResponse>>> Workflows(this IMediator mediator, 
+        WorkflowListRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<WorkflowDetailsResponse>> WorkflowDetails(this IMediator mediator,
+        WorkflowDetailsRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<AddWorkflowResponse>> AddWorkflow(this IMediator mediator,
+        AddWorkflowRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<Unit>> UpdateWorkflow(this IMediator mediator, UpdateWorkflowRequest request,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<Unit>> DeleteWorkflow(this IMediator mediator, DeleteWorkflowRequest request,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
+    }
+    #endregion
 
     #region Version
     public static Task<Result<VersionResponse>> Version(this IMediator mediator, VersionRequest request, CancellationToken cancellationToken)

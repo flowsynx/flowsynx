@@ -1,11 +1,10 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Core.Features.PluginConfig.Query.List;
 using FlowSynx.Core.Wrapper;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Core.Services;
 
-namespace FlowSynx.Core.Features.Config.Query.Details;
+namespace FlowSynx.Core.Features.PluginConfig.Query.Details;
 
 internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsRequest, Result<PluginConfigDetailsResponse>>
 {
@@ -30,9 +29,6 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
-
-            if (string.IsNullOrEmpty(request.Name))
-                ArgumentNullException.ThrowIfNull(request.Name);
 
             var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, request.Name, cancellationToken);
             if (pluginConfig is null) 

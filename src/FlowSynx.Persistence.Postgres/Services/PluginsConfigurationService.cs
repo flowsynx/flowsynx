@@ -50,7 +50,7 @@ public class PluginConfigurationService : IPluginConfigurationService
             .ConfigureAwait(false);
 
         await _appContext
-            .SaveChangesAsync(configuration.UserId, cancellationToken)
+            .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -59,7 +59,7 @@ public class PluginConfigurationService : IPluginConfigurationService
         _appContext.PluginConfiguration.Remove(configuration);
 
         await _appContext
-            .SaveChangesAsync(configuration.UserId, cancellationToken)
+            .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
 
         return true;

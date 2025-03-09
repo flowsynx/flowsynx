@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Core.Features.PluginConfig.Query.List;
 using FluentValidation;
 
-namespace FlowSynx.Core.Features.Config.Command.Delete;
+namespace FlowSynx.Core.Features.PluginConfig.Command.Delete;
 
 public class DeletePluginConfigValidator : AbstractValidator<DeletePluginConfigRequest>
 {

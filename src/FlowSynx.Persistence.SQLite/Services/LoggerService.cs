@@ -3,7 +3,6 @@ using FlowSynx.Domain.Interfaces;
 using FlowSynx.Domain.Entities.Logs;
 using FlowSynx.Persistence.SQLite.Contexts;
 using System.Linq.Expressions;
-using System;
 
 namespace FlowSynx.Persistence.SQLite.Services;
 

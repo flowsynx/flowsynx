@@ -10,5 +10,5 @@ public abstract class Plugin
     public abstract PluginSpecifications? Specifications { get; set; }
     public abstract Type SpecificationsType { get; }
     public abstract Task Initialize();
-    public abstract Task<object> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken);
+    public abstract Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken);
 }

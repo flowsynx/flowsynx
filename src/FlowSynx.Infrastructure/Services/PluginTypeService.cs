@@ -4,8 +4,8 @@ using FlowSynx.Core.Services;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.PluginCore;
 using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Connectors.Storage.LocalFileSystem;
 using Microsoft.Extensions.Logging;
+using FlowSynx.Plugins.LocalFileSystem;
 
 namespace FlowSynx.Infrastructure.Services;
 

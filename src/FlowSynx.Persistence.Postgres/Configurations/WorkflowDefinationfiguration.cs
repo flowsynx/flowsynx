@@ -10,6 +10,7 @@ public class WorkflowDefinationfiguration : IEntityTypeConfiguration<WorkflowDef
     {
         builder.HasKey(x => x.Id);
         builder.Property(t => t.Id).IsRequired();
+        builder.Property(t => t.UserId).IsRequired();
         builder.Property(t => t.Name).HasMaxLength(128).IsRequired();
         builder.Property(t => t.Template).IsRequired();
     }

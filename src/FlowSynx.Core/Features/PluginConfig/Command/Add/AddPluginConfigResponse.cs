@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Core.Features.Config.Command.Add;
+﻿namespace FlowSynx.Core.Features.PluginConfig.Command.Add;
 
 public class AddPluginConfigResponse
 {

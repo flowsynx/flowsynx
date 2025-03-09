@@ -115,6 +115,15 @@ namespace FlowSynx.Core {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Workflow &apos;{Name}&apos; is already exist..
+        /// </summary>
+        internal static string AddWorkflowNameIsAlreadyExist {
+            get {
+                return ResourceManager.GetString("AddWorkflowNameIsAlreadyExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The compression was done successfully..
         /// </summary>
         internal static string CompressHandlerSuccessfullyCompress {

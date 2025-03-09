@@ -270,6 +270,7 @@ public static class ServiceCollectionExtensions
             options.AddPolicy("Config", policy => policy.RequireRole("User"));
             options.AddPolicy("Logs", policy => policy.RequireRole("User"));
             options.AddPolicy("Plugins", policy => policy.RequireRole("User"));
+            options.AddPolicy("Workflows", policy => policy.RequireRole("User"));
 
             logger.LogInformation("Authorization initialized.");
         });

@@ -4,7 +4,7 @@ using FlowSynx.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Core.Features.Config.Command.Delete;
+namespace FlowSynx.Core.Features.PluginConfig.Command.Delete;
 
 internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigRequest, Result<Unit>>
 {

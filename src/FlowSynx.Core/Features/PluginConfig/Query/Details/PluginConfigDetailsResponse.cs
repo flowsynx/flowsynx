@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Core.Features.Config.Query.Details;
+﻿namespace FlowSynx.Core.Features.PluginConfig.Query.Details;
 
 public class PluginConfigDetailsResponse
 {
