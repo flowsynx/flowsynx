@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.AuditTrails;
+﻿using FlowSynx.Domain.Entities.Audit;
 using FlowSynx.Persistence.Postgres.Models.Audit;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +10,7 @@ public abstract class AuditableContext : DbContext
     {
     }
 
-    public DbSet<Audit> AuditTrails { get; set; }
+    public DbSet<AuditEntity> Audits { get; set; }
 
     public virtual async Task<int> SaveChangesAsync(string userId, CancellationToken cancellationToken = new())
     {
@@ -26,7 +26,7 @@ public abstract class AuditableContext : DbContext
         var auditEntries = new List<AuditEntry>();
         foreach (var entry in ChangeTracker.Entries())
         {
-            if (entry.Entity is Audit || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+            if (entry.Entity is AuditEntity || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
                 continue;
 
             var auditEntry = new AuditEntry(entry)
@@ -76,7 +76,7 @@ public abstract class AuditableContext : DbContext
         }
         foreach (var auditEntry in auditEntries.Where(_ => !_.HasTemporaryProperties))
         {
-            AuditTrails.Add(auditEntry.ToAudit());
+            Audits.Add(auditEntry.ToAudit());
         }
         return auditEntries.Where(_ => _.HasTemporaryProperties).ToList();
     }
@@ -99,7 +99,7 @@ public abstract class AuditableContext : DbContext
                     auditEntry.NewValues[prop.Metadata.Name] = prop.CurrentValue;
                 }
             }
-            AuditTrails.Add(auditEntry.ToAudit());
+            Audits.Add(auditEntry.ToAudit());
         }
         return SaveChangesAsync(cancellationToken);
     }

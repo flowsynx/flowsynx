@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Core.Wrapper;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Core.Services;
-using FlowSynx.Domain.Entities.Logs;
+using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Core.Extensions;
 
 namespace FlowSynx.Core.Features.Logs.Query.List;
@@ -29,7 +29,7 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
     {
         try
         {
-            var predicate = PredicateBuilder.Create<Log>(p => p.UserId == _currentUserService.UserId);
+            var predicate = PredicateBuilder.Create<LogEntity>(p => p.UserId == _currentUserService.UserId);
 
             if (!string.IsNullOrEmpty(request.Level))
                 predicate = predicate.And(p => p.Level == ToLogsLevel(request.Level));

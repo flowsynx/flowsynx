@@ -1,9 +1,7 @@
-﻿using FlowSynx.Core.Services;
-using FlowSynx.Domain.Interfaces;
+﻿using FlowSynx.Domain.Interfaces;
 using FlowSynx.Infrastructure.Logging.ConsoleLogger;
 using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Extensions;

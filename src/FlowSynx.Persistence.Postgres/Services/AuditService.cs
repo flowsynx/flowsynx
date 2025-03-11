@@ -16,7 +16,7 @@ public class AuditService : IAuditService
 
     public async Task<IReadOnlyCollection<AuditResponse>> All(CancellationToken cancellationToken)
     {
-        var trails = await _appContext.AuditTrails.Select(audit => new AuditResponse
+        var trails = await _appContext.Audits.Select(audit => new AuditResponse
                 {
                     Id = audit.Id,
                     Type = audit.Type,
@@ -35,7 +35,7 @@ public class AuditService : IAuditService
 
     public async Task<AuditResponse?> Get(Guid id, CancellationToken cancellationToken)
     {
-        var trail = await _appContext.AuditTrails
+        var trail = await _appContext.Audits
             .Where(x=>x.Id == id)
             .Select(audit => new AuditResponse
                 {

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Domain.Interfaces;
-using FlowSynx.Domain.Entities.PluignConfig;
+using FlowSynx.Domain.Entities.PluginConfig;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 
@@ -14,7 +14,7 @@ public class PluginConfigurationService : IPluginConfigurationService
         _appContext = appContext;
     }
 
-    public async Task<IReadOnlyCollection<PluginConfiguration>> All(string userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<PluginConfigurationEntity>> All(string userId, CancellationToken cancellationToken)
     {
         var result = await _appContext.PluginConfiguration
             .Where(c => c.UserId == userId)
@@ -27,26 +27,42 @@ public class PluginConfigurationService : IPluginConfigurationService
         return result;
     }
 
-    public async Task<PluginConfiguration?> Get(string userId, string configId, CancellationToken cancellationToken)
+    public async Task<PluginConfigurationEntity?> Get(string userId, Guid configId, CancellationToken cancellationToken)
     {
         return await _appContext.PluginConfiguration
-            .FindAsync(new object?[] { userId, configId }, cancellationToken: cancellationToken)
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == configId, cancellationToken)
             .ConfigureAwait(false);
     }
 
-    public async Task<bool> IsExist(string userId, string configId, CancellationToken cancellationToken)
+    public async Task<PluginConfigurationEntity?> Get(string userId, string configName, CancellationToken cancellationToken)
+    {
+        return await _appContext.PluginConfiguration
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Name.ToLower() == configName.ToLower(), cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<bool> IsExist(string userId, Guid configId, CancellationToken cancellationToken)
     {
         var result = await _appContext.PluginConfiguration
-            .FindAsync(new object?[] { userId, configId }, cancellationToken: cancellationToken)
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == configId, cancellationToken)
             .ConfigureAwait(false);
 
         return result != null;
     }
 
-    public async Task Add(PluginConfiguration configuration, CancellationToken cancellationToken)
+    public async Task<bool> IsExist(string userId, string configName, CancellationToken cancellationToken)
+    {
+        var result = await _appContext.PluginConfiguration
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Name.ToLower() == configName.ToLower(), cancellationToken)
+            .ConfigureAwait(false);
+
+        return result != null;
+    }
+
+    public async Task Add(PluginConfigurationEntity configurationEntity, CancellationToken cancellationToken)
     {
         await _appContext.PluginConfiguration
-            .AddAsync(configuration, cancellationToken)
+            .AddAsync(configurationEntity, cancellationToken)
             .ConfigureAwait(false);
 
         await _appContext
@@ -54,9 +70,18 @@ public class PluginConfigurationService : IPluginConfigurationService
             .ConfigureAwait(false);
     }
 
-    public async Task<bool> Delete(PluginConfiguration configuration, CancellationToken cancellationToken)
+    public async Task Update(PluginConfigurationEntity configurationEntity, CancellationToken cancellationToken)
     {
-        _appContext.PluginConfiguration.Remove(configuration);
+        _appContext.PluginConfiguration.Update(configurationEntity);
+
+        await _appContext
+            .SaveChangesAsync(cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<bool> Delete(PluginConfigurationEntity configurationEntity, CancellationToken cancellationToken)
+    {
+        _appContext.PluginConfiguration.Remove(configurationEntity);
 
         await _appContext
             .SaveChangesAsync(cancellationToken)

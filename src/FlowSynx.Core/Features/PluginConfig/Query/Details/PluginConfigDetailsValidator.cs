@@ -6,9 +6,15 @@ public class PluginConfigDetailsValidator : AbstractValidator<PluginConfigDetail
 {
     public PluginConfigDetailsValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Id)
             .NotNull()
             .NotEmpty()
+            .Must(BeAValidGuid)
             .WithMessage(Resources.ConnectorValidatorConnectorNamespaceValueMustBeValidMessage);
+    }
+
+    private bool BeAValidGuid(string id)
+    {
+        return Guid.TryParse(id, out _);
     }
 }

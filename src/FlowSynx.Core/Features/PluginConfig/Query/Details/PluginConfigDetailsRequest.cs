@@ -5,5 +5,5 @@ namespace FlowSynx.Core.Features.PluginConfig.Query.Details;
 
 public class PluginConfigDetailsRequest : IRequest<Result<PluginConfigDetailsResponse>>
 {
-    public required string Name { get; set; }
+    public required string Id { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.PluignConfig;
+﻿using FlowSynx.Domain.Entities.PluginConfig;
 
 namespace FlowSynx.Core.Extensions;
 public static class PluginConfigurationSpecificationsExtensions

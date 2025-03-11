@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Domain.Interfaces;
-using FlowSynx.Domain.Entities.Logs;
+using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Persistence.SQLite.Contexts;
 using System.Linq.Expressions;
 
@@ -15,7 +15,7 @@ public class LoggerService : ILoggerService
         _logContextFactory = logContextFactory;
     }
 
-    public async Task<IReadOnlyCollection<Log>> All(Expression<Func<Log, bool>>? predicate, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<LogEntity>> All(Expression<Func<LogEntity, bool>>? predicate, CancellationToken cancellationToken)
     {
         using var context = _logContextFactory.CreateDbContext();
         var logs = context.Logs;
@@ -26,7 +26,7 @@ public class LoggerService : ILoggerService
             return await logs.Where(predicate).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<Log?> Get(string userId, Guid id, CancellationToken cancellationToken)
+    public async Task<LogEntity?> Get(string userId, Guid id, CancellationToken cancellationToken)
     {
         using var context = _logContextFactory.CreateDbContext();
         return await context.Logs
@@ -34,12 +34,12 @@ public class LoggerService : ILoggerService
             .ConfigureAwait(false);
     }
 
-    public async Task Add(Log log, CancellationToken cancellationToken)
+    public async Task Add(LogEntity logEntity, CancellationToken cancellationToken)
     {
         try
         {
             using var context = _logContextFactory.CreateDbContext();
-            await context.Logs.AddAsync(log);
+            await context.Logs.AddAsync(logEntity);
             await context.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)

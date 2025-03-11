@@ -3,7 +3,7 @@ using FlowSynx.Core.Features.PluginConfig.Query.List;
 using FlowSynx.Core.Features.Plugins.Query.Details;
 using FlowSynx.Core.Features.Plugins.Query.List;
 using FlowSynx.Core.Services;
-using FlowSynx.Domain.Entities.PluignConfig;
+using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Extensions;
 using FlowSynx.Infrastructure.Services;
 using MediatR;

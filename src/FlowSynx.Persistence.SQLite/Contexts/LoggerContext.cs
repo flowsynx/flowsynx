@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using FlowSynx.Domain.Entities.Logs;
+using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Persistence.SQLite.Configurations;
 
 namespace FlowSynx.Persistence.SQLite.Contexts;
@@ -11,7 +11,7 @@ public class LoggerContext : DbContext
     {
     }
 
-    public DbSet<Log> Logs { get; set; }
+    public DbSet<LogEntity> Logs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

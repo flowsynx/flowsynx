@@ -33,6 +33,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
             var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId, cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
             {
+                Id = config.Id,
                 Name = config.Name,
                 Type = config.Type,
                 ModifiedTime = config.LastModifiedOn

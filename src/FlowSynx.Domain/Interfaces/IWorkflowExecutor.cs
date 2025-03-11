@@ -1,9 +1,9 @@
-﻿using FlowSynx.Domain.Entities.Workflow;
+﻿//using FlowSynx.Domain.Entities.Workflow.Models;
 
-namespace FlowSynx.Domain.Interfaces;
+//namespace FlowSynx.Domain.Interfaces;
 
-public interface IWorkflowExecutor
-{
-    Task<Dictionary<string, object?>> ExecuteAsync(WorkflowExecutionDefinition executionDefinition,
-        CancellationToken cancellationToken);
-}
+//public interface IWorkflowExecutor
+//{
+//    Task<Dictionary<string, object?>> ExecuteAsync(WorkflowDefinition workflowDefinition, 
+//        CancellationToken cancellationToken);
+//}

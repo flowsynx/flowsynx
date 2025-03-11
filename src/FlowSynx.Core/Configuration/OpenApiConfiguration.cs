@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.Logs;
+﻿using FlowSynx.Domain.Entities.Log;
 
 namespace FlowSynx.Core.Configuration;
 

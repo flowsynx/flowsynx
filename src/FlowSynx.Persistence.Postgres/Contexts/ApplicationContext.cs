@@ -2,7 +2,7 @@
 using FlowSynx.Core.Services;
 using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Entities.Workflow;
-using FlowSynx.Domain.Entities.PluignConfig;
+using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Persistence.Postgres.Configurations;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
@@ -27,8 +27,10 @@ public class ApplicationContext : AuditableContext
         _jsonDeserializer = jsonDeserializer;
     }
 
-    public DbSet<PluginConfiguration> PluginConfiguration { get; set; }
-    public DbSet<WorkflowDefination> Workflows { get; set; }
+    public DbSet<PluginConfigurationEntity> PluginConfiguration { get; set; }
+    public DbSet<WorkflowEntity> Workflows { get; set; }
+    public DbSet<WorkflowExecutionEntity> WorkflowExecutions { get; set; }
+    public DbSet<WorkflowTaskExecutionEntity> WorkflowTaskExecutions { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
     {
@@ -68,8 +70,10 @@ public class ApplicationContext : AuditableContext
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
-        builder.ApplyConfiguration(new PluginConfigConfiguration(_jsonSerializer, _jsonDeserializer));
-        builder.ApplyConfiguration(new WorkflowDefinationfiguration());
+        builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer));
+        builder.ApplyConfiguration(new WorkflowEntityfiguration());
+        builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration());
+        builder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
         builder.HasDefaultSchema("FlowSynx");
     }
 }

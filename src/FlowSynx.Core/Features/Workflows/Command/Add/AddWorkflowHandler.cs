@@ -1,5 +1,4 @@
-﻿using FlowSynx.Core.Extensions;
-using FlowSynx.Core.Services;
+﻿using FlowSynx.Core.Services;
 using FlowSynx.Core.Wrapper;
 using FlowSynx.Domain.Entities.Workflow;
 using FlowSynx.Domain.Interfaces;
@@ -40,12 +39,12 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 return await Result<AddWorkflowResponse>.FailAsync(workflowExistMessage);
             }
 
-            var workflowDefination = new WorkflowDefination
+            var workflowDefination = new WorkflowEntity
             {
                 Id = Guid.NewGuid(),
                 UserId = _currentUserService.UserId,
                 Name = request.Name,
-                Template = request.Template.ToString(),
+                Definition = request.Template.ToString(),
             };
 
             await _workflowService.Add(workflowDefination, cancellationToken);

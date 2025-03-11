@@ -27,12 +27,13 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
     {
         try
         {
-            var workflow = await _workflowService.Get(_currentUserService.UserId, request.Id, cancellationToken);
+            var workflowId = Guid.Parse(request.Id);
+            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow == null)
                 throw new Exception($"The workflow with id '{request.Id}' not found");
 
             workflow.Name = request.Name;
-            workflow.Template = request.Template.ToString();
+            workflow.Definition = request.Definition.ToString();
 
             await _workflowService.Update(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);

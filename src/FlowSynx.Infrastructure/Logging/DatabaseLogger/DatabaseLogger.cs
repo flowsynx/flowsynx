@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.Logs;
+﻿using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -79,7 +79,7 @@ internal class DatabaseLogger : ILogger, IDisposable
     {
         try
         {
-            var log = new Log
+            var log = new LogEntity
             {
                 Id = Guid.NewGuid(),
                 UserId = logMessage.UserId,

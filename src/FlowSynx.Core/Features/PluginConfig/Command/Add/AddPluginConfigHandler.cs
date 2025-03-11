@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Core.Extensions;
 using FlowSynx.Core.Services;
 using FlowSynx.Core.Wrapper;
-using FlowSynx.Domain.Entities.PluignConfig;
+using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Domain.Interfaces;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -53,8 +53,9 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
                 return await Result<AddPluginConfigResponse>.FailAsync(isPluginSpecificationsValid.Message ?? "");
             }
 
-            var pluginConfiguration = new PluginConfiguration
+            var pluginConfiguration = new PluginConfigurationEntity
             {
+                Id = Guid.NewGuid(),
                 UserId = _currentUserService.UserId,
                 Name = request.Name,
                 Type = request.Type,
@@ -70,7 +71,11 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             }
 
             await _pluginConfigurationService.Add(pluginConfiguration, cancellationToken);
-            var response = new AddPluginConfigResponse { Name = request.Name };
+            var response = new AddPluginConfigResponse { 
+                Id = pluginConfiguration.Id, 
+                Name = pluginConfiguration.Name 
+            };
+
             return await Result<AddPluginConfigResponse>.SuccessAsync(response, Resources.AddConfigHandlerSuccessfullyAdded);
         }
         catch (Exception ex)

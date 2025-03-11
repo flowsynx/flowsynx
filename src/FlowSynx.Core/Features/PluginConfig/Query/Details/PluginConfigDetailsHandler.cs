@@ -30,13 +30,15 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
 
-            var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, request.Name, cancellationToken);
+            var configId = Guid.Parse(request.Id);
+            var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfig is null) 
                 throw new Exception("The config not found");
 
             var response = new PluginConfigDetailsResponse
             {
-                Name = request.Name,
+                Id = pluginConfig.Id,
+                Name = pluginConfig.Name,
                 Type = pluginConfig.Type,
                 Specifications = pluginConfig.Specifications,
             };

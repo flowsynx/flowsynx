@@ -1,14 +1,13 @@
-﻿using FlowSynx.Domain.Entities.Logs;
-using FlowSynx.Domain.Entities.PluignConfig;
+﻿using FlowSynx.Domain.Entities.Log;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FlowSynx.Persistence.SQLite.Configurations;
 
-public class LoggerConfiguration : IEntityTypeConfiguration<Log>
+public class LoggerConfiguration : IEntityTypeConfiguration<LogEntity>
 {
-    public void Configure(EntityTypeBuilder<Log> builder)
+    public void Configure(EntityTypeBuilder<LogEntity> builder)
     {
         builder.HasKey(x => x.Id);
         builder.Property(t => t.Id).IsRequired();

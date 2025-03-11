@@ -1,13 +1,16 @@
-﻿using FlowSynx.Domain.Entities.PluignConfig;
+﻿using FlowSynx.Domain.Entities.PluginConfig;
 
 namespace FlowSynx.Domain.Interfaces;
 
 public interface IPluginConfigurationService
 {
-    Task<IReadOnlyCollection<PluginConfiguration>> All(string userId, CancellationToken cancellationToken);
-    Task<PluginConfiguration?> Get(string userId, string configId, CancellationToken cancellationToken);
-    Task<bool> IsExist(string userId, string configId, CancellationToken cancellationToken);
-    Task Add(PluginConfiguration configuration, CancellationToken cancellationToken);
-    Task<bool> Delete(PluginConfiguration configuration, CancellationToken cancellationToken);
+    Task<IReadOnlyCollection<PluginConfigurationEntity>> All(string userId, CancellationToken cancellationToken);
+    Task<PluginConfigurationEntity?> Get(string userId, Guid configId, CancellationToken cancellationToken);
+    Task<PluginConfigurationEntity?> Get(string userId, string configName, CancellationToken cancellationToken);
+    Task<bool> IsExist(string userId, Guid configId, CancellationToken cancellationToken);
+    Task<bool> IsExist(string userId, string configName, CancellationToken cancellationToken);
+    Task Add(PluginConfigurationEntity configurationEntity, CancellationToken cancellationToken);
+    Task Update(PluginConfigurationEntity configurationEntity, CancellationToken cancellationToken);
+    Task<bool> Delete(PluginConfigurationEntity configurationEntity, CancellationToken cancellationToken);
     Task<bool> CheckHealthAsync(CancellationToken cancellationToken);
 }

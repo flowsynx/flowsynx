@@ -1,5 +1,4 @@
-﻿using FlowSynx.Core.Features.PluginConfig.Query.List;
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace FlowSynx.Core.Features.PluginConfig.Command.Delete;
 
@@ -7,9 +6,15 @@ public class DeletePluginConfigValidator : AbstractValidator<DeletePluginConfigR
 {
     public DeletePluginConfigValidator()
     {
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Id)
             .NotNull()
             .NotEmpty()
+            .Must(BeAValidGuid)
             .WithMessage(Resources.ConnectorValidatorConnectorNamespaceValueMustBeValidMessage);
+    }
+
+    private bool BeAValidGuid(string id)
+    {
+        return Guid.TryParse(id, out _);
     }
 }

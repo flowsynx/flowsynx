@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using FlowSynx.Domain.Entities.AuditTrails;
+using FlowSynx.Domain.Entities.Audit;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FlowSynx.Persistence.Postgres.Models.Audit;
@@ -22,9 +22,9 @@ public class AuditEntry
     public List<string> ChangedColumns { get; } = new();
     public bool HasTemporaryProperties => TemporaryProperties.Any();
 
-    public Domain.Entities.AuditTrails.Audit ToAudit()
+    public AuditEntity ToAudit()
     {
-        var audit = new Domain.Entities.AuditTrails.Audit
+        var audit = new AuditEntity
         {
             UserId = UserId,
             Type = AuditType.ToString(),

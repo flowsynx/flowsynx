@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Core.Services;
-using FlowSynx.Domain.Entities.PluignConfig;
+using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Persistence.Postgres.Contexts;
 using Microsoft.Extensions.Logging;
 
@@ -28,9 +28,14 @@ public class ApplicationDataSeeder : IApplicationDataSeeder
         {
             if (!_appContext.PluginConfiguration.Any())
             {
-                IEnumerable<PluginConfiguration> configs = new List<PluginConfiguration>()
+                IEnumerable<PluginConfigurationEntity> configs = new List<PluginConfigurationEntity>()
                     {
-                        new PluginConfiguration { Name = "azblob", Type= "flowsynx.connectors/Azure.Blob", UserId = "dddd", Specifications = new()}
+                        new PluginConfigurationEntity { 
+                            Id= Guid.NewGuid(),
+                            UserId = "dddd",
+                            Name = "azblob", 
+                            Type= "flowsynx.connectors/Azure.Blob", 
+                            Specifications = new()}
                     };
                 _appContext.PluginConfiguration.AddRange(configs);
             }

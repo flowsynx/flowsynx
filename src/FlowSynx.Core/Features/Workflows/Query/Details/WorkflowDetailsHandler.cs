@@ -30,18 +30,16 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
 
-            if (string.IsNullOrEmpty(request.Name))
-                ArgumentNullException.ThrowIfNull(request.Name);
-
-            var workflow = await _workflowService.Get(_currentUserService.UserId, request.Name, cancellationToken);
-            if (workflow is null) 
-                throw new Exception($"The workflow '{request.Name}' not found");
+            var workflowId = Guid.Parse(request.Id);
+            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            if (workflow is null)
+                throw new Exception($"The workflow with id '{request.Id}' not found");
 
             var response = new WorkflowDetailsResponse
             {
                 Id = workflow.Id,
                 Name = workflow.Name,
-                Template = workflow.Template
+                Definition = workflow.Definition
             };
             _logger.LogInformation("Workflow details is executed successfully.");
             return await Result<WorkflowDetailsResponse>.SuccessAsync(response);

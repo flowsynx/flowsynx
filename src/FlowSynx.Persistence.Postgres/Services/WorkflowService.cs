@@ -14,7 +14,7 @@ public class WorkflowService : IWorkflowService
         _appContext = appContext;
     }
 
-    public async Task<IReadOnlyCollection<WorkflowDefination>> All(string userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<WorkflowEntity>> All(string userId, CancellationToken cancellationToken)
     {
         var result = await _appContext.Workflows
             .Where(c => c.UserId == userId)
@@ -27,14 +27,14 @@ public class WorkflowService : IWorkflowService
         return result;
     }
 
-    public async Task<WorkflowDefination?> Get(string userId, Guid workflowId, CancellationToken cancellationToken)
+    public async Task<WorkflowEntity?> Get(string userId, Guid workflowId, CancellationToken cancellationToken)
     {
         return await _appContext.Workflows
             .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == workflowId, cancellationToken)
             .ConfigureAwait(false);
     }
 
-    public async Task<WorkflowDefination?> Get(string userId, string workflowName, CancellationToken cancellationToken)
+    public async Task<WorkflowEntity?> Get(string userId, string workflowName, CancellationToken cancellationToken)
     {
         return await _appContext.Workflows
             .FirstOrDefaultAsync(x=>x.UserId == userId && x.Name.ToLower() == workflowName.ToLower(), cancellationToken)
@@ -50,10 +50,10 @@ public class WorkflowService : IWorkflowService
         return result != null;
     }
 
-    public async Task Add(WorkflowDefination workflow, CancellationToken cancellationToken)
+    public async Task Add(WorkflowEntity workflowEntity, CancellationToken cancellationToken)
     {
         await _appContext.Workflows
-            .AddAsync(workflow, cancellationToken)
+            .AddAsync(workflowEntity, cancellationToken)
             .ConfigureAwait(false);
 
         await _appContext
@@ -61,18 +61,18 @@ public class WorkflowService : IWorkflowService
             .ConfigureAwait(false);
     }
 
-    public async Task Update(WorkflowDefination workflow, CancellationToken cancellationToken)
+    public async Task Update(WorkflowEntity workflowEntity, CancellationToken cancellationToken)
     {
-        _appContext.Update(workflow);
+        _appContext.Workflows.Update(workflowEntity);
 
         await _appContext
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
-    public async Task<bool> Delete(WorkflowDefination workflow, CancellationToken cancellationToken)
+    public async Task<bool> Delete(WorkflowEntity workflowEntity, CancellationToken cancellationToken)
     {
-        _appContext.Workflows.Remove(workflow);
+        _appContext.Workflows.Remove(workflowEntity);
 
         await _appContext
             .SaveChangesAsync(cancellationToken)

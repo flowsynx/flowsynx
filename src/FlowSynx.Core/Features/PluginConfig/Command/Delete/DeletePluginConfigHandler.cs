@@ -27,7 +27,8 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
     {
         try
         {
-            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, request.Name, cancellationToken);
+            var configId = Guid.Parse(request.Id);
+            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfiguration == null)
                 throw new Exception("The config not found");
 
