@@ -1,5 +1,5 @@
-﻿using FlowSynx.Core.Model;
-using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Model;
+using FlowSynx.Application.Services;
 using FlowSynx.Infrastructure;
 using FlowSynx.PluginCore;
 

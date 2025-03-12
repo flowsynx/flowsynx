@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using FlowSynx.Core.Exceptions;
-using FlowSynx.Core.Services;
-using FlowSynx.Core.Wrapper;
+using FlowSynx.Application.Exceptions;
+using FlowSynx.Application.Services;
+using FlowSynx.Application.Wrapper;
 
 namespace FlowSynx.Middleware;
 

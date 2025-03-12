@@ -1,8 +1,8 @@
-﻿using FlowSynx.Core.Extensions;
-using FlowSynx.Core.Features.PluginConfig.Query.List;
-using FlowSynx.Core.Features.Plugins.Query.Details;
-using FlowSynx.Core.Features.Plugins.Query.List;
-using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.PluginConfig.Query.List;
+using FlowSynx.Application.Features.Plugins.Query.Details;
+using FlowSynx.Application.Features.Plugins.Query.List;
+using FlowSynx.Application.Services;
 using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Extensions;
 using FlowSynx.Infrastructure.Services;

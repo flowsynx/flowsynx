@@ -1,6 +1,6 @@
 ﻿using FlowSynx.HealthCheck;
 using FlowSynx.Services;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using FlowSynx.Infrastructure.Extensions;
@@ -9,7 +9,7 @@ using FlowSynx.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using FlowSynx.Core.Configuration;
+using FlowSynx.Application.Configuration;
 using FlowSynx.Domain.Interfaces;
 
 namespace FlowSynx.Extensions;

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text;
-using FlowSynx.Core.Configuration;
+using FlowSynx.Application.Configuration;
 using System.Net.Http.Headers;
 
 namespace FlowSynx.Middleware;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using FlowSynx.Persistence.Postgres.Contexts;
-using FlowSynx.Core.Models;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 

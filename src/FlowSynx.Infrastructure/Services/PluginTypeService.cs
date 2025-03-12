@@ -1,6 +1,6 @@
-﻿using FlowSynx.Core.Exceptions;
+﻿using FlowSynx.Application.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.PluginCore;
 using FlowSynx.Infrastructure.Extensions;

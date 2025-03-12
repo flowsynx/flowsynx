@@ -1,4 +1,4 @@
-﻿using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Services;
 using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Persistence.Postgres.Contexts;
 using Microsoft.Extensions.Logging;

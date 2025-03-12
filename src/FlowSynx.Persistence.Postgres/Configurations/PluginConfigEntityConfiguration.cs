@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using FlowSynx.Domain.Entities.PluginConfig;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;

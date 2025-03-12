@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using FlowSynx.Infrastructure.Services;
 using FlowSynx.PluginCore;
 using FlowSynx.Plugins.LocalFileSystem;

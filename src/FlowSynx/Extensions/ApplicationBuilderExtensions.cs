@@ -1,6 +1,6 @@
-﻿using FlowSynx.Core.Configuration;
-using FlowSynx.Core.Exceptions;
-using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Exceptions;
+using FlowSynx.Application.Services;
 using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
 using FlowSynx.Models;

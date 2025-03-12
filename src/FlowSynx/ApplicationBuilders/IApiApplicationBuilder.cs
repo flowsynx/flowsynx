@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Commands;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 
 namespace FlowSynx.ApplicationBuilders;
 

@@ -1,4 +1,4 @@
-﻿using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Services;
 using System.Reflection;
 
 namespace FlowSynx.Services;

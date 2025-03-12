@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj" />
-    <ProjectReference Include="..\FlowSynx.Core\FlowSynx.Core.csproj" />
+    <ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

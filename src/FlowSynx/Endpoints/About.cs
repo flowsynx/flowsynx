@@ -1,5 +1,5 @@
-﻿//using FlowSynx.Core.Extensions;
-//using FlowSynx.Core.Features.About.Query;
+﻿//using FlowSynx.Applications.Extensions;
+//using FlowSynx.Applications.Features.About.Query;
 //using FlowSynx.Extensions;
 //using MediatR;
 //using Microsoft.AspNetCore.Mvc;

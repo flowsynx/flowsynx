@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using FlowSynx.PluginCore;
-using FlowSynx.Core.Exceptions;
+using FlowSynx.Application.Exceptions;
 using Microsoft.Extensions.Logging;
 using System;
 

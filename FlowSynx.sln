@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx", "src\FlowSynx\FlowSynx.csproj", "{855FAD1D-289E-44C8-AA86-FEBFF8309CC1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Core", "src\FlowSynx.Core\FlowSynx.Core.csproj", "{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Application", "src\FlowSynx.Application\FlowSynx.Application.csproj", "{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{F0C26331-6C4A-4389-80E3-7580C3977871}"
 EndProject

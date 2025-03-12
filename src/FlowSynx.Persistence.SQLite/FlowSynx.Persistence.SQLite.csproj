@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FlowSynx.Core\FlowSynx.Core.csproj" />
+    <ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
   </ItemGroup>
 
 </Project>

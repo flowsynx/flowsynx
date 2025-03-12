@@ -1,4 +1,4 @@
-﻿using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Services;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Logging.ConsoleLogger;

@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FlowSynx.Core\FlowSynx.Core.csproj" />
+    <ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
     <ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
     <ProjectReference Include="..\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
     <ProjectReference Include="..\FlowSynx.Persistence.SQLite\FlowSynx.Persistence.SQLite.csproj" />

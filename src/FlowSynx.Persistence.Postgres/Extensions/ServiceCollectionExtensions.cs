@@ -1,5 +1,5 @@
 ﻿using ConnectivityTestingLab.Application.Configurations;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Persistence.Postgres.Seeder;

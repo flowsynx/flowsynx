@@ -1,9 +1,9 @@
-﻿using FlowSynx.Core.Services;
+﻿using FlowSynx.Application.Services;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using FlowSynx.Core.Models;
-using FlowSynx.Core.Exceptions;
+using FlowSynx.Application.Models;
+using FlowSynx.Application.Exceptions;
 
 namespace FlowSynx.Infrastructure.Services;
 

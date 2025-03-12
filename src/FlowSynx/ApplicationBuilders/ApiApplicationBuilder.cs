@@ -1,4 +1,4 @@
-﻿using FlowSynx.Core.Extensions;
+﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Extensions;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Persistence.Postgres.Extensions;

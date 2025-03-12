@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using FlowSynx.Core.Services;
+using FlowSynx.Application.Services;
 using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Entities.Workflow;
 using FlowSynx.Domain.Entities.PluginConfig;
