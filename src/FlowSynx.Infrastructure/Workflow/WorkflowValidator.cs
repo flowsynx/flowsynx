@@ -4,7 +4,7 @@ namespace FlowSynx.Infrastructure.Workflow;
 
 public class WorkflowValidator : IWorkflowValidator
 {
-    public List<string> AllDependenciesExist(WorkflowTasks workflowTasks)
+    public List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
     {
         var allNodeNames = workflowTasks.Select(n => n.Name).ToHashSet();
         var missingDependencies = new HashSet<string>();
@@ -18,7 +18,7 @@ public class WorkflowValidator : IWorkflowValidator
         return missingDependencies.ToList();
     }
 
-    public WorkflowValidatorResult CheckCyclic(WorkflowTasks workflowTasks)
+    public WorkflowValidatorResult CheckCyclic(List<WorkflowTask> workflowTasks)
     {
         var inDegree = new Dictionary<string, int>();
         var graph = new Dictionary<string, List<string>>();
@@ -80,7 +80,7 @@ public class WorkflowValidator : IWorkflowValidator
         };
     }
 
-    public bool HasDuplicateNames(WorkflowTasks workflowTasks)
+    public bool HasDuplicateNames(List<WorkflowTask> workflowTasks)
     {
         var knownKeys = new HashSet<string>();
         return workflowTasks.Any(item => !knownKeys.Add(item.Name));

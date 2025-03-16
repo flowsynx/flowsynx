@@ -4,7 +4,7 @@ namespace FlowSynx.Infrastructure.Workflow;
 
 public interface IWorkflowValidator
 {
-    List<string> AllDependenciesExist(WorkflowTasks workflowTasks);
-    WorkflowValidatorResult CheckCyclic(WorkflowTasks workflowTasks);
-    bool HasDuplicateNames(WorkflowTasks workflowTasks);
+    List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks);
+    WorkflowValidatorResult CheckCyclic(List<WorkflowTask> workflowTasks);
+    bool HasDuplicateNames(List<WorkflowTask> workflowTasks);
 }
