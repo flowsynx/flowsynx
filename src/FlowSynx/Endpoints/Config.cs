@@ -1,9 +1,9 @@
-﻿using FlowSynx.Applications.Extensions;
-using FlowSynx.Applications.Features.PluginConfig.Command.Add;
-using FlowSynx.Applications.Features.PluginConfig.Command.Delete;
-using FlowSynx.Applications.Features.PluginConfig.Query.Details;
-using FlowSynx.Applications.Features.PluginConfig.Query.List;
-using FlowSynx.Applications.Services;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.PluginConfig.Command.Add;
+using FlowSynx.Application.Features.PluginConfig.Command.Delete;
+using FlowSynx.Application.Features.PluginConfig.Query.Details;
+using FlowSynx.Application.Features.PluginConfig.Query.List;
+using FlowSynx.Application.Services;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

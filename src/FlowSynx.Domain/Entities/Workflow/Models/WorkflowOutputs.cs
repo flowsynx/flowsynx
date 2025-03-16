@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Domain.Entities.Workflow.Models;
+﻿//namespace FlowSynx.Domain.Entities.Workflow.Models;
 
-public class WorkflowOutputs : Dictionary<string, object>
-{
+//public class WorkflowOutputs : Dictionary<string, object>
+//{
 
-}
+//}

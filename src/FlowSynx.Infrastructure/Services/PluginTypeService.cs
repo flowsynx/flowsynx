@@ -74,7 +74,7 @@ internal class PluginTypeService : IPluginTypeService
 
             var currentConfig = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
             var getCurrentPlugin = await _pluginService.Get(currentConfig.Type, cancellationToken);
-            var currentPlugin = GetPlugin(getCurrentPlugin, configName, currentConfig.Specifications.ToPluginParameters());
+            var currentPlugin = GetPlugin(getCurrentPlugin, configName, currentConfig.Specifications.ToPluginSpecifications());
 
             return currentPlugin;
         }

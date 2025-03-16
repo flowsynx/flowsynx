@@ -5,19 +5,6 @@ namespace FlowSynx.PluginCore.Extensions;
 
 public static class PluginParametersExtensions
 {
-    public static PluginParameters ToConnectorOptions(this Dictionary<string, object?>? source)
-    {
-        var options = new PluginParameters();
-        if (source is null)
-            return options;
-
-        foreach (var item in source)
-        {
-            options.Add(item.Key, item.Value);
-        }
-        return options;
-    }
-
     public static T ToObject<T>(this PluginParameters? source) where T : class, new()
     {
         var newInstance = new T();

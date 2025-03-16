@@ -4,7 +4,14 @@ namespace FlowSynx.PluginCore;
 
 public class PluginParameters : Dictionary<string, object?>, ICloneable
 {
-    public PluginParameters() : base(StringComparer.OrdinalIgnoreCase)
+    public PluginParameters(IDictionary<string, object?> dictionary)
+    : base(dictionary, StringComparer.OrdinalIgnoreCase)
+    {
+
+    }
+
+    public PluginParameters()
+        : base(StringComparer.OrdinalIgnoreCase)
     {
 
     }

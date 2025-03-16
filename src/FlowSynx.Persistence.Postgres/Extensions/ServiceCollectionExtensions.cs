@@ -26,6 +26,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<IApplicationDataSeeder, ApplicationDataSeeder>()
             .AddScoped<IPluginConfigurationService, PluginConfigurationService>()
             .AddScoped<IWorkflowService, WorkflowService>()
+            .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()
+            .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()
             .AddDbContext<ApplicationContext>(options =>
             {
                 options.UseNpgsql(connectionString);

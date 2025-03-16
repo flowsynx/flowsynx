@@ -3,6 +3,7 @@ using FlowSynx.Application.Services;
 using FlowSynx.Infrastructure.Services;
 using FlowSynx.PluginCore;
 using FlowSynx.Plugins.LocalFileSystem;
+using FlowSynx.Infrastructure.Workflow;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -13,10 +14,11 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<ISystemClock, SystemClock>()
             .AddSingleton(typeof(ICacheService<string, Plugin>), typeof(CacheService<string, Plugin>))
-            //.AddScoped<IWorkflowExecutor, WorkflowExecutor>()
+            .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IHashService, HashService>()
             .AddScoped<IPluginService, PluginService>()
             .AddScoped<IPluginTypeService, PluginTypeService>()
+            .AddScoped<IWorkflowValidator, WorkflowValidator>()
             .AddScoped<IPluginSpecificationsService, PluginSpecificationsService>();
 
         return services;

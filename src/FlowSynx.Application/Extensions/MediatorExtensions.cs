@@ -8,6 +8,7 @@ using FlowSynx.Application.Features.Plugins.Query.List;
 using FlowSynx.Application.Features.Version.Query;
 using FlowSynx.Application.Features.Workflows.Command.Add;
 using FlowSynx.Application.Features.Workflows.Command.Delete;
+using FlowSynx.Application.Features.Workflows.Command.Execute;
 using FlowSynx.Application.Features.Workflows.Command.Update;
 using FlowSynx.Application.Features.Workflows.Query.Details;
 using FlowSynx.Application.Features.Workflows.Query.List;
@@ -101,6 +102,12 @@ public static class MediatorExtensions
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
+    }
+
+    public static Task<Result<object?>> ExecuteWorkflow(this IMediator mediator, Guid id,
+    CancellationToken cancellationToken)
+    {
+        return mediator.Send(new ExecuteWorkflowRequest { WorkflowId = id }, cancellationToken);
     }
     #endregion
 

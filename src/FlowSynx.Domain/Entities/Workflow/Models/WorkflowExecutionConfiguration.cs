@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Domain.Entities.Workflow.Models;
+﻿//namespace FlowSynx.Domain.Entities.Workflow.Models;
 
-public class WorkflowExecutionConfiguration
-{
-    public int DegreeOfParallelism { get; set; } = 3;
-}
+//public class WorkflowExecutionConfiguration
+//{
+//    public int DegreeOfParallelism { get; set; } = 3;
+//}

@@ -2,6 +2,7 @@
 using FlowSynx.Application.Features.PluginConfig.Query.Details;
 using FlowSynx.Application.Features.Workflows.Command.Add;
 using FlowSynx.Application.Features.Workflows.Command.Delete;
+using FlowSynx.Application.Features.Workflows.Command.Execute;
 using FlowSynx.Application.Features.Workflows.Command.Update;
 using FlowSynx.Application.Features.Workflows.Query.Details;
 using FlowSynx.Application.Features.Workflows.Query.List;
@@ -40,6 +41,11 @@ public class Workflows : EndpointGroupBase
 
         group.MapDelete("/delete", DeleteWorkflow)
             .WithName("DeleteWorkflow")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+
+        group.MapPost("/execute/{id}", ExecuteWorkflow)
+            .WithName("ExecuteWorkflow")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
     }
@@ -96,6 +102,14 @@ public class Workflows : EndpointGroupBase
         var request = jsonDeserializer.Deserialize<DeleteWorkflowRequest>(jsonString);
 
         var result = await mediator.DeleteWorkflow(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> ExecuteWorkflow(Guid id, [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
+    {
+        //var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
+        var result = await mediator.ExecuteWorkflow(id, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

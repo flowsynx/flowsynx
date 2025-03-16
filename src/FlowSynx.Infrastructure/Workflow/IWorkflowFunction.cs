@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Services;
+﻿namespace FlowSynx.Infrastructure.Workflow;
 
 public interface IWorkflowFunction
 {

@@ -15,6 +15,10 @@ public class WorkflowTaskExecutionEntityConfiguration : IEntityTypeConfiguration
         builder.Property(t => t.Id)
                .IsRequired();
 
+        builder.Property(t => t.Name)
+               .IsRequired()
+               .HasMaxLength(128);
+
         var levelConverter = new ValueConverter<WorkflowTaskExecutionStatus, string>(
             v => v.ToString(),
             v => (WorkflowTaskExecutionStatus)Enum.Parse(typeof(WorkflowTaskExecutionStatus), v, true)
@@ -23,9 +27,6 @@ public class WorkflowTaskExecutionEntityConfiguration : IEntityTypeConfiguration
         builder.Property(t => t.Status)
                .IsRequired()
                .HasConversion(levelConverter);
-
-        builder.Property(te => te.StartTime)
-               .IsRequired();
 
         builder.HasOne(te => te.WorkflowExecution)
                .WithMany(we => we.TaskExecutions)
