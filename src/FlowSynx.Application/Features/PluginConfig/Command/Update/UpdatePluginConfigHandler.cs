@@ -36,7 +36,18 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
             var configId = Guid.Parse(request.Id);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfiguration == null)
-                throw new Exception("The config not found");
+                throw new Exception($"The config with id '{request.Id}' not found");
+
+            if (!string.Equals(request.Name, pluginConfiguration.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                var ispluginConfigExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, request.Name, cancellationToken);
+                if (ispluginConfigExist)
+                {
+                    var pluginConfigExistMessage = string.Format(Resources.AddWorkflowNameIsAlreadyExist, request.Name);
+                    _logger.LogWarning(pluginConfigExistMessage);
+                    return await Result<Unit>.FailAsync(pluginConfigExistMessage);
+                }
+            }
 
             var isTypeExist = await _pluginService.IsExist(request.Type, cancellationToken);
             if (!isTypeExist)

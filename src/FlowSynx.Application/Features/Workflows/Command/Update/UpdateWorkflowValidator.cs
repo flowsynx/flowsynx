@@ -12,7 +12,7 @@ public class UpdateWorkflowValidator : AbstractValidator<UpdateWorkflowRequest>
             .Must(BeAValidGuid)
             .WithMessage(Resources.ConnectorValidatorConnectorNamespaceValueMustBeValidMessage);
 
-        RuleFor(x => x.Name)
+        RuleFor(x => x.Definition)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.ConnectorValidatorConnectorNamespaceValueMustBeValidMessage);

@@ -39,7 +39,7 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
             {
                 Id = workflow.Id,
                 Name = workflow.Name,
-                Definition = workflow.Definition
+                Workflow = workflow.Definition
             };
             _logger.LogInformation("Workflow details is executed successfully.");
             return await Result<WorkflowDetailsResponse>.SuccessAsync(response);

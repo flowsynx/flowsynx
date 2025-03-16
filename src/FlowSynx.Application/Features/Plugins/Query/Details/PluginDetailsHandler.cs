@@ -24,7 +24,8 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
     {
         try
         {
-            var plugin = await _pluginService.Get(request.Type, cancellationToken);
+            var pluginId = Guid.Parse(request.Id);
+            var plugin = await _pluginService.Get(pluginId, cancellationToken);
             var specificationsType = plugin.SpecificationsType;
             var properties = specificationsType.GetProperties().Where(x => x.CanWrite).ToList();
             var specifications = properties

@@ -5,7 +5,7 @@ using FlowSynx.Application.Wrapper;
 
 namespace FlowSynx.Application.Features.Workflows.Command.Execute;
 
-internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, Result<object?>>
+internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, Result<Unit>>
 {
     private readonly ILogger<ExecuteWorkflowHandler> _logger;
     private readonly IWorkflowExecutor _workflowExecutor;
@@ -21,19 +21,19 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
         _currentUserService = currentUserService;
     }
 
-    public async Task<Result<object?>> Handle(ExecuteWorkflowRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(ExecuteWorkflowRequest request, CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new UnauthorizedAccessException("User is not authenticated.");
 
-            var response = await _workflowExecutor.ExecuteAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
-            return await Result<object?>.SuccessAsync(response);
+            await _workflowExecutor.ExecuteAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
+            return await Result<Unit>.SuccessAsync("Workflow executed successfully!");
         }
         catch (Exception ex)
         {
-            return await Result<object?>.FailAsync(new List<string> { ex.Message });
+            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
         }
     }
 }

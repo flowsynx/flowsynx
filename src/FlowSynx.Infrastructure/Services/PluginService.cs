@@ -26,6 +26,20 @@ public class PluginService : IPluginService
         return Task.FromResult<IReadOnlyCollection<Plugin>>(plugins);
     }
 
+    public Task<Plugin> Get(Guid pluginId, CancellationToken cancellationToken)
+    {
+        var result = Plugins().FirstOrDefault(x => x.Id == pluginId);
+
+        if (result != null)
+        {
+            var activatePlugin = (Plugin)ActivatorUtilities.CreateInstance(_serviceProvider, result.GetType());
+            return Task.FromResult(activatePlugin);
+        }
+
+        _logger.LogError($"Plugin with id '{pluginId}' could not found!");
+        throw new PluginServiceException(string.Format(Resources.PluginServiceCouldNotFoundPlugin, pluginId));
+    }
+
     public Task<Plugin> Get(string type, CancellationToken cancellationToken)
     {
         var result = Plugins().FirstOrDefault(x => x.Type.Equals(type, StringComparison.OrdinalIgnoreCase));

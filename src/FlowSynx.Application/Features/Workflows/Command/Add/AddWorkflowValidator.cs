@@ -8,7 +8,7 @@ public class AddWorkflowValidator : AbstractValidator<AddWorkflowRequest>
 {
     public AddWorkflowValidator()
     {
-        RuleFor(request => request.Name)
+        RuleFor(request => request.Definition)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.AddConfigValidatorNameValueMustNotNullOrEmptyMessage);
