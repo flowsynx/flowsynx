@@ -3,6 +3,8 @@ using FlowSynx.Extensions;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Persistence.SQLite.Extensions;
+using FlowSynx.Services;
+using Microsoft.Extensions.Hosting;
 
 namespace FlowSynx.ApplicationBuilders;
 
@@ -33,6 +35,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
                .AddHttpClient()
                .AddHealthChecker(config)
                .AddOpenApi(config);
+               //.AddHostedService<TriggerProcessingService>();
 
         var app = builder.Build();
 
