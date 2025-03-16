@@ -28,6 +28,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowService, WorkflowService>()
             .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()
             .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()
+            .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()
             .AddDbContext<ApplicationContext>(options =>
             {
                 options.UseNpgsql(connectionString);

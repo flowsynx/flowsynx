@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IPluginService, PluginService>()
             .AddScoped<IPluginTypeService, PluginTypeService>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
+            .AddScoped<WorkflowTimeBasedTriggerProcessor>()
             .AddScoped<IPluginSpecificationsService, PluginSpecificationsService>();
 
         return services;
