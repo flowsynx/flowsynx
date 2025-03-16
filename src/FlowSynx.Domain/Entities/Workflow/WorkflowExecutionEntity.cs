@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Domain.Entities.Workflow;
+﻿using FlowSynx.Domain.Entities.Trigger;
+
+namespace FlowSynx.Domain.Entities.Workflow;
 
 public class WorkflowExecutionEntity : AuditableEntity<Guid>
 {

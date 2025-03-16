@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Domain.Entities.Workflow;
+﻿using FlowSynx.Domain.Entities.Trigger;
+
+namespace FlowSynx.Domain.Entities.Workflow;
 
 public class WorkflowEntity: AuditableEntity<Guid>
 {
@@ -7,4 +9,5 @@ public class WorkflowEntity: AuditableEntity<Guid>
     public required string Definition { get; set; }
 
     public List<WorkflowExecutionEntity> Executions { get; set; } = new();
+    public List<WorkflowTriggerEntity> Triggers { get; set; } = new();
 }

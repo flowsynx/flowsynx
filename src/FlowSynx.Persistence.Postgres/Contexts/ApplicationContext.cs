@@ -6,6 +6,7 @@ using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Persistence.Postgres.Configurations;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
+using FlowSynx.Domain.Entities.Trigger;
 
 namespace FlowSynx.Persistence.Postgres.Contexts;
 
@@ -31,6 +32,7 @@ public class ApplicationContext : AuditableContext
     public DbSet<WorkflowEntity> Workflows { get; set; }
     public DbSet<WorkflowExecutionEntity> WorkflowExecutions { get; set; }
     public DbSet<WorkflowTaskExecutionEntity> WorkflowTaskExecutions { get; set; }
+    public DbSet<WorkflowTriggerEntity> WorkflowTriggeres { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
     {

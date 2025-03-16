@@ -12,6 +12,7 @@ public class WorkflowExecutionEntityConfiguration : IEntityTypeConfiguration<Wor
     {
         builder.HasKey(x => x.Id);
         builder.Property(t => t.Id).IsRequired();
+        builder.Property(t => t.WorkflowId).IsRequired();
         builder.Property(t => t.UserId).IsRequired();
 
         var levelConverter = new ValueConverter<WorkflowExecutionStatus, string>(
