@@ -3,5 +3,5 @@ namespace FlowSynx.Application.Services;
 
 public interface IWorkflowExecutor
 {
-    Task<object?> ExecuteAsync(string userId, Guid workflowId, CancellationToken cancellationToken);
+    Task ExecuteAsync(string userId, Guid workflowId, CancellationToken cancellationToken);
 }

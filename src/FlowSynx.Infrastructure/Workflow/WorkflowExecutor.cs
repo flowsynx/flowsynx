@@ -39,7 +39,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         _workflowValidator = workflowValidator;
     }
 
-    public async Task<object?> ExecuteAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
+    public async Task ExecuteAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
     {
         var workflow = await GetWorkflow(userId, workflowId, cancellationToken);
         var workflowExecutionEntity = await InitilizeWorkflowExecution(workflow, cancellationToken);
@@ -102,9 +102,6 @@ public class WorkflowExecutor : IWorkflowExecutor
 
             await ChangeWorkflowExecutionStatus(workflowExecutionEntity, WorkflowExecutionStatus.Completed, cancellationToken);
             _logger.LogInformation($"Workflow execution with Id: {workflow.Id} was completed successfully.");
-
-            //var outputs = new Dictionary<string, object?>(_taskOutputs);
-            return null;
         }
         catch (Exception ex)
         {
