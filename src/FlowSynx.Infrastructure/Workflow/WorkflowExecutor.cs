@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace FlowSynx.Infrastructure.Workflow;
@@ -22,7 +23,7 @@ public class WorkflowExecutor : IWorkflowExecutor
     private readonly ISystemClock _systemClock;
     private readonly IPluginTypeService _pluginTypeService;
     private readonly IWorkflowValidator _workflowValidator;
-    private readonly ConcurrentDictionary<string, WorkflowTaskExecutionResult> _taskOutputs = new();
+    private readonly ConcurrentDictionary<string, object?> _taskOutputs = new();
 
     public WorkflowExecutor(ILogger<WorkflowExecutor> logger, IWorkflowService workflowService,
         IWorkflowExecutionService workflowExecutionService, IWorkflowTaskExecutionService workflowTaskExecutionService,
@@ -79,7 +80,7 @@ public class WorkflowExecutor : IWorkflowExecutor
             while (pendingTasks.Any())
             {
                 var readyTasks = pendingTasks
-                    .Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d) && _taskOutputs[d].Status == WorkflowTaskStatus.Completed))
+                    .Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d)))
                     .ToList();
 
                 if (!readyTasks.Any())
@@ -198,18 +199,19 @@ public class WorkflowExecutor : IWorkflowExecutor
         await _workflowExecutionService.Update(workflowExecutionEntity, cancellationToken);
     }
 
-    private async Task<List<Exception>> ProcessWithDegreeOfParallelismAsync(string userId, Guid workflowExecutionId, IEnumerable<WorkflowTask> workflowTasks, 
-        int degreeOfParallelism, CancellationToken cancellationToken)
+    private async Task<List<Exception>> ProcessWithDegreeOfParallelismAsync(string userId, Guid workflowExecutionId, 
+        IEnumerable<WorkflowTask> workflowTasks, int degreeOfParallelism, CancellationToken cancellationToken)
     {
         using var semaphore = new SemaphoreSlim(degreeOfParallelism);
         var exceptions = new List<Exception>();
 
+        var parser = new ExpressionParser(_taskOutputs.ToDictionary());
         var tasks = workflowTasks.Select(async item =>
         {
             await semaphore.WaitAsync(cancellationToken);
             try
             {
-                await ExecuteTaskAsync(userId, workflowExecutionId, item, cancellationToken);
+                await ExecuteTaskAsync(userId, workflowExecutionId, item, parser, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -228,7 +230,8 @@ public class WorkflowExecutor : IWorkflowExecutor
         return exceptions;
     }
 
-    private async Task ExecuteTaskAsync(string userId, Guid workflowExecutionId, WorkflowTask task, CancellationToken cancellationToken)
+    private async Task ExecuteTaskAsync(string userId, Guid workflowExecutionId, WorkflowTask task,
+        ExpressionParser parser, CancellationToken cancellationToken)
     {
         try
         {
@@ -236,17 +239,8 @@ public class WorkflowExecutor : IWorkflowExecutor
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name, 
                 WorkflowTaskExecutionStatus.Running, cancellationToken);
-
-            _taskOutputs[task.Name] = new WorkflowTaskExecutionResult
-            {
-                Status = WorkflowTaskStatus.Completed
-            };
-
-            var executionResult = await TryExecuteAsync(userId, task, cancellationToken);
-            _taskOutputs[task.Name] = new WorkflowTaskExecutionResult { 
-                Result = executionResult, 
-                Status = WorkflowTaskStatus.Completed 
-            };
+            var executionResult = await TryExecuteAsync(userId, task, parser, cancellationToken);
+            _taskOutputs[task.Name] = executionResult;
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
                             WorkflowTaskExecutionStatus.Completed, cancellationToken);
@@ -256,10 +250,6 @@ public class WorkflowExecutor : IWorkflowExecutor
         {
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
                             WorkflowTaskExecutionStatus.Failed, cancellationToken);
-            _taskOutputs[task.Name] = new WorkflowTaskExecutionResult
-            {
-                Status = WorkflowTaskStatus.Failed
-            };
             //_logger.LogError($"Task {task.Name} failed: {ex.Message}");
             throw new Exception($"Task {task.Name} failed: {ex.Message}");
         }
@@ -277,39 +267,163 @@ public class WorkflowExecutor : IWorkflowExecutor
         await _workflowTaskExecutionService.Update(workflowTaskExecutionEntity, cancellationToken);
     }
 
-    private async Task<object?> TryExecuteAsync(string userId, WorkflowTask task, 
-        CancellationToken cancellationToken)
+    private async Task<object?> TryExecuteAsync(string userId, WorkflowTask task,
+        ExpressionParser parser, CancellationToken cancellationToken)
     {
         var plugin = await _pluginTypeService.Get(userId, task.Type, cancellationToken).ConfigureAwait(false);
-        var pluginParameters = task.Parameters.ToPluginParameters();
-        return await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false);
+        var resolvedParameters = task.Parameters;
+
+        if (resolvedParameters != null && resolvedParameters.Any())
+            ReplacePlaceholderInParameters(resolvedParameters, parser);
+        
+        var pluginParameters = resolvedParameters.ToPluginParameters();
+
+        if (task.Retry is null || task.Retry.Max is <= 0)
+        {
+            return await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false);
+        }
+
+        var maxRetries = task.Retry?.Max ?? 3;
+        var delay = task.Retry?.Delay ?? 1000;
+
+        return await RetryAsync(async() => 
+                        await plugin.ExecuteAsync(pluginParameters, cancellationToken), 
+                        maxRetries: maxRetries, delay: TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
+
     }
 
-    private void ConvertBooleansToLowercase(JObject jObject)
+    private async Task<T> RetryAsync<T>(Func<Task<T>> action, int maxRetries, TimeSpan delay)
     {
-        foreach (var property in jObject.Properties().ToList())
+        int attempt = 0;
+        while (attempt < maxRetries)
         {
-            if (property.Value.Type == JTokenType.Boolean)
+            try
             {
-                // Convert the boolean value to lowercase "true" or "false"
-                property.Value = property.Value.ToString().ToLower();
+                return await action(); // Return the result on success
             }
-            else if (property.Value.Type == JTokenType.Object)
+            catch (Exception ex)
             {
-                // Recursively handle nested objects
-                ConvertBooleansToLowercase((JObject)property.Value);
+                attempt++;
+                Console.WriteLine($"Attempt {attempt} failed: {ex.Message}");
+
+                if (attempt >= maxRetries)
+                    throw; // Rethrow after max attempts
+
+                await Task.Delay(delay); // Wait before retrying
             }
-            else if (property.Value.Type == JTokenType.Array)
+        }
+
+        throw new Exception("Retry logic failed unexpectedly."); // Should not reach here
+    }
+
+    private Dictionary<string, object?>? ResolveInputs(Dictionary<string, object?> parameters, ExpressionParser parser)
+    {
+        var resolvedParameters = new Dictionary<string, object?>();
+
+        foreach (var (key, value) in parameters)
+        {
+            if (value is string strValue)
+                resolvedParameters[key] = parser.Parse(strValue);
+            else
+                resolvedParameters[key] = value;
+        }
+        return resolvedParameters;
+    }
+
+    private void ReplacePlaceholderInParameters(Dictionary<string, object?> parameters, ExpressionParser parser)
+    {
+        foreach (var key in new List<string>(parameters.Keys))
+        {
+            switch (parameters[key])
             {
-                // Handle nested arrays if needed
-                foreach (var item in property.Value)
-                {
-                    if (item.Type == JTokenType.Boolean)
+                case Dictionary<string, object?> nestedDict:
+                    ReplacePlaceholderInParameters(nestedDict, parser);
+                    break;
+
+                case List<string> stringList:
+                    for (int i = 0; i < stringList.Count; i++)
                     {
-                        item.Replace(item.ToString().ToLower());
+                        stringList[i] = parser.Parse(stringList[i].ToString()) as string;
                     }
-                }
+                    break;
+
+                case JObject jObject:
+                    ReplacePlaceholderInJObject(jObject, parser);
+                    break;
+
+                case JArray jArray:
+                    ReplacePlaceholderInJArray(jArray, parser);
+                    break;
+
+                case string strValue:
+                    if (IsJson(strValue))
+                    {
+                        var parsedJson = JsonConvert.DeserializeObject(strValue);
+                        ReplacePlaceholderInJson(parsedJson, parser);
+                        parameters[key] = JsonConvert.SerializeObject(parsedJson);
+                    }
+                    else
+                    {
+                        parameters[key] = parser.Parse(strValue);
+                    }
+                    break;
             }
+        }
+    }
+
+    private void ReplacePlaceholderInJObject(JObject jObject, ExpressionParser parser)
+    {
+        foreach (var prop in jObject.Properties())
+        {
+            if (prop.Value.Type == JTokenType.String)
+            {
+                prop.Value = parser.Parse(prop.Value.ToString()) as string;
+            }
+            else if (prop.Value.Type == JTokenType.Object)
+            {
+                ReplacePlaceholderInJObject((JObject)prop.Value, parser);
+            }
+            else if (prop.Value.Type == JTokenType.Array)
+            {
+                ReplacePlaceholderInJArray((JArray)prop.Value, parser);
+            }
+        }
+    }
+
+    private void ReplacePlaceholderInJArray(JArray jArray, ExpressionParser parser)
+    {
+        for (int i = 0; i < jArray.Count; i++)
+        {
+            if (jArray[i].Type == JTokenType.String)
+            {
+                jArray[i] = parser.Parse(jArray[i].ToString()) as string;
+            }
+            else if (jArray[i].Type == JTokenType.Object)
+            {
+                ReplacePlaceholderInJObject((JObject)jArray[i], parser);
+            }
+            else if (jArray[i].Type == JTokenType.Array)
+            {
+                ReplacePlaceholderInJArray((JArray)jArray[i], parser);
+            }
+        }
+    }
+
+    private bool IsJson(string str)
+    {
+        str = str.Trim();
+        return (str.StartsWith("{") && str.EndsWith("}")) || (str.StartsWith("[") && str.EndsWith("]"));
+    }
+
+    private void ReplacePlaceholderInJson(object? json, ExpressionParser parser)
+    {
+        if (json is JObject jObject)
+        {
+            ReplacePlaceholderInJObject(jObject, parser);
+        }
+        else if (json is JArray jArray)
+        {
+            ReplacePlaceholderInJArray(jArray, parser);
         }
     }
 }
