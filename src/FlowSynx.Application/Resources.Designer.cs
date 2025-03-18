@@ -115,7 +115,7 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Workflow &apos;{Name}&apos; is already exist..
+        ///   Looks up a localized string similar to Workflow &apos;{0}&apos; is already exist..
         /// </summary>
         internal static string AddWorkflowNameIsAlreadyExist {
             get {

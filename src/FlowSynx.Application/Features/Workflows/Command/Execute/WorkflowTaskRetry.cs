@@ -2,6 +2,6 @@
 
 public class WorkflowTaskRetry
 {
-    public int? Max { get; set; } = 3;
-    public int? Delay { get; set; } = 1000;
+    public int? Max { get; set; }
+    public int? Delay { get; set; }
 }

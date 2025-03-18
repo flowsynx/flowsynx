@@ -6,6 +6,5 @@ public class WorkflowDefinition
     public string? Description { get; set; }
     public WorkflowConfiguration Configuration { get; set; } = new();
     public List<WorkflowTrigger> Triggers { get; set; } = new List<WorkflowTrigger>();
-    public WorkflowVariables Variables { get; set; } = new WorkflowVariables();
     public required List<WorkflowTask> Tasks { get; set; } = new List<WorkflowTask>();
 }

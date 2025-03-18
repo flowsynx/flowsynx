@@ -31,8 +31,4 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Workflow\Models\" />
-  </ItemGroup>
-
 </Project>
