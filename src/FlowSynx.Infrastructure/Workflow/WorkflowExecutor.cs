@@ -23,12 +23,13 @@ public class WorkflowExecutor : IWorkflowExecutor
     private readonly ISystemClock _systemClock;
     private readonly IPluginTypeService _pluginTypeService;
     private readonly IWorkflowValidator _workflowValidator;
+    private readonly IRetryService _retryService;
     private readonly ConcurrentDictionary<string, object?> _taskOutputs = new();
 
     public WorkflowExecutor(ILogger<WorkflowExecutor> logger, IWorkflowService workflowService,
         IWorkflowExecutionService workflowExecutionService, IWorkflowTaskExecutionService workflowTaskExecutionService,
         IJsonDeserializer jsonDeserializer, ISystemClock systemClock, IPluginTypeService pluginTypeService,
-        IWorkflowValidator workflowValidator)
+        IWorkflowValidator workflowValidator, IRetryService retryService)
     {
         _logger = logger;
         _workflowService = workflowService;
@@ -38,6 +39,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         _systemClock = systemClock;
         _pluginTypeService = pluginTypeService;
         _workflowValidator = workflowValidator;
+        _retryService = retryService;
     }
 
     public async Task ExecuteAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
@@ -49,24 +51,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         {
             var deserializeWorkflow = DeserializeWorkflow(workflow.Definition);
 
-            var missingDependencies = _workflowValidator.AllDependenciesExist(deserializeWorkflow.Tasks);
-            if (missingDependencies.Any())
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("Invalid workflow: missing dependencies.. There are list of missing dependencies:");
-                sb.AppendLine(string.Join(",", missingDependencies));
-                throw new Exception(sb.ToString());
-            }
-
-            var validation = _workflowValidator.CheckCyclic(deserializeWorkflow.Tasks);
-            if (validation.Cyclic)
-            {
-                var sb = new StringBuilder();
-                sb.AppendLine("The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic:");
-                sb.AppendLine(string.Join(" -> ", validation.CyclicNodes));
-
-                throw new Exception(sb.ToString());
-            }
+            ValidateWorkflow(deserializeWorkflow.Tasks);
 
             var taskMap = deserializeWorkflow.Tasks.ToDictionary(t => t.Name);
 
@@ -129,6 +114,28 @@ public class WorkflowExecutor : IWorkflowExecutor
         catch (Exception ex)
         {
             throw new Exception(ex.ToString());
+        }
+    }
+
+    private void ValidateWorkflow(List<WorkflowTask> workflowTasks)
+    {
+        var missingDependencies = _workflowValidator.AllDependenciesExist(workflowTasks);
+        if (missingDependencies.Any())
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Invalid workflow: missing dependencies.. There are list of missing dependencies:");
+            sb.AppendLine(string.Join(",", missingDependencies));
+            throw new Exception(sb.ToString());
+        }
+
+        var validation = _workflowValidator.CheckCyclic(workflowTasks);
+        if (validation.Cyclic)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic:");
+            sb.AppendLine(string.Join(" -> ", validation.CyclicNodes));
+
+            throw new Exception(sb.ToString());
         }
     }
 
@@ -244,13 +251,13 @@ public class WorkflowExecutor : IWorkflowExecutor
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
                             WorkflowTaskExecutionStatus.Completed, cancellationToken);
-            //_logger.LogInformation($"Task {task.Name} completed.");
+            _logger.LogInformation($"Task {task.Name} completed.");
         }
         catch (Exception ex)
         {
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
                             WorkflowTaskExecutionStatus.Failed, cancellationToken);
-            //_logger.LogError($"Task {task.Name} failed: {ex.Message}");
+            _logger.LogError($"Task {task.Name} failed: {ex.Message}");
             throw new Exception($"Task {task.Name} failed: {ex.Message}");
         }
     }
@@ -283,51 +290,14 @@ public class WorkflowExecutor : IWorkflowExecutor
             return await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false);
         }
 
-        var maxRetries = task.Retry?.Max ?? 3;
-        var delay = task.Retry?.Delay ?? 1000;
+        var maxRetries = task.Retry.Max ?? 3;
+        var delay = task.Retry.Delay ?? 1000;
 
-        return await RetryAsync(async() => 
-                        await plugin.ExecuteAsync(pluginParameters, cancellationToken), 
-                        maxRetries: maxRetries, delay: TimeSpan.FromMilliseconds(delay)).ConfigureAwait(false);
-
-    }
-
-    private async Task<T> RetryAsync<T>(Func<Task<T>> action, int maxRetries, TimeSpan delay)
-    {
-        int attempt = 0;
-        while (attempt < maxRetries)
-        {
-            try
-            {
-                return await action(); // Return the result on success
-            }
-            catch (Exception ex)
-            {
-                attempt++;
-                Console.WriteLine($"Attempt {attempt} failed: {ex.Message}");
-
-                if (attempt >= maxRetries)
-                    throw; // Rethrow after max attempts
-
-                await Task.Delay(delay); // Wait before retrying
-            }
-        }
-
-        throw new Exception("Retry logic failed unexpectedly."); // Should not reach here
-    }
-
-    private Dictionary<string, object?>? ResolveInputs(Dictionary<string, object?> parameters, ExpressionParser parser)
-    {
-        var resolvedParameters = new Dictionary<string, object?>();
-
-        foreach (var (key, value) in parameters)
-        {
-            if (value is string strValue)
-                resolvedParameters[key] = parser.Parse(strValue);
-            else
-                resolvedParameters[key] = value;
-        }
-        return resolvedParameters;
+        return await _retryService.ExecuteAsync(
+            async () => await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false),
+            maxRetries: maxRetries,
+            delay: TimeSpan.FromMilliseconds(delay)
+        );
     }
 
     private void ReplacePlaceholderInParameters(Dictionary<string, object?> parameters, ExpressionParser parser)
