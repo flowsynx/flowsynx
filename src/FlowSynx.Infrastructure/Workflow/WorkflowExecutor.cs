@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace FlowSynx.Infrastructure.Workflow;
@@ -73,7 +72,7 @@ public class WorkflowExecutor : IWorkflowExecutor
 
                 var executionTasks = readyTasks.Select(taskId => taskMap[taskId]);
                 var errors = await ProcessWithDegreeOfParallelismAsync(userId, workflowExecutionEntity.Id, executionTasks,
-                    deserializeWorkflow.Configuration.DegreeOfParallelism, cancellationToken);
+                    deserializeWorkflow.Configuration, cancellationToken);
 
                 if (errors.Any())
                 {
@@ -207,8 +206,9 @@ public class WorkflowExecutor : IWorkflowExecutor
     }
 
     private async Task<List<Exception>> ProcessWithDegreeOfParallelismAsync(string userId, Guid workflowExecutionId, 
-        IEnumerable<WorkflowTask> workflowTasks, int degreeOfParallelism, CancellationToken cancellationToken)
+        IEnumerable<WorkflowTask> workflowTasks, WorkflowConfiguration workflowConfiguration, CancellationToken cancellationToken)
     {
+        var degreeOfParallelism = workflowConfiguration.DegreeOfParallelism ?? 3;
         using var semaphore = new SemaphoreSlim(degreeOfParallelism);
         var exceptions = new List<Exception>();
 
@@ -218,7 +218,7 @@ public class WorkflowExecutor : IWorkflowExecutor
             await semaphore.WaitAsync(cancellationToken);
             try
             {
-                await ExecuteTaskAsync(userId, workflowExecutionId, item, parser, cancellationToken);
+                await ExecuteTaskAsync(userId, workflowExecutionId, item, workflowConfiguration.Retry, parser, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -238,7 +238,7 @@ public class WorkflowExecutor : IWorkflowExecutor
     }
 
     private async Task ExecuteTaskAsync(string userId, Guid workflowExecutionId, WorkflowTask task,
-        ExpressionParser parser, CancellationToken cancellationToken)
+        WorkflowRetry? workflowRetry, ExpressionParser parser, CancellationToken cancellationToken)
     {
         try
         {
@@ -246,7 +246,7 @@ public class WorkflowExecutor : IWorkflowExecutor
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name, 
                 WorkflowTaskExecutionStatus.Running, cancellationToken);
-            var executionResult = await TryExecuteAsync(userId, task, parser, cancellationToken);
+            var executionResult = await TryExecuteAsync(userId, task, workflowRetry, parser, cancellationToken);
             _taskOutputs[task.Name] = executionResult;
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
@@ -274,7 +274,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         await _workflowTaskExecutionService.Update(workflowTaskExecutionEntity, cancellationToken);
     }
 
-    private async Task<object?> TryExecuteAsync(string userId, WorkflowTask task,
+    private async Task<object?> TryExecuteAsync(string userId, WorkflowTask task, WorkflowRetry? workflowRetry,
         ExpressionParser parser, CancellationToken cancellationToken)
     {
         var plugin = await _pluginTypeService.Get(userId, task.Type, cancellationToken).ConfigureAwait(false);
@@ -285,13 +285,13 @@ public class WorkflowExecutor : IWorkflowExecutor
         
         var pluginParameters = resolvedParameters.ToPluginParameters();
 
-        if (task.Retry is null || task.Retry.Max is <= 0)
+        if (workflowRetry is null || workflowRetry.Max is <= 0)
         {
             return await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false);
         }
 
-        var maxRetries = task.Retry.Max ?? 3;
-        var delay = task.Retry.Delay ?? 1000;
+        var maxRetries = workflowRetry.Max ?? 3;
+        var delay = workflowRetry.Delay ?? 1000;
 
         return await _retryService.ExecuteAsync(
             async () => await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false),

@@ -65,7 +65,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
 
             await _workflowService.Add(workflowEntity, cancellationToken);
 
-            foreach (var trigger in workflowDefinition.Triggers)
+            foreach (var trigger in workflowDefinition.Configuration.Triggers)
             {
                 var workflowTrigger = new WorkflowTriggerEntity
                 {
