@@ -4,5 +4,6 @@ namespace FlowSynx.Infrastructure.Services;
 
 public class SystemClock : ISystemClock
 {
-    public DateTime NowUtc => DateTime.UtcNow;
+    public DateTime UtcNow => DateTime.UtcNow;
+    public DateTime Now => DateTime.Now;
 }
