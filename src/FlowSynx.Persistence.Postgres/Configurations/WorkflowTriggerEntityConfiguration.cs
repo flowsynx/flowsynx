@@ -2,11 +2,21 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using FlowSynx.Domain.Entities.Trigger;
+using FlowSynx.Application.Services;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 
 public class WorkflowTriggerEntityConfiguration : IEntityTypeConfiguration<WorkflowTriggerEntity>
 {
+    private readonly IJsonSerializer _jsonSerializer;
+    private readonly IJsonDeserializer _jsonDeserializer;
+
+    public WorkflowTriggerEntityConfiguration(IJsonSerializer jsonSerializer, IJsonDeserializer jsonDeserializer)
+    {
+        _jsonSerializer = jsonSerializer;
+        _jsonDeserializer = jsonDeserializer;
+    }
+
     public void Configure(EntityTypeBuilder<WorkflowTriggerEntity> builder)
     {
         builder.HasKey(x => x.Id);
@@ -20,6 +30,16 @@ public class WorkflowTriggerEntityConfiguration : IEntityTypeConfiguration<Workf
         );
 
         builder.Property(t => t.Type).IsRequired().HasConversion(levelConverter);
+
+        var dictionaryconverter = new ValueConverter<Dictionary<string, object>, string>(
+            v => _jsonSerializer.Serialize(v),
+            v => _jsonDeserializer.Deserialize<Dictionary<string, object>>(v)
+        );
+
+        builder.Property(e => e.Properties)
+               .IsRequired()
+               .HasColumnType("jsonb")
+               .HasConversion(dictionaryconverter);
 
         builder.HasOne(we => we.Workflow)
                .WithMany(w => w.Triggers)

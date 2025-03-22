@@ -55,13 +55,13 @@ public class ApplicationContext : AuditableContext
 
             if (entry.State == EntityState.Added)
             {
-                auditable.CreatedOn = _systemClock.NowUtc;
+                auditable.CreatedOn = _systemClock.UtcNow;
                 auditable.CreatedBy = GetUserId();
             }
 
             if (entry.State == EntityState.Modified)
             {
-                auditable.LastModifiedOn = _systemClock.NowUtc;
+                auditable.LastModifiedOn = _systemClock.UtcNow;
                 auditable.LastModifiedBy = GetUserId();
             }
         }
@@ -76,6 +76,7 @@ public class ApplicationContext : AuditableContext
         builder.ApplyConfiguration(new WorkflowEntityfiguration());
         builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration());
         builder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
+        builder.ApplyConfiguration(new WorkflowTriggerEntityConfiguration(_jsonSerializer, _jsonDeserializer));
         builder.HasDefaultSchema("FlowSynx");
     }
 }
