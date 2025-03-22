@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FlowSynx.Infrastructure.Logging.ConsoleLogger;
 
@@ -75,15 +76,18 @@ internal class ConsoleLogger : ILogger, IDisposable
 
     private void WriteLine(LogMessage logMessage, CancellationToken cancellationToken)
     {
-        ConsoleColor originalColor = Console.ForegroundColor;
+        var originalColor = Console.ForegroundColor;
         try
         {
             Console.ForegroundColor = ColorMap[logMessage.Level];
             Console.WriteLine(LogTemplate.Format(logMessage, _options.OutputTemplate));
+            Console.ForegroundColor = originalColor;
         }
         catch (Exception ex)
         {
+            Console.ForegroundColor = ColorMap[LogLevel.Error];
             Console.WriteLine(ex.Message);
+            Console.ForegroundColor = originalColor;
             throw;
         }
         finally
