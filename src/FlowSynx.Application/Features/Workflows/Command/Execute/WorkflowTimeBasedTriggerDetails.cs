@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Application.Features.Workflows.Command.Execute;
 
-public class WorkflowTimeBasedTriggerDetails
+public class WorkflowTimeBasedTriggerDetails: Dictionary<string, object>
 {
-    public string Cron { get; set; }
+    public required string Cron { get; set; }
 }

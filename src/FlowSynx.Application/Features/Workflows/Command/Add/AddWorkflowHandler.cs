@@ -20,11 +20,14 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     private readonly IJsonDeserializer _jsonDeserializer;
 
     public AddWorkflowHandler(ILogger<AddWorkflowHandler> logger, IWorkflowService workflowService,
-        IWorkflowTriggerService workflowTriggerService, ICurrentUserService currentUserService, IJsonDeserializer jsonDeserializer)
+        IWorkflowTriggerService workflowTriggerService, ICurrentUserService currentUserService, 
+        IJsonDeserializer jsonDeserializer)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowService);
+        ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _logger = logger;
         _workflowService = workflowService;
         _workflowTriggerService = workflowTriggerService;
@@ -73,7 +76,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                     WorkflowId = workflowEntity.Id,
                     UserId = _currentUserService.UserId,
                     Type = trigger.Type,
-                    Details = trigger.Details,
+                    Properties = trigger.Properties,
                 };
 
                await _workflowTriggerService.Add(workflowTrigger, cancellationToken);

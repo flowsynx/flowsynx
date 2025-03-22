@@ -33,9 +33,6 @@ public class WorkflowTriggerService : IWorkflowTriggerService
             .ToListAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        if (result.Count == 0)
-            throw new Exception("No workflow trigger found!");
-
         return result;
     }
 

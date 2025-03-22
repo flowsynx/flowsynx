@@ -176,7 +176,7 @@ public class WorkflowExecutor : IWorkflowExecutor
             Id = Guid.NewGuid(),
             WorkflowId = workflowId,
             UserId = userId,
-            ExecutionStart = _systemClock.NowUtc,
+            ExecutionStart = _systemClock.UtcNow,
             Status = WorkflowExecutionStatus.Running,
             TaskExecutions = new List<WorkflowTaskExecutionEntity>()
         };
@@ -201,7 +201,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         CancellationToken cancellationToken)
     {
         workflowExecutionEntity.Status = status;
-        workflowExecutionEntity.ExecutionEnd = _systemClock.NowUtc;
+        workflowExecutionEntity.ExecutionEnd = _systemClock.UtcNow;
         await _workflowExecutionService.Update(workflowExecutionEntity, cancellationToken);
     }
 
@@ -270,7 +270,7 @@ public class WorkflowExecutor : IWorkflowExecutor
             throw new Exception($"No workflow task execution found with name '{name}'");
         
         workflowTaskExecutionEntity.Status = status;
-        workflowTaskExecutionEntity.EndTime = _systemClock.NowUtc;
+        workflowTaskExecutionEntity.EndTime = _systemClock.UtcNow;
         await _workflowTaskExecutionService.Update(workflowTaskExecutionEntity, cancellationToken);
     }
 

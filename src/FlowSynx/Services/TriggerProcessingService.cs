@@ -1,38 +1,41 @@
-﻿using FlowSynx.Application.Services;
-using FlowSynx.Infrastructure.Workflow;
+﻿using FlowSynx.Infrastructure.Workflow;
 
 namespace FlowSynx.Services;
 
 public class TriggerProcessingService : BackgroundService
 {
+    private readonly ILogger<TriggerProcessingService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly int _userId; // The user ID for which we are processing triggers
 
-    public TriggerProcessingService(IServiceProvider serviceProvider, int userId)
+    public TriggerProcessingService(ILogger<TriggerProcessingService> logger, IServiceProvider serviceProvider)
     {
+        _logger = logger;
         _serviceProvider = serviceProvider;
-        _userId = userId;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        using (var scope = _serviceProvider.CreateScope())
+        while (!cancellationToken.IsCancellationRequested)
         {
-            var timeTriggerProcessor = scope.ServiceProvider.GetRequiredService<WorkflowTimeBasedTriggerProcessor>();
-            //var eventTriggerProcessor = scope.ServiceProvider.GetRequiredService<EventBasedTriggerProcessor>();
-            //var apiTriggerProcessor = scope.ServiceProvider.GetRequiredService<ApiBasedTriggerProcessor>();
-
-            while (!stoppingToken.IsCancellationRequested)
+            try
             {
-                // Process triggers for the specific user
-                await Task.WhenAll(
-                    timeTriggerProcessor.ProcessTriggersAsync(stoppingToken)
-                    //eventTriggerProcessor.ListenForEventsForUserAsync(_userId),
-                    //apiTriggerProcessor.CheckForApiCallsForUserAsync(_userId)
-                );
+                using var scope = _serviceProvider.CreateScope();
+                var timeTriggerProcessor = scope.ServiceProvider.GetRequiredService<WorkflowTimeBasedTriggerProcessor>();
+                //var eventTriggerProcessor = scope.ServiceProvider.GetRequiredService<EventBasedTriggerProcessor>();
+                //var apiTriggerProcessor = scope.ServiceProvider.GetRequiredService<ApiBasedTriggerProcessor>();
 
-                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+                await Task.WhenAll(
+                    timeTriggerProcessor.ProcessTriggersAsync(cancellationToken)
+                    //eventTriggerProcessor.ListenForEventsForUserAsync(),
+                    //apiTriggerProcessor.CheckForApiCallsForUserAsync()
+                );
             }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in Trigger Processing Service. Error: {ex.Message}");
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
         }
     }
 }

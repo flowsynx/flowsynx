@@ -2,5 +2,6 @@
 
 public interface ISystemClock
 {
-    DateTime NowUtc { get; }
+    DateTime UtcNow { get; }
+    DateTime Now { get; }
 }

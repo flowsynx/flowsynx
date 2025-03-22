@@ -39,8 +39,8 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
             {
                 Id = workflow.Id,
                 Name = workflow.Name,
-                ModifiedDate = workflow.LastModifiedOn ?? _systemClock.NowUtc
-                
+                ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow
+
             });
             _logger.LogInformation("Plugin Config List is got successfully.");
             return await Result<IEnumerable<WorkflowListResponse>>.SuccessAsync(response);

@@ -34,8 +34,8 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
                .AddLoggingService(config, cancellationToken)
                .AddHttpClient()
                .AddHealthChecker(config)
-               .AddOpenApi(config);
-               //.AddHostedService<TriggerProcessingService>();
+               .AddOpenApi(config)
+               .AddHostedService<TriggerProcessingService>();
 
         var app = builder.Build();
 
