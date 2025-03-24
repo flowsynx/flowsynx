@@ -37,47 +37,29 @@ public class LocalFileSystemPlugin : Plugin
 
         switch (operation.ToLower())
         {
+            case "create":
+                await _manager.Create(parameters).ConfigureAwait(false);
+                return null;
+            case "delete":
+                await _manager.Delete(parameters).ConfigureAwait(false);
+                return null;
+            case "exist":
+                return await _manager.Exist(parameters).ConfigureAwait(false);
+            case "list":
+                return await _manager.List(parameters).ConfigureAwait(false);
+            case "purge":
+                await _manager.Purge(parameters).ConfigureAwait(false);
+                return null;
             case "read":
                 return await _manager.Read(parameters).ConfigureAwait(false);
+            case "rename":
+                await _manager.Rename(parameters).ConfigureAwait(false);
+                return null;
             case "write":
                 await _manager.Write(parameters).ConfigureAwait(false);
                 return null;
             default:
-                throw new NotSupportedException($"Local FileSystem plugin: Operation {operation} is not supported.");
+                throw new NotSupportedException($"Local FileSystem plugin: Operation '{operation}' is not supported.");
         }
     }
-
-    //public async Task<object> About(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.About(context).ConfigureAwait(false);
-
-    //public async Task Create(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Create(context).ConfigureAwait(false);
-
-    //public async Task Write(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Write(context).ConfigureAwait(false);
-
-    //public async Task<string> Read(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Read(context).ConfigureAwait(false);
-
-    //public async Task Rename(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Rename(context).ConfigureAwait(false);
-
-    //public async Task Delete(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Delete(context).ConfigureAwait(false);
-
-    //public async Task<bool> Exist(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Exist(context);
-
-    //public async Task<InterchangeData> List(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.FilteredEntities(context).ConfigureAwait(false);
-
-    //public async Task Transfer(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Transfer(context, cancellationToken).ConfigureAwait(false);
-
-    ////public override async Task ProcessTransfer(Context context, TransferData transferData,
-    ////    TransferKind transferKind, CancellationToken cancellationToken = default) =>
-    ////    await _manager.ProcessTransfer(context, transferData, transferKind, cancellationToken).ConfigureAwait(false);
-
-    //public async Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken = default) =>
-    //    await _manager.Compress(context, cancellationToken).ConfigureAwait(false);
 }

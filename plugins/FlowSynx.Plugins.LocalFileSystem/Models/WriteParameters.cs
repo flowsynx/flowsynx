@@ -1,7 +1,8 @@
 ﻿namespace FlowSynx.Plugins.LocalFileSystem.Models;
 
-public class WriteParameter
+public class WriteParameters
 {
-    public object Data { get; set; }
+    public string? Path { get; set; }
+    public object? Data { get; set; }
     public bool Overwrite { get; set; } = false;
 }
