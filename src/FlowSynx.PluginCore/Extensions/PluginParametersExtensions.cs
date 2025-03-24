@@ -71,6 +71,12 @@ public static class PluginParametersExtensions
                         convertedValue = System.Text.Json.JsonSerializer.Deserialize(value.ToString(), property.PropertyType);
                     }
                 }
+                else if (value.GetType().IsGenericType &&
+                         (value.GetType().GetGenericTypeDefinition() == typeof(List<>)
+                          || value.GetType().GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+                {
+                    convertedValue = value;
+                }
                 else if (value.ToString().IsJson())
                 {
                     // Try Newtonsoft.Json for complex types
@@ -84,9 +90,14 @@ public static class PluginParametersExtensions
                         convertedValue = System.Text.Json.JsonSerializer.Deserialize(value.ToString(), property.PropertyType);
                     }
                 }
+                else if (value is object)
+                {
+                    convertedValue = value;
+                }
                 else
                 {
-                    convertedValue = Convert.ChangeType(value, property.PropertyType);
+                    Type underlyingType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                    convertedValue = Convert.ChangeType(value, underlyingType);
                 }
 
                 // Check for null values (only assign if the value is valid, otherwise use default)
