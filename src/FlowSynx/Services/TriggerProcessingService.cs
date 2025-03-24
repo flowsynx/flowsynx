@@ -35,7 +35,7 @@ public class TriggerProcessingService : BackgroundService
                 _logger.LogError($"Error in Trigger Processing Service. Error: {ex.Message}");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+            await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
         }
     }
 }

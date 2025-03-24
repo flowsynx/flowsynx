@@ -91,7 +91,6 @@ public class WorkflowExecutor : IWorkflowExecutor
         catch (Exception ex)
         {
             await ChangeWorkflowExecutionStatus(workflowExecutionEntity, WorkflowExecutionStatus.Failed, cancellationToken);
-            _logger.LogError($"Workflow execution error: {ex.Message}");
             throw new Exception($"Workflow execution error: {ex.Message}");
         }
     }
@@ -257,7 +256,6 @@ public class WorkflowExecutor : IWorkflowExecutor
         {
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
                             WorkflowTaskExecutionStatus.Failed, cancellationToken);
-            _logger.LogError($"Task {task.Name} failed: {ex.Message}");
             throw new Exception($"Task {task.Name} failed: {ex.Message}");
         }
     }
