@@ -24,12 +24,19 @@ public class WorkflowTriggerEntityConfiguration : IEntityTypeConfiguration<Workf
         builder.Property(t => t.WorkflowId).IsRequired();
         builder.Property(t => t.UserId).IsRequired();
 
-        var levelConverter = new ValueConverter<WorkflowTriggerType, string>(
+        var typeConverter = new ValueConverter<WorkflowTriggerType, string>(
             v => v.ToString(),
             v => (WorkflowTriggerType)Enum.Parse(typeof(WorkflowTriggerType), v, true)
         );
 
-        builder.Property(t => t.Type).IsRequired().HasConversion(levelConverter);
+        builder.Property(t => t.Type).IsRequired().HasConversion(typeConverter);
+
+        var statusConverter = new ValueConverter<WorkflowTriggerStatus, string>(
+            v => v.ToString(),
+            v => (WorkflowTriggerStatus)Enum.Parse(typeof(WorkflowTriggerStatus), v, true)
+        );
+
+        builder.Property(t => t.Status).IsRequired().HasConversion(statusConverter);
 
         var dictionaryconverter = new ValueConverter<Dictionary<string, object>, string>(
             v => _jsonSerializer.Serialize(v),

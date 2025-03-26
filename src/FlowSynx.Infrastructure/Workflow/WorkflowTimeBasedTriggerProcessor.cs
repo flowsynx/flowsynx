@@ -25,7 +25,7 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
 
     public async Task ProcessTriggersAsync(CancellationToken cancellationToken)
     {
-        var triggers = await _workflowTriggerService.All(WorkflowTriggerType.TimeBased, cancellationToken);
+        var triggers = await _workflowTriggerService.ActiveTriggers(WorkflowTriggerType.TimeBased, cancellationToken);
 
         DateTime now = _systemClock.UtcNow;
         foreach (var trigger in triggers)

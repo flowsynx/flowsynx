@@ -7,37 +7,39 @@ namespace FlowSynx.Persistence.Postgres.Services;
 
 public class WorkflowExecutionService : IWorkflowExecutionService
 {
-    private readonly ApplicationContext _appContext;
+    private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
 
-    public WorkflowExecutionService(ApplicationContext appContext)
+    public WorkflowExecutionService(IDbContextFactory<ApplicationContext> appContextFactory)
     {
-        _appContext = appContext;
+        _appContextFactory = appContextFactory;
     }
 
     public async Task<IReadOnlyCollection<WorkflowExecutionEntity>> All(string userId, Guid workflowId, CancellationToken cancellationToken)
     {
-        var result = await _appContext.WorkflowExecutions
-            .Where(c => c.UserId == userId)
+        using var context = _appContextFactory.CreateDbContext();
+        var result = await context.WorkflowExecutions
+            .Where(c => c.UserId == userId && c.IsDeleted == false)
             .ToListAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
-
-        if (result.Count == 0)
-            throw new Exception("No workflow execution found!");
 
         return result;
     }
 
     public async Task<WorkflowExecutionEntity?> Get(string userId, Guid workflowExecutionId, CancellationToken cancellationToken)
     {
-        return await _appContext.WorkflowExecutions
-            .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == workflowExecutionId, cancellationToken)
+        using var context = _appContextFactory.CreateDbContext();
+        return await context.WorkflowExecutions
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == workflowExecutionId && x.IsDeleted == false, 
+            cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task<bool> IsExist(string userId, Guid workflowExecutionId, CancellationToken cancellationToken)
     {
-        var result = await _appContext.WorkflowExecutions
-            .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == workflowExecutionId, cancellationToken)
+        using var context = _appContextFactory.CreateDbContext();
+        var result = await context.WorkflowExecutions
+            .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == workflowExecutionId && x.IsDeleted == false, 
+            cancellationToken)
             .ConfigureAwait(false);
 
         return result != null;
@@ -45,29 +47,33 @@ public class WorkflowExecutionService : IWorkflowExecutionService
 
     public async Task Add(WorkflowExecutionEntity workflowExecutionEntity, CancellationToken cancellationToken)
     {
-        await _appContext.WorkflowExecutions
+        using var context = _appContextFactory.CreateDbContext();
+        await context.WorkflowExecutions
             .AddAsync(workflowExecutionEntity, cancellationToken)
             .ConfigureAwait(false);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Update(WorkflowExecutionEntity workflowExecutionEntity, CancellationToken cancellationToken)
     {
-        _appContext.WorkflowExecutions.Update(workflowExecutionEntity);
+        using var context = _appContextFactory.CreateDbContext();
+        context.Entry(workflowExecutionEntity).State = EntityState.Detached;
+        context.WorkflowExecutions.Update(workflowExecutionEntity);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task<bool> Delete(WorkflowExecutionEntity workflowExecutionEntity, CancellationToken cancellationToken)
     {
-        _appContext.WorkflowExecutions.Remove(workflowExecutionEntity);
+        using var context = _appContextFactory.CreateDbContext();
+        context.WorkflowExecutions.Remove(workflowExecutionEntity);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -78,7 +84,8 @@ public class WorkflowExecutionService : IWorkflowExecutionService
     {
         try
         {
-            return await _appContext.Database.CanConnectAsync(cancellationToken);
+            using var context = _appContextFactory.CreateDbContext();
+            return await context.Database.CanConnectAsync(cancellationToken);
         }
         catch
         {

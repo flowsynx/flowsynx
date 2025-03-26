@@ -2,34 +2,35 @@
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Domain.Entities.Trigger;
+using FlowSynx.Domain.Entities.Workflow;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 
 public class WorkflowTriggerService : IWorkflowTriggerService
 {
-    private readonly ApplicationContext _appContext;
+    private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
 
-    public WorkflowTriggerService(ApplicationContext appContext)
+    public WorkflowTriggerService(IDbContextFactory<ApplicationContext> appContextFactory)
     {
-        _appContext = appContext;
+        _appContextFactory = appContextFactory;
     }
 
     public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> All(CancellationToken cancellationToken)
     {
-        var result = await _appContext.WorkflowTriggeres
+        using var context = _appContextFactory.CreateDbContext();
+        var result = await context.WorkflowTriggeres
+            .Where(x => x.IsDeleted == false)
             .ToListAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
-
-        if (result.Count == 0)
-            throw new Exception("No workflows found!");
 
         return result;
     }
 
-    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> All(WorkflowTriggerType type, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> ActiveTriggers(WorkflowTriggerType type, CancellationToken cancellationToken)
     {
-        var result = await _appContext.WorkflowTriggeres
-            .Where(x=>x.Type == type)
+        using var context = _appContextFactory.CreateDbContext();
+        var result = await context.WorkflowTriggeres
+            .Where(x=>x.Type == type && x.Status == WorkflowTriggerStatus.Active && x.IsDeleted == false)
             .ToListAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
@@ -38,36 +39,41 @@ public class WorkflowTriggerService : IWorkflowTriggerService
 
     public async Task<WorkflowTriggerEntity?> Get(Guid workflowTriggerId, CancellationToken cancellationToken)
     {
-        return await _appContext.WorkflowTriggeres
-            .FirstOrDefaultAsync(x=>x.Id == workflowTriggerId, cancellationToken)
+        using var context = _appContextFactory.CreateDbContext();
+        return await context.WorkflowTriggeres
+            .FirstOrDefaultAsync(x=>x.Id == workflowTriggerId && x.IsDeleted == false, cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Add(WorkflowTriggerEntity workflowTriggerEntity, CancellationToken cancellationToken)
     {
-        await _appContext.WorkflowTriggeres
+        using var context = _appContextFactory.CreateDbContext();
+        await context.WorkflowTriggeres
             .AddAsync(workflowTriggerEntity, cancellationToken)
             .ConfigureAwait(false);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Update(WorkflowTriggerEntity workflowTriggerEntity, CancellationToken cancellationToken)
     {
-        _appContext.WorkflowTriggeres.Update(workflowTriggerEntity);
+        using var context = _appContextFactory.CreateDbContext();
+        context.Entry(workflowTriggerEntity).State = EntityState.Detached;
+        context.WorkflowTriggeres.Update(workflowTriggerEntity);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task<bool> Delete(WorkflowTriggerEntity workflowTriggerEntity, CancellationToken cancellationToken)
     {
-        _appContext.WorkflowTriggeres.Remove(workflowTriggerEntity);
+        using var context = _appContextFactory.CreateDbContext();
+        context.WorkflowTriggeres.Remove(workflowTriggerEntity);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -78,7 +84,8 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            return await _appContext.Database.CanConnectAsync(cancellationToken);
+            using var context = _appContextFactory.CreateDbContext();
+            return await context.Database.CanConnectAsync(cancellationToken);
         }
         catch
         {

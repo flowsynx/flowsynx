@@ -32,7 +32,7 @@ internal class DeleteWorkflowHandler : IRequestHandler<DeleteWorkflowRequest, Re
             if (workflow == null)
                 throw new Exception($"The workflow with id '{request.Id}' not found");
 
-            var deleteResult = await _workflowService.Delete(workflow, cancellationToken);
+            await _workflowService.Delete(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
         }
         catch (Exception ex)

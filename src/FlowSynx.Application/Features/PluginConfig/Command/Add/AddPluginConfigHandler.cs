@@ -71,7 +71,8 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             }
 
             await _pluginConfigurationService.Add(pluginConfiguration, cancellationToken);
-            var response = new AddPluginConfigResponse { 
+            var response = new AddPluginConfigResponse 
+            { 
                 Id = pluginConfiguration.Id, 
                 Name = pluginConfiguration.Name 
             };

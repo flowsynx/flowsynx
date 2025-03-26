@@ -7,16 +7,17 @@ namespace FlowSynx.Persistence.Postgres.Services;
 
 public class AuditService : IAuditService
 {
-    private readonly ApplicationContext _appContext;
+    private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
 
-    public AuditService(ApplicationContext appContext)
+    public AuditService(IDbContextFactory<ApplicationContext> appContextFactory)
     {
-        _appContext = appContext;
+        _appContextFactory = appContextFactory;
     }
 
     public async Task<IReadOnlyCollection<AuditResponse>> All(CancellationToken cancellationToken)
     {
-        var trails = await _appContext.Audits.Select(audit => new AuditResponse
+        using var context = _appContextFactory.CreateDbContext();
+        var trails = await context.Audits.Select(audit => new AuditResponse
                 {
                     Id = audit.Id,
                     Type = audit.Type,
@@ -35,7 +36,8 @@ public class AuditService : IAuditService
 
     public async Task<AuditResponse?> Get(Guid id, CancellationToken cancellationToken)
     {
-        var trail = await _appContext.Audits
+        using var context = _appContextFactory.CreateDbContext();
+        var trail = await context.Audits
             .Where(x=>x.Id == id)
             .Select(audit => new AuditResponse
                 {

@@ -12,7 +12,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services
-            .AddScoped<ISystemClock, SystemClock>()
+            .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton(typeof(ICacheService<string, Plugin>), typeof(CacheService<string, Plugin>))
             .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IHashService, HashService>()

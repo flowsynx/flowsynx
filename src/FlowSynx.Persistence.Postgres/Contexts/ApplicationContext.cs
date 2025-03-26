@@ -36,18 +36,32 @@ public class ApplicationContext : AuditableContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
     {
+        HandleSoftDelete();
         ApplyAuditing();
 
-        if ( string.IsNullOrEmpty(GetUserId()))
+        var userId = GetUserId();
+        if (string.IsNullOrEmpty(userId))
             return await base.SaveChangesAsync(cancellationToken);
 
-        return await base.SaveChangesAsync(GetUserId(), cancellationToken);
+        return await base.SaveChangesAsync(userId, cancellationToken);
+    }
+
+    private void HandleSoftDelete()
+    {
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(e => e.State == EntityState.Deleted && e.Entity is ISoftDeletable))
+        {
+            entry.State = EntityState.Modified;
+            ((ISoftDeletable)entry.Entity).IsDeleted = true;
+        }
     }
 
     private void ApplyAuditing()
     {
         var entries = ChangeTracker.Entries()
-            .Where(e => e.Entity is IAuditableEntity && (e.State == EntityState.Added || e.State == EntityState.Modified));
+            .Where(e => e.Entity is IAuditableEntity && 
+                (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
+            );
 
         foreach (var entry in entries)
         {

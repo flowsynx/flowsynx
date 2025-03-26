@@ -30,6 +30,15 @@ public class WorkflowExecutor : IWorkflowExecutor
         IJsonDeserializer jsonDeserializer, ISystemClock systemClock, IPluginTypeService pluginTypeService,
         IWorkflowValidator workflowValidator, IRetryService retryService)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(workflowService);
+        ArgumentNullException.ThrowIfNull(workflowExecutionService);
+        ArgumentNullException.ThrowIfNull(workflowTaskExecutionService);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(systemClock);
+        ArgumentNullException.ThrowIfNull(pluginTypeService);
+        ArgumentNullException.ThrowIfNull(workflowValidator);
+        ArgumentNullException.ThrowIfNull(retryService);
         _logger = logger;
         _workflowService = workflowService;
         _workflowExecutionService = workflowExecutionService;
@@ -117,6 +126,10 @@ public class WorkflowExecutor : IWorkflowExecutor
 
     private void ValidateWorkflow(List<WorkflowTask> workflowTasks)
     {
+        var hasWorkflowPipelinesDuplicateNames = _workflowValidator.HasDuplicateNames(workflowTasks);
+        if (hasWorkflowPipelinesDuplicateNames)
+            throw new Exception("There is a duplicated pipeline name in the workflow pipelines.");
+
         var missingDependencies = _workflowValidator.AllDependenciesExist(workflowTasks);
         if (missingDependencies.Any())
         {
@@ -266,7 +279,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         var workflowTaskExecutionEntity = await _workflowTaskExecutionService.Get(workflowExecutionId, name, cancellationToken);
         if (workflowTaskExecutionEntity == null)
             throw new Exception($"No workflow task execution found with name '{name}'");
-        
+
         workflowTaskExecutionEntity.Status = status;
         workflowTaskExecutionEntity.EndTime = _systemClock.UtcNow;
         await _workflowTaskExecutionService.Update(workflowTaskExecutionEntity, cancellationToken);

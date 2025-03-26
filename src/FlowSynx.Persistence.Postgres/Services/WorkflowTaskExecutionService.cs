@@ -2,70 +2,76 @@
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Domain.Entities.Workflow;
+using FlowSynx.Domain.Entities;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 
 public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
 {
-    private readonly ApplicationContext _appContext;
+    private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
 
-    public WorkflowTaskExecutionService(ApplicationContext appContext)
+    public WorkflowTaskExecutionService(IDbContextFactory<ApplicationContext> appContextFactory)
     {
-        _appContext = appContext;
+        _appContextFactory = appContextFactory;
     }
 
     public async Task<IReadOnlyCollection<WorkflowTaskExecutionEntity>> All(Guid workflowExecutionId, CancellationToken cancellationToken)
     {
-        var result = await _appContext.WorkflowTaskExecutions
-            .Where(c => c.WorkflowExecutionId == workflowExecutionId)
+        using var context = _appContextFactory.CreateDbContext();
+        var result = await context.WorkflowTaskExecutions
+            .Where(c => c.WorkflowExecutionId == workflowExecutionId && c.IsDeleted == false)
             .ToListAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
-
-        if (result.Count == 0)
-            throw new Exception("No workflow task executions found!");
 
         return result;
     }
 
     public async Task<WorkflowTaskExecutionEntity?> Get(Guid workflowTaskExecutionId, CancellationToken cancellationToken)
     {
-        return await _appContext.WorkflowTaskExecutions
-            .FirstOrDefaultAsync(x => x.Id == workflowTaskExecutionId, cancellationToken)
+        using var context = _appContextFactory.CreateDbContext();
+        return await context.WorkflowTaskExecutions
+            .FirstOrDefaultAsync(x => x.Id == workflowTaskExecutionId && x.IsDeleted == false, cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task<WorkflowTaskExecutionEntity?> Get(Guid workflowExecutionId, string taskName, CancellationToken cancellationToken)
     {
-        return await _appContext.WorkflowTaskExecutions
-            .FirstOrDefaultAsync(x => x.WorkflowExecutionId == workflowExecutionId && x.Name.ToLower() == taskName.ToLower(), cancellationToken)
+        using var context = _appContextFactory.CreateDbContext();
+        return await context.WorkflowTaskExecutions
+            .FirstOrDefaultAsync(x => x.WorkflowExecutionId == workflowExecutionId && x.Name.ToLower() == taskName.ToLower() && x.IsDeleted == false, 
+            cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Add(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, CancellationToken cancellationToken)
     {
-        await _appContext.WorkflowTaskExecutions
+        using var context = _appContextFactory.CreateDbContext();
+        await context.WorkflowTaskExecutions
             .AddAsync(workflowTaskExecutionEntity, cancellationToken)
             .ConfigureAwait(false);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task Update(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, CancellationToken cancellationToken)
     {
-        _appContext.WorkflowTaskExecutions.Update(workflowTaskExecutionEntity);
+        using var context = _appContextFactory.CreateDbContext();
+        context.Entry(workflowTaskExecutionEntity).State = EntityState.Detached;
+        context.WorkflowTaskExecutions.Update(workflowTaskExecutionEntity);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
     }
 
     public async Task<bool> Delete(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, CancellationToken cancellationToken)
     {
-        _appContext.WorkflowTaskExecutions.Remove(workflowTaskExecutionEntity);
+        using var context = _appContextFactory.CreateDbContext();
+        context.WorkflowTaskExecutions.Remove(workflowTaskExecutionEntity);
 
-        await _appContext
+        await context
             .SaveChangesAsync(cancellationToken)
             .ConfigureAwait(false);
 
@@ -76,7 +82,8 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            return await _appContext.Database.CanConnectAsync(cancellationToken);
+            using var context = _appContextFactory.CreateDbContext();
+            return await context.Database.CanConnectAsync(cancellationToken);
         }
         catch
         {

@@ -1,5 +1,6 @@
 ﻿using ConnectivityTestingLab.Application.Configurations;
 using FlowSynx.Application.Services;
+using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Persistence.Postgres.Seeder;
@@ -29,10 +30,11 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()
             .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()
             .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()
-            .AddDbContext<ApplicationContext>(options =>
+            .AddScoped<ITransactionService, TransactionService>()
+            .AddDbContextFactory<ApplicationContext>(options =>
             {
                 options.UseNpgsql(connectionString);
-            }, ServiceLifetime.Scoped);
+            });
         return services;
     }
 }

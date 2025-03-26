@@ -8,31 +8,38 @@ using FlowSynx.IO.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace FlowSynx.Application.Features.Workflows.Command.Add;
 
 internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<AddWorkflowResponse>>
 {
     private readonly ILogger<AddWorkflowHandler> _logger;
+    private readonly ITransactionService _transactionService;
     private readonly IWorkflowService _workflowService;
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IJsonDeserializer _jsonDeserializer;
+    private readonly IWorkflowValidator _workflowValidator;
 
-    public AddWorkflowHandler(ILogger<AddWorkflowHandler> logger, IWorkflowService workflowService,
-        IWorkflowTriggerService workflowTriggerService, ICurrentUserService currentUserService, 
-        IJsonDeserializer jsonDeserializer)
+    public AddWorkflowHandler(ILogger<AddWorkflowHandler> logger, ITransactionService transactionService,
+        IWorkflowService workflowService, IWorkflowTriggerService workflowTriggerService, 
+        ICurrentUserService currentUserService, IJsonDeserializer jsonDeserializer, 
+        IWorkflowValidator workflowValidator)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(transactionService);
         ArgumentNullException.ThrowIfNull(workflowService);
         ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _logger = logger;
+        _transactionService = transactionService;
         _workflowService = workflowService;
         _workflowTriggerService = workflowTriggerService;
         _currentUserService = currentUserService;
         _jsonDeserializer = jsonDeserializer;
+        _workflowValidator = workflowValidator;
     }
 
     public async Task<Result<AddWorkflowResponse>> Handle(AddWorkflowRequest request, CancellationToken cancellationToken)
@@ -50,6 +57,8 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             if (workflowDefinition.Name == null)
                 throw new Exception("Workflow name shold have value!");
 
+            ValidateWorkflow(workflowDefinition.Tasks);
+
             var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId, workflowDefinition.Name, cancellationToken);
             if (isWorkflowExist)
             {
@@ -66,24 +75,28 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 Definition = request.Definition,
             };
 
-            await _workflowService.Add(workflowEntity, cancellationToken);
-
-            foreach (var trigger in workflowDefinition.Configuration.Triggers)
+            await _transactionService.TransactionAsync(async () =>
             {
-                var workflowTrigger = new WorkflowTriggerEntity
+                await _workflowService.Add(workflowEntity, cancellationToken);
+
+                foreach (var trigger in workflowDefinition.Configuration.Triggers)
                 {
-                    Id = Guid.NewGuid(),
-                    WorkflowId = workflowEntity.Id,
-                    UserId = _currentUserService.UserId,
-                    Type = trigger.Type,
-                    Properties = trigger.Properties,
-                };
+                    var workflowTrigger = new WorkflowTriggerEntity
+                    {
+                        Id = Guid.NewGuid(),
+                        WorkflowId = workflowEntity.Id,
+                        UserId = _currentUserService.UserId,
+                        Type = trigger.Type,
+                        Status = WorkflowTriggerStatus.Active,
+                        Properties = trigger.Properties,
+                    };
 
-               await _workflowTriggerService.Add(workflowTrigger, cancellationToken);
-            }
+                    await _workflowTriggerService.Add(workflowTrigger, cancellationToken);
+                }
+            }, cancellationToken);
 
-            var response = new AddWorkflowResponse 
-            { 
+            var response = new AddWorkflowResponse
+            {
                 Id = workflowEntity.Id,
                 Name = workflowDefinition.Name,
             };
@@ -100,6 +113,32 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         catch (Exception ex)
         {
             return await Result<AddWorkflowResponse>.FailAsync(ex.Message);
+        }
+    }
+
+    private void ValidateWorkflow(List<WorkflowTask> workflowTasks)
+    {
+        var hasWorkflowPipelinesDuplicateNames = _workflowValidator.HasDuplicateNames(workflowTasks);
+        if (hasWorkflowPipelinesDuplicateNames)
+            throw new Exception("There is a duplicated pipeline name in the workflow pipelines.");
+
+        var missingDependencies = _workflowValidator.AllDependenciesExist(workflowTasks);
+        if (missingDependencies.Any())
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("Invalid workflow: missing dependencies.. There are list of missing dependencies:");
+            sb.AppendLine(string.Join(",", missingDependencies));
+            throw new Exception(sb.ToString());
+        }
+
+        var validation = _workflowValidator.CheckCyclic(workflowTasks);
+        if (validation.Cyclic)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic:");
+            sb.AppendLine(string.Join(" -> ", validation.CyclicNodes));
+
+            throw new Exception(sb.ToString());
         }
     }
 }

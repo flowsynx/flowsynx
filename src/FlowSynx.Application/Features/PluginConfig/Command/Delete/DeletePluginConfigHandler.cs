@@ -12,7 +12,7 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
     private readonly IPluginConfigurationService _pluginConfigurationService;
     private readonly ICurrentUserService _currentUserService;
 
-    public DeletePluginConfigHandler(ILogger<DeletePluginConfigHandler> logger, ICurrentUserService currentUserService,
+    public DeletePluginConfigHandler(ILogger<DeletePluginConfigHandler> logger, ICurrentUserService currentUserService, 
         IPluginConfigurationService pluginConfigurationService)
     {
         ArgumentNullException.ThrowIfNull(logger);
