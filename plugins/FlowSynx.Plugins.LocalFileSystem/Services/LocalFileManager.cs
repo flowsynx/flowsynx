@@ -8,7 +8,7 @@ using System.Text;
 
 namespace FlowSynx.Plugins.LocalFileSystem.Services;
 
-public class LocalFileManager : ILocalFileManager
+internal class LocalFileManager : ILocalFileManager
 {
     private readonly ILogger _logger;
     public LocalFileManager(ILogger logger)

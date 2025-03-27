@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Plugins.LocalFileSystem.Models;
 
-public class WriteParameters
+internal class WriteParameters
 {
     public string? Path { get; set; }
     public object? Data { get; set; }

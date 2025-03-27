@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Plugins.LocalFileSystem.Models;
 
-public class LocalFileEntity
+internal class LocalFileEntity
 {
     public string Key { get; set; }
     public string Path { get; set; }

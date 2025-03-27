@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Plugins.LocalFileSystem.Models;
 
-public class ExistParameters
+internal class ExistParameters
 {
     public string Path { get; set; } = string.Empty;
 }

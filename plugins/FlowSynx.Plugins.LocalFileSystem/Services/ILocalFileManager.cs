@@ -2,7 +2,7 @@
 
 namespace FlowSynx.Plugins.LocalFileSystem.Services;
 
-public interface ILocalFileManager
+internal interface ILocalFileManager
 {
     Task Create(PluginParameters parameters);
     Task Delete(PluginParameters parameters);

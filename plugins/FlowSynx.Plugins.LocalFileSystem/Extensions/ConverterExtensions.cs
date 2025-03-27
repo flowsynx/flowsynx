@@ -3,7 +3,7 @@ using FlowSynx.Plugins.LocalFileSystem;
 
 namespace FlowSynx.Plugins.Storage.LocalFileSystem.Extensions;
 
-static class ConverterExtensions
+internal static class ConverterExtensions
 {
     public static PluginContextData ToContextData(this FileInfo file, bool? includeMetadata)
     {

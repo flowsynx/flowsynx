@@ -2,7 +2,7 @@
 
 namespace FlowSynx.Plugins.LocalFileSystem.Extensions;
 
-public static class ByteExtensions
+internal static class ByteExtensions
 {
     public static string ToBase64String(this byte[]? bytes)
     {

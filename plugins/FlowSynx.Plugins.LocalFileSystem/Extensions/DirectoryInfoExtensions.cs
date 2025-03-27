@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace FlowSynx.Plugins.LocalFileSystem.Extensions;
 
-public static class DirectoryInfoExtensions
+internal static class DirectoryInfoExtensions
 {
     public static IEnumerable<FileInfo> FindFiles(this DirectoryInfo directoryInfo, ILogger logger, ListParameters listParameters)
     {
