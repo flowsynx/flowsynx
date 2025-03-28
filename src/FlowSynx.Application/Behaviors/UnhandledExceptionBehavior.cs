@@ -4,11 +4,11 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Behaviors;
 
-public class UnhandledExceptionBehaviour<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
+public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse> where TRequest : notnull
 {
-    private readonly ILogger<TRequest> _logger;
+    private readonly ILogger<UnhandledExceptionBehavior<TRequest, TResponse>> _logger;
 
-    public UnhandledExceptionBehaviour(ILogger<TRequest> logger)
+    public UnhandledExceptionBehavior(ILogger<UnhandledExceptionBehavior<TRequest, TResponse>> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
@@ -19,12 +19,6 @@ public class UnhandledExceptionBehaviour<TRequest, TResponse> : IPipelineBehavio
         try
         {
             return await next();
-        }
-        catch (InputValidationException ive)
-        {
-            var requestName = typeof(TRequest).Name;
-            _logger.LogWarning("Validation error occurred in request '{RequestName}'\r\n\tRequestPayload: {@RequestPayload}\r\n\tErrors: {@Errors}.", requestName, request, ive.Errors);
-            throw;
         }
         catch (Exception e)
         {
