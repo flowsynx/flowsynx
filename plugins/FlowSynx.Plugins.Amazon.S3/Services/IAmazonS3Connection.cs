@@ -1,7 +1,7 @@
 ﻿using Amazon.S3;
-using FlowSynx.Connectors.Storage.Amazon.S3.Models;
+using FlowSynx.Plugins.Amazon.S3.Models;
 
-namespace FlowSynx.Connectors.Storage.Amazon.S3.Services;
+namespace FlowSynx.Plugins.Amazon.S3.Services;
 
 public interface IAmazonS3Connection
 {

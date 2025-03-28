@@ -1,92 +1,73 @@
 ﻿using Amazon.S3.Model;
 using Amazon.S3;
-using FlowSynx.IO;
+using FlowSynx.PluginCore;
+using System.Text;
 
-namespace FlowSynx.Connectors.Storage.Amazon.S3.Extensions;
+namespace FlowSynx.Plugins.Amazon.S3.Extensions;
 
 internal static class ConverterExtensions
 {
     private const string MetaDataHeaderPrefix = "x-amz-meta-";
 
-    public static StorageEntity ToEntity(this string bucketName, bool? includeMetadata)
-    {
-        var entity = new StorageEntity(bucketName, StorageEntityItemKind.Directory)
-        {
-            Size = 0
-        };
-
-        if (includeMetadata is true)
-        {
-            entity.Metadata["IsBucket"] = true;
-        }
-
-        return entity;
-    }
-
-    public static IReadOnlyCollection<StorageEntity> ToEntity(this ListObjectsV2Response response,
-        AmazonS3Client client, string bucketName, bool? includeMetadata, CancellationToken cancellationToken)
-    {
-        var result = new List<StorageEntity>();
-        result.AddRange((response.S3Objects
-            .Where(obj => !obj.Key.EndsWith(PathHelper.PathSeparator))
-            .Select(obj => obj.ToEntity(client, bucketName, includeMetadata, cancellationToken))));
-
-        result.AddRange(response.CommonPrefixes
-            .Where(prefix => !PathHelper.IsRootPath(prefix))
-            .Select(prefix => prefix.ToEntity(bucketName, includeMetadata)));
-
-        return result;
-    }
-
-    public static StorageEntity ToEntity(this S3Object s3Obj, AmazonS3Client client, string bucketName,
+    public static async Task<PluginContextData> ToContextData(this AmazonS3Client client, string bucketName, string key,
         bool? includeMetadata, CancellationToken cancellationToken)
     {
-        var fullPath = PathHelper.Combine(bucketName, s3Obj.Key);
-        StorageEntity entity = s3Obj.Key.EndsWith(PathHelper.PathSeparator)
-            ? new StorageEntity(fullPath, StorageEntityItemKind.Directory)
-            : new StorageEntity(fullPath, StorageEntityItemKind.File);
+        var request = new GetObjectRequest { BucketName = bucketName, Key = key };
+        var response = await client.GetObjectAsync(request, cancellationToken).ConfigureAwait(false);
 
-        entity.Size = s3Obj.Size;
-        entity.ModifiedTime = s3Obj.LastModified.ToUniversalTime();
+        var ms = new MemoryStream();
+        await response.ResponseStream.CopyToAsync(ms, cancellationToken);
+        ms.Seek(0, SeekOrigin.Begin);
 
-        if (includeMetadata is true)
+        var dataBytes = ms.ToArray();
+        var isBinaryFile = IsBinaryFile(dataBytes);
+        var rawData = isBinaryFile ? dataBytes : null;
+        var content = !isBinaryFile ? Encoding.UTF8.GetString(dataBytes) : null;
+
+        PluginContextData entity = new PluginContextData(response.Key, "File")
         {
-            entity.Metadata["ContentHash"] = s3Obj.ETag.Trim('\"');
-            entity.Metadata["StorageClass"] = s3Obj.StorageClass;
-            entity.Metadata["ETag"] = s3Obj.ETag;
-            AddProperties(client, s3Obj.BucketName, s3Obj.Key, entity, cancellationToken);
-        }
-
-        return entity;
-    }
-
-    public static StorageEntity ToEntity(this string prefix, string bucketName, bool? includeMetadata)
-    {
-        var fullPath = PathHelper.Combine(bucketName, prefix);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory)
-        {
-            Size = 0
+            RawData = rawData,
+            Content = content
         };
 
         if (includeMetadata is true)
         {
-            entity.Metadata["IsDirectory"] = true;
+            entity.TryAddMetadata("Length", response.ContentLength);
+            entity.TryAddMetadata("ModifiedTime", response.LastModified.ToUniversalTime());
+            entity.TryAddMetadata("ContentHash", response.ETag.Trim('\"'));
+            entity.TryAddMetadata("StorageClass", response.StorageClass);
+            entity.TryAddMetadata("ETag", response.ETag);
+            AddProperties(client, response.BucketName, response.Key, entity, cancellationToken);
         }
 
         return entity;
     }
 
-    private static async void AddProperties(AmazonS3Client client, string bucketName, string key, 
-        StorageEntity entity, CancellationToken cancellationToken)
+    private static bool IsBinaryFile(byte[] data, int sampleSize = 1024)
+    {
+        if (data == null || data.Length == 0)
+            return false;
+
+        int checkLength = Math.Min(sampleSize, data.Length);
+        int nonPrintableCount = data.Take(checkLength)
+            .Count(b => (b < 8 || (b > 13 && b < 32)) && b != 9 && b != 10 && b != 13);
+
+        double threshold = 0.1; // 10% threshold of non-printable characters
+        return (double)nonPrintableCount / checkLength > threshold;
+    }
+
+    private static async void AddProperties(AmazonS3Client client, string bucketName, string key,
+        PluginContextData entity, CancellationToken cancellationToken)
     {
         GetObjectMetadataResponse obj = await client.GetObjectMetadataAsync(bucketName, key, cancellationToken).ConfigureAwait(false);
         if (obj != null)
         {
+            entity.Format = obj.Headers.ContentType;
             AddProperties(entity, obj.Metadata);
         }
     }
 
-    private static void AddProperties(StorageEntity entity, MetadataCollection metadata)
+    private static void AddProperties(PluginContextData contextData, MetadataCollection metadata)
     {
         foreach (string key in metadata.Keys)
         {
@@ -95,7 +76,7 @@ internal static class ConverterExtensions
             if (putKey.StartsWith(MetaDataHeaderPrefix))
                 putKey = putKey[MetaDataHeaderPrefix.Length..];
 
-            entity.Metadata[putKey] = value;
+            contextData.TryAddMetadata(putKey,value);
         }
     }
 }

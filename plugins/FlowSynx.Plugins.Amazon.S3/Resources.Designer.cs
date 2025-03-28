@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FlowSynx.Connectors.Amazon.S3 {
+namespace FlowSynx.Plugins.Amazon.S3 {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace FlowSynx.Connectors.Amazon.S3 {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FlowSynx.Connectors.Amazon.S3.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FlowSynx.Plugins.Amazon.S3.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

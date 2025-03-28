@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.Amazon.S3\FlowSynx.Plugins.Amazon.S3.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj" />
     <ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
   </ItemGroup>

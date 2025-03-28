@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Connectors.Storage.Amazon.S3.Models;
+﻿namespace FlowSynx.Plugins.Amazon.S3.Models;
 
 internal class AmazonS3EntityPart
 {

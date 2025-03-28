@@ -1,9 +1,8 @@
-﻿using FlowSynx.Abstractions.Attributes;
-using FlowSynx.Connectors.Abstractions;
+﻿using FlowSynx.PluginCore;
 
-namespace FlowSynx.Connectors.Storage.Amazon.S3.Models;
+namespace FlowSynx.Plugins.Amazon.S3.Models;
 
-public class AmazonS3Specifications : Specifications
+public class AmazonS3Specifications : PluginSpecifications
 {
     [RequiredMember]
     public string AccessKey { get; set; } = string.Empty;
@@ -13,6 +12,9 @@ public class AmazonS3Specifications : Specifications
 
     [RequiredMember]
     public string Region { get; set; } = string.Empty;
+
+    [RequiredMember]
+    public string Bucket { get; set; } = string.Empty;
 
     public string SessionToken { get; set; } = string.Empty;
 }
