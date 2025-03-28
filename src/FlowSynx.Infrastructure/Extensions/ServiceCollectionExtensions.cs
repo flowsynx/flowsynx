@@ -5,6 +5,7 @@ using FlowSynx.PluginCore;
 using FlowSynx.Plugins.LocalFileSystem;
 using FlowSynx.Infrastructure.Workflow;
 using FlowSynx.Plugins.Amazon.S3;
+using FlowSynx.Plugins.Azure.Blobs;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -47,6 +48,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<Plugin, LocalFileSystemPlugin>();
         services.AddScoped<Plugin, AmazonS3Plugin>();
+        services.AddScoped<Plugin, AzureBlobPlugin>();
         return services;
     }
 }

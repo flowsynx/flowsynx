@@ -1,18 +1,18 @@
 ﻿using Azure.Storage;
 using Azure.Storage.Blobs;
-using FlowSynx.Connectors.Storage.Azure.Blobs.Models;
-using FlowSynx.Connectors.Storage.Exceptions;
+using FlowSynx.Plugins.Azure.Blobs.Models;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
+namespace FlowSynx.Plugins.Azure.Blobs.Services;
 
 public class AzureBlobConnection: IAzureBlobConnection
 {
    public BlobServiceClient Connect(AzureBlobSpecifications specifications)
     {
         if (string.IsNullOrEmpty(specifications.AccountKey) || string.IsNullOrEmpty(specifications.AccountName))
-            throw new StorageException(Resources.PropertiesShouldHaveValue);
+            throw new Exception(Resources.PropertiesShouldHaveValue);
 
-        var uri = new Uri($"https://{specifications.AccountName}.blob.core.windows.net");
+        var uriString = $"https://{specifications.AccountName}.blob.core.windows.net";
+        var uri = new Uri(uriString);
         var credential = new StorageSharedKeyCredential(specifications.AccountName, specifications.AccountKey);
         return new BlobServiceClient(serviceUri: uri, credential: credential);
     }

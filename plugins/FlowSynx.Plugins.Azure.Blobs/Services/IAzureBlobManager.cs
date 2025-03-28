@@ -1,32 +1,14 @@
-﻿using FlowSynx.Connectors.Abstractions;
-using FlowSynx.Data;
-using FlowSynx.IO.Compression;
+﻿using FlowSynx.PluginCore;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs.Services;
+namespace FlowSynx.Plugins.Azure.Blobs.Services;
 
 public interface IAzureBlobManager
 {
-    Task Create(Context context, CancellationToken cancellationToken);
-
-    Task Write(Context context, CancellationToken cancellationToken);
-
-    Task<InterchangeData> Read(Context context, CancellationToken cancellationToken);
-
-    Task Update(Context context, CancellationToken cancellationToken);
-
-    Task Delete(Context context, CancellationToken cancellationToken);
-
-    Task<bool> Exist(Context context, CancellationToken cancellationToken);
-
-    Task<InterchangeData> FilteredEntities(Context context, CancellationToken cancellationToken);
-
-    public Task Transfer(Context context, CancellationToken cancellationToken);
-
-    //Task Transfer(Namespace @namespace, string type, Context sourceContext, Context destinationContext,
-    //    TransferKind transferKind, CancellationToken cancellationToken);
-
-    //Task ProcessTransfer(Context context, TransferData transferData,
-    //    TransferKind transferKind, CancellationToken cancellationToken);
-
-    Task<IEnumerable<CompressEntry>> Compress(Context context, CancellationToken cancellationToken);
+    Task Create(PluginParameters parameters, CancellationToken cancellationToken);
+    Task Delete(PluginParameters parameters, CancellationToken cancellationToken);
+    Task<bool> Exist(PluginParameters parameters, CancellationToken cancellationToken);
+    Task<IEnumerable<PluginContextData>> List(PluginParameters parameters, CancellationToken cancellationToken);
+    Task Purge(PluginParameters parameters, CancellationToken cancellationToken);
+    Task<PluginContextData> Read(PluginParameters parameters, CancellationToken cancellationToken);
+    Task Write(PluginParameters parameters, CancellationToken cancellationToken);
 }

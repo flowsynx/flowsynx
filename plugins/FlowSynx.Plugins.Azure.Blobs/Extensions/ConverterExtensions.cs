@@ -1,123 +1,80 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using FlowSynx.IO;
+using FlowSynx.PluginCore;
+using System.Text;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs.Extensions;
+namespace FlowSynx.Plugins.Azure.Blobs.Extensions;
 
 internal static class ConverterExtensions
 {
-    public static StorageEntity ToEntity(this BlobContainerClient client, bool? includeMetadata)
+    public static async Task<PluginContextData> ToContextData(this BlobClient blobClient, bool? includeMetadata,
+        CancellationToken cancellationToken)
     {
-        var entity = new StorageEntity(client.Name, StorageEntityItemKind.Directory)
+        BlobDownloadInfo download = await blobClient.DownloadAsync(cancellationToken);
+
+        var ms = new MemoryStream();
+        await download.Content.CopyToAsync(ms, cancellationToken);
+        ms.Seek(0, SeekOrigin.Begin);
+
+        var dataBytes = ms.ToArray();
+        var isBinaryFile = IsBinaryFile(dataBytes);
+        var rawData = isBinaryFile ? dataBytes : null;
+        var content = !isBinaryFile ? Encoding.UTF8.GetString(dataBytes) : null;
+
+        var entity = new PluginContextData(blobClient.Name, "File")
         {
-            Size = 0
+            RawData = rawData,
+            Content = content,
         };
 
         if (includeMetadata is true)
         {
-            entity.Metadata["IsContainer"] = true;
-            if (client.Name == "$logs")
-            {
-                entity.Metadata["IsLogsContainer"] = true;
-            }
+            var blobProperties = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            AddProperties(entity, blobProperties);
         }
 
         return entity;
     }
 
-    public static StorageEntity ToEntity(this BlobHierarchyItem item, string containerName, bool? includeMetadata)
+    private static bool IsBinaryFile(byte[] data, int sampleSize = 1024)
     {
-        var fullPath = PathHelper.Combine(containerName, item.Blob.Name);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.File)
-        {
-            Size = item.Blob.Properties.ContentLength,
-            CreatedTime = item.Blob.Properties.CreatedOn,
-            ModifiedTime = item.Blob.Properties.LastModified
-        };
+        if (data == null || data.Length == 0)
+            return false;
 
-        if (includeMetadata is true)
-            AddProperties(entity, item.Blob.Properties);
+        int checkLength = Math.Min(sampleSize, data.Length);
+        int nonPrintableCount = data.Take(checkLength)
+            .Count(b => (b < 8 || (b > 13 && b < 32)) && b != 9 && b != 10 && b != 13);
 
-        return entity;
+        double threshold = 0.1; // 10% threshold of non-printable characters
+        return (double)nonPrintableCount / checkLength > threshold;
     }
 
-    public static StorageEntity ToEntity(this BlobHierarchyItem item, string containerName)
+    private static void AddProperties(PluginContextData entity, BlobProperties properties)
     {
-        var fullPath = PathHelper.Combine(containerName, item.Prefix);
-        var entity = new StorageEntity(fullPath, StorageEntityItemKind.Directory);
-        return entity;
-    }
-
-    private static void AddProperties(StorageEntity entity, BlobItemProperties properties)
-    {
-        if (properties.AccessTier.HasValue)
-            entity.Metadata.Add("AccessTier", properties.AccessTier);
-
-        if (properties.AccessTierChangedOn.HasValue)
-            entity.Metadata.Add("AccessTierChangedOn", properties.AccessTierChangedOn);
-
+        entity.Metadata.Add("AccessTier", properties.AccessTier);
+        entity.Metadata.Add("AccessTierChangedOn", properties.AccessTierChangedOn);
         entity.Metadata.Add("AccessTierInferred", properties.AccessTierInferred);
-
-        if (properties.BlobSequenceNumber.HasValue)
-            entity.Metadata.Add("BlobSequenceNumber", properties.BlobSequenceNumber);
-
-        if (properties.BlobType.HasValue)
-            entity.Metadata.Add("BlobType", properties.BlobType);
-
+        entity.Metadata.Add("BlobSequenceNumber", properties.BlobSequenceNumber);
+        entity.Metadata.Add("BlobType", properties.BlobType);
         entity.Metadata.Add("CacheControl", properties.CacheControl);
         entity.Metadata.Add("ContentDisposition", properties.ContentDisposition);
         entity.Metadata.Add("ContentEncoding", properties.ContentEncoding);
         entity.Metadata.Add("ContentHash", properties.ContentHash.ToHexString());
         entity.Metadata.Add("ContentLanguage", properties.ContentLanguage);
-        entity.Metadata.Add("CustomerProvidedKeySha256", properties.CustomerProvidedKeySha256);
-
-        if (properties.ContentLength.HasValue)
-            entity.Metadata.Add("ContentLength", properties.ContentLength);
-
+        entity.Metadata.Add("ContentLength", properties.ContentLength);
         entity.Metadata.Add("ContentType", properties.ContentType);
-
-        if (properties.CopyCompletedOn.HasValue)
-            entity.Metadata.Add("CopyCompletedOn", properties.CopyCompletedOn);
-
+        entity.Metadata.Add("CopyCompletedOn", properties.CopyCompletedOn);
         entity.Metadata.Add("CopyId", properties.CopyId);
         entity.Metadata.Add("CopyProgress", properties.CopyProgress);
         entity.Metadata.Add("CopySource", properties.CopySource);
-
-        if (properties.CopyStatus.HasValue)
-            entity.Metadata.Add("CopyStatus", properties.CopyStatus);
-
+        entity.Metadata.Add("CopyStatus", properties.CopyStatus);
         entity.Metadata.Add("CopyStatusDescription", properties.CopyStatusDescription);
-
-        if (properties.CreatedOn.HasValue)
-            entity.Metadata.Add("CreatedOn", properties.CreatedOn);
-
-        if (properties.DeletedOn.HasValue)
-            entity.Metadata.Add("DeletedOn", properties.DeletedOn);
-
+        entity.Metadata.Add("CreatedOn", properties.CreatedOn);
         entity.Metadata.Add("DestinationSnapshot", properties.DestinationSnapshot);
-
-        if (properties.ETag.HasValue)
-            entity.Metadata.Add("ETag", properties.ETag);
-
-        if (properties.IncrementalCopy.HasValue)
-            entity.Metadata.Add("IncrementalCopy", properties.IncrementalCopy);
-
-        if (properties.LastModified.HasValue)
-            entity.Metadata.Add("LastModified", properties.LastModified);
-
-        if (properties.LeaseDuration.HasValue)
-            entity.Metadata.Add("LeaseDuration", properties.LeaseDuration);
-
-        if (properties.LeaseState.HasValue)
-            entity.Metadata.Add("LeaseState", properties.LeaseState);
-
-        if (properties.LeaseStatus.HasValue)
-            entity.Metadata.Add("LeaseStatus", properties.LeaseStatus);
-
-        if (properties.RemainingRetentionDays.HasValue)
-            entity.Metadata.Add("RemainingRetentionDays", properties.RemainingRetentionDays);
-
-        if (properties.ServerEncrypted.HasValue)
-            entity.Metadata.Add("ServerEncrypted", properties.ServerEncrypted);
+        entity.Metadata.Add("ETag", properties.ETag);
+        entity.Metadata.Add("LastModified", properties.LastModified);
+        entity.Metadata.Add("LeaseDuration", properties.LeaseDuration);
+        entity.Metadata.Add("LeaseState", properties.LeaseState);
+        entity.Metadata.Add("LeaseStatus", properties.LeaseStatus);
     }
 }

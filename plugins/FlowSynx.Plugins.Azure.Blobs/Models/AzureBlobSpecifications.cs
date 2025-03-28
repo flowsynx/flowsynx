@@ -1,9 +1,8 @@
-﻿using FlowSynx.Abstractions.Attributes;
-using FlowSynx.Connectors.Abstractions;
+﻿using FlowSynx.PluginCore;
 
-namespace FlowSynx.Connectors.Storage.Azure.Blobs.Models;
+namespace FlowSynx.Plugins.Azure.Blobs.Models;
 
-public class AzureBlobSpecifications : Specifications
+public class AzureBlobSpecifications : PluginSpecifications
 {
     [RequiredMember]
     public string AccountName { get; set; } = string.Empty;
@@ -11,4 +10,6 @@ public class AzureBlobSpecifications : Specifications
     [RequiredMember]
     public string AccountKey { get; set; } = string.Empty;
 
+    [RequiredMember]
+    public string ContainerName { get; set; } = string.Empty;
 }

@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FlowSynx.Connectors.Azure.Blobs {
+namespace FlowSynx.Plugins.Azure.Blobs {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace FlowSynx.Connectors.Azure.Blobs {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FlowSynx.Connectors.Azure.Blobs.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FlowSynx.Plugins.Azure.Blobs.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
