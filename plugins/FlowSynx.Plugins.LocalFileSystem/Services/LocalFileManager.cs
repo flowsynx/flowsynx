@@ -261,8 +261,11 @@ internal class LocalFileManager : ILocalFileManager
         else
             throw new InvalidDataException($"The entered data is invalid for '{contextData.Id}'");
 
-        var root = Path.GetPathRoot(contextData.Id);
-        var relativePath = Path.GetRelativePath(root, contextData.Id);
+        var rootPath = Path.GetPathRoot(contextData.Id);
+        string relativePath = contextData.Id;
+
+        if (!string.IsNullOrEmpty(rootPath))
+            relativePath = Path.GetRelativePath(rootPath, contextData.Id);
 
         var fullPath = PathHelper.IsDirectory(path) ? Path.Combine(path, relativePath) : path;
 
