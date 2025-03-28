@@ -1,5 +1,6 @@
 ﻿using FlowSynx.PluginCore;
 using FlowSynx.Plugins.LocalFileSystem;
+using System.Text;
 
 namespace FlowSynx.Plugins.Storage.LocalFileSystem.Extensions;
 
@@ -7,9 +8,10 @@ internal static class ConverterExtensions
 {
     public static PluginContextData ToContextData(this FileInfo file, bool? includeMetadata)
     {
-        var isBinaryFile = IsBinaryFile(file.FullName);
-        var rawData = isBinaryFile ? File.ReadAllBytes(file.FullName) : null;
-        var content = !isBinaryFile ? File.ReadAllText(file.FullName) : null;
+        var dataBytes = File.ReadAllBytes(file.FullName);
+        var isBinaryFile = IsBinaryFile(dataBytes);
+        var rawData = isBinaryFile ? dataBytes : null;
+        var content = !isBinaryFile ? Encoding.UTF8.GetString(dataBytes) : null;
 
         var entity = new PluginContextData(PathHelper.ToUnixPath(file.FullName), "File")
         {
@@ -28,20 +30,16 @@ internal static class ConverterExtensions
         return entity;
     }
 
-    private static bool IsBinaryFile(this string filePath, int sampleSize = 1024)
+    private static bool IsBinaryFile(byte[] data, int sampleSize = 1024)
     {
-        byte[] buffer = new byte[sampleSize];
-        int bytesRead;
+        if (data == null || data.Length == 0)
+            return false;
 
-        using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read))
-        {
-            bytesRead = fs.Read(buffer, 0, buffer.Length);
-        }
+        int checkLength = Math.Min(sampleSize, data.Length);
+        int nonPrintableCount = data.Take(checkLength)
+            .Count(b => (b < 8 || (b > 13 && b < 32)) && b != 9 && b != 10 && b != 13);
 
-        // Define printable ASCII range (9 = Tab, 10 = LF, 13 = CR)
-        int nonPrintableThreshold = 5; // Allow a few non-printable characters
-        int nonPrintableCount = buffer.Take(bytesRead).Count(b => (b < 9 || (b > 13 && b < 32)) && b != 127);
-
-        return nonPrintableCount > nonPrintableThreshold;
+        double threshold = 0.1; // 10% threshold of non-printable characters
+        return (double)nonPrintableCount / checkLength > threshold;
     }
 }
