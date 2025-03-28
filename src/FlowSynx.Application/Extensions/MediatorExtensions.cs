@@ -20,60 +20,6 @@ namespace FlowSynx.Application.Extensions;
 
 public static class MediatorExtensions
 {
-    //#region Connectors
-    //public static Task<Result<object>> About(this IMediator mediator, AboutRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<InterchangeData>> List(this IMediator mediator, ListRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<Unit>> Write(this IMediator mediator, WriteRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<InterchangeData>> Read(this IMediator mediator, ReadRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<Unit>> Delete(this IMediator mediator, DeleteRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<object>> Exist(this IMediator mediator, ExistRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<Unit>> Create(this IMediator mediator, CreateRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<Unit>> Transfer(this IMediator mediator, TransferRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-
-    //public static Task<Result<CompressResult>> Compress(this IMediator mediator, CompressRequest request, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(request, cancellationToken);
-    //}
-    //#endregion
-
-    //#region Workflow
-    //public static Task<Result<object?>> Workflow(this IMediator mediator, WorkflowRequest workflow, CancellationToken cancellationToken)
-    //{
-    //    return mediator.Send(workflow, cancellationToken);
-    //}
-    //#endregion
-
     #region Workflow
     public static Task<Result<IEnumerable<WorkflowListResponse>>> Workflows(this IMediator mediator, 
         CancellationToken cancellationToken)
