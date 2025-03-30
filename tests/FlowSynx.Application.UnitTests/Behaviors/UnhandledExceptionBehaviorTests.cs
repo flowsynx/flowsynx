@@ -3,6 +3,8 @@ using MediatR;
 using FlowSynx.Application.Behaviors;
 using Microsoft.Extensions.Logging.Testing;
 using Moq;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.UnitTests.Behaviors;
 
@@ -26,11 +28,11 @@ public class UnhandledExceptionBehaviorTests
         var request = new TestRequest();
         var cancellationToken = CancellationToken.None;
 
-        var exception = new InvalidOperationException("Test exception");
+        var exception = new FlowSynxException((int)ErrorCode.BehaviorUnhandledException, "Test exception");
         _nextMock.Setup(x => x()).ThrowsAsync(exception);
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var ex = await Assert.ThrowsAsync<FlowSynxException>(async () =>
             await _behavior.Handle(request, _nextMock.Object, cancellationToken));
 
         // Assert

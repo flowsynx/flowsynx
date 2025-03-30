@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Behaviors;
 using Microsoft.Extensions.Logging.Testing;
 using Moq;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.UnitTests;
 
@@ -67,11 +69,11 @@ public class PerformanceBehaviorTests
         var testRequest = new TestRequest();
         var testResponse = new TestResponse();
 
-        var exception = new InvalidOperationException("Test exception");
+        var exception = new FlowSynxException((int)ErrorCode.BehaviorPerformanceError, "Test exception");
         _nextMock.Setup(x => x()).ThrowsAsync(exception);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        await Assert.ThrowsAsync<FlowSynxException>(async () =>
             await _behavior.Handle(testRequest, _nextMock.Object, CancellationToken.None));
 
         // Assert

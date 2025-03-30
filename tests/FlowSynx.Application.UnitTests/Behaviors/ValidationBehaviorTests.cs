@@ -3,7 +3,6 @@ using FluentValidation;
 using MediatR;
 using Moq;
 using FlowSynx.Application.Behaviors;
-using FlowSynx.Application.Exceptions;
 using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.UnitTests.Behaviors;
