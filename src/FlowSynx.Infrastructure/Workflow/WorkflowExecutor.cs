@@ -1,9 +1,10 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Entities.Workflow;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.IO.Exceptions;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -110,17 +111,17 @@ public class WorkflowExecutor : IWorkflowExecutor
         {
             return _jsonDeserializer.Deserialize<WorkflowDefinition>(workFlowDefinition);
         }
-        catch (JsonDeserializerException ex)
+        catch (FlowSynxException ex) when (ex.ErrorCode == (int)ErrorCode.Serialization)
         {
-            throw new Exception($"Json deserialization error: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.Serialization, $"Json deserialization error: {ex.Message}");
         }
         catch (JsonReaderException ex)
         {
-            throw new Exception($"Reader Error at Line {ex.LineNumber}, Position {ex.LinePosition}: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.Serialization, $"Reader Error at Line {ex.LineNumber}, Position {ex.LinePosition}: {ex.Message}");
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.ToString());
+            throw new FlowSynxException((int)ErrorCode.Serialization, ex.ToString());
         }
     }
 

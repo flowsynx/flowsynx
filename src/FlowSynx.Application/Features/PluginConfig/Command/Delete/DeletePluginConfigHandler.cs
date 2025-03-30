@@ -1,6 +1,8 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -30,14 +32,15 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
             var configId = Guid.Parse(request.Id);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfiguration == null)
-                throw new Exception("The config not found");
+                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"The config '{configId}' not found");
 
             var deleteResult = await _pluginConfigurationService.Delete(pluginConfiguration, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<Unit>.FailAsync(new List<string> { ex.ToString() });
         }
     }
 }

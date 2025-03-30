@@ -1,5 +1,7 @@
-﻿using FlowSynx.Domain.Entities.Log;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
@@ -94,8 +96,7 @@ internal class DatabaseLogger : ILogger, IDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine(ex.Message);
-            throw;
+            throw new FlowSynxException((int)ErrorCode.LogAdd, ex.Message);
         }
     }
 

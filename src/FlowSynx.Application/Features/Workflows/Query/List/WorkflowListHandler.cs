@@ -1,7 +1,9 @@
 ﻿using FlowSynx.Application.Features.PluginConfig.Query.List;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +34,7 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             var workflows = await _workflowService.All(_currentUserService.UserId, cancellationToken);
             var response = workflows.Select(workflow => new WorkflowListResponse
@@ -45,9 +47,10 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
             _logger.LogInformation("Plugin Config List is got successfully.");
             return await Result<IEnumerable<WorkflowListResponse>>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<IEnumerable<WorkflowListResponse>>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<IEnumerable<WorkflowListResponse>>.FailAsync(ex.ToString());
         }
     }
 }

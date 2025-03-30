@@ -1,16 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Persistence.Postgres.Contexts;
+using Microsoft.Extensions.Logging;
+using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 
 public class TransactionService : ITransactionService
 {
     private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
+    private readonly ILogger<TransactionService> _logger;
 
-    public TransactionService(IDbContextFactory<ApplicationContext> dbContextFactory)
+    public TransactionService(IDbContextFactory<ApplicationContext> dbContextFactory,
+        ILogger<TransactionService> logger)
     {
         _appContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
+        _logger = logger;
     }
 
     public async Task TransactionAsync(Func<Task> action, CancellationToken cancellationToken)
@@ -23,10 +29,12 @@ public class TransactionService : ITransactionService
             await action();
             await transaction.CommitAsync(cancellationToken);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
             await transaction.RollbackAsync(cancellationToken);
-            throw;
+            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseTransaction, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
         finally
         {

@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using FlowSynx.Application.Services;
 using FlowSynx.PluginCore;
-using FlowSynx.Application.Exceptions;
 using Microsoft.Extensions.Logging;
-using System;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Infrastructure.Services;
 
@@ -36,8 +36,9 @@ public class PluginService : IPluginService
             return Task.FromResult(activatePlugin);
         }
 
-        _logger.LogError($"Plugin with id '{pluginId}' could not found!");
-        throw new PluginServiceException(string.Format(Resources.PluginServiceCouldNotFoundPlugin, pluginId));
+        var exception = new FlowSynxException((int)ErrorCode.PluginNotFound, $"Plugin with id '{pluginId}' could not found!");
+        _logger.LogError(exception.ToString());
+        throw exception;
     }
 
     public Task<Plugin> Get(string type, CancellationToken cancellationToken)
@@ -50,8 +51,10 @@ public class PluginService : IPluginService
             return Task.FromResult(activatePlugin);
         }
 
-        _logger.LogError($"Connector {type} could not found!");
-        throw new PluginServiceException(string.Format(Resources.PluginServiceCouldNotFoundPlugin, type));
+        var message = string.Format(Resources.PluginServiceCouldNotFoundPlugin, type);
+        var exception = new FlowSynxException((int)ErrorCode.PluginTypeNotFound, message);
+        _logger.LogError(exception.ToString());
+        throw exception;
     }
 
     public async Task<bool> IsExist(string type, CancellationToken cancellationToken)

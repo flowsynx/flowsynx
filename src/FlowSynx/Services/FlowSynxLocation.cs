@@ -1,4 +1,6 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Services;
 
@@ -24,9 +26,21 @@ public class FlowSynxLocation : ILocation
     #region MyRegion
     private string GetRootLocation()
     {
-        if (_rootLocation is not null) return _rootLocation;
-        _logger.LogError("Root location not found");
-        throw new Exception(Resources.FlowSynxLocationRootLocationNotFound);
+        try
+        {
+            if (_rootLocation is not null) 
+                return _rootLocation;
+
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationLocation, Resources.FlowSynxLocationRootLocationNotFound);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationLocation, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
     }
     #endregion
 }

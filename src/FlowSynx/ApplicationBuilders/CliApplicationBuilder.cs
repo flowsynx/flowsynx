@@ -2,6 +2,7 @@
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using FlowSynx.Models;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.ApplicationBuilders;
 
@@ -36,6 +37,11 @@ public class CliApplicationBuilder : ICliApplicationBuilder
 
             var parser = commandLineBuilder.Build();
             return await parser.InvokeAsync(args);
+        }
+        catch (FlowSynxException ex)
+        {
+            _logger.LogError(ex.ToString());
+            return ExitCode.Error;
         }
         catch (Exception ex)
         {

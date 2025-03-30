@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using FlowSynx.Application.Models;
-using FlowSynx.IO.Exceptions;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Infrastructure.Services;
 
@@ -29,7 +29,7 @@ public class JsonDeserializer : IJsonDeserializer
             if (string.IsNullOrWhiteSpace(input))
             {
                 _logger.LogWarning($"Input value can't be empty or null.");
-                throw new JsonDeserializerException(Resources.JsonDeserializerValueCanNotBeEmpty);
+                throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
             }
 
             var settings = new JsonSerializerSettings
@@ -45,8 +45,9 @@ public class JsonDeserializer : IJsonDeserializer
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error in deserialize data. Message: {ex.Message}");
-            throw new JsonDeserializerException(ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.Serialization, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 }

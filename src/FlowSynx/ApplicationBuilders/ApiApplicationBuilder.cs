@@ -4,7 +4,6 @@ using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Persistence.SQLite.Extensions;
 using FlowSynx.Services;
-using Microsoft.Extensions.Hosting;
 
 namespace FlowSynx.ApplicationBuilders;
 
@@ -15,7 +14,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
         var builder = WebApplication.CreateBuilder();
         IConfiguration config = builder.Configuration;
 
-        builder.WebHost.ConfigHttpServer(port);
+        builder.WebHost.ConfigHttpServer(port, logger);
 
         builder.Services
                .AddHttpContextAccessor()
@@ -34,7 +33,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
                .AddLoggingService(config, cancellationToken)
                .AddHttpClient()
                .AddHealthChecker(config)
-               .AddOpenApi(config)
+               .AddOpenApi(config, logger)
                .AddHostedService<TriggerProcessingService>();
 
         var app = builder.Build();
@@ -54,7 +53,7 @@ public class ApiApplicationBuilder : IApiApplicationBuilder
            .UseAuthentication()
            .UseAuthorization()
            .EnsureApplicationDatabaseCreated(logger)
-           .UseApplicationDataSeeder()
+           .UseApplicationDataSeeder(logger)
            .UseHealthCheck();
 
         app.MapEndpoints();

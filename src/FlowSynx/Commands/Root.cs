@@ -2,6 +2,8 @@
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using FlowSynx.ApplicationBuilders;
+using FlowSynx.Models;
+using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Services;
 
 namespace FlowSynx.Commands;
@@ -25,10 +27,16 @@ public class Root : RootCommand
                 var cancellationToken = context.GetCancellationToken();
                 await apiApplicationBuilder.RunAsync(logger, endpoint.HttpPort(), cancellationToken);
             }
+            catch (FlowSynxException ex)
+            {
+                logger.LogError(ex.ToString());
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex.Message);
-
+            }
+            finally 
+            {
                 // Since SetHandler executes synchronously, if the console closes immediately,
                 // the output may not be visible. So, added await Task.Delay(500) here;
                 await Task.Delay(500);

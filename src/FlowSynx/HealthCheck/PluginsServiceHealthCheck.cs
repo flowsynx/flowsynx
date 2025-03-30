@@ -1,4 +1,6 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;
@@ -22,13 +24,14 @@ public class PluginsServiceHealthCheck : IHealthCheck
         {
             var healthStatus = await _pluginService.CheckHealthAsync(cancellationToken);
             if (healthStatus is false)
-                throw new Exception("Service health is fail.");
+                throw new FlowSynxException((int)ErrorCode.ApplicationHealthCheck, Resources.PluginServiceHealthCheckPluginServiceFailed);
 
             return HealthCheckResult.Healthy(Resources.PluginServiceHealthCheckPluginServiceAvailable);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Plugin service health checking: Error: {ex.Message}");
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, $"Error in checking plugin service health. Error: {ex.Message}");
+            _logger.LogError(errorMessage.ToString());
             return HealthCheckResult.Unhealthy(Resources.PluginServiceHealthCheckPluginServiceFailed);
         }
     }

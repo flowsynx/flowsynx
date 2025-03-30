@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+using FluentValidation;
 using MediatR;
 
 namespace FlowSynx.Application.Behaviors;
@@ -20,7 +22,8 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
         if (!validationResult.IsValid)
         {
-            throw new ValidationException(validationResult.Errors);
+            var errorMessages = string.Join(", ", validationResult.Errors);
+            throw new FlowSynxException((int)ErrorCode.InputValidation, errorMessages);
         }
 
         return await next();

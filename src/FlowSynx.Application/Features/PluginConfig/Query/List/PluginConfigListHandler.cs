@@ -1,6 +1,8 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -28,7 +30,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId, cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
@@ -41,9 +43,10 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
             _logger.LogInformation("Plugin Config List is got successfully.");
             return await Result<IEnumerable<PluginConfigListResponse>>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<IEnumerable<PluginConfigListResponse>>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<IEnumerable<PluginConfigListResponse>>.FailAsync(ex.ToString());
         }
     }
 }

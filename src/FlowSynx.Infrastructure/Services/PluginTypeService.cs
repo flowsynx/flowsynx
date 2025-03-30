@@ -1,11 +1,12 @@
-﻿using FlowSynx.Application.Exceptions;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.PluginCore;
 using FlowSynx.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Plugins.LocalFileSystem;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Infrastructure.Services;
 
@@ -52,8 +53,9 @@ internal class PluginTypeService : IPluginTypeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
-            throw new PluginTypeServiceException(ex.Message);
+            var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
+            _logger.LogError(exception.ToString());
+            throw exception;
         }
     }
 
@@ -70,7 +72,7 @@ internal class PluginTypeService : IPluginTypeService
             var currentConfigExist = await _pluginConfigurationService.IsExist(userId, configName, cancellationToken);
 
             if (!currentConfigExist)
-                throw new PluginTypeServiceException($"{configName} is not exist.");
+                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"Configuration '{configName}' could be not found.");
 
             var currentConfig = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
             var getCurrentPlugin = await _pluginService.Get(currentConfig.Type, cancellationToken);
@@ -80,8 +82,9 @@ internal class PluginTypeService : IPluginTypeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
-            throw new PluginTypeServiceException(ex.Message);
+            var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
+            _logger.LogError(exception.ToString());
+            throw exception;
         }
     }
 
@@ -116,8 +119,9 @@ internal class PluginTypeService : IPluginTypeService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message);
-            throw new PluginTypeServiceException(ex.Message);
+            var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
+            _logger.LogError(exception.ToString());
+            throw exception;
         }
     }
 

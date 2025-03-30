@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Application.Services;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.Features.PluginConfig.Query.Details;
 
@@ -28,12 +30,12 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             var configId = Guid.Parse(request.Id);
             var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
-            if (pluginConfig is null) 
-                throw new Exception("The config not found");
+            if (pluginConfig is null)
+                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"The config '{configId}' not found.");
 
             var response = new PluginConfigDetailsResponse
             {
@@ -42,12 +44,13 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
                 Type = pluginConfig.Type,
                 Specifications = pluginConfig.Specifications,
             };
-            _logger.LogInformation("Plugin details is executed successfully.");
+            _logger.LogInformation($"Plugin details for '{configId}' is executed successfully.");
             return await Result<PluginConfigDetailsResponse>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<PluginConfigDetailsResponse>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<PluginConfigDetailsResponse>.FailAsync(ex.ToString());
         }
     }
 }

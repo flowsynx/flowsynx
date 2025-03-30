@@ -1,4 +1,6 @@
-﻿using FlowSynx.Domain.Interfaces;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;
@@ -23,14 +25,15 @@ public class LogsServiceHealthCheck : IHealthCheck
         {
             var healthStatus = await _loggerService.CheckHealthAsync();
             if (healthStatus is false)
-                throw new Exception("Service health is fail.");
+                throw new FlowSynxException((int)ErrorCode.ApplicationHealthCheck, Resources.LoggerServiceHealthCheckFailed);
 
             return HealthCheckResult.Healthy(Resources.LoggerServiceHealthCheckLoggerServiceAvailable);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Logger service health checking: Error: {ex.Message}");
-            return HealthCheckResult.Unhealthy(Resources.LoggerServiceHealthCheckLoggerServiceFailed);
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, $"Error in checking logger service health. Error: {ex.Message}");
+            _logger.LogError(errorMessage.ToString());
+            return HealthCheckResult.Unhealthy(Resources.LoggerServiceHealthCheckFailed);
         }
     }
 }

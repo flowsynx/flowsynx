@@ -1,10 +1,11 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Entities.Trigger;
 using FlowSynx.Domain.Entities.Workflow;
 using FlowSynx.Domain.Interfaces;
-using FlowSynx.IO.Exceptions;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -47,15 +48,15 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
             if (workflowDefinition == null)
-                throw new Exception("Workflow definition must be not empty!");
+                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, "Workflow definition must be not empty!");
 
             if (workflowDefinition.Name == null)
-                throw new Exception("Workflow name shold have value!");
+                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, "Workflow name shold have value!");
 
             ValidateWorkflow(workflowDefinition.Tasks);
 
@@ -63,8 +64,9 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             if (isWorkflowExist)
             {
                 var workflowExistMessage = string.Format(Resources.AddWorkflowNameIsAlreadyExist, workflowDefinition.Name);
-                _logger.LogWarning(workflowExistMessage);
-                return await Result<AddWorkflowResponse>.FailAsync(workflowExistMessage);
+                var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowCheckExistence, workflowExistMessage);
+                _logger.LogWarning(errorMessage.ToString());
+                return await Result<AddWorkflowResponse>.FailAsync(errorMessage.ToString());
             }
 
             var workflowEntity = new WorkflowEntity
@@ -102,17 +104,18 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             };
             return await Result<AddWorkflowResponse>.SuccessAsync(response, Resources.AddConfigHandlerSuccessfullyAdded);
         }
-        catch (JsonDeserializerException ex)
+        catch (FlowSynxException ex) when (ex.ErrorCode == (int)ErrorCode.Serialization)
         {
-            throw new Exception($"Json deserialization error: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.Serialization, $"Json deserialization error: {ex.Message}");
         }
         catch (JsonReaderException ex)
         {
-            throw new Exception($"Reader Error at Line {ex.LineNumber}, Position {ex.LinePosition}: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.Serialization, $"Reader Error at Line {ex.LineNumber}, Position {ex.LinePosition}: {ex.Message}");
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<AddWorkflowResponse>.FailAsync(ex.Message);
+            _logger.LogError(ex.ToString());
+            return await Result<AddWorkflowResponse>.FailAsync(ex.ToString());
         }
     }
 
@@ -120,7 +123,10 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     {
         var hasWorkflowPipelinesDuplicateNames = _workflowValidator.HasDuplicateNames(workflowTasks);
         if (hasWorkflowPipelinesDuplicateNames)
-            throw new Exception("There is a duplicated pipeline name in the workflow pipelines.");
+        {
+            throw new FlowSynxException((int)ErrorCode.WorkflowHasDuplicateNames,
+                "There is a duplicated pipeline name in the workflow pipelines."); ;
+        }
 
         var missingDependencies = _workflowValidator.AllDependenciesExist(workflowTasks);
         if (missingDependencies.Any())
@@ -128,7 +134,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             var sb = new StringBuilder();
             sb.AppendLine("Invalid workflow: missing dependencies.. There are list of missing dependencies:");
             sb.AppendLine(string.Join(",", missingDependencies));
-            throw new Exception(sb.ToString());
+            throw new FlowSynxException((int)ErrorCode.WorkflowMissingDependencies, sb.ToString()); ;
         }
 
         var validation = _workflowValidator.CheckCyclic(workflowTasks);
@@ -137,8 +143,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             var sb = new StringBuilder();
             sb.AppendLine("The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic:");
             sb.AppendLine(string.Join(" -> ", validation.CyclicNodes));
-
-            throw new Exception(sb.ToString());
+            throw new FlowSynxException((int)ErrorCode.WorkflowCyclicDependencies, sb.ToString());
         }
     }
 }

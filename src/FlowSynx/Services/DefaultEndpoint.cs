@@ -1,4 +1,7 @@
-﻿namespace FlowSynx.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+
+namespace FlowSynx.Services;
 
 public class DefaultEndpoint : IEndpoint
 {
@@ -8,6 +11,18 @@ public class DefaultEndpoint : IEndpoint
     {
         _logger = logger;
     }
-    
-    public int HttpPort() => 5860;
+
+    public int HttpPort()
+    {
+        try
+        {
+            return 5860;
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationEndpoint, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
 }

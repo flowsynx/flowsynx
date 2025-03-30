@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Application.Services;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.Features.Workflows.Query.Details;
 
@@ -28,12 +30,12 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             var workflowId = Guid.Parse(request.Id);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow is null)
-                throw new Exception($"The workflow with id '{request.Id}' not found");
+                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, $"The workflow with id '{request.Id}' not found");
 
             var response = new WorkflowDetailsResponse
             {
@@ -44,9 +46,10 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
             _logger.LogInformation("Workflow details is executed successfully.");
             return await Result<WorkflowDetailsResponse>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<WorkflowDetailsResponse>.FailAsync(ex.Message);
+            _logger.LogError(ex.ToString());
+            return await Result<WorkflowDetailsResponse>.FailAsync(ex.ToString());
         }
     }
 }

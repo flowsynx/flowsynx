@@ -153,6 +153,9 @@
   <data name="FlowSynxVersionErrorInReadingExecutableApplication" xml:space="preserve">
     <value>Error in reading executable application.</value>
   </data>
+  <data name="LoggerServiceHealthCheckFailed" xml:space="preserve">
+    <value>Logger Service is failed</value>
+  </data>
   <data name="LoggerServiceHealthCheckLoggerServiceAvailable" xml:space="preserve">
     <value>Logger service is available</value>
   </data>

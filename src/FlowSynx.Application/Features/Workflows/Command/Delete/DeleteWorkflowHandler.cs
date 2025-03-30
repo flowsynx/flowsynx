@@ -1,6 +1,8 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -30,14 +32,15 @@ internal class DeleteWorkflowHandler : IRequestHandler<DeleteWorkflowRequest, Re
             var workflowId = Guid.Parse(request.Id);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow == null)
-                throw new Exception($"The workflow with id '{request.Id}' not found");
+                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, $"The workflow with id '{request.Id}' not found");
 
             await _workflowService.Delete(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<Unit>.FailAsync(ex.ToString());
         }
     }
 }

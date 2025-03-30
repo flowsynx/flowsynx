@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.Features.Workflows.Command.Execute;
 
@@ -26,14 +28,15 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             await _workflowExecutor.ExecuteAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
             return await Result<Unit>.SuccessAsync("Workflow executed successfully!");
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<Unit>.FailAsync(ex.ToString());
         }
     }
 }

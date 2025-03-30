@@ -2,6 +2,7 @@
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.PluginCore;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -46,9 +47,10 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
 
             return await Result<PluginDetailsResponse>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<PluginDetailsResponse>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<PluginDetailsResponse>.FailAsync(ex.ToString());
         }
     }
 }

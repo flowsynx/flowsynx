@@ -1,14 +1,16 @@
-﻿using FlowSynx.Domain.Interfaces;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace FlowSynx.HealthCheck;
 
-public class ConfigurationServiceHealthCheck : IHealthCheck
+public class PluginConfigurationServiceHealthCheck : IHealthCheck
 {
-    private readonly ILogger<ConfigurationServiceHealthCheck> _logger;
+    private readonly ILogger<PluginConfigurationServiceHealthCheck> _logger;
     private readonly IPluginConfigurationService _pluginConfigurationService;
 
-    public ConfigurationServiceHealthCheck(ILogger<ConfigurationServiceHealthCheck> logger,
+    public PluginConfigurationServiceHealthCheck(ILogger<PluginConfigurationServiceHealthCheck> logger,
         IPluginConfigurationService pluginConfigurationService)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -23,13 +25,14 @@ public class ConfigurationServiceHealthCheck : IHealthCheck
         {
             var healthStatus = await _pluginConfigurationService.CheckHealthAsync(cancellationToken);
             if (healthStatus is false)
-                throw new Exception("Service health is fail.");
+                throw new FlowSynxException((int)ErrorCode.ApplicationHealthCheck, Resources.ConfigurationServiceHealthCheckConfigurationServiceFailed);
 
             return HealthCheckResult.Healthy(Resources.ConfigurationServiceHealthCheckConfigurationServiceAvailable);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Plugin configuration service health checking: Error: {ex.Message}");
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, $"Error in checking application health. Error: {ex.Message}");
+            _logger.LogError(errorMessage.ToString());
             return HealthCheckResult.Unhealthy(Resources.ConfigurationServiceHealthCheckConfigurationServiceFailed);
         }
     }

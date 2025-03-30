@@ -3,6 +3,8 @@ using FluentValidation;
 using MediatR;
 using Moq;
 using FlowSynx.Application.Behaviors;
+using FlowSynx.Application.Exceptions;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.UnitTests.Behaviors;
 
@@ -56,7 +58,7 @@ public class ValidationBehaviorTests
                       .ReturnsAsync(validationResult);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() => _validationBehavior.Handle(request, _mockNext.Object, CancellationToken.None));
+        await Assert.ThrowsAsync<FlowSynxException>(() => _validationBehavior.Handle(request, _mockNext.Object, CancellationToken.None));
         _mockValidator.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
         _mockNext.Verify(n => n(), Times.Never);
     }

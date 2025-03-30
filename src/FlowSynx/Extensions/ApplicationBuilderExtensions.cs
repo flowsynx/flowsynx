@@ -1,10 +1,11 @@
 ﻿using FlowSynx.Application.Configuration;
-using FlowSynx.Application.Exceptions;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
 using FlowSynx.Models;
 using FlowSynx.Persistence.Postgres.Contexts;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -113,29 +114,31 @@ public static class ApplicationBuilderExtensions
         }
         catch (Exception ex)
         {
-            logger.LogError("Error occurred while creating the application database: " + ex.Message);
-            if (ex.Message.Contains("Cannot create application database"))
-            {
-                logger.LogError("Failed to create application database due to other reasons.");
-            }
-            throw;
+            throw new FlowSynxException((int)ErrorCode.DatabaseCreation, $"Error occurred while creating the application database: {ex.Message}");
         }
     }
 
-    public static IApplicationBuilder UseApplicationDataSeeder(this IApplicationBuilder app)
+    public static IApplicationBuilder UseApplicationDataSeeder(this IApplicationBuilder app, ILogger logger)
     {
-        using var serviceScope = app.ApplicationServices.CreateScope();
-        var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
-
-        if (!context.Database.CanConnect())
-            throw new DatabaseException(Resources.FailDatabaseConnection);
-
-        var initializers = serviceScope.ServiceProvider.GetServices<IApplicationDataSeeder>();
-        foreach (var initializer in initializers)
+        try
         {
-            initializer.Initialize();
-        }
+            using var serviceScope = app.ApplicationServices.CreateScope();
+            var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
 
-        return app;
+            if (!context.Database.CanConnect())
+                throw new FlowSynxException((int)ErrorCode.DatabaseConnection, "Failed to connect to the database.");
+
+            var initializers = serviceScope.ServiceProvider.GetServices<IApplicationDataSeeder>();
+            foreach (var initializer in initializers)
+            {
+                initializer.Initialize();
+            }
+
+            return app;
+        }
+        catch (Exception ex)
+        {
+            throw new FlowSynxException((int)ErrorCode.DatabaseDataSeeder, $"Error occurred while seeder data into the application database: {ex.Message}");
+        }
     }
 }

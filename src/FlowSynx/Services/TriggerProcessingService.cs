@@ -1,4 +1,6 @@
-﻿using FlowSynx.Infrastructure.Workflow;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Infrastructure.Workflow;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Services;
 
@@ -32,7 +34,8 @@ public class TriggerProcessingService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error in Trigger Processing Service. Error: {ex.Message}");
+                var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationTriggerProcessing, ex.Message);
+                _logger.LogError(errorMessage.ToString());
             }
 
             await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);

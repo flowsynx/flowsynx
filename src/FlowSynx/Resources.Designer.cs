@@ -169,6 +169,15 @@ namespace FlowSynx {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Logger Service is failed.
+        /// </summary>
+        internal static string LoggerServiceHealthCheckFailed {
+            get {
+                return ResourceManager.GetString("LoggerServiceHealthCheckFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Logger service is available.
         /// </summary>
         internal static string LoggerServiceHealthCheckLoggerServiceAvailable {

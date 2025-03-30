@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.Features.Plugins.Query.List;
 
@@ -31,9 +32,10 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
             });
             return await Result<IEnumerable<PluginsListResponse>>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<IEnumerable<PluginsListResponse>>.FailAsync(ex.Message);
+            _logger.LogError(ex.ToString());
+            return await Result<IEnumerable<PluginsListResponse>>.FailAsync(ex.ToString());
         }
     }
 }

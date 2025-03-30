@@ -5,6 +5,7 @@ using FlowSynx.Domain.Interfaces;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Application.Extensions;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.Features.Logs.Query.List;
 
@@ -55,9 +56,10 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
             });
             return await Result<IEnumerable<LogsListResponse>>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<IEnumerable<LogsListResponse>>.FailAsync(ex.Message);
+            _logger.LogError(ex.ToString());
+            return await Result<IEnumerable<LogsListResponse>>.FailAsync(ex.ToString());
         }
     }
 

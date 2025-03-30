@@ -1,7 +1,9 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Interfaces;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -31,20 +33,20 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new UnauthorizedAccessException("User is not authenticated.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
             var workflowId = Guid.Parse(request.Id);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow == null)
-                throw new Exception($"The workflow with id '{request.Id}' not found");
+                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, $"The workflow with id '{request.Id}' not found");
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
             if (workflowDefinition == null)
-                throw new Exception("Workflow definition must be not empty!");
+                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, "Workflow definition must be not empty!");
 
             if (workflowDefinition.Name == null)
-                throw new Exception("Workflow name shold have value!");
+                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, "Workflow name shold have value!");
 
             if (!string.Equals(workflow.Name, workflowDefinition.Name, StringComparison.OrdinalIgnoreCase))
             {
@@ -63,9 +65,10 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
             await _workflowService.Update(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<Unit>.FailAsync(new List<string> { ex.Message });
+            _logger.LogError(ex.ToString());
+            return await Result<Unit>.FailAsync(ex.ToString());
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Exceptions;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -20,11 +21,13 @@ public class UnhandledExceptionBehavior<TRequest, TResponse> : IPipelineBehavior
         {
             return await next();
         }
-        catch (Exception e)
+        catch (Exception)
         {
             var requestName = typeof(TRequest).Name;
-            _logger.LogError(e, "Exception occurred in request '{RequestName}'\r\n\tRequestPayload: {@RequestPayload}", requestName, request);
-            throw;
+            var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorUnhandledException, 
+                $"Exception occurred in request '{typeof(TRequest).Name}'\r\n\tRequestPayload: {request}");
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 }

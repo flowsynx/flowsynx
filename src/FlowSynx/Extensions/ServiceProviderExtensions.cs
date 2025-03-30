@@ -1,4 +1,6 @@
-﻿using FlowSynx.Persistence.SQLite.Contexts;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Persistence.SQLite.Contexts;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Extensions;
 
@@ -14,12 +16,9 @@ public static class ServiceProviderExtensions
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error occurred while creating the log database: " + ex.Message);
-            if (ex.Message.Contains("Cannot create log database"))
-            {
-                Console.WriteLine("Failed to create log database due to other reasons.");
-            }
-            throw;
+            var errorMessage = new ErrorMessage((int)ErrorCode.LoggerCreation, "Error occurred while creating the logger: " + ex.Message);
+            Console.WriteLine(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 }

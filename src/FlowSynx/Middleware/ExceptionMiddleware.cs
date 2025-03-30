@@ -1,7 +1,7 @@
 ﻿using System.Net;
-using FlowSynx.Application.Exceptions;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Middleware;
 
@@ -34,12 +34,9 @@ public class ExceptionMiddleware
 
             switch (error)
             {
-                case ApiBaseException e:
+                case FlowSynxException e:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    break;
-                case InputValidationException e:
-                    response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    responseModel.Messages = e.Errors;
+                    responseModel.Messages = new List<string> { e.ToString() };
                     break;
                 default:
                     response.StatusCode = (int)HttpStatusCode.InternalServerError;

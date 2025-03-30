@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using FlowSynx.Application.Models;
-using FlowSynx.Application.Exceptions;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Infrastructure.Services;
 
@@ -31,13 +31,15 @@ public class JsonSerializer : IJsonSerializer
             if (input is null)
             {
                 _logger.LogWarning($"Input value can't be empty or null.");
-                throw new JsonSerializerException(Resources.JsonSerializerValueCanNotBeEmpty);
+                throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
             }
 
             var settings = new JsonSerializerSettings
             {
                 Formatting = configuration.Indented ? Formatting.Indented : Formatting.None,
-                ContractResolver = configuration.NameCaseInsensitive ? new DefaultContractResolver() : new CamelCasePropertyNamesContractResolver()
+                ContractResolver = configuration.NameCaseInsensitive 
+                    ? new DefaultContractResolver() 
+                    : new CamelCasePropertyNamesContractResolver()
             };
 
             if (configuration.Converters is not null)
@@ -47,8 +49,9 @@ public class JsonSerializer : IJsonSerializer
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error in serializer data. Message: {ex.Message}");
-            throw new JsonSerializerException(ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.Serialization, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 }

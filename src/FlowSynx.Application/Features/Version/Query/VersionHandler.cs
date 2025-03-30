@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
+using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
@@ -29,9 +30,10 @@ internal class VersionHandler : IRequestHandler<VersionRequest, Result<VersionRe
 
             return await Result<VersionResponse>.SuccessAsync(response);
         }
-        catch (Exception ex)
+        catch (FlowSynxException ex)
         {
-            return await Result<VersionResponse>.FailAsync(ex.Message);
+            _logger.LogError(ex.ToString());
+            return await Result<VersionResponse>.FailAsync(ex.ToString());
         }
     }
 }
