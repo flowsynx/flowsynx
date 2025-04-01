@@ -1,7 +1,7 @@
 ﻿using Azure.Storage.Files.Shares;
-using FlowSynx.Connectors.Storage.Azure.Files.Models;
+using FlowSynx.Plugins.Azure.Files.Models;
 
-namespace FlowSynx.Connectors.Storage.Azure.Files.Services;
+namespace FlowSynx.Plugins.Azure.Files.Services;
 
 public interface IAzureFilesConnection
 {
