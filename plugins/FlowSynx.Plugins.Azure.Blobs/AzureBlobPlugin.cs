@@ -61,7 +61,7 @@ public class AzureBlobPlugin : Plugin
                 await _manager.Write(parameters, cancellationToken).ConfigureAwait(false);
                 return null;
             default:
-                throw new NotSupportedException($"Amazon S3 plugin: Operation '{operation}' is not supported.");
+                throw new NotSupportedException($"Microsoft Azure Blobs plugin: Operation '{operation}' is not supported.");
         }
     }
 }
