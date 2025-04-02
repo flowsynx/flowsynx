@@ -12,7 +12,9 @@ public class DefaultEndpoint : IEndpoint
         _logger = logger;
     }
 
-    public int HttpPort()
+    public int HttpPort => GetHttpPort();
+
+    private int GetHttpPort()
     {
         try
         {

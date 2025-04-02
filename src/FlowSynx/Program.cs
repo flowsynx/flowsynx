@@ -1,60 +1,63 @@
-using System.CommandLine;
-using FlowSynx;
-using FlowSynx.ApplicationBuilders;
-using FlowSynx.Commands;
 using FlowSynx.Extensions;
 using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Models;
+using FlowSynx.Application.Extensions;
 using FlowSynx.Persistence.SQLite.Extensions;
+using FlowSynx.Persistence.Postgres.Extensions;
+using FlowSynx.Services;
 
-var cts = new CancellationTokenSource();
-var cancellationToken = cts.Token;
-IHost host = GetHost(cancellationToken);
-IServiceProvider serviceProvider = host.Services;
+WebApplicationBuilder builder = WebApplication.CreateBuilder();
+IConfiguration config = builder.Configuration;
 
-try
+builder.Services
+       .AddCancellationTokenSource()
+       .AddHttpContextAccessor()
+       .AddEndpointsApiExplorer()
+       .AddHttpClient()
+       .AddHttpJsonOptions()
+       .AddJsonSerialization()
+       .AddSQLiteLoggerLayer()
+       .AddPostgresPersistenceLayer(config)
+       .AddSQLiteLoggerLayer()
+       .AddLoggingService(config)
+       .AddEndpoint()
+       .AddLocation()
+       .AddVersion()
+       .AddCore()
+       .AddInfrastructure()
+       .AddFlowSynxPlugins()
+       .AddUserService();
+
+//builder.Services.ParseArguments(args);
+
+builder.Services
+       .AddSecurity(config)
+       .AddHealthChecker(config)
+       .AddOpenApi(config)
+       .AddHostedService<TriggerProcessingService>();
+
+builder.ConfigHttpServer();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
 {
-    serviceProvider.EnsureLogDatabaseCreated();
-    var cli = serviceProvider.GetRequiredService<ICliApplicationBuilder>() ?? 
-              throw new Exception(Resources.EntryPointErrorInExecutteApplication);
-
-    Console.CancelKeyPress += (sender, eventArgs) =>
-    {
-        Console.WriteLine("Cancellation requested.");
-        cts.Cancel();
-        eventArgs.Cancel = true; // Don't terminate immediately
-    };
-
-    return await cli.RunAsync(args);
-}
-catch (Exception ex)
-{
-    var logger = serviceProvider.GetService<ILogger<Program>>();
-    if (logger != null)
-        logger.LogError(ex.Message);
-    else
-        Console.Error.WriteLine(ex.Message);
-
-    return ExitCode.Error;
+    app.UseDeveloperExceptionPage();
 }
 
-IHost GetHost(CancellationToken cancellationToken)
-{
-    var hostBuilder = new HostBuilder().ConfigureServices((hostContext, services) =>
-    {
-        IConfiguration config = hostContext.Configuration;
+app.UseOpenApi()
+   .UseCustomHeaders()
+   .UseExceptionHandler(exceptionHandlerApp =>
+                        exceptionHandlerApp.Run(async context =>
+                            await Results.Problem().ExecuteAsync(context)))
+   .UseCustomException()
+   .UseRouting()
+   .UseAuthentication()
+   .UseAuthorization()
+   .EnsureLogDatabaseCreated()
+   .EnsureApplicationDatabaseCreated()
+   .UseApplicationDataSeeder()
+   .UseHealthCheck();
 
-        services.AddHttpContextAccessor()
-                .AddSQLiteLoggerLayer()
-                .AddLocation()
-                .AddJsonSerialization()
-                .AddEndpoint()
-                .AddUserService()
-                .AddLoggingService(config, cancellationToken)
-                .AddScoped<RootCommand, Root>()
-                .AddScoped<IApiApplicationBuilder, ApiApplicationBuilder>()
-                .AddScoped<ICliApplicationBuilder, CliApplicationBuilder>();
-    });
-    
-    return hostBuilder.UseConsoleLifetime().Build();
-}
+app.MapEndpoints();
+
+await app.RunAsync();

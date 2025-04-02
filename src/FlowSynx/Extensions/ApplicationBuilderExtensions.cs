@@ -5,6 +5,7 @@ using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
 using FlowSynx.Models;
 using FlowSynx.Persistence.Postgres.Contexts;
+using FlowSynx.Persistence.SQLite.Contexts;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -97,10 +98,34 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder EnsureApplicationDatabaseCreated(this IApplicationBuilder app, ILogger logger)
+    public static IApplicationBuilder EnsureLogDatabaseCreated(this IApplicationBuilder app)
+    {
+        using var serviceScope = app.ApplicationServices.CreateScope();
+        var context = serviceScope.ServiceProvider.GetRequiredService<LoggerContext>();
+
+        try
+        {
+            var result = context.Database.EnsureCreated();
+            var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+            if (result)
+                logger.LogInformation("Logger created successfully.");
+            else
+                logger.LogInformation("Logger already exists.");
+
+            return app;
+        }
+        catch (Exception ex)
+        {
+            throw new FlowSynxException((int)ErrorCode.LoggerCreation, $"Error occurred while creating the logger: {ex.Message}");
+        }
+    }
+
+    public static IApplicationBuilder EnsureApplicationDatabaseCreated(this IApplicationBuilder app)
     {
         using var serviceScope = app.ApplicationServices.CreateScope();
         var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
+        var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         try
         {
@@ -118,12 +143,13 @@ public static class ApplicationBuilderExtensions
         }
     }
 
-    public static IApplicationBuilder UseApplicationDataSeeder(this IApplicationBuilder app, ILogger logger)
+    public static IApplicationBuilder UseApplicationDataSeeder(this IApplicationBuilder app)
     {
         try
         {
             using var serviceScope = app.ApplicationServices.CreateScope();
             var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
+            var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
             if (!context.Database.CanConnect())
                 throw new FlowSynxException((int)ErrorCode.DatabaseConnection, "Failed to connect to the database.");

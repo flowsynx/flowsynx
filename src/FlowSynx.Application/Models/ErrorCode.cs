@@ -5,13 +5,14 @@ public enum ErrorCode
     None                                            = 0,
 
     #region Application error codes
-    ApplicationEndpoint                             = 1001,
-    ApplicationLocation                             = 1002,
-    ApplicationVersion                              = 1003,
-    ApplicationTriggerProcessing                    = 1004,
-    ApplicationHealthCheck                          = 1005,
-    ApplicationConfigureServer                      = 1006,
-    ApplicationOpenApiService                       = 1007,
+    ApplicationStartArgumentIsRequired              = 1001,
+    ApplicationEndpoint                             = 1002,
+    ApplicationLocation                             = 1003,
+    ApplicationVersion                              = 1004,
+    ApplicationTriggerProcessing                    = 1005,
+    ApplicationHealthCheck                          = 1006,
+    ApplicationConfigureServer                      = 1007,
+    ApplicationOpenApiService                       = 1008,
     #endregion
 
     #region Behavior error codes

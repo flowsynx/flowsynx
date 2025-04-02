@@ -18,6 +18,13 @@ namespace FlowSynx.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddCancellationTokenSource(this IServiceCollection services)
+    {
+        var cancellationTokenSource = new CancellationTokenSource();
+        services.AddSingleton(cancellationTokenSource);
+        return services;
+    }
+
     public static IServiceCollection AddLocation(this IServiceCollection services)
     {
         services.AddSingleton<ILocation, FlowSynxLocation>();
@@ -42,8 +49,7 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddLoggingService(this IServiceCollection services,
-        IConfiguration configuration, CancellationToken cancellationToken)
+    public static IServiceCollection AddLoggingService(this IServiceCollection services, IConfiguration configuration)
     {
         var loggerConfiguration = new LoggerConfiguration();
         configuration.GetSection("Logger").Bind(loggerConfiguration);
@@ -52,6 +58,9 @@ public static class ServiceCollectionExtensions
         var serviceProvider = services.BuildServiceProvider();
         var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
         var logService = serviceProvider.GetRequiredService<ILoggerService>();
+        var cancellationTokenSource = serviceProvider.GetRequiredService<CancellationTokenSource>();
+
+        var cancellationToken = cancellationTokenSource.Token;
         var logLevel = loggerConfiguration.Level.ToLogLevel();
 
         services.AddLogging(c => c.ClearProviders());
@@ -105,10 +114,13 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddOpenApi(this IServiceCollection services, IConfiguration configuration, ILogger logger)
+    public static IServiceCollection AddOpenApi(this IServiceCollection services, IConfiguration configuration)
     {
         try
         {
+            using var scope = services.BuildServiceProvider().CreateScope();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
             var openApiConfiguration = new OpenApiConfiguration();
             configuration.GetSection("OpenApi").Bind(openApiConfiguration);
             services.AddSingleton(openApiConfiguration);
@@ -193,7 +205,6 @@ public static class ServiceCollectionExtensions
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationOpenApiService, ex.Message);
-            logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -208,10 +219,13 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration, ILogger logger)
+    public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
     {
         try
         {
+            using var scope = services.BuildServiceProvider().CreateScope();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
             logger.LogInformation("Initializing security");
 
             var securityConfiguration = new SecurityConfiguration();
@@ -299,5 +313,26 @@ public static class ServiceCollectionExtensions
             var errorMessage = new ErrorMessage((int)ErrorCode.SecurityInitializedError, ex.Message);
             throw new FlowSynxException(errorMessage);
         }
+    }
+
+    public static IServiceCollection ParseArguments(this IServiceCollection services, string[] args)
+    {
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        bool hasStartArgument = args.Contains("--start");
+        if (!hasStartArgument)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, "The '--start' argument is required.");
+            logger.LogError(errorMessage.ToString());
+
+            // if the console closes immediately, the output may not be visible.
+            // So, added await Task.Delay(500) here;
+            Task.Delay(500).Wait();
+
+            Environment.Exit(1);
+        }
+
+        return services;
     }
 }

@@ -2,5 +2,5 @@
 
 public interface IEndpoint
 {
-    int HttpPort();
+    int HttpPort { get; }
 }
