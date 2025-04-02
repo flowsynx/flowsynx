@@ -19,7 +19,7 @@ builder.Services
        .AddPostgresPersistenceLayer(config)
        .AddSQLiteLoggerLayer()
        .AddLoggingService(config)
-       .AddEndpoint()
+       .AddEndpoint(config)
        .AddLocation()
        .AddVersion()
        .AddCore()
@@ -27,7 +27,7 @@ builder.Services
        .AddFlowSynxPlugins()
        .AddUserService();
 
-//builder.Services.ParseArguments(args);
+builder.Services.ParseArguments(args);
 
 builder.Services
        .AddSecurity(config)

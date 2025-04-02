@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Services;
 
@@ -9,15 +10,15 @@ public static class WebApplicationBuilderExtensions
     public static WebApplicationBuilder ConfigHttpServer(this WebApplicationBuilder builder)
     {
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
-        var endpoint = scope.ServiceProvider.GetRequiredService<IEndpoint>();
+        var endpointConfiguration = scope.ServiceProvider.GetRequiredService<EndpointConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         try
         {
             builder.WebHost.ConfigureKestrel((context, kestrelOptions) =>
             {
-                var httpPort = endpoint.HttpPort;
-                kestrelOptions.ListenAnyIP(httpPort);
+                var httpPort = endpointConfiguration.Http;
+                kestrelOptions.ListenAnyIP(httpPort ?? 5860);
             });
 
             builder.WebHost.UseKestrel(option =>
