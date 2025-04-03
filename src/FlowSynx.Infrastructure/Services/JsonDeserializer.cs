@@ -28,7 +28,7 @@ public class JsonDeserializer : IJsonDeserializer
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                _logger.LogWarning($"Input value can't be empty or null.");
+                _logger.LogError("Input value can't be empty or null.");
                 throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
             }
 

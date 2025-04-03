@@ -30,7 +30,7 @@ public class JsonSerializer : IJsonSerializer
         {
             if (input is null)
             {
-                _logger.LogWarning($"Input value can't be empty or null.");
+                _logger.LogError("Input value can't be empty or null.");
                 throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
             }
 
