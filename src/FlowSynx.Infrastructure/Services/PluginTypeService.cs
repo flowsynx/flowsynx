@@ -10,7 +10,7 @@ using FlowSynx.Application.Models;
 
 namespace FlowSynx.Infrastructure.Services;
 
-internal class PluginTypeService : IPluginTypeService
+public class PluginTypeService : IPluginTypeService
 {
     private readonly ILogger<PluginTypeService> _logger;
     private readonly IPluginConfigurationService _pluginConfigurationService;
@@ -53,6 +53,7 @@ internal class PluginTypeService : IPluginTypeService
         }
         catch (Exception ex)
         {
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeGetItem, ex.Message)
             var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
             _logger.LogError(exception.ToString());
             throw exception;
@@ -61,31 +62,22 @@ internal class PluginTypeService : IPluginTypeService
 
     private async Task<Plugin> GetPluginBasedOnConfig(string userId, string? configName, CancellationToken cancellationToken)
     {
-        try
+        if (string.IsNullOrEmpty(configName))
         {
-            if (string.IsNullOrEmpty(configName))
-            {
-                var localFileSystemPlugin = GetPlugin(LocalFileSystemConnector(), "LocalFileSystem", null);
-                return localFileSystemPlugin;
-            }
-
-            var currentConfigExist = await _pluginConfigurationService.IsExist(userId, configName, cancellationToken);
-
-            if (!currentConfigExist)
-                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"Configuration '{configName}' could be not found.");
-
-            var currentConfig = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
-            var getCurrentPlugin = await _pluginService.Get(currentConfig.Type, cancellationToken);
-            var currentPlugin = GetPlugin(getCurrentPlugin, configName, currentConfig.Specifications.ToPluginSpecifications());
-
-            return currentPlugin;
+            var localFileSystemPlugin = GetPlugin(LocalFileSystemConnector(), "LocalFileSystem", null);
+            return localFileSystemPlugin;
         }
-        catch (Exception ex)
-        {
-            var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
-            _logger.LogError(exception.ToString());
-            throw exception;
-        }
+
+        var currentConfigExist = await _pluginConfigurationService.IsExist(userId, configName, cancellationToken);
+
+        if (!currentConfigExist)
+            throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"Configuration '{configName}' could be not found.");
+
+        var currentConfig = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
+        var getCurrentPlugin = await _pluginService.Get(currentConfig.Type, cancellationToken);
+        var currentPlugin = GetPlugin(getCurrentPlugin, configName, currentConfig.Specifications.ToPluginSpecifications());
+
+        return currentPlugin;
     }
 
     private async Task<Plugin> GetPluginBasedOnType(object? type, CancellationToken cancellationToken)
