@@ -22,8 +22,9 @@ public class AmazonS3Plugin : Plugin
 
     public override Guid Id => Guid.Parse("b961131b-04cb-48df-9554-4252dc66c04c");
     public override string Name => "Amazon.S3";
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
+    public override PluginVersion Version => new PluginVersion(1, 0, 0);
+    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override PluginSpecifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(AmazonS3Specifications);
 

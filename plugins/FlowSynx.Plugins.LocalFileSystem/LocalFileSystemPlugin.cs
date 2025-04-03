@@ -19,8 +19,9 @@ public class LocalFileSystemPlugin : Plugin
 
     public override Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
     public override string Name => "LocalFileSystem";
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
+    public override PluginVersion Version => new PluginVersion(1,0,0);
+    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override PluginSpecifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(LocalFileSystemSpecifications);
 

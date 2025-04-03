@@ -22,8 +22,9 @@ public class AzureFilePlugin : Plugin
 
     public override Guid Id => Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d");
     public override string Name => "Azure.Files";
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
+    public override PluginVersion Version => new PluginVersion(1, 0, 0);
+    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override PluginSpecifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(AzureFilesSpecifications);
 

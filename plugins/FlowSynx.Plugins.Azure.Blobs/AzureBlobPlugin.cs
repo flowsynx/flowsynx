@@ -22,8 +22,9 @@ public class AzureBlobPlugin : Plugin
 
     public override Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
     public override string Name => "Azure.Blobs";
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override string? Description => Resources.ConnectorDescription;
+    public override PluginVersion Version => new PluginVersion(1, 0, 0);
+    public override PluginNamespace Namespace => PluginNamespace.Connectors;
     public override PluginSpecifications? Specifications { get; set; }
     public override Type SpecificationsType => typeof(AzureBlobSpecifications);
 
