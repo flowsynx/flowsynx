@@ -53,10 +53,9 @@ public class PluginTypeService : IPluginTypeService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeGetItem, ex.Message)
-            var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
-            _logger.LogError(exception.ToString());
-            throw exception;
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeGetItem, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 
@@ -111,9 +110,9 @@ public class PluginTypeService : IPluginTypeService
         }
         catch (Exception ex)
         {
-            var exception = new FlowSynxException((int)ErrorCode.PluginTypeGetItem, ex.Message);
-            _logger.LogError(exception.ToString());
-            throw exception;
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeGetItem, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 
