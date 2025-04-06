@@ -1,4 +1,6 @@
-﻿using FlowSynx.Application.Features.Logs.Query.List;
+﻿using FlowSynx.Application.Features.Audit.Query.Details;
+using FlowSynx.Application.Features.Audit.Query.List;
+using FlowSynx.Application.Features.Logs.Query.List;
 using FlowSynx.Application.Features.PluginConfig.Command.Add;
 using FlowSynx.Application.Features.PluginConfig.Command.Delete;
 using FlowSynx.Application.Features.PluginConfig.Command.Update;
@@ -115,6 +117,19 @@ public static class MediatorExtensions
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
+    }
+    #endregion
+
+    #region Audits
+    public static Task<Result<IEnumerable<AuditsListResponse>>> Audits(this IMediator mediator, CancellationToken cancellationToken)
+    {
+        return mediator.Send(new AuditsListRequest(), cancellationToken);
+    }
+
+    public static Task<Result<AuditDetailsResponse>> AuditDetails(this IMediator mediator,
+     string id, CancellationToken cancellationToken)
+    {
+        return mediator.Send(new AuditDetailsRequest { Id = id }, cancellationToken);
     }
     #endregion
 }
