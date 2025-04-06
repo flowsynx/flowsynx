@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Models;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain.PluginConfig;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 

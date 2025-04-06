@@ -2,9 +2,9 @@
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain.Interfaces;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Models;
+using FlowSynx.Domain.Plugin;
 
 namespace FlowSynx.Application.Features.Plugins.Query.List;
 

@@ -10,10 +10,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using FlowSynx.Application.Configuration;
-using FlowSynx.Domain.Interfaces;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Domain.Log;
 
 namespace FlowSynx.Extensions;
 

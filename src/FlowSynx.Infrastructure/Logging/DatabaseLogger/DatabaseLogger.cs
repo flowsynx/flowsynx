@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Application.Models;
-using FlowSynx.Domain.Entities.Log;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain.Log;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;

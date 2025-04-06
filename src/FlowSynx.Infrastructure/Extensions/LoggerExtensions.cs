@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Interfaces;
+﻿using FlowSynx.Domain.Log;
 using FlowSynx.Infrastructure.Logging.ConsoleLogger;
 using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using Microsoft.AspNetCore.Http;

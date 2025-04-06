@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.Audit;
+﻿using FlowSynx.Domain.Audit;
 using FlowSynx.Persistence.Postgres.Models.Audit;
 using Microsoft.EntityFrameworkCore;
 

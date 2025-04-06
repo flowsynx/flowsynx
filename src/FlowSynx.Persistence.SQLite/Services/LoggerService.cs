@@ -1,10 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using FlowSynx.Domain.Interfaces;
-using FlowSynx.Domain.Entities.Log;
 using FlowSynx.Persistence.SQLite.Contexts;
 using System.Linq.Expressions;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Domain.Log;
 
 namespace FlowSynx.Persistence.SQLite.Services;
 

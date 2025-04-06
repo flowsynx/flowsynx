@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Domain.Entities.PluginConfig;
+using FlowSynx.Domain.PluginConfig;
 
 namespace FlowSynx.Application.UnitTests.Extensions;
 

@@ -2,9 +2,9 @@
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
-using FlowSynx.Domain.Entities.Trigger;
-using FlowSynx.Domain.Entities.Workflow;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain;
+using FlowSynx.Domain.Trigger;
+using FlowSynx.Domain.Workflow;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;

@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Model;
-using FlowSynx.Domain.Entities.Plugin;
+using FlowSynx.Domain.Plugin;
 
 namespace FlowSynx.Application.Services;
 

@@ -1,7 +1,10 @@
 ﻿using ConnectivityTestingLab.Application.Configurations;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain;
+using FlowSynx.Domain.Plugin;
+using FlowSynx.Domain.PluginConfig;
+using FlowSynx.Domain.Trigger;
+using FlowSynx.Domain.Workflow;
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Persistence.Postgres.Seeder;
 using FlowSynx.Persistence.Postgres.Services;

@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Interfaces;
 using FlowSynx.PluginCore;
 using FlowSynx.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Plugins.LocalFileSystem;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
-using FlowSynx.Domain.Entities.Plugin;
 using FlowSynx.Application.PluginHost;
+using FlowSynx.Domain.Plugin;
+using FlowSynx.Domain.PluginConfig;
 
 namespace FlowSynx.Infrastructure.Services;
 

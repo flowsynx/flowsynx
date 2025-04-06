@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using FlowSynx.Domain.Entities.Audit;
+using FlowSynx.Domain.Audit;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FlowSynx.Persistence.Postgres.Models.Audit;

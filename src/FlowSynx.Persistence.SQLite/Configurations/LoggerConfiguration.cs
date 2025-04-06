@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.Log;
+﻿using FlowSynx.Domain.Log;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;

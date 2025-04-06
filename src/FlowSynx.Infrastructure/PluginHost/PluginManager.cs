@@ -1,8 +1,7 @@
 ﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities.Plugin;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore;
 using Microsoft.Extensions.Logging;
 using System.Reflection;

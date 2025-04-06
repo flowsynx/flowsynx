@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Model;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities.Plugin;
+using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 

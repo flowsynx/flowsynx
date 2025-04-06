@@ -3,9 +3,8 @@ using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.Persistence.Postgres.Contexts;
 using Microsoft.EntityFrameworkCore;
-using FlowSynx.Domain.Entities.Plugin;
-using FlowSynx.Domain.Interfaces;
 using FlowSynx.Persistence.Postgres.Extensions;
+using FlowSynx.Domain.Plugin;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 

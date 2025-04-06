@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.Trigger;
+﻿using FlowSynx.Domain.Trigger;
 
 namespace FlowSynx.Application.Features.Workflows.Command.Execute;
 

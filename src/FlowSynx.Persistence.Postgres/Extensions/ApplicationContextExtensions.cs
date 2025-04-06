@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain;
 using FlowSynx.Persistence.Postgres.Contexts;
 
 namespace FlowSynx.Persistence.Postgres.Extensions;

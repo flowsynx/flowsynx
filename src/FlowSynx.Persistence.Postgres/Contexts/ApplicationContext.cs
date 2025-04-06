@@ -1,16 +1,16 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities;
-using FlowSynx.Domain.Entities.Workflow;
-using FlowSynx.Domain.Entities.PluginConfig;
 using FlowSynx.Persistence.Postgres.Configurations;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
-using FlowSynx.Domain.Entities.Trigger;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Domain.Entities.Plugin;
+using FlowSynx.Domain.Trigger;
+using FlowSynx.Domain.Workflow;
+using FlowSynx.Domain.PluginConfig;
+using FlowSynx.Domain.Plugin;
+using FlowSynx.Domain;
 
 namespace FlowSynx.Persistence.Postgres.Contexts;
 

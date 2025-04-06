@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
-using FlowSynx.Domain.Entities.Workflow;
+using FlowSynx.Domain.Workflow;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 

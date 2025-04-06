@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities.Plugin;
+﻿using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore;
 
 namespace FlowSynx.Infrastructure.PluginHost;

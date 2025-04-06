@@ -1,8 +1,7 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities.Workflow;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;

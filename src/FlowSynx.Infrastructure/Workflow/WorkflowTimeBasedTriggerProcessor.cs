@@ -1,7 +1,6 @@
 ﻿using Cronos;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities.Trigger;
-using FlowSynx.Domain.Interfaces;
+using FlowSynx.Domain.Trigger;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow;
