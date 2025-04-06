@@ -1,6 +1,7 @@
 ﻿using ConnectivityTestingLab.Application.Configurations;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain;
+using FlowSynx.Domain.Audit;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Domain.Trigger;
