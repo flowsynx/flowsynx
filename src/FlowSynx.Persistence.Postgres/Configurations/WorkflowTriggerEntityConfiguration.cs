@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using FlowSynx.Application.Services;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using FlowSynx.Domain.Trigger;
+using FlowSynx.Application.Serialization;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 

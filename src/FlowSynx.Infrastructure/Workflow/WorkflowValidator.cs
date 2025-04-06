@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Workflow;
 
 namespace FlowSynx.Infrastructure.Workflow;
 

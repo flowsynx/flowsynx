@@ -1,10 +1,12 @@
 ﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
+using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
 using FlowSynx.Models;
 using FlowSynx.Persistence.Postgres.Contexts;
+using FlowSynx.Persistence.Postgres.Seeder;
 using FlowSynx.Persistence.SQLite.Contexts;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;

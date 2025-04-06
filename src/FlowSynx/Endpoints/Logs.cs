@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Features.Logs.Query.List;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;

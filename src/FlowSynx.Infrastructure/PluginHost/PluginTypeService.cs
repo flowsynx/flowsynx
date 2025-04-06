@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using FlowSynx.Application.Services;
 using FlowSynx.PluginCore;
 using FlowSynx.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
@@ -9,8 +8,10 @@ using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Domain.PluginConfig;
+using FlowSynx.Application.Serialization;
+using FlowSynx.Infrastructure.Services;
 
-namespace FlowSynx.Infrastructure.Services;
+namespace FlowSynx.Infrastructure.PluginHost;
 
 public class PluginTypeService : IPluginTypeService
 {
@@ -25,7 +26,7 @@ public class PluginTypeService : IPluginTypeService
     private readonly IPluginLoader _pluginLoader;
 
     public PluginTypeService(ILogger<PluginTypeService> logger, IPluginConfigurationService pluginConfigurationService,
-        IPluginService pluginService, ICacheService<string, IPlugin> cacheService, 
+        IPluginService pluginService, ICacheService<string, IPlugin> cacheService,
         IJsonSerializer serializer, IJsonDeserializer deserializer,
         IHashService hashService, IServiceProvider serviceProvider,
         IPluginLoader pluginLoader)
@@ -52,8 +53,8 @@ public class PluginTypeService : IPluginTypeService
     {
         try
         {
-            return type is string 
-                ? GetPluginBasedOnConfig(userId, type.ToString(), cancellationToken) 
+            return type is string
+                ? GetPluginBasedOnConfig(userId, type.ToString(), cancellationToken)
                 : GetPluginBasedOnType(userId, type, cancellationToken);
         }
         catch (Exception ex)
@@ -79,7 +80,7 @@ public class PluginTypeService : IPluginTypeService
 
         var currentConfig = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
         var getCurrentPlugin = await _pluginService.Get(userId, currentConfig.Type, currentConfig.Version, cancellationToken);
-        var currentPlugin = await GetPlugin(getCurrentPlugin, configName, currentConfig.Specifications.ToPluginSpecifications(), 
+        var currentPlugin = await GetPlugin(getCurrentPlugin, configName, currentConfig.Specifications.ToPluginSpecifications(),
             cancellationToken);
 
         return currentPlugin;
@@ -111,7 +112,7 @@ public class PluginTypeService : IPluginTypeService
                 var localFileSystemConnector = await GetLocalFileSystemPlugin(userId);
                 return localFileSystemConnector;
             }
-            
+
             var getCurrentConnector = await _pluginService.Get(userId, pluginType, pluginVersion, cancellationToken);
             var currentConnector = await GetPlugin(getCurrentConnector, pluginType, specifications, cancellationToken);
 

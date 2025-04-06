@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Features.PluginConfig.Command.Add;
 using FlowSynx.Application.Models;
+using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Plugin;

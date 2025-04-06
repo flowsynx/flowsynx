@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Services;
+﻿namespace FlowSynx.Infrastructure.Services;
 
 public interface IHashService
 {

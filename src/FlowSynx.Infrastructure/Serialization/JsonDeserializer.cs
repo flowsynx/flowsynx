@@ -1,34 +1,32 @@
-﻿using FlowSynx.Application.Services;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Serialization;
 
-namespace FlowSynx.Infrastructure.Services;
+namespace FlowSynx.Infrastructure.Serialization;
 
-public class JsonSerializer : IJsonSerializer
+public class JsonDeserializer : IJsonDeserializer
 {
-    private readonly ILogger<JsonSerializer> _logger;
+    private readonly ILogger<JsonDeserializer> _logger;
 
-    public JsonSerializer(ILogger<JsonSerializer> logger)
+    public JsonDeserializer(ILogger<JsonDeserializer> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
-    public string ContentMineType => "application/json";
-
-    public string Serialize(object? input)
+    public T Deserialize<T>(string? input)
     {
-        return Serialize(input, new JsonSerializationConfiguration { Indented = false });
+        return Deserialize<T>(input, new JsonSerializationConfiguration { });
     }
 
-    public string Serialize(object? input, JsonSerializationConfiguration configuration)
+    public T Deserialize<T>(string? input, JsonSerializationConfiguration configuration)
     {
         try
         {
-            if (input is null)
+            if (string.IsNullOrWhiteSpace(input))
             {
                 _logger.LogError("Input value can't be empty or null.");
                 throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
@@ -37,15 +35,13 @@ public class JsonSerializer : IJsonSerializer
             var settings = new JsonSerializerSettings
             {
                 Formatting = configuration.Indented ? Formatting.Indented : Formatting.None,
-                ContractResolver = configuration.NameCaseInsensitive 
-                    ? new DefaultContractResolver() 
-                    : new CamelCasePropertyNamesContractResolver()
+                ContractResolver = configuration.NameCaseInsensitive ? new DefaultContractResolver() : new CamelCasePropertyNamesContractResolver()
             };
 
             if (configuration.Converters is not null)
                 settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
 
-            return JsonConvert.SerializeObject(input, settings);
+            return JsonConvert.DeserializeObject<T>(input, settings);
         }
         catch (Exception ex)
         {

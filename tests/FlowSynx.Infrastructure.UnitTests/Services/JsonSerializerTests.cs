@@ -1,9 +1,9 @@
-﻿using Moq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging.Testing;
-using FlowSynx.Infrastructure.Services;
+using FlowSynx.Application.Serialization;
+using FlowSynx.Infrastructure.Serialization;
 
 namespace FlowSynx.Infrastructure.UnitTests.Services;
 

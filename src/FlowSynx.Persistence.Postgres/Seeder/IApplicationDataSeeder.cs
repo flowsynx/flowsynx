@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Services;
+﻿namespace FlowSynx.Persistence.Postgres.Seeder;
 
 public interface IApplicationDataSeeder
 {

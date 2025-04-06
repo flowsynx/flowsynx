@@ -1,6 +1,6 @@
 ﻿using FlowSynx.PluginCore;
 
-namespace FlowSynx.Application.Services;
+namespace FlowSynx.Application.PluginHost;
 
 public interface IPluginTypeService
 {

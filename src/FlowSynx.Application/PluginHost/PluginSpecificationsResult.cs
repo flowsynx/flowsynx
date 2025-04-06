@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Model;
+﻿namespace FlowSynx.Application.PluginHost;
 
 public class PluginSpecificationsResult
 {

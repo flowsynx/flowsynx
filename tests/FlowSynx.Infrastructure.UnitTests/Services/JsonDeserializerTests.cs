@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Models;
-using FlowSynx.Infrastructure.Services;
+using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;

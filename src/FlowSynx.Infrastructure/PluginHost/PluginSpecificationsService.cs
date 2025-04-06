@@ -1,11 +1,10 @@
-﻿using FlowSynx.Application.Model;
-using FlowSynx.Application.Models;
-using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.PluginHost;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Infrastructure.Services;
+namespace FlowSynx.Infrastructure.PluginHost;
 
 public class PluginSpecificationsService : IPluginSpecificationsService
 {

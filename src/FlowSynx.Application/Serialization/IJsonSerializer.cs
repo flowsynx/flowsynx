@@ -1,6 +1,4 @@
-﻿using FlowSynx.Application.Models;
-
-namespace FlowSynx.Application.Services;
+﻿namespace FlowSynx.Application.Serialization;
 
 public interface IJsonSerializer
 {

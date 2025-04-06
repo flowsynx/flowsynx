@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Serialization;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.PluginHost;

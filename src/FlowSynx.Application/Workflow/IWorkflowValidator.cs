@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
 
-namespace FlowSynx.Application.Services;
+namespace FlowSynx.Application.Workflow;
 
 public interface IWorkflowValidator
 {

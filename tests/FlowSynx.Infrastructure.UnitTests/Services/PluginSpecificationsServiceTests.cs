@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Services;
-using FlowSynx.Infrastructure.Services;
+using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.PluginCore;
 using Moq;
 
