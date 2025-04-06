@@ -6,26 +6,37 @@ using MediatR;
 namespace FlowSynx.Application.Behaviors;
 
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : notnull
+    where TRequest : IRequest<TResponse>
 {
-    private readonly IValidator<TRequest> _validator;
+    private readonly IEnumerable<IValidator<TRequest>> _validators;
 
-    public ValidationBehavior(IValidator<TRequest> validator)
+    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
     {
-        ArgumentNullException.ThrowIfNull(validator);
-        _validator = validator;
+        ArgumentNullException.ThrowIfNull(validators);
+        _validators = validators;
     }
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        var validationResult = await _validator.ValidateAsync(request, cancellationToken);
-
-        if (!validationResult.IsValid)
+        if (_validators.Any())
         {
-            var errorMessages = string.Join(", ", validationResult.Errors);
-            throw new FlowSynxException((int)ErrorCode.InputValidation, errorMessages);
-        }
+            var context = new ValidationContext<TRequest>(request);
 
+            var validationResults = await Task.WhenAll(
+                _validators.Select(v =>
+                    v.ValidateAsync(context, cancellationToken)));
+
+            var failures = validationResults
+                .Where(r => r.Errors.Any())
+                .SelectMany(r => r.Errors)
+                .ToList();
+
+            if (failures.Any())
+            {
+                var errorMessages = string.Join(", ", failures.Select(x=>x.ErrorMessage));
+                throw new FlowSynxException((int)ErrorCode.InputValidation, errorMessages);
+            }
+        }
         return await next();
     }
 }
