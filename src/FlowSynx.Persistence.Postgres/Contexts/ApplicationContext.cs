@@ -10,6 +10,7 @@ using FlowSynx.Domain.Entities.Trigger;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using Microsoft.Extensions.Logging;
+using FlowSynx.Domain.Entities.Plugin;
 
 namespace FlowSynx.Persistence.Postgres.Contexts;
 
@@ -34,6 +35,7 @@ public class ApplicationContext : AuditableContext
         _logger = logger;
     }
 
+    public DbSet<PluginEntity> Plugins { get; set; }
     public DbSet<PluginConfigurationEntity> PluginConfiguration { get; set; }
     public DbSet<WorkflowEntity> Workflows { get; set; }
     public DbSet<WorkflowExecutionEntity> WorkflowExecutions { get; set; }
@@ -121,6 +123,7 @@ public class ApplicationContext : AuditableContext
         try
         {
             base.OnModelCreating(builder);
+            builder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
             builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer));
             builder.ApplyConfiguration(new WorkflowEntityfiguration());
             builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration());

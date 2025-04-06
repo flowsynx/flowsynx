@@ -87,4 +87,3 @@ public class WorkflowValidator : IWorkflowValidator
         return workflowTasks.Any(item => !knownKeys.Add(item.Name));
     }
 }
-

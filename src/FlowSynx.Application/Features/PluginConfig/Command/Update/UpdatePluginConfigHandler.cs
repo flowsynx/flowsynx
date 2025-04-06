@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.PluginConfig.Command.Add;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
@@ -52,17 +53,19 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
                 }
             }
 
-            var isTypeExist = await _pluginService.IsExist(request.Type, cancellationToken);
+            var isTypeExist = await _pluginService.IsExist(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
             if (!isTypeExist)
                 throw new FlowSynxException((int)ErrorCode.PluginTypeNotFound,
                     string.Format(Resources.AddConfigValidatorTypeValueIsNotValid, request.Name));
 
-            var isPluginSpecificationsValid = await _pluginSpecificationsService.Validate(request.Type, request.Specifications, cancellationToken);
+            var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
+            var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, pluginEntity.Specifications);
             if (!isPluginSpecificationsValid.Valid)
-                throw new FlowSynxException((int)ErrorCode.PluginTypeNotFound, isPluginSpecificationsValid.Message ?? "");
+                return await Result<Unit>.FailAsync(isPluginSpecificationsValid.Messages);
 
             pluginConfiguration.Name = request.Name;
             pluginConfiguration.Type = request.Type;
+            pluginConfiguration.Version = request.Version;
             pluginConfiguration.Specifications = request.Specifications.ToPluginConfigurationSpecifications();
 
             await _pluginConfigurationService.Update(pluginConfiguration, cancellationToken);

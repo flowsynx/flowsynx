@@ -7,24 +7,39 @@ using FlowSynx.Infrastructure.Workflow;
 using FlowSynx.Plugins.Amazon.S3;
 using FlowSynx.Plugins.Azure.Blobs;
 using FlowSynx.Plugins.Azure.Files;
+using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Application.PluginHost;
+using Microsoft.Extensions.Configuration;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    public static IServiceCollection AddPluginManager(this IServiceCollection services)
+    {
+        services
+            .AddScoped<IExtractPluginSpecifications, ExtractPluginSpecifications>()
+            .AddScoped<IPluginChecksumValidator, Sha256PluginChecksumValidator>()
+            .AddScoped<IPluginDownloader, PluginDownloader>()
+            .AddScoped<IPluginExtractor, PluginExtractor>()
+            .AddScoped<IPluginLoader, PluginLoader>()
+            .AddScoped<IPluginManager, PluginManager>()
+            .AddScoped<IPluginTypeService, PluginTypeService>()
+            .AddScoped<IPluginSpecificationsService, PluginSpecificationsService>();
+
+        return services;
+    }
+
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services
             .AddSingleton<ISystemClock, SystemClock>()
-            .AddSingleton(typeof(ICacheService<string, Plugin>), typeof(CacheService<string, Plugin>))
+            .AddSingleton(typeof(ICacheService<string, IPlugin>), typeof(CacheService<string, IPlugin>))
             .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IHashService, HashService>()
-            .AddScoped<IPluginService, PluginService>()
-            .AddScoped<IPluginTypeService, PluginTypeService>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
             .AddScoped<IRetryService, RetryService>()
-            .AddScoped<WorkflowTimeBasedTriggerProcessor>()
-            .AddScoped<IPluginSpecificationsService, PluginSpecificationsService>();
+            .AddScoped<WorkflowTimeBasedTriggerProcessor>();
 
         return services;
     }
@@ -47,10 +62,10 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection RegisterPlugins(this IServiceCollection services)
     {
-        services.AddScoped<Plugin, LocalFileSystemPlugin>();
-        services.AddScoped<Plugin, AmazonS3Plugin>();
-        services.AddScoped<Plugin, AzureBlobPlugin>();
-        services.AddScoped<Plugin, AzureFilePlugin>();
+        services.AddScoped<IPlugin, LocalFileSystemPlugin>();
+        //services.AddScoped<Plugin, AmazonS3Plugin>();
+        //services.AddScoped<Plugin, AzureBlobPlugin>();
+        //services.AddScoped<Plugin, AzureFilePlugin>();
         return services;
     }
 }

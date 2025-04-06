@@ -1,12 +1,18 @@
-﻿namespace FlowSynx.Domain.Entities.PluginConfig;
+﻿using FlowSynx.Domain.Entities.Plugin;
+
+namespace FlowSynx.Domain.Entities.PluginConfig;
 
 public class PluginConfigurationEntity : AuditableEntity<Guid>, IEquatable<PluginConfigurationEntity>, ISoftDeletable
 {
+    public required Guid PluginId { get; set; }
     public required string UserId { get; set; }
     public required string Name { get; set; }
     public required string Type { get; set; }
+    public required string Version { get; set; }
     public PluginConfigurationSpecifications? Specifications { get; set; }
     public bool IsDeleted { get; set; } = false;
+
+    public PluginEntity Plugin { get; set; }
 
     public override string ToString()
     {

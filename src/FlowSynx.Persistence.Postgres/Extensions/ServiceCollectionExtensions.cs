@@ -26,6 +26,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IAuditService, AuditService>()
             .AddScoped<IApplicationDataSeeder, ApplicationDataSeeder>()
             .AddScoped<IPluginConfigurationService, PluginConfigurationService>()
+            .AddScoped<IPluginService, PluginService>()
             .AddScoped<IWorkflowService, WorkflowService>()
             .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()
             .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()

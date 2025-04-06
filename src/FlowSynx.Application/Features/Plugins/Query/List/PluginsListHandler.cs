@@ -1,8 +1,10 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
-using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Domain.Interfaces;
+using FlowSynx.Application.Services;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.Features.Plugins.Query.List;
 
@@ -10,20 +12,27 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
 {
     private readonly ILogger<PluginsListHandler> _logger;
     private readonly IPluginService _pluginService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public PluginsListHandler(ILogger<PluginsListHandler> logger, IPluginService pluginService)
+    public PluginsListHandler(ILogger<PluginsListHandler> logger, IPluginService pluginService, 
+        ICurrentUserService currentUserService)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginService);
+        ArgumentNullException.ThrowIfNull(currentUserService);
         _logger = logger;
         _pluginService = pluginService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<IEnumerable<PluginsListResponse>>> Handle(PluginsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var plugins = await _pluginService.All(cancellationToken);
+            if (string.IsNullOrEmpty(_currentUserService.UserId))
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+
+            var plugins = await _pluginService.All(_currentUserService.UserId, cancellationToken);
             var response = plugins.Select(p => new PluginsListResponse
             {
                 Id = p.Id,

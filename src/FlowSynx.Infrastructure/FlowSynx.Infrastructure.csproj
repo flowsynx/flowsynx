@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.9.0" />
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>

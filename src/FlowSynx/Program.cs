@@ -21,14 +21,15 @@ try
            .AddJsonSerialization()
            .AddPostgresPersistenceLayer(config)
            .AddEndpoint(config)
-           .AddLocation()
+           .AddPluginsPath()
            .AddVersion()
            .AddCore()
            .AddInfrastructure()
            .AddFlowSynxPlugins()
+           .AddInfrastructurePluginManager(config)
            .AddUserService();
 
-    builder.Services.ParseArguments(args);
+    //builder.Services.ParseArguments(args);
 
     builder.Services
            .AddSecurity(config)

@@ -1,7 +1,7 @@
-﻿using FlowSynx.Application.Extensions;
+﻿using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
-using FlowSynx.PluginCore;
+using FlowSynx.Domain.Interfaces;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -12,29 +12,34 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
 {
     private readonly ILogger<PluginDetailsHandler> _logger;
     private readonly IPluginService _pluginService;
+    private readonly ICurrentUserService _currentUserService;
 
-    public PluginDetailsHandler(ILogger<PluginDetailsHandler> logger, IPluginService pluginService)
+    public PluginDetailsHandler(ILogger<PluginDetailsHandler> logger, IPluginService pluginService,
+        ICurrentUserService currentUserService)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginService);
+        ArgumentNullException.ThrowIfNull(currentUserService);
         _logger = logger;
         _pluginService = pluginService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<PluginDetailsResponse>> Handle(PluginDetailsRequest request, CancellationToken cancellationToken)
     {
         try
         {
+            if (string.IsNullOrEmpty(_currentUserService.UserId))
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+
             var pluginId = Guid.Parse(request.Id);
-            var plugin = await _pluginService.Get(pluginId, cancellationToken);
-            var specificationsType = plugin.SpecificationsType;
-            var properties = specificationsType.GetProperties().Where(x => x.CanWrite).ToList();
-            var specifications = properties
+            var plugin = await _pluginService.Get(_currentUserService.UserId, pluginId, cancellationToken);
+            var specifications = plugin.Specifications
                 .Select(property => new PluginDetailsSpecification
                 {
                     Key = property.Name,
-                    Type = property.PropertyType.GetPrimitiveType(),
-                    Required = Attribute.IsDefined(property, typeof(RequiredMemberAttribute))
+                    Type = property.Type,
+                    IsRequired = property.IsRequired
                 }).ToList();
 
             var response = new PluginDetailsResponse

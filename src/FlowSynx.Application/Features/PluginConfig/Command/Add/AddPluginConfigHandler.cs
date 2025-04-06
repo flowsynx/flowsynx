@@ -41,26 +41,29 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
 
-            var isTypeExist = await _pluginService.IsExist(request.Type, cancellationToken);
+            var isTypeExist = await _pluginService.IsExist(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
             if (!isTypeExist)
             {
                 var typeNotExistMessage = string.Format(Resources.AddConfigValidatorTypeValueIsNotValid, request.Name);
                 _logger.LogWarning(typeNotExistMessage);
                 return await Result<AddPluginConfigResponse>.FailAsync(typeNotExistMessage);
             }
-            var isPluginSpecificationsValid = await _pluginSpecificationsService.Validate(request.Type, request.Specifications, cancellationToken);
+
+            var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
+            var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, pluginEntity.Specifications);
             if (!isPluginSpecificationsValid.Valid)
             {
-                _logger.LogWarning(isPluginSpecificationsValid.Message);
-                return await Result<AddPluginConfigResponse>.FailAsync(isPluginSpecificationsValid.Message ?? "");
+                return await Result<AddPluginConfigResponse>.FailAsync(isPluginSpecificationsValid.Messages);
             }
 
             var pluginConfiguration = new PluginConfigurationEntity
             {
                 Id = Guid.NewGuid(),
+                PluginId = pluginEntity.Id,
                 UserId = _currentUserService.UserId,
                 Name = request.Name,
                 Type = request.Type,
+                Version = request.Version,
                 Specifications = request.Specifications.ToPluginConfigurationSpecifications(),
             };
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using FlowSynx.Domain.Entities.Trigger;
 using FlowSynx.Application.Services;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 
@@ -38,15 +39,22 @@ public class WorkflowTriggerEntityConfiguration : IEntityTypeConfiguration<Workf
 
         builder.Property(t => t.Status).IsRequired().HasConversion(statusConverter);
 
-        var dictionaryconverter = new ValueConverter<Dictionary<string, object>, string>(
+        var dictionaryConverter = new ValueConverter<Dictionary<string, object>, string>(
             v => _jsonSerializer.Serialize(v),
             v => _jsonDeserializer.Deserialize<Dictionary<string, object>>(v)
+        );
+
+        var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
+            (c1, c2) => _jsonSerializer.Serialize(c1) ==
+                        _jsonSerializer.Serialize(c2),
+            c => _jsonSerializer.Serialize(c).GetHashCode(),
+            c => _jsonDeserializer.Deserialize<Dictionary<string, object>>(_jsonSerializer.Serialize(c))
         );
 
         builder.Property(e => e.Properties)
                .IsRequired()
                .HasColumnType("jsonb")
-               .HasConversion(dictionaryconverter);
+               .HasConversion(dictionaryConverter, dictionaryComparer);
 
         builder.HasOne(we => we.Workflow)
                .WithMany(w => w.Triggers)

@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Extensions;
+﻿namespace FlowSynx.Infrastructure.Extensions;
 
 public static class TypeExtensions
 {

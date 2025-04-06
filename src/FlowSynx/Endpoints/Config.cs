@@ -77,6 +77,7 @@ public class Config : EndpointGroupBase
             Id = id, 
             Name = request.Name, 
             Type = request.Type, 
+            Version = request.Version,
             Specifications = request.Specifications 
         };
         var result = await mediator.UpdatePluginConfiguration(updatePluginConfigRequest, cancellationToken);

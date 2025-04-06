@@ -7,7 +7,7 @@ public enum ErrorCode
     #region Application error codes
     ApplicationStartArgumentIsRequired              = 1001,
     ApplicationEndpoint                             = 1002,
-    ApplicationLocation                             = 1003,
+    PluginsLocation                                 = 1003,
     ApplicationVersion                              = 1004,
     ApplicationTriggerProcessing                    = 1005,
     ApplicationHealthCheck                          = 1006,

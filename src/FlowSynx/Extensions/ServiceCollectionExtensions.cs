@@ -13,6 +13,7 @@ using FlowSynx.Application.Configuration;
 using FlowSynx.Domain.Interfaces;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Infrastructure.PluginHost;
 
 namespace FlowSynx.Extensions;
 
@@ -25,9 +26,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddLocation(this IServiceCollection services)
+    public static IServiceCollection AddPluginsPath(this IServiceCollection services)
     {
-        services.AddSingleton<ILocation, FlowSynxLocation>();
+        services.AddSingleton<IPluginsLocation, PluginsLocation>();
         return services;
     }
 
@@ -217,6 +218,16 @@ public static class ServiceCollectionExtensions
         {
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services, IConfiguration configuration)
+    {
+        var pluginRegistryConfiguration = new PluginRegistryConfiguration();
+        configuration.GetSection("PluginRegistry").Bind(pluginRegistryConfiguration);
+        services.AddSingleton(pluginRegistryConfiguration);
+        services.AddPluginManager();
 
         return services;
     }

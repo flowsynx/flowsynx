@@ -1,9 +1,10 @@
 ﻿using FlowSynx.Application.Model;
+using FlowSynx.Domain.Entities.Plugin;
 
 namespace FlowSynx.Application.Services;
 
 public interface IPluginSpecificationsService
 {
-    Task<PluginSpecificationsResult> Validate(string type, Dictionary<string, object?>? specifications, 
-        CancellationToken cancellationToken);
+    PluginSpecificationsResult Validate(Dictionary<string, object?> inputSpecifications, 
+        List<PluginSpecification> specifications);
 }
