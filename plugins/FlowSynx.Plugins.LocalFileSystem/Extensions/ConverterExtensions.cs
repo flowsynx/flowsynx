@@ -6,14 +6,14 @@ namespace FlowSynx.Plugins.Storage.LocalFileSystem.Extensions;
 
 internal static class ConverterExtensions
 {
-    public static PluginContextData ToContextData(this FileInfo file, bool? includeMetadata)
+    public static PluginContext ToContext(this FileInfo file, bool? includeMetadata)
     {
         var dataBytes = File.ReadAllBytes(file.FullName);
         var isBinaryFile = IsBinaryFile(dataBytes);
         var rawData = isBinaryFile ? dataBytes : null;
         var content = !isBinaryFile ? Encoding.UTF8.GetString(dataBytes) : null;
 
-        var entity = new PluginContextData(PathHelper.ToUnixPath(file.FullName), "File")
+        var context = new PluginContext(PathHelper.ToUnixPath(file.FullName), "File")
         {
             Format = file.Extension.ToLower(),
             RawData = rawData,
@@ -22,12 +22,12 @@ internal static class ConverterExtensions
 
         if (includeMetadata is true)
         {
-            entity.TryAddMetadata("Length", file.Length);
-            entity.TryAddMetadata("CreatedTime", file.CreationTimeUtc);
-            entity.TryAddMetadata("ModifiedTime", file.LastWriteTimeUtc);
-            entity.TryAddMetadata("Attributes", file.Attributes.ToString());
+            context.TryAddMetadata("Length", file.Length);
+            context.TryAddMetadata("CreatedTime", file.CreationTimeUtc);
+            context.TryAddMetadata("ModifiedTime", file.LastWriteTimeUtc);
+            context.TryAddMetadata("Attributes", file.Attributes.ToString());
         }
-        return entity;
+        return context;
     }
 
     private static bool IsBinaryFile(byte[] data, int sampleSize = 1024)

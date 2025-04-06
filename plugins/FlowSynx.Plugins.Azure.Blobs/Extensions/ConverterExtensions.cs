@@ -7,7 +7,7 @@ namespace FlowSynx.Plugins.Azure.Blobs.Extensions;
 
 internal static class ConverterExtensions
 {
-    public static async Task<PluginContextData> ToContextData(this BlobClient blobClient, bool? includeMetadata,
+    public static async Task<PluginContext> ToContext(this BlobClient blobClient, bool? includeMetadata,
         CancellationToken cancellationToken)
     {
         BlobDownloadInfo download = await blobClient.DownloadAsync(cancellationToken);
@@ -21,7 +21,7 @@ internal static class ConverterExtensions
         var rawData = isBinaryFile ? dataBytes : null;
         var content = !isBinaryFile ? Encoding.UTF8.GetString(dataBytes) : null;
 
-        var entity = new PluginContextData(blobClient.Name, "File")
+        var context = new PluginContext(blobClient.Name, "File")
         {
             RawData = rawData,
             Content = content,
@@ -30,10 +30,10 @@ internal static class ConverterExtensions
         if (includeMetadata is true)
         {
             var blobProperties = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
-            AddProperties(entity, blobProperties);
+            AddProperties(context, blobProperties);
         }
 
-        return entity;
+        return context;
     }
 
     private static bool IsBinaryFile(byte[] data, int sampleSize = 1024)
@@ -49,32 +49,32 @@ internal static class ConverterExtensions
         return (double)nonPrintableCount / checkLength > threshold;
     }
 
-    private static void AddProperties(PluginContextData entity, BlobProperties properties)
+    private static void AddProperties(PluginContext context, BlobProperties properties)
     {
-        entity.Metadata.Add("AccessTier", properties.AccessTier);
-        entity.Metadata.Add("AccessTierChangedOn", properties.AccessTierChangedOn);
-        entity.Metadata.Add("AccessTierInferred", properties.AccessTierInferred);
-        entity.Metadata.Add("BlobSequenceNumber", properties.BlobSequenceNumber);
-        entity.Metadata.Add("BlobType", properties.BlobType);
-        entity.Metadata.Add("CacheControl", properties.CacheControl);
-        entity.Metadata.Add("ContentDisposition", properties.ContentDisposition);
-        entity.Metadata.Add("ContentEncoding", properties.ContentEncoding);
-        entity.Metadata.Add("ContentHash", properties.ContentHash.ToHexString());
-        entity.Metadata.Add("ContentLanguage", properties.ContentLanguage);
-        entity.Metadata.Add("ContentLength", properties.ContentLength);
-        entity.Metadata.Add("ContentType", properties.ContentType);
-        entity.Metadata.Add("CopyCompletedOn", properties.CopyCompletedOn);
-        entity.Metadata.Add("CopyId", properties.CopyId);
-        entity.Metadata.Add("CopyProgress", properties.CopyProgress);
-        entity.Metadata.Add("CopySource", properties.CopySource);
-        entity.Metadata.Add("CopyStatus", properties.CopyStatus);
-        entity.Metadata.Add("CopyStatusDescription", properties.CopyStatusDescription);
-        entity.Metadata.Add("CreatedOn", properties.CreatedOn);
-        entity.Metadata.Add("DestinationSnapshot", properties.DestinationSnapshot);
-        entity.Metadata.Add("ETag", properties.ETag);
-        entity.Metadata.Add("LastModified", properties.LastModified);
-        entity.Metadata.Add("LeaseDuration", properties.LeaseDuration);
-        entity.Metadata.Add("LeaseState", properties.LeaseState);
-        entity.Metadata.Add("LeaseStatus", properties.LeaseStatus);
+        context.Metadata.Add("AccessTier", properties.AccessTier);
+        context.Metadata.Add("AccessTierChangedOn", properties.AccessTierChangedOn);
+        context.Metadata.Add("AccessTierInferred", properties.AccessTierInferred);
+        context.Metadata.Add("BlobSequenceNumber", properties.BlobSequenceNumber);
+        context.Metadata.Add("BlobType", properties.BlobType);
+        context.Metadata.Add("CacheControl", properties.CacheControl);
+        context.Metadata.Add("ContentDisposition", properties.ContentDisposition);
+        context.Metadata.Add("ContentEncoding", properties.ContentEncoding);
+        context.Metadata.Add("ContentHash", properties.ContentHash.ToHexString());
+        context.Metadata.Add("ContentLanguage", properties.ContentLanguage);
+        context.Metadata.Add("ContentLength", properties.ContentLength);
+        context.Metadata.Add("ContentType", properties.ContentType);
+        context.Metadata.Add("CopyCompletedOn", properties.CopyCompletedOn);
+        context.Metadata.Add("CopyId", properties.CopyId);
+        context.Metadata.Add("CopyProgress", properties.CopyProgress);
+        context.Metadata.Add("CopySource", properties.CopySource);
+        context.Metadata.Add("CopyStatus", properties.CopyStatus);
+        context.Metadata.Add("CopyStatusDescription", properties.CopyStatusDescription);
+        context.Metadata.Add("CreatedOn", properties.CreatedOn);
+        context.Metadata.Add("DestinationSnapshot", properties.DestinationSnapshot);
+        context.Metadata.Add("ETag", properties.ETag);
+        context.Metadata.Add("LastModified", properties.LastModified);
+        context.Metadata.Add("LeaseDuration", properties.LeaseDuration);
+        context.Metadata.Add("LeaseState", properties.LeaseState);
+        context.Metadata.Add("LeaseStatus", properties.LeaseStatus);
     }
 }

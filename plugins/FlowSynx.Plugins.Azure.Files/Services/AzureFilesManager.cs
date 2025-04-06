@@ -2,7 +2,6 @@
 using Azure.Storage.Files.Shares;
 using Azure;
 using Microsoft.Extensions.Logging;
-using System.Data;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Extensions;
 using FlowSynx.Plugins.Azure.Files.Models;
@@ -10,7 +9,6 @@ using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Plugins.Azure.Files.Exceptions;
 using System.Text;
 using FlowSynx.Plugins.Azure.Files.Extensions;
-using Microsoft.Extensions.Options;
 
 namespace FlowSynx.Plugins.Azure.Files.Services;
 
@@ -45,7 +43,7 @@ public class AzureFilesManager: IAzureFilesManager
         return await ExistEntity(existParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<PluginContextData>> List(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<IEnumerable<PluginContext>> List(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var listParameters = parameters.ToObject<ListParameters>();
         return await ListEntities(listParameters, cancellationToken).ConfigureAwait(false);
@@ -57,7 +55,7 @@ public class AzureFilesManager: IAzureFilesManager
         await PurgeEntity(purgeParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<PluginContextData> Read(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<PluginContext> Read(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var readParameters = parameters.ToObject<ReadParameters>();
         return await ReadEntity(readParameters, cancellationToken).ConfigureAwait(false);
@@ -120,42 +118,42 @@ public class AzureFilesManager: IAzureFilesManager
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         var dataValue = writeParameters.Data;
-        var pluginContextDatas = new List<PluginContextData>();
+        var pluginContextes = new List<PluginContext>();
 
-        if (dataValue is PluginContextData pluginContextData)
+        if (dataValue is PluginContext pluginContext)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            pluginContextDatas.Add(pluginContextData);
+            pluginContextes.Add(pluginContext);
         }
-        else if (dataValue is IEnumerable<PluginContextData> pluginContextDataList)
+        else if (dataValue is IEnumerable<PluginContext> pluginContextesList)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new Exception(Resources.ThePathIsNotDirectory);
 
-            pluginContextDatas.AddRange(pluginContextDataList);
+            pluginContextes.AddRange(pluginContextesList);
         }
         else if (dataValue is string data)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            var contextData = CreateContextDataFromStringData(path, data);
-            pluginContextDatas.Add(contextData);
+            var context = CreateContextFromStringData(path, data);
+            pluginContextes.Add(context);
         }
         else
         {
             throw new NotSupportedException("The entered data format is not supported!");
         }
 
-        foreach (var contextData in pluginContextDatas)
+        foreach (var context in pluginContextes)
         {
-            await WriteEntityFromContextData(path, contextData, writeParameters.Overwrite, cancellationToken).ConfigureAwait(false);
+            await WriteEntityFromContext(path, context, writeParameters.Overwrite, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private PluginContextData CreateContextDataFromStringData(string path, string data)
+    private PluginContext CreateContextFromStringData(string path, string data)
     {
         var rootPath = Path.GetPathRoot(path);
         string relativePath = path;
@@ -165,36 +163,34 @@ public class AzureFilesManager: IAzureFilesManager
 
         var dataBytesArray = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
-        return new PluginContextData(relativePath, "File")
+        return new PluginContext(relativePath, "File")
         {
             RawData = dataBytesArray,
         };
     }
 
-    private async Task WriteEntityFromContextData(string path, PluginContextData contextData, bool overwrite,
+    private async Task WriteEntityFromContext(string path, PluginContext context, bool overwrite,
         CancellationToken cancellationToken)
     {
         byte[] dataToWrite;
 
-        if (contextData.RawData is not null)
-            dataToWrite = contextData.RawData;
-        else if (contextData.Content is not null)
-            dataToWrite = Encoding.UTF8.GetBytes(contextData.Content);
+        if (context.RawData is not null)
+            dataToWrite = context.RawData;
+        else if (context.Content is not null)
+            dataToWrite = Encoding.UTF8.GetBytes(context.Content);
         else
-            throw new InvalidDataException($"The entered data is invalid for '{contextData.Id}'");
+            throw new InvalidDataException($"The entered data is invalid for '{context.Id}'");
 
-        var rootPath = Path.GetPathRoot(contextData.Id);
-        string relativePath = contextData.Id;
+        var rootPath = Path.GetPathRoot(context.Id);
+        string relativePath = context.Id;
 
         if (!string.IsNullOrEmpty(rootPath))
-            relativePath = Path.GetRelativePath(rootPath, contextData.Id);
+            relativePath = Path.GetRelativePath(rootPath, context.Id);
 
         var fullPath = PathHelper.IsDirectory(path) ? PathHelper.Combine(path, relativePath) : path;
 
         if (!PathHelper.IsFile(fullPath))
             throw new Exception(Resources.ThePathIsNotFile);
-
-
 
         try
         {
@@ -239,7 +235,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task<PluginContextData> ReadEntity(ReadParameters readParameters, CancellationToken cancellationToken)
+    private async Task<PluginContext> ReadEntity(ReadParameters readParameters, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(readParameters.Path);
         if (string.IsNullOrEmpty(path))
@@ -256,10 +252,7 @@ public class AzureFilesManager: IAzureFilesManager
             if (!isExist)
                 throw new FlowSynxException((int)ErrorCodes.AzureFilesThePathIsNotExist, string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-            //var stream = await fileClient.OpenReadAsync(cancellationToken: cancellationToken);
-            //var fileProperties = await fileClient.GetPropertiesAsync(cancellationToken);
-
-            return await fileClient.ToContextData(true, cancellationToken).ConfigureAwait(false);
+            return await fileClient.ToContext(true, cancellationToken).ConfigureAwait(false);
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
@@ -393,7 +386,7 @@ public class AzureFilesManager: IAzureFilesManager
         }
     }
 
-    private async Task<IEnumerable<PluginContextData>> ListEntities(ListParameters listParameters, CancellationToken cancellationToken)
+    private async Task<IEnumerable<PluginContext>> ListEntities(ListParameters listParameters, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(listParameters.Path);
         if (string.IsNullOrEmpty(path))
@@ -402,7 +395,7 @@ public class AzureFilesManager: IAzureFilesManager
         if (!PathHelper.IsDirectory(path))
             throw new FlowSynxException((int)ErrorCodes.AzureFilesPathIsNotDirectory, Resources.ThePathIsNotDirectory);
 
-        var storageEntities = new List<PluginContextData>();
+        var storageEntities = new List<PluginContext>();
         ShareDirectoryClient directoryClient;
 
         if (string.IsNullOrEmpty(path) || PathHelper.IsRootPath(path))
@@ -422,7 +415,7 @@ public class AzureFilesManager: IAzureFilesManager
                     try
                     {
                         var fileClient = dir.GetFileClient(item.Name);
-                        storageEntities.Add(await fileClient.ToContextData(listParameters.IncludeMetadata, cancellationToken));
+                        storageEntities.Add(await fileClient.ToContext(listParameters.IncludeMetadata, cancellationToken));
 
                         if (listParameters.Recurse is false) 
                             continue;

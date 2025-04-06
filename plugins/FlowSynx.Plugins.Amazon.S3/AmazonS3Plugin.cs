@@ -6,7 +6,7 @@ using FlowSynx.PluginCore.Extensions;
 
 namespace FlowSynx.Plugins.Amazon.S3;
 
-public class AmazonS3Plugin : Plugin
+public class AmazonS3Plugin : IPlugin
 {
     private readonly ILogger<AmazonS3Plugin> _logger;
     private readonly IAmazonS3Connection _connection;
@@ -20,15 +20,25 @@ public class AmazonS3Plugin : Plugin
         _connection = new AmazonS3Connection();
     }
 
-    public override Guid Id => Guid.Parse("b961131b-04cb-48df-9554-4252dc66c04c");
-    public override string Name => "Amazon.S3";
-    public override string? Description => Resources.ConnectorDescription;
-    public override PluginVersion Version => new PluginVersion(1, 0, 0);
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
-    public override PluginSpecifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(AmazonS3Specifications);
+    public PluginMetadata Metadata { 
+        get
+        {
+            return new PluginMetadata
+            {
+                Id = Guid.Parse("b961131b-04cb-48df-9554-4252dc66c04c"),
+                Name = "Amazon.S3",
+                Description = Resources.ConnectorDescription,
+                Version = new PluginVersion(1, 0, 0),
+                Namespace = PluginNamespace.Connectors,
+                Author = "FlowSynx LLC."
+            };
+        }
+    }
 
-    public override Task Initialize()
+    public PluginSpecifications? Specifications { get; set; }
+    public Type SpecificationsType => typeof(AmazonS3Specifications);
+
+    public Task Initialize()
     {
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
         var client = _connection.Connect(_s3Specifications);
@@ -36,7 +46,7 @@ public class AmazonS3Plugin : Plugin
         return Task.CompletedTask;
     }
 
-    public override async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var operationParameter = parameters.ToObject<OperationParameter>();
         var operation = operationParameter.Operation;

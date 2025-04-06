@@ -6,7 +6,7 @@ using FlowSynx.PluginCore.Extensions;
 
 namespace FlowSynx.Plugins.Azure.Files;
 
-public class AzureFilePlugin : Plugin
+public class AzureFilePlugin : IPlugin
 {
     private readonly ILogger<AzureFilePlugin> _logger;
     private readonly IAzureFilesConnection _connection;
@@ -20,15 +20,26 @@ public class AzureFilePlugin : Plugin
         _connection = new AzureFilesConnection();
     }
 
-    public override Guid Id => Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d");
-    public override string Name => "Azure.Files";
-    public override string? Description => Resources.ConnectorDescription;
-    public override PluginVersion Version => new PluginVersion(1, 0, 0);
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
-    public override PluginSpecifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(AzureFilesSpecifications);
+    public PluginMetadata Metadata
+    {
+        get
+        {
+            return new PluginMetadata
+            {
+                Id = Guid.Parse("cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d"),
+                Name = "Azure.Files",
+                Description = Resources.ConnectorDescription,
+                Version = new PluginVersion(1, 0, 0),
+                Namespace = PluginNamespace.Connectors,
+                Author = "FlowSynx LLC."
+            };
+        }
+    }
 
-    public override Task Initialize()
+    public PluginSpecifications? Specifications { get; set; }
+    public Type SpecificationsType => typeof(AzureFilesSpecifications);
+           
+    public Task Initialize()
     {
         _azureFilesSpecifications = Specifications.ToObject<AzureFilesSpecifications>();
         var client = _connection.Connect(_azureFilesSpecifications);
@@ -36,7 +47,7 @@ public class AzureFilePlugin : Plugin
         return Task.CompletedTask;
     }
 
-    public override async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var operationParameter = parameters.ToObject<OperationParameter>();
         var operation = operationParameter.Operation;

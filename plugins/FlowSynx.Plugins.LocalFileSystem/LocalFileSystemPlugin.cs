@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugins.LocalFileSystem;
 
-public class LocalFileSystemPlugin : Plugin
+public class LocalFileSystemPlugin : IPlugin
 {
     private readonly ILogger<LocalFileSystemPlugin> _logger;
     private ILocalFileManager _manager = null!;
@@ -17,21 +17,32 @@ public class LocalFileSystemPlugin : Plugin
         _logger = logger;
     }
 
-    public override Guid Id => Guid.Parse("f6304870-0294-453e-9598-a82167ace653");
-    public override string Name => "LocalFileSystem";
-    public override string? Description => Resources.ConnectorDescription;
-    public override PluginVersion Version => new PluginVersion(1,0,0);
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
-    public override PluginSpecifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(LocalFileSystemSpecifications);
+    public PluginMetadata Metadata
+    {
+        get
+        {
+            return new PluginMetadata
+            {
+                Id = Guid.Parse("f6304870-0294-453e-9598-a82167ace653"),
+                Name = "LocalFileSystem",
+                Description = Resources.ConnectorDescription,
+                Version = new PluginVersion(1, 0, 0),
+                Namespace = PluginNamespace.Connectors,
+                Author = "FlowSynx LLC."
+            };
+        }
+    }
 
-    public override Task Initialize()
+    public PluginSpecifications? Specifications { get; set; }
+    public Type SpecificationsType => typeof(LocalFileSystemSpecifications);
+
+    public Task Initialize()
     {
         _manager = new LocalFileManager(_logger);
         return Task.CompletedTask;
     }
 
-    public override async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var operationParameter = parameters.ToObject<OperationParameter>();
         var operation = operationParameter.Operation;

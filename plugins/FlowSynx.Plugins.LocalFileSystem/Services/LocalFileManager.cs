@@ -35,7 +35,7 @@ internal class LocalFileManager : ILocalFileManager
         return await ExistEntity(existParameters).ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<PluginContextData>> List(PluginParameters parameters)
+    public async Task<IEnumerable<PluginContext>> List(PluginParameters parameters)
     {
         var listParameter = parameters.ToObject<ListParameters>();
         return await ListEntities(listParameter).ConfigureAwait(false);
@@ -47,7 +47,7 @@ internal class LocalFileManager : ILocalFileManager
         await PurgeEntity(purgeParameters).ConfigureAwait(false);
     }
 
-    public async Task<PluginContextData> Read(PluginParameters parameters)
+    public async Task<PluginContext> Read(PluginParameters parameters)
     {
         var readParameters = parameters.ToObject<ReadParameters>();
         return await ReadEntity(readParameters).ConfigureAwait(false);
@@ -110,7 +110,7 @@ internal class LocalFileManager : ILocalFileManager
         return Task.FromResult(isExist);
     }
 
-    private Task<IEnumerable<PluginContextData>> ListEntities(ListParameters listParameters)
+    private Task<IEnumerable<PluginContext>> ListEntities(ListParameters listParameters)
     {
         var path = PathHelper.ToUnixPath(listParameters.Path);
         if (string.IsNullOrEmpty(path))
@@ -126,10 +126,10 @@ internal class LocalFileManager : ILocalFileManager
 
         var fileEntities = directoryInfo
                            .FindFiles(_logger, listParameters)
-                           .Select(file => file.ToContextData(listParameters.IncludeMetadata))
+                           .Select(file => file.ToContext(listParameters.IncludeMetadata))
                            .ToList();
 
-        return Task.FromResult<IEnumerable<PluginContextData>>(fileEntities);
+        return Task.FromResult<IEnumerable<PluginContext>>(fileEntities);
     }
 
     private Task PurgeEntity(PurgeParameters purgeParameters)
@@ -153,7 +153,7 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<PluginContextData> ReadEntity(ReadParameters readParameters)
+    private Task<PluginContext> ReadEntity(ReadParameters readParameters)
     {
         var path = PathHelper.ToUnixPath(readParameters.Path);
         if (string.IsNullOrEmpty(path))
@@ -166,7 +166,7 @@ internal class LocalFileManager : ILocalFileManager
             throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
         var fileInfo = new FileInfo(path);
-        var entity = fileInfo.ToContextData(true);
+        var entity = fileInfo.ToContext(true);
 
         return Task.FromResult(entity);
     }
@@ -203,21 +203,21 @@ internal class LocalFileManager : ILocalFileManager
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         var dataValue = writeParameters.Data;
-        var pluginContextDatas = new List<PluginContextData>();
+        var pluginContextes = new List<PluginContext>();
 
-        if (dataValue is PluginContextData pluginContextData)
+        if (dataValue is PluginContext pluginContext)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            pluginContextDatas.Add(pluginContextData);
+            pluginContextes.Add(pluginContext);
         }
-        else if (dataValue is IEnumerable<PluginContextData> pluginContextDataList)
+        else if (dataValue is IEnumerable<PluginContext> pluginContextDataList)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new Exception(Resources.ThePathIsNotDirectory);
 
-            pluginContextDatas.AddRange(pluginContextDataList);
+            pluginContextes.AddRange(pluginContextDataList);
         }
         else if (dataValue is string data)
         {
@@ -225,47 +225,47 @@ internal class LocalFileManager : ILocalFileManager
                 throw new Exception(Resources.ThePathIsNotFile);
 
             var contextData = CreateContextDataFromStringData(path, data);
-            pluginContextDatas.Add(contextData);
+            pluginContextes.Add(contextData);
         }
         else
         {
             throw new NotSupportedException("The entered data format is not supported!");
         }
 
-        foreach (var contextData in pluginContextDatas)
+        foreach (var contextData in pluginContextes)
         {
             await WriteEntityFromContextData(path, contextData, writeParameters.Overwrite).ConfigureAwait(false);
         }
     }
 
-    private PluginContextData CreateContextDataFromStringData(string path, string data)
+    private PluginContext CreateContextDataFromStringData(string path, string data)
     {
         var root = Path.GetPathRoot(path);
         var relativePath = Path.GetRelativePath(root, path);
         var dataBytesArray = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
-        return new PluginContextData(relativePath, "File")
+        return new PluginContext(relativePath, "File")
         {
             RawData = dataBytesArray,
         };
     }
 
-    private Task WriteEntityFromContextData(string path, PluginContextData contextData, bool overwrite)
+    private Task WriteEntityFromContextData(string path, PluginContext pluginContext, bool overwrite)
     {
         byte[] dataToWrite;
 
-        if (contextData.RawData is not null)
-            dataToWrite = contextData.RawData;
-        else if (contextData.Content is not null)
-            dataToWrite = Encoding.UTF8.GetBytes(contextData.Content);
+        if (pluginContext.RawData is not null)
+            dataToWrite = pluginContext.RawData;
+        else if (pluginContext.Content is not null)
+            dataToWrite = Encoding.UTF8.GetBytes(pluginContext.Content);
         else
-            throw new InvalidDataException($"The entered data is invalid for '{contextData.Id}'");
+            throw new InvalidDataException($"The entered data is invalid for '{pluginContext.Id}'");
 
-        var rootPath = Path.GetPathRoot(contextData.Id);
-        string relativePath = contextData.Id;
+        var rootPath = Path.GetPathRoot(pluginContext.Id);
+        string relativePath = pluginContext.Id;
 
         if (!string.IsNullOrEmpty(rootPath))
-            relativePath = Path.GetRelativePath(rootPath, contextData.Id);
+            relativePath = Path.GetRelativePath(rootPath, pluginContext.Id);
 
         var fullPath = PathHelper.IsDirectory(path) ? Path.Combine(path, relativePath) : path;
 

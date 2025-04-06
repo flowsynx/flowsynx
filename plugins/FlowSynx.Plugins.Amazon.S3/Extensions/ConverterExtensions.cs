@@ -9,7 +9,7 @@ internal static class ConverterExtensions
 {
     private const string MetaDataHeaderPrefix = "x-amz-meta-";
 
-    public static async Task<PluginContextData> ToContextData(this AmazonS3Client client, string bucketName, string key,
+    public static async Task<PluginContext> ToContext(this AmazonS3Client client, string bucketName, string key,
         bool? includeMetadata, CancellationToken cancellationToken)
     {
         var request = new GetObjectRequest { BucketName = bucketName, Key = key };
@@ -24,7 +24,7 @@ internal static class ConverterExtensions
         var rawData = isBinaryFile ? dataBytes : null;
         var content = !isBinaryFile ? Encoding.UTF8.GetString(dataBytes) : null;
 
-        PluginContextData entity = new PluginContextData(response.Key, "File")
+        var context = new PluginContext(response.Key, "File")
         {
             RawData = rawData,
             Content = content
@@ -32,15 +32,15 @@ internal static class ConverterExtensions
 
         if (includeMetadata is true)
         {
-            entity.TryAddMetadata("Length", response.ContentLength);
-            entity.TryAddMetadata("ModifiedTime", response.LastModified.ToUniversalTime());
-            entity.TryAddMetadata("ContentHash", response.ETag.Trim('\"'));
-            entity.TryAddMetadata("StorageClass", response.StorageClass);
-            entity.TryAddMetadata("ETag", response.ETag);
-            AddProperties(client, response.BucketName, response.Key, entity, cancellationToken);
+            context.TryAddMetadata("Length", response.ContentLength);
+            context.TryAddMetadata("ModifiedTime", response.LastModified.ToUniversalTime());
+            context.TryAddMetadata("ContentHash", response.ETag.Trim('\"'));
+            context.TryAddMetadata("StorageClass", response.StorageClass);
+            context.TryAddMetadata("ETag", response.ETag);
+            AddProperties(client, response.BucketName, response.Key, context, cancellationToken);
         }
 
-        return entity;
+        return context;
     }
 
     private static bool IsBinaryFile(byte[] data, int sampleSize = 1024)
@@ -57,7 +57,7 @@ internal static class ConverterExtensions
     }
 
     private static async void AddProperties(AmazonS3Client client, string bucketName, string key,
-        PluginContextData entity, CancellationToken cancellationToken)
+        PluginContext entity, CancellationToken cancellationToken)
     {
         GetObjectMetadataResponse obj = await client.GetObjectMetadataAsync(bucketName, key, cancellationToken).ConfigureAwait(false);
         if (obj != null)
@@ -67,7 +67,7 @@ internal static class ConverterExtensions
         }
     }
 
-    private static void AddProperties(PluginContextData contextData, MetadataCollection metadata)
+    private static void AddProperties(PluginContext context, MetadataCollection metadata)
     {
         foreach (string key in metadata.Keys)
         {
@@ -76,7 +76,7 @@ internal static class ConverterExtensions
             if (putKey.StartsWith(MetaDataHeaderPrefix))
                 putKey = putKey[MetaDataHeaderPrefix.Length..];
 
-            contextData.TryAddMetadata(putKey,value);
+            context.TryAddMetadata(putKey,value);
         }
     }
 }

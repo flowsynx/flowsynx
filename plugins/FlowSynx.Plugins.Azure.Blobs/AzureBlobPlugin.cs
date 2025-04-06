@@ -6,7 +6,7 @@ using FlowSynx.Plugins.Azure.Blobs.Services;
 
 namespace FlowSynx.Plugins.Azure.Blobs;
 
-public class AzureBlobPlugin : Plugin
+public class AzureBlobPlugin : IPlugin
 {
     private readonly ILogger<AzureBlobPlugin> _logger;
     private readonly IAzureBlobConnection _connection;
@@ -20,15 +20,26 @@ public class AzureBlobPlugin : Plugin
         _connection = new AzureBlobConnection();
     }
 
-    public override Guid Id => Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8");
-    public override string Name => "Azure.Blobs";
-    public override string? Description => Resources.ConnectorDescription;
-    public override PluginVersion Version => new PluginVersion(1, 0, 0);
-    public override PluginNamespace Namespace => PluginNamespace.Connectors;
-    public override PluginSpecifications? Specifications { get; set; }
-    public override Type SpecificationsType => typeof(AzureBlobSpecifications);
+    public PluginMetadata Metadata
+    {
+        get
+        {
+            return new PluginMetadata
+            {
+                Id = Guid.Parse("7f21ba04-ea2a-4c78-a2f9-051fa05391c8"),
+                Name = "Azure.Blobs",
+                Description = Resources.ConnectorDescription,
+                Version = new PluginVersion(1, 0, 0),
+                Namespace = PluginNamespace.Connectors,
+                Author = "FlowSynx LLC."
+            };
+        }
+    }
 
-    public override Task Initialize()
+    public PluginSpecifications? Specifications { get; set; }
+    public Type SpecificationsType => typeof(AzureBlobSpecifications);
+
+    public Task Initialize()
     {
         _azureBlobSpecifications = Specifications.ToObject<AzureBlobSpecifications>();
         var client = _connection.Connect(_azureBlobSpecifications);
@@ -36,7 +47,7 @@ public class AzureBlobPlugin : Plugin
         return Task.CompletedTask;
     }
 
-    public override async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var operationParameter = parameters.ToObject<OperationParameter>();
         var operation = operationParameter.Operation;

@@ -47,7 +47,7 @@ public class AmazonS3Manager : IAmazonS3Manager
         return await ExistEntity(existParameters.Path, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<PluginContextData>> List(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<IEnumerable<PluginContext>> List(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var listParameter = parameters.ToObject<ListParameters>();
         return await ListEntities(listParameter, cancellationToken).ConfigureAwait(false);
@@ -59,7 +59,7 @@ public class AmazonS3Manager : IAmazonS3Manager
         await PurgeEntity(purgeParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<PluginContextData> Read(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<PluginContext> Read(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var readParameters = parameters.ToObject<ReadParameters>();
         return await ReadEntity(readParameters, cancellationToken).ConfigureAwait(false);
@@ -168,7 +168,7 @@ public class AmazonS3Manager : IAmazonS3Manager
         }
     }
 
-    private async Task<IEnumerable<PluginContextData>> ListEntities(ListParameters listParameters,
+    private async Task<IEnumerable<PluginContext>> ListEntities(ListParameters listParameters,
         CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(listParameters.Path);
@@ -185,12 +185,12 @@ public class AmazonS3Manager : IAmazonS3Manager
         return await ListObjects(_bucketName, listParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<List<PluginContextData>> ListObjects(string bucketName, ListParameters listParameters,
+    private async Task<List<PluginContext>> ListObjects(string bucketName, ListParameters listParameters,
         CancellationToken cancellationToken)
     {
         int count = 0;
         string continuationToken;
-        var result = new List<PluginContextData>();
+        var result = new List<PluginContext>();
 
         Regex? regex = null;
         if (!string.IsNullOrEmpty(listParameters.Filter))
@@ -222,8 +222,8 @@ public class AmazonS3Manager : IAmazonS3Manager
                 var isMatched = regex != null && regex.IsMatch(obj.Key);
                 if (listParameters.Filter == null || isMatched)
                 {
-                    var entity = await _client.ToContextData(obj.BucketName, obj.Key, listParameters.IncludeMetadata, cancellationToken);
-                    result.Add(entity);
+                    var context = await _client.ToContext(obj.BucketName, obj.Key, listParameters.IncludeMetadata, cancellationToken);
+                    result.Add(context);
                     count++;
                 }
             }
@@ -258,7 +258,7 @@ public class AmazonS3Manager : IAmazonS3Manager
         await DeleteEntity(new DeleteParameters { Path = folder }, cancellationToken);
     }
 
-    private async Task<PluginContextData> ReadEntity(ReadParameters readParameters, CancellationToken cancellationToken)
+    private async Task<PluginContext> ReadEntity(ReadParameters readParameters, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(readParameters.Path);
         if (string.IsNullOrEmpty(path))
@@ -273,7 +273,7 @@ public class AmazonS3Manager : IAmazonS3Manager
             if (!isExist)
                 throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-            return await _client.ToContextData(_bucketName, path, true, cancellationToken);
+            return await _client.ToContext(_bucketName, path, true, cancellationToken);
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
@@ -288,70 +288,70 @@ public class AmazonS3Manager : IAmazonS3Manager
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         var dataValue = writeParameters.Data;
-        var pluginContextDatas = new List<PluginContextData>();
+        var pluginContextes = new List<PluginContext>();
 
-        if (dataValue is PluginContextData pluginContextData)
+        if (dataValue is PluginContext pluginContext)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            pluginContextDatas.Add(pluginContextData);
+            pluginContextes.Add(pluginContext);
         }
-        else if (dataValue is IEnumerable<PluginContextData> pluginContextDataList)
+        else if (dataValue is IEnumerable<PluginContext> pluginContextesList)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new Exception(Resources.ThePathIsNotDirectory);
 
-            pluginContextDatas.AddRange(pluginContextDataList);
+            pluginContextes.AddRange(pluginContextesList);
         }
         else if (dataValue is string data)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            var contextData = CreateContextDataFromStringData(path, data);
-            pluginContextDatas.Add(contextData);
+            var context = CreateContextFromStringData(path, data);
+            pluginContextes.Add(context);
         }
         else
         {
             throw new NotSupportedException("The entered data format is not supported!");
         }
 
-        foreach (var contextData in pluginContextDatas)
+        foreach (var context in pluginContextes)
         {
-            await WriteEntityFromContextData(path, contextData, writeParameters.Overwrite, cancellationToken).ConfigureAwait(false);
+            await WriteEntityFromContext(path, context, writeParameters.Overwrite, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private PluginContextData CreateContextDataFromStringData(string path, string data)
+    private PluginContext CreateContextFromStringData(string path, string data)
     {
         var root = Path.GetPathRoot(path);
         var relativePath = Path.GetRelativePath(root, path);
         var dataBytesArray = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
-        return new PluginContextData(relativePath, "File")
+        return new PluginContext(relativePath, "File")
         {
             RawData = dataBytesArray,
         };
     }
 
-    private async Task WriteEntityFromContextData(string path, PluginContextData contextData, bool overwrite, 
+    private async Task WriteEntityFromContext(string path, PluginContext context, bool overwrite, 
         CancellationToken cancellationToken)
     {
         byte[] dataToWrite;
 
-        if (contextData.RawData is not null)
-            dataToWrite = contextData.RawData;
-        else if (contextData.Content is not null)
-            dataToWrite = Encoding.UTF8.GetBytes(contextData.Content);
+        if (context.RawData is not null)
+            dataToWrite = context.RawData;
+        else if (context.Content is not null)
+            dataToWrite = Encoding.UTF8.GetBytes(context.Content);
         else
-            throw new InvalidDataException($"The entered data is invalid for '{contextData.Id}'");
+            throw new InvalidDataException($"The entered data is invalid for '{context.Id}'");
 
-        var rootPath = Path.GetPathRoot(contextData.Id);
-        string relativePath = contextData.Id;
+        var rootPath = Path.GetPathRoot(context.Id);
+        string relativePath = context.Id;
 
         if (!string.IsNullOrEmpty(rootPath))
-            relativePath = Path.GetRelativePath(rootPath, contextData.Id);
+            relativePath = Path.GetRelativePath(rootPath, context.Id);
 
         var fullPath = PathHelper.IsDirectory(path) ? PathHelper.Combine(path, relativePath) : path;
 

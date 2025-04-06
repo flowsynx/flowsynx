@@ -45,7 +45,7 @@ public class AzureBlobManager : IAzureBlobManager
         return await ExistEntity(existParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<PluginContextData>> List(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<IEnumerable<PluginContext>> List(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var listParameters = parameters.ToObject<ListParameters>();
         return await ListEntities(listParameters, cancellationToken).ConfigureAwait(false);
@@ -57,7 +57,7 @@ public class AzureBlobManager : IAzureBlobManager
         await PurgeEntity(purgeParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<PluginContextData> Read(PluginParameters parameters, CancellationToken cancellationToken)
+    public async Task<PluginContext> Read(PluginParameters parameters, CancellationToken cancellationToken)
     {
         var readParameters = parameters.ToObject<ReadParameters>();
         return await ReadEntity(readParameters, cancellationToken).ConfigureAwait(false);
@@ -120,42 +120,42 @@ public class AzureBlobManager : IAzureBlobManager
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
 
         var dataValue = writeParameters.Data;
-        var pluginContextDatas = new List<PluginContextData>();
+        var pluginContextes = new List<PluginContext>();
 
-        if (dataValue is PluginContextData pluginContextData)
+        if (dataValue is PluginContext pluginContext)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            pluginContextDatas.Add(pluginContextData);
+            pluginContextes.Add(pluginContext);
         }
-        else if (dataValue is IEnumerable<PluginContextData> pluginContextDataList)
+        else if (dataValue is IEnumerable<PluginContext> pluginContextesList)
         {
             if (!PathHelper.IsDirectory(path))
                 throw new Exception(Resources.ThePathIsNotDirectory);
 
-            pluginContextDatas.AddRange(pluginContextDataList);
+            pluginContextes.AddRange(pluginContextesList);
         }
         else if (dataValue is string data)
         {
             if (!PathHelper.IsFile(path))
                 throw new Exception(Resources.ThePathIsNotFile);
 
-            var contextData = CreateContextDataFromStringData(path, data);
-            pluginContextDatas.Add(contextData);
+            var context = CreateContextFromStringData(path, data);
+            pluginContextes.Add(context);
         }
         else
         {
             throw new NotSupportedException("The entered data format is not supported!");
         }
 
-        foreach (var contextData in pluginContextDatas)
+        foreach (var context in pluginContextes)
         {
-            await WriteEntityFromContextData(path, contextData, writeParameters.Overwrite, cancellationToken).ConfigureAwait(false);
+            await WriteEntityFromContext(path, context, writeParameters.Overwrite, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private PluginContextData CreateContextDataFromStringData(string path, string data)
+    private PluginContext CreateContextFromStringData(string path, string data)
     {
         var rootPath = Path.GetPathRoot(path);
         string relativePath = path;
@@ -165,29 +165,29 @@ public class AzureBlobManager : IAzureBlobManager
 
         var dataBytesArray = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
-        return new PluginContextData(relativePath, "File")
+        return new PluginContext(relativePath, "File")
         {
             RawData = dataBytesArray,
         };
     }
 
-    private async Task WriteEntityFromContextData(string path, PluginContextData contextData, bool overwrite,
+    private async Task WriteEntityFromContext(string path, PluginContext context, bool overwrite,
         CancellationToken cancellationToken)
     {
         byte[] dataToWrite;
 
-        if (contextData.RawData is not null)
-            dataToWrite = contextData.RawData;
-        else if (contextData.Content is not null)
-            dataToWrite = Encoding.UTF8.GetBytes(contextData.Content);
+        if (context.RawData is not null)
+            dataToWrite = context.RawData;
+        else if (context.Content is not null)
+            dataToWrite = Encoding.UTF8.GetBytes(context.Content);
         else
-            throw new InvalidDataException($"The entered data is invalid for '{contextData.Id}'");
+            throw new InvalidDataException($"The entered data is invalid for '{context.Id}'");
 
-        var rootPath = Path.GetPathRoot(contextData.Id);
-        string relativePath = contextData.Id;
+        var rootPath = Path.GetPathRoot(context.Id);
+        string relativePath = context.Id;
 
         if (!string.IsNullOrEmpty(rootPath))
-            relativePath = Path.GetRelativePath(rootPath, contextData.Id);
+            relativePath = Path.GetRelativePath(rootPath, context.Id);
 
         var fullPath = PathHelper.IsDirectory(path) ? PathHelper.Combine(path, relativePath) : path;
 
@@ -206,7 +206,7 @@ public class AzureBlobManager : IAzureBlobManager
         await blockBlobClient.UploadAsync(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<PluginContextData> ReadEntity(ReadParameters readParameters,
+    private async Task<PluginContext> ReadEntity(ReadParameters readParameters,
         CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(readParameters.Path);
@@ -225,7 +225,7 @@ public class AzureBlobManager : IAzureBlobManager
             if (!isExist)
                 throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
-            return await blobClient.ToContextData(true, cancellationToken).ConfigureAwait(false);
+            return await blobClient.ToContext(true, cancellationToken).ConfigureAwait(false);
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")
         {
@@ -374,7 +374,7 @@ public class AzureBlobManager : IAzureBlobManager
         }
     }
 
-    private async Task<List<PluginContextData>> ListEntities(ListParameters listParameters, CancellationToken cancellationToken)
+    private async Task<List<PluginContext>> ListEntities(ListParameters listParameters, CancellationToken cancellationToken)
     {
         var path = PathHelper.ToUnixPath(listParameters.Path);
 
@@ -388,10 +388,10 @@ public class AzureBlobManager : IAzureBlobManager
         return await ListBlobs(container, listParameters, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<List<PluginContextData>> ListBlobs(BlobContainerClient containerClient, 
+    private async Task<List<PluginContext>> ListBlobs(BlobContainerClient containerClient, 
         ListParameters listParameters, CancellationToken cancellationToken)
     {
-        var result = new List<PluginContextData>();
+        var result = new List<PluginContext>();
 
         var resultSegment = containerClient.GetBlobsAsync(
             prefix: FormatFolderPrefix(listParameters.Path),
@@ -409,7 +409,7 @@ public class AzureBlobManager : IAzureBlobManager
                         continue; // Skip subdirectories if non-recursive mode is selected
 
                     BlobClient blobClient = containerClient.GetBlobClient(blobItem.Name);
-                    var contextData = await blobClient.ToContextData(listParameters.IncludeMetadata, cancellationToken).ConfigureAwait(false);
+                    var contextData = await blobClient.ToContext(listParameters.IncludeMetadata, cancellationToken).ConfigureAwait(false);
                     result.Add(contextData);
 
                     if (result.Count >= listParameters.MaxResults)
