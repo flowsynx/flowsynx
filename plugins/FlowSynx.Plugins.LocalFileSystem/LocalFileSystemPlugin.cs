@@ -2,20 +2,12 @@
 using FlowSynx.PluginCore.Extensions;
 using FlowSynx.Plugins.LocalFileSystem.Models;
 using FlowSynx.Plugins.LocalFileSystem.Services;
-using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Plugins.LocalFileSystem;
 
 public class LocalFileSystemPlugin : IPlugin
 {
-    private readonly ILogger<LocalFileSystemPlugin> _logger;
     private ILocalFileManager _manager = null!;
-
-    public LocalFileSystemPlugin(ILogger<LocalFileSystemPlugin> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
-    }
 
     public PluginMetadata Metadata
     {
@@ -36,9 +28,10 @@ public class LocalFileSystemPlugin : IPlugin
     public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(LocalFileSystemSpecifications);
 
-    public Task Initialize()
+    public Task Initialize(IPluginLogger logger)
     {
-        _manager = new LocalFileManager(_logger);
+        ArgumentNullException.ThrowIfNull(logger);
+        _manager = new LocalFileManager(logger);
         return Task.CompletedTask;
     }
 

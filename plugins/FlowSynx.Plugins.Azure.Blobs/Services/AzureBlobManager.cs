@@ -2,7 +2,6 @@
 using Azure.Storage.Blobs.Models;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Specialized;
-using Microsoft.Extensions.Logging;
 using System.Data;
 using FlowSynx.PluginCore;
 using FlowSynx.Plugins.Azure.Blobs.Models;
@@ -14,11 +13,11 @@ namespace FlowSynx.Plugins.Azure.Blobs.Services;
 
 public class AzureBlobManager : IAzureBlobManager
 {
-    private readonly ILogger _logger;
+    private readonly IPluginLogger _logger;
     private readonly BlobServiceClient _client;
     private readonly string _containerName;
 
-    public AzureBlobManager(ILogger logger, BlobServiceClient client, string containerName)
+    public AzureBlobManager(IPluginLogger logger, BlobServiceClient client, string containerName)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(client);
@@ -267,7 +266,7 @@ public class AzureBlobManager : IAzureBlobManager
             {
                 BlockBlobClient blockBlobClient = container.GetBlockBlobClient(path);
                 await blockBlobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
-                _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+                _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
                 return;
             }
 
@@ -276,7 +275,7 @@ public class AzureBlobManager : IAzureBlobManager
             {
                 BlobClient blobClient = container.GetBlobClient(blobItem.Name);
                 await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
-                _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, blobItem.Name));
+                _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, blobItem.Name));
             }
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == "ResourceNotFound")

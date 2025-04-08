@@ -1,24 +1,14 @@
 ﻿using FlowSynx.PluginCore;
 using FlowSynx.Plugins.Amazon.S3.Models;
 using FlowSynx.Plugins.Amazon.S3.Services;
-using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore.Extensions;
 
 namespace FlowSynx.Plugins.Amazon.S3;
 
 public class AmazonS3Plugin : IPlugin
 {
-    private readonly ILogger<AmazonS3Plugin> _logger;
-    private readonly IAmazonS3Connection _connection;
     private IAmazonS3Manager _manager = null!;
     private AmazonS3Specifications _s3Specifications = null!;
-
-    public AmazonS3Plugin(ILogger<AmazonS3Plugin> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
-        _connection = new AmazonS3Connection();
-    }
 
     public PluginMetadata Metadata { 
         get
@@ -38,11 +28,13 @@ public class AmazonS3Plugin : IPlugin
     public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(AmazonS3Specifications);
 
-    public Task Initialize()
+    public Task Initialize(IPluginLogger logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        var connection = new AmazonS3Connection();
         _s3Specifications = Specifications.ToObject<AmazonS3Specifications>();
-        var client = _connection.Connect(_s3Specifications);
-        _manager = new AmazonS3Manager(_logger, client, _s3Specifications.Bucket);
+        var client = connection.Connect(_s3Specifications);
+        _manager = new AmazonS3Manager(logger, client, _s3Specifications.Bucket);
         return Task.CompletedTask;
     }
 

@@ -1,24 +1,14 @@
 ﻿using FlowSynx.PluginCore;
 using FlowSynx.Plugins.Azure.Files.Models;
 using FlowSynx.Plugins.Azure.Files.Services;
-using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore.Extensions;
 
 namespace FlowSynx.Plugins.Azure.Files;
 
 public class AzureFilePlugin : IPlugin
 {
-    private readonly ILogger<AzureFilePlugin> _logger;
-    private readonly IAzureFilesConnection _connection;
     private IAzureFilesManager _manager = null!;
     private AzureFilesSpecifications? _azureFilesSpecifications;
-
-    public AzureFilePlugin(ILogger<AzureFilePlugin> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
-        _connection = new AzureFilesConnection();
-    }
 
     public PluginMetadata Metadata
     {
@@ -39,11 +29,13 @@ public class AzureFilePlugin : IPlugin
     public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(AzureFilesSpecifications);
            
-    public Task Initialize()
+    public Task Initialize(IPluginLogger logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        var connection = new AzureFilesConnection();
         _azureFilesSpecifications = Specifications.ToObject<AzureFilesSpecifications>();
-        var client = _connection.Connect(_azureFilesSpecifications);
-        _manager = new AzureFilesManager(_logger, client);
+        var client = connection.Connect(_azureFilesSpecifications);
+        _manager = new AzureFilesManager(logger, client);
         return Task.CompletedTask;
     }
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using FlowSynx.PluginCore;
+﻿using FlowSynx.PluginCore;
 using FlowSynx.Plugins.LocalFileSystem.Models;
 using FlowSynx.PluginCore.Extensions;
 using FlowSynx.Plugins.LocalFileSystem.Extensions;
@@ -10,8 +9,8 @@ namespace FlowSynx.Plugins.LocalFileSystem.Services;
 
 internal class LocalFileManager : ILocalFileManager
 {
-    private readonly ILogger _logger;
-    public LocalFileManager(ILogger logger)
+    private readonly IPluginLogger _logger;
+    public LocalFileManager(IPluginLogger logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
@@ -95,7 +94,7 @@ internal class LocalFileManager : ILocalFileManager
             throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
         File.Delete(path);
-        _logger.LogInformation($"The specified path '{path}' was deleted successfully.");
+        _logger.LogInfo($"The specified path '{path}' was deleted successfully.");
 
         return Task.CompletedTask;
     }
@@ -148,7 +147,7 @@ internal class LocalFileManager : ILocalFileManager
         var deleteRecursively = purgeParameters.Force ?? false;
 
         directoryInfo.Delete(deleteRecursively);
-        _logger.LogInformation($"The specified path '{path}' was deleted successfully.");
+        _logger.LogInfo($"The specified path '{path}' was deleted successfully.");
 
         return Task.CompletedTask;
     }
@@ -185,12 +184,12 @@ internal class LocalFileManager : ILocalFileManager
         if (File.Exists(sourcePath))
         {
             File.Move(sourcePath, targetPath);
-            _logger.LogInformation($"File renamed: '{sourcePath}' → '{targetPath}'");
+            _logger.LogInfo($"File renamed: '{sourcePath}' → '{targetPath}'");
         }
         else if (Directory.Exists(sourcePath))
         {
             Directory.Move(sourcePath, targetPath);
-            _logger.LogInformation($"Directory renamed: '{sourcePath}' → '{targetPath}'");
+            _logger.LogInfo($"Directory renamed: '{sourcePath}' → '{targetPath}'");
         }
 
         return Task.CompletedTask;

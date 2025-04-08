@@ -1,12 +1,13 @@
-﻿using FlowSynx.Plugins.LocalFileSystem.Models;
-using Microsoft.Extensions.Logging;
+﻿using FlowSynx.PluginCore;
+using FlowSynx.PluginCore.Extensions;
+using FlowSynx.Plugins.LocalFileSystem.Models;
 using System.Text.RegularExpressions;
 
 namespace FlowSynx.Plugins.LocalFileSystem.Extensions;
 
 internal static class DirectoryInfoExtensions
 {
-    public static IEnumerable<FileInfo> FindFiles(this DirectoryInfo directoryInfo, ILogger logger, ListParameters listParameters)
+    public static IEnumerable<FileInfo> FindFiles(this DirectoryInfo directoryInfo, IPluginLogger logger, ListParameters listParameters)
     {
         if (directoryInfo == null)
             throw new ArgumentNullException(nameof(directoryInfo), "DirectoryInfo cannot be null.");

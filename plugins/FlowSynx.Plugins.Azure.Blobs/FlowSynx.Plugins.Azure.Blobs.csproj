@@ -13,10 +13,7 @@
 
   <ItemGroup>
 	<PackageReference Include="Azure.Storage.Blobs" Version="12.19.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\FlowSynx.PluginCore\FlowSynx.PluginCore.csproj" />
+	<PackageReference Include="FlowSynx.PluginCore" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

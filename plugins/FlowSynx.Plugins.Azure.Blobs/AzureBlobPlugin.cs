@@ -1,6 +1,5 @@
 ﻿using FlowSynx.PluginCore;
 using FlowSynx.Plugins.Azure.Blobs.Models;
-using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore.Extensions;
 using FlowSynx.Plugins.Azure.Blobs.Services;
 
@@ -8,17 +7,8 @@ namespace FlowSynx.Plugins.Azure.Blobs;
 
 public class AzureBlobPlugin : IPlugin
 {
-    private readonly ILogger<AzureBlobPlugin> _logger;
-    private readonly IAzureBlobConnection _connection;
     private IAzureBlobManager _manager = null!;
     private AzureBlobSpecifications _azureBlobSpecifications = null!;
-
-    public AzureBlobPlugin(ILogger<AzureBlobPlugin> logger)
-    {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
-        _connection = new AzureBlobConnection();
-    }
 
     public PluginMetadata Metadata
     {
@@ -39,11 +29,13 @@ public class AzureBlobPlugin : IPlugin
     public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(AzureBlobSpecifications);
 
-    public Task Initialize()
+    public Task Initialize(IPluginLogger logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        var connection = new AzureBlobConnection();
         _azureBlobSpecifications = Specifications.ToObject<AzureBlobSpecifications>();
-        var client = _connection.Connect(_azureBlobSpecifications);
-        _manager = new AzureBlobManager(_logger, client, _azureBlobSpecifications.ContainerName);
+        var client = connection.Connect(_azureBlobSpecifications);
+        _manager = new AzureBlobManager(logger, client, _azureBlobSpecifications.ContainerName);
         return Task.CompletedTask;
     }
 

@@ -1,6 +1,5 @@
 ﻿using Amazon.S3;
 using Amazon.S3.Model;
-using Microsoft.Extensions.Logging;
 using System.Net;
 using Amazon.S3.Transfer;
 using FlowSynx.PluginCore;
@@ -14,12 +13,12 @@ namespace FlowSynx.Plugins.Amazon.S3.Services;
 
 public class AmazonS3Manager : IAmazonS3Manager
 {
-    private readonly ILogger _logger;
+    private readonly IPluginLogger _logger;
     private readonly AmazonS3Client _client;
     private readonly string _bucketName;
     private readonly TransferUtility _fileTransferUtility;
 
-    public AmazonS3Manager(ILogger logger, AmazonS3Client client, string bucketName)
+    public AmazonS3Manager(IPluginLogger logger, AmazonS3Client client, string bucketName)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(client);
@@ -85,7 +84,7 @@ public class AmazonS3Manager : IAmazonS3Manager
         if (!isExist)
         {
             await _client.PutBucketAsync(_bucketName, cancellationToken: cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation($"Bucket '{_bucketName}' was created successfully.");
+            _logger.LogInfo($"Bucket '{_bucketName}' was created successfully.");
         }
 
         if (!string.IsNullOrEmpty(path))
@@ -123,7 +122,7 @@ public class AmazonS3Manager : IAmazonS3Manager
             ContentBody = string.Empty
         };
         await _client.PutObjectAsync(request, cancellationToken);
-        _logger.LogInformation($"Folder '{folderName}' was created successfully.");
+        _logger.LogInfo($"Folder '{folderName}' was created successfully.");
     }
 
     private async Task DeleteEntity(DeleteParameters deleteParameters, CancellationToken cancellationToken)
@@ -142,7 +141,7 @@ public class AmazonS3Manager : IAmazonS3Manager
                 .DeleteObjectAsync(_bucketName, path, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+            _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {

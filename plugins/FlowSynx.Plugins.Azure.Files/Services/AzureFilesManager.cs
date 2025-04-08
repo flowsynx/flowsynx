@@ -1,7 +1,6 @@
 ﻿using Azure.Storage.Files.Shares.Models;
 using Azure.Storage.Files.Shares;
 using Azure;
-using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Extensions;
 using FlowSynx.Plugins.Azure.Files.Models;
@@ -14,10 +13,10 @@ namespace FlowSynx.Plugins.Azure.Files.Services;
 
 public class AzureFilesManager: IAzureFilesManager
 {
-    private readonly ILogger _logger;
+    private readonly IPluginLogger _logger;
     private readonly ShareClient _client;
 
-    public AzureFilesManager(ILogger logger, ShareClient client)
+    public AzureFilesManager(IPluginLogger logger, ShareClient client)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(client);
@@ -289,13 +288,13 @@ public class AzureFilesManager: IAzureFilesManager
             {
                 ShareFileClient fileClient = _client.GetRootDirectoryClient().GetFileClient(path);
                 await fileClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
-                _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+                _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
                 return;
             }
 
             ShareDirectoryClient directoryClient = _client.GetDirectoryClient(path);
             await DeleteAll(directoryClient, cancellationToken: cancellationToken);
-            _logger.LogInformation(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
+            _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
         }
         catch (RequestFailedException ex) when (ex.ErrorCode == ShareErrorCode.ResourceNotFound)
         {
