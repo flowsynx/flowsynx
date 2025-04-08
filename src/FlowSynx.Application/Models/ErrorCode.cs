@@ -79,6 +79,7 @@ public enum ErrorCode
     PluginTypeNotFound                              = 2302,
     PluginSpecificationsInvalid                     = 2303,
     PluginTypeGetItem                               = 2304,
+    PluginCheckExistence                            = 2305,
     #endregion
 
     #region Workflow error codes

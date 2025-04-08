@@ -1,16 +1,15 @@
 ﻿using FlowSynx.Domain.Plugin;
-using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.PluginCore;
 
-namespace FlowSynx.Infrastructure.PluginHost;
+namespace FlowSynx.Infrastructure.Extensions;
 
-public class ExtractPluginSpecifications: IExtractPluginSpecifications
+public static class PluginExtensions
 {
-    public List<PluginSpecification> GetPluginSpecification(IPlugin? plugin)
+    public static List<PluginSpecification> GetPluginSpecification(this IPlugin? plugin)
     {
         if (plugin == null)
             return new List<PluginSpecification>();
-        
+
         var specificationsType = plugin.SpecificationsType;
         return specificationsType
             .GetProperties()

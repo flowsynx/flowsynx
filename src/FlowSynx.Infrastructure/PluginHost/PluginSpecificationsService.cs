@@ -50,54 +50,6 @@ public class PluginSpecificationsService : IPluginSpecificationsService
             Valid = errors.Count == 0,
             Messages = errors
         };
-
-
-
-        //Plugin plugin = await _pluginService.Get(type, cancellationToken);
-        //var specificationsType = plugin.SpecificationsType;
-        //var requiredProperties = specificationsType
-        //    .GetProperties()
-        //    .Where(prop => Attribute.IsDefined(prop, typeof(RequiredMemberAttribute)))
-        //    .ToList();
-
-        //if (!requiredProperties.Any())
-        //    return new PluginSpecificationsResult { Valid = true };
-
-        //var convertedSpecifications = ConvertKeysToLowerCase(specifications);
-
-        //var messages = new List<string>();
-        //foreach (var property in requiredProperties)
-        //{
-        //    if (convertedSpecifications == null || !convertedSpecifications.Any() || !ContainsKey(convertedSpecifications, property.Name))
-        //    {
-        //        var specs = string.Join(", ", requiredProperties.Select(p => p.Name));
-        //        return new PluginSpecificationsResult { 
-        //            Valid = false, 
-        //            Message = string.Format(Resources.SpecificationsMustHaveValue, specs) 
-        //        };
-        //    }
-
-        //    var value = convertedSpecifications[property.Name.ToLower()];
-        //    var valid = true;
-
-        //    switch (value)
-        //    {
-        //        case null:
-        //        case string when string.IsNullOrEmpty(value.ToString()):
-        //            valid = false;
-        //            break;
-        //    }
-
-        //    if (valid) continue;
-
-        //    return new PluginSpecificationsResult
-        //    {
-        //        Valid = false,
-        //        Message = string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, property.Name)
-        //    };
-        //}
-
-        //return new PluginSpecificationsResult { Valid = true };
     }
 
     private Dictionary<string, object?>? ConvertKeysToLowerCase(Dictionary<string, object?>? dictionaries)

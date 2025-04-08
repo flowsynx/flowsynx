@@ -1,12 +1,24 @@
 ﻿using FlowSynx.PluginCore;
-using System.Reflection;
 
 namespace FlowSynx.Infrastructure.PluginHost;
 
 public class PluginHandle
 {
-    public IPlugin Instance { get; set; } = default!;
-    public PluginLoadContext LoadContext { get; set; } = default!;
-    public Assembly Assembly { get; set; } = default!;
-    public string Path { get; set; } = default!;
+    public PluginLoadContext LoadContext { get; }
+    public IPlugin Instance { get; }
+
+    public PluginHandle(PluginLoadContext loadContext, IPlugin pluginInstance)
+    {
+        LoadContext = loadContext;
+        Instance = pluginInstance;
+    }
+
+    //public void Execute() => Instance.ExecuteAsync();
+
+    public void Unload()
+    {
+        LoadContext.Unload();
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+    }
 }

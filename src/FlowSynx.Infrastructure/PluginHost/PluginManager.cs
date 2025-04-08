@@ -1,8 +1,14 @@
-﻿using FlowSynx.Application.Configuration;
+﻿using Azure.Core;
+using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
+using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Plugin;
+using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.PluginCore;
+using FlowSynx.PluginCore.Exceptions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
@@ -16,14 +22,11 @@ public class PluginManager : IPluginManager
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginService _pluginService;
     private readonly IPluginDownloader _pluginDownloader;
-    private readonly IPluginChecksumValidator _pluginChecksumValidator;
-    private readonly IPluginExtractor _pluginExtractor;
-    private readonly IExtractPluginSpecifications _extractPluginSpecifications;
+    private readonly IPluginLoader _pluginLoader;
 
     public PluginManager(ILogger<PluginManager> logger, PluginRegistryConfiguration pluginRegistryConfiguration,
-        IPluginsLocation pluginsLocation, ICurrentUserService currentUserService, IPluginService pluginService, 
-        IPluginDownloader pluginDownloader, IPluginChecksumValidator pluginChecksumValidator, 
-        IPluginExtractor pluginExtractor, IExtractPluginSpecifications extractPluginSpecifications)
+        IPluginsLocation pluginsLocation, ICurrentUserService currentUserService, IPluginService pluginService,
+        IPluginDownloader pluginDownloader, IPluginLoader pluginLoader)
     {
         _logger = logger;
         _pluginRegistryConfiguration = pluginRegistryConfiguration;
@@ -31,31 +34,37 @@ public class PluginManager : IPluginManager
         _currentUserService = currentUserService;
         _pluginService = pluginService;
         _pluginDownloader = pluginDownloader;
-        _pluginChecksumValidator = pluginChecksumValidator;
-        _pluginExtractor = pluginExtractor;
-        _extractPluginSpecifications = extractPluginSpecifications;
+        _pluginLoader = pluginLoader;
     }
 
-    public async Task InstallAsync(string pluginName, string pluginVersion, CancellationToken cancellationToken)
+    public async Task InstallAsync(string pluginType, string pluginVersion, CancellationToken cancellationToken)
     {
+        var isPlugineExist = await _pluginService.IsExist(_currentUserService.UserId, pluginType, pluginVersion, cancellationToken);
+        if (isPlugineExist)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginCheckExistence, $"The plugin type '{pluginType}' with version '{pluginVersion}' is already exist.");
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+
         var registryUrl = _pluginRegistryConfiguration.Url;
-        string pluginMetadataUrl = $"{registryUrl}/{pluginName}/{pluginVersion}";
-        string pluginDataUrl = $"{registryUrl}/{pluginName}/{pluginVersion}/Download";
+        string pluginMetadataUrl = $"{registryUrl}/{pluginType}/{pluginVersion}";
+        string pluginDataUrl = $"{registryUrl}/{pluginType}/{pluginVersion}/Download";
 
         var rootLocation = Path.Combine(_pluginsLocation.Path, _currentUserService.UserId);
-        string pluginLocalPath = Path.Combine(rootLocation, pluginName, pluginVersion, $"{pluginName}.{pluginVersion}.zip");
+        string pluginLocalPath = Path.Combine(rootLocation, pluginType, pluginVersion, $"{pluginType}.{pluginVersion}.zip");
 
         var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(pluginMetadataUrl);
         var pluginData = await _pluginDownloader.GetPluginDataAsync(pluginDataUrl);
 
-        bool isChecksumValid = _pluginChecksumValidator.ValidateChecksum(pluginData, pluginMetadata.Checksum);
+        bool isChecksumValid = _pluginDownloader.ValidateChecksum(pluginLocalPath, pluginMetadata.Checksum);
         if (!isChecksumValid)
         {
             _logger.LogError("Checksum validation failed. Package may be corrupted or tampered with.");
             return;
         }
 
-        var pluginLocation = await _pluginExtractor.ExtractPluginAsync(pluginLocalPath, cancellationToken);
+        var pluginLocation = await _pluginDownloader.ExtractPluginAsync(pluginLocalPath, cancellationToken);
         File.Delete(pluginLocalPath);
 
         var targetType = typeof(IPlugin);
@@ -63,37 +72,27 @@ public class PluginManager : IPluginManager
         {
             _logger.LogInformation($"\nScanning: {Path.GetFileName(dllPath)}");
 
-            var pluginLoadContext = new PluginLoadContext(dllPath);
             try
             {
-                var assembly = pluginLoadContext.LoadFromAssemblyPath(dllPath);
-
-                foreach (var type in assembly.GetTypes())
+                var pluginHandle = _pluginLoader.LoadPlugin(dllPath);
+                var pluginEntity = new PluginEntity
                 {
-                    if (!type.IsAbstract && targetType.IsAssignableFrom(type))
-                    {
-                        var pluginInstance = Activator.CreateInstance(type);
-                        var targetPlugin = pluginInstance as IPlugin;
+                    Id = Guid.NewGuid(),
+                    PluginId = pluginMetadata.Id,
+                    Name = pluginMetadata.Name,
+                    Version = pluginMetadata.Version,
+                    Checksum = pluginMetadata.Checksum,
+                    PluginLocation = pluginLocation,
+                    UserId = _currentUserService.UserId,
+                    Author = pluginMetadata.Author,
+                    Description = pluginMetadata.Description,
+                    Type = pluginMetadata.Type,
+                    Specifications = pluginHandle.Instance.GetPluginSpecification()
+                };
 
-                        var pluginEntity = new PluginEntity
-                        {
-                            Id = Guid.NewGuid(),
-                            PluginId = pluginMetadata.Id,
-                            Name = pluginMetadata.Name,
-                            Version = pluginMetadata.Version,
-                            Checksum = pluginMetadata.Checksum,
-                            PluginLocation = pluginLocation,
-                            UserId = _currentUserService.UserId,
-                            Author = pluginMetadata.Author,
-                            Description = pluginMetadata.Description,
-                            Type = pluginMetadata.Type,
-                            Specifications = _extractPluginSpecifications.GetPluginSpecification(targetPlugin)
-                        };
-
-                        await _pluginService.Add(pluginEntity, cancellationToken);
-                        _logger.LogInformation($"Plugin {pluginName} v{pluginVersion} installed successfully and saved to database.");
-                    }
-                }
+                await _pluginService.Add(pluginEntity, cancellationToken);
+                pluginHandle.Unload();
+                _logger.LogInformation($"Plugin {pluginType} v{pluginVersion} installed successfully and saved to database.");
             }
             catch (ReflectionTypeLoadException ex)
             {
@@ -110,22 +109,22 @@ public class PluginManager : IPluginManager
         }
     }
 
-    public async Task UpdateAsync(string pluginName, string oldVersion, string newPluginVersion, CancellationToken cancellationToken)
+    public async Task UpdateAsync(string pluginType, string oldVersion, string newPluginVersion, CancellationToken cancellationToken)
     {
-        await Uninstall(pluginName, oldVersion, cancellationToken);
-        await InstallAsync(pluginName, newPluginVersion, cancellationToken);
+        await Uninstall(pluginType, oldVersion, cancellationToken);
+        await InstallAsync(pluginType, newPluginVersion, cancellationToken);
     }
 
-    public async Task Uninstall(string pluginName, string version, CancellationToken cancellationToken)
+    public async Task Uninstall(string pluginType, string version, CancellationToken cancellationToken)
     {
-        var pluginEntity = await _pluginService.Get(_currentUserService.UserId, pluginName, version, cancellationToken);
+        var pluginEntity = await _pluginService.Get(_currentUserService.UserId, pluginType, version, cancellationToken);
         if (pluginEntity != null)
         {
             var pluginLocation = pluginEntity.PluginLocation;
             if (Directory.Exists(pluginLocation))
             {
                 Directory.Delete(pluginLocation, true);
-                _logger.LogInformation($"Uninstalled: {pluginName}");
+                _logger.LogInformation($"Uninstalled: '{pluginType}' version '{version}'");
             }
         }
     }

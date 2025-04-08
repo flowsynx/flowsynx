@@ -6,6 +6,7 @@ using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
