@@ -1,4 +1,7 @@
 ﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.PluginConfig.Command.Add;
+using FlowSynx.Application.Features.Plugins.Command.Add;
+using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +23,11 @@ public class Plugins : EndpointGroupBase
             .WithName("PluginDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
+
+        group.MapPost("/add", AddPlugin)
+            .WithName("AddPlugin")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
     }
 
     public async Task<IResult> PluginsList([FromServices] IMediator mediator,
@@ -33,6 +41,17 @@ public class Plugins : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var result = await mediator.PluginDetails(id, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> AddPlugin(HttpContext context,
+    [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+    CancellationToken cancellationToken)
+    {
+        var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
+        var request = jsonDeserializer.Deserialize<AddPluginRequest>(jsonString);
+
+        var result = await mediator.AddPlugin(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

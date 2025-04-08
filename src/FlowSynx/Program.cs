@@ -25,7 +25,6 @@ try
            .AddVersion()
            .AddCore()
            .AddInfrastructure()
-           .AddFlowSynxPlugins()
            .AddInfrastructurePluginManager(config)
            .AddUserService();
 

@@ -47,7 +47,6 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
             var response = logs.Select(l => new LogsListResponse
             {
                 Id = l.Id,
-                Category = l.Category,
                 Level = l.Level,
                 TimeStamp = l.TimeStamp,
                 Message = l.Message,

@@ -12,8 +12,8 @@ using System.Text;
 using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Domain.Log;
+using FlowSynx.Infrastructure.PluginHost;
 
 namespace FlowSynx.Extensions;
 

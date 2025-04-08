@@ -12,13 +12,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FlowSynx.PluginCore" Version="1.1.0" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.8.1" />
     <PackageReference Include="MediatR" Version="12.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FlowSynx.Domain\FlowSynx.Domain.csproj" />
-    <ProjectReference Include="..\FlowSynx.PluginCore\FlowSynx.PluginCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>

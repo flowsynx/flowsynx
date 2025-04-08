@@ -45,9 +45,9 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             var isTypeExist = await _pluginService.IsExist(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
             if (!isTypeExist)
             {
-                var typeNotExistMessage = string.Format(Resources.AddConfigValidatorTypeValueIsNotValid, request.Name);
-                _logger.LogWarning(typeNotExistMessage);
-                return await Result<AddPluginConfigResponse>.FailAsync(typeNotExistMessage);
+                var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeNotFound, $"The plugin type '{request.Type}' with version '{request.Version}' is not exist.");
+                _logger.LogError(errorMessage.ToString());
+                return await Result<AddPluginConfigResponse>.FailAsync(errorMessage.ToString());
             }
 
             var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, request.Version, cancellationToken);

@@ -6,6 +6,7 @@ using FlowSynx.Application.Features.PluginConfig.Command.Delete;
 using FlowSynx.Application.Features.PluginConfig.Command.Update;
 using FlowSynx.Application.Features.PluginConfig.Query.Details;
 using FlowSynx.Application.Features.PluginConfig.Query.List;
+using FlowSynx.Application.Features.Plugins.Command.Add;
 using FlowSynx.Application.Features.Plugins.Query.Details;
 using FlowSynx.Application.Features.Plugins.Query.List;
 using FlowSynx.Application.Features.Version.Query;
@@ -78,6 +79,12 @@ public static class MediatorExtensions
         string id, CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginDetailsRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<Unit>> AddPlugin(this IMediator mediator,
+        AddPluginRequest request, CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
     }
     #endregion
 

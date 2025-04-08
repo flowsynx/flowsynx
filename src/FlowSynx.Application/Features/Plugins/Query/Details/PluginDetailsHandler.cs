@@ -34,7 +34,10 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
 
             var pluginId = Guid.Parse(request.Id);
             var plugin = await _pluginService.Get(_currentUserService.UserId, pluginId, cancellationToken);
-            var specifications = plugin.Specifications
+            if (plugin is null)
+                throw new FlowSynxException((int)ErrorCode.PluginNotFound, $"The plugin '{pluginId}' not found.");
+            
+            var specifications = plugin.Specifications?
                 .Select(property => new PluginDetailsSpecification
                 {
                     Key = property.Name,
