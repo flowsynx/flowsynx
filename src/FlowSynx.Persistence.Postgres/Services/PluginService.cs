@@ -87,7 +87,7 @@ public class PluginService : IPluginService
             var result = await context.Plugins
                 .FirstOrDefaultAsync(
                     x => x.UserId == userId 
-                    && x.Name.ToLower() == pluginType.ToLower()
+                    && x.Type.ToLower() == pluginType.ToLower()
                     && x.Version == pluginVersion
                     && !x.IsDeleted, cancellationToken
                 ).ConfigureAwait(false);
