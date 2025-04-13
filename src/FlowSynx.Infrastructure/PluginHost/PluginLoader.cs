@@ -1,6 +1,5 @@
-﻿using FlowSynx.Application.Models;
-using FlowSynx.PluginCore;
-using FlowSynx.PluginCore.Exceptions;
+﻿using FlowSynx.PluginCore;
+using System.Reflection;
 
 namespace FlowSynx.Infrastructure.PluginHost;
 
@@ -8,14 +7,37 @@ public class PluginLoader : IPluginLoader
 {
     public PluginHandle LoadPlugin(string pluginLocation)
     {
-        var context = new PluginLoadContext(pluginLocation);
-        var assembly = context.LoadFromAssemblyPath(pluginLocation);
+        return GetImplementationsOfInterface(pluginLocation);
+    }
 
-        var pluginType = assembly.GetTypes().FirstOrDefault(t => typeof(IPlugin).IsAssignableFrom(t) && !t.IsInterface);
-        if (pluginType is null)
-            throw new FlowSynxException((int)ErrorCode.PluginNotFound, "The plugin not found.");
+    private PluginHandle GetImplementationsOfInterface(string pluginLocation)
+    {
+        try
+        {
+            if (!File.Exists(pluginLocation))
+                return PluginHandle.Fail($"Plugin file not found: {pluginLocation}");
 
-        var instance = (IPlugin)Activator.CreateInstance(pluginType)!;
-        return new PluginHandle(context, instance); ;
+            var interfaceType = typeof(IPlugin);
+            var pluginAssembly = Assembly.LoadFrom(pluginLocation);
+            var types = pluginAssembly.GetTypes();
+
+            foreach (var type in types)
+            {
+                if (!type.IsClass || type.IsAbstract)
+                    continue;
+
+                if (interfaceType.IsAssignableFrom(type))
+                {
+                    var instance = (IPlugin)Activator.CreateInstance(type)!;
+                    return PluginHandle.Ok(instance, pluginAssembly.Location);
+                }
+            }
+
+            return PluginHandle.Fail("No plugin type found.");
+        }
+        catch (Exception ex)
+        {
+            return PluginHandle.Fail($"Failed to load plugin: {ex.Message}");
+        }
     }
 }

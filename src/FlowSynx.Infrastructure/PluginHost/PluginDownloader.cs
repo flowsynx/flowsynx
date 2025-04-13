@@ -32,40 +32,28 @@ public class PluginDownloader : IPluginDownloader
         throw new Exception("Failed to fetch file from URL.");
     }
 
-    public async Task<PluginInstallMetadata> GetPluginMetadataAsync(string url)
+    public async Task<PluginInstallMetadata> GetPluginMetadataAsync(string url, string pluginType, string pluginVersion)
     {
         var client = _httpClientFactory.CreateClient("PluginRegistry");
-        var response = await client.GetStringAsync(url);
-        var metadata = _jsonDeserializer.Deserialize<PluginInstallMetadata>(response);
+        var mainUrl = new Uri(url);
+        var indexUrl = new Uri(mainUrl, "index.json");
+        var response = await client.GetStringAsync(indexUrl);
+        var plugins = _jsonDeserializer.Deserialize<List<PluginInstallMetadata>>(response);
+        var metadata = plugins.FirstOrDefault(x=>x.Type.ToLower() == pluginType.ToLower() && x.Version == pluginVersion);
+
+        if (metadata == null)
+            throw new Exception($"No plugin with type '{pluginType}' and version '{pluginVersion}' found.");
 
         return metadata;
     }
 
-    public async Task<string> ExtractPluginAsync(string pluginPath, CancellationToken cancellationToken)
+    public async Task ExtractPluginAsync(string pluginDirectory, byte[] data, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(pluginPath))
-            throw new ArgumentException("Package path cannot be null or empty", nameof(pluginPath));
-
-        if (!File.Exists(pluginPath))
-            throw new FileNotFoundException("The specified plugin file does not exist", pluginPath);
-
-        if (Path.GetExtension(pluginPath).ToLower() != ".zip")
-            throw new InvalidOperationException("The provided plugin is not a valid ZIP file");
-
-        var parentDirectory = Path.GetDirectoryName(pluginPath);
-        if (string.IsNullOrEmpty(parentDirectory))
-            throw new InvalidOperationException("The provided plugin location is not a valid");
-
-        var targetDirectory = Path.Combine(parentDirectory, Path.GetFileNameWithoutExtension(pluginPath));
-
-        if (!Directory.Exists(targetDirectory))
-            Directory.CreateDirectory(targetDirectory);
-
         try
         {
-            await Task.Run(() => ZipFile.ExtractToDirectory(pluginPath, targetDirectory), cancellationToken);
-            _logger.LogInformation($"Plugin successfully extracted to: {targetDirectory}");
-            return targetDirectory;
+            await Task.Run(() => DeleteAllFiles(pluginDirectory), cancellationToken);
+            await ExtractZipFromBytesAsync(pluginDirectory, data, cancellationToken);
+            _logger.LogInformation($"Plugin successfully extracted to: {pluginDirectory}");
         }
         catch (Exception ex)
         {
@@ -73,10 +61,9 @@ public class PluginDownloader : IPluginDownloader
         }
     }
 
-    public bool ValidateChecksum(string pluginPath, string expectedChecksum)
+    public bool ValidateChecksum(byte[] data, string expectedChecksum)
     {
-        var pluginData = File.ReadAllBytes(pluginPath);
-        string computedChecksum = ComputeChecksum(pluginData);
+        string computedChecksum = ComputeChecksum(data);
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -86,6 +73,52 @@ public class PluginDownloader : IPluginDownloader
         {
             byte[] hashBytes = sha256.ComputeHash(data);
             return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+        }
+    }
+
+    private void DeleteAllFiles(string directoryPath)
+    {
+        if (!Directory.Exists(directoryPath))
+        {
+            _logger.LogWarning($"Directory not found: {directoryPath}");
+            return;
+        }
+
+        try
+        {
+            var files = Directory.GetFiles(directoryPath);
+            foreach (var file in files)
+            {
+                File.Delete(file);
+            }
+            _logger.LogInformation("All files deleted successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error deleting files: {ex.Message}");
+        }
+    }
+
+    private async Task ExtractZipFromBytesAsync(string outputDirectory, byte[] zipData, CancellationToken cancellationToken)
+    {
+        using var memoryStream = new MemoryStream(zipData);
+        using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Read, leaveOpen: false);
+
+        foreach (var entry in archive.Entries)
+        {
+            string destinationPath = Path.Combine(outputDirectory, entry.FullName);
+
+            string? directoryPath = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrEmpty(directoryPath))
+                Directory.CreateDirectory(directoryPath);
+
+            if (!string.IsNullOrEmpty(entry.Name))
+            {
+                using var entryStream = entry.Open();
+                using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true);
+
+                await entryStream.CopyToAsync(outputStream, cancellationToken);
+            }
         }
     }
 }

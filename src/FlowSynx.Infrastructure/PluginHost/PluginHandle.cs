@@ -4,21 +4,22 @@ namespace FlowSynx.Infrastructure.PluginHost;
 
 public class PluginHandle
 {
-    public PluginLoadContext LoadContext { get; }
-    public IPlugin Instance { get; }
+    public bool Success { get; set; }
+    public string? Message { get; set; }
+    public IPlugin Instance { get; private set; } = default!;
+    public string Location { get; private set; } = default!;
 
-    public PluginHandle(PluginLoadContext loadContext, IPlugin pluginInstance)
+    public static PluginHandle Ok(IPlugin pluginInstance, string location) => new PluginHandle
     {
-        LoadContext = loadContext;
-        Instance = pluginInstance;
-    }
+        Success = true,
+        Message = "Plugin loaded successfully.",
+        Instance = pluginInstance,
+        Location = location
+    };
 
-    //public void Execute() => Instance.ExecuteAsync();
-
-    public void Unload()
+    public static PluginHandle Fail(string message) => new PluginHandle
     {
-        LoadContext.Unload();
-        GC.Collect();
-        GC.WaitForPendingFinalizers();
-    }
+        Success = false,
+        Message = message
+    };
 }

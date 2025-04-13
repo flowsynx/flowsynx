@@ -1,16 +1,12 @@
-﻿using Azure.Core;
-using FlowSynx.Application.Configuration;
+﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
-using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
-using MediatR;
 using Microsoft.Extensions.Logging;
-using System.Reflection;
 
 namespace FlowSynx.Infrastructure.PluginHost;
 
@@ -48,33 +44,31 @@ public class PluginManager : IPluginManager
         }
 
         var registryUrl = _pluginRegistryConfiguration.Url;
-        string pluginMetadataUrl = $"{registryUrl}/{pluginType}/{pluginVersion}";
-        string pluginDataUrl = $"{registryUrl}/{pluginType}/{pluginVersion}/Download";
 
         var rootLocation = Path.Combine(_pluginsLocation.Path, _currentUserService.UserId);
-        string pluginLocalPath = Path.Combine(rootLocation, pluginType, pluginVersion, $"{pluginType}.{pluginVersion}.zip");
+        string pluginLocalDirectory = Path.Combine(rootLocation, pluginType, pluginVersion);
 
-        var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(pluginMetadataUrl);
-        var pluginData = await _pluginDownloader.GetPluginDataAsync(pluginDataUrl);
+        var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(registryUrl, pluginType, pluginVersion);
+        var pluginData = await _pluginDownloader.GetPluginDataAsync(pluginMetadata.Url);
 
-        bool isChecksumValid = _pluginDownloader.ValidateChecksum(pluginLocalPath, pluginMetadata.Checksum);
+        bool isChecksumValid = _pluginDownloader.ValidateChecksum(pluginData, pluginMetadata.Checksum);
         if (!isChecksumValid)
         {
             _logger.LogError("Checksum validation failed. Package may be corrupted or tampered with.");
             return;
         }
 
-        var pluginLocation = await _pluginDownloader.ExtractPluginAsync(pluginLocalPath, cancellationToken);
-        File.Delete(pluginLocalPath);
+        await _pluginDownloader.ExtractPluginAsync(pluginLocalDirectory, pluginData, cancellationToken);
 
         var targetType = typeof(IPlugin);
-        foreach (var dllPath in Directory.GetFiles(pluginLocation, "*.dll"))
+        foreach (var pluginLocation in Directory.GetFiles(pluginLocalDirectory, "*.dll"))
         {
-            _logger.LogInformation($"\nScanning: {Path.GetFileName(dllPath)}");
-
             try
             {
-                var pluginHandle = _pluginLoader.LoadPlugin(dllPath);
+                var pluginHandle = _pluginLoader.LoadPlugin(pluginLocation);
+                if (!pluginHandle.Success)
+                    continue;
+                
                 var pluginEntity = new PluginEntity
                 {
                     Id = Guid.NewGuid(),
@@ -82,7 +76,7 @@ public class PluginManager : IPluginManager
                     Name = pluginMetadata.Name,
                     Version = pluginMetadata.Version,
                     Checksum = pluginMetadata.Checksum,
-                    PluginLocation = pluginLocation,
+                    PluginLocation = pluginHandle.Location,
                     UserId = _currentUserService.UserId,
                     Author = pluginMetadata.Author,
                     Description = pluginMetadata.Description,
@@ -91,20 +85,11 @@ public class PluginManager : IPluginManager
                 };
 
                 await _pluginService.Add(pluginEntity, cancellationToken);
-                pluginHandle.Unload();
-                _logger.LogInformation($"Plugin {pluginType} v{pluginVersion} installed successfully and saved to database.");
-            }
-            catch (ReflectionTypeLoadException ex)
-            {
-                _logger.LogError($"⚠️ Could not load all types from {dllPath}: {ex.Message}");
-                foreach (var loaderEx in ex.LoaderExceptions)
-                {
-                    _logger.LogError($" - {loaderEx.Message}");
-                }
+                _logger.LogInformation($"Plugin {pluginType} v{pluginVersion} installed successfully.");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error loading {dllPath}: {ex.Message}");
+                _logger.LogError($"Error loading {pluginLocation}: {ex.Message}");
             }
         }
     }

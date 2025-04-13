@@ -122,6 +122,9 @@ public class PluginTypeService : IPluginTypeService
         }
 
         var pluginHandle = _pluginLoader.LoadPlugin(pluginEntity.PluginLocation);
+        if (!pluginHandle.Success)
+            throw new FlowSynxException((int)ErrorCode.PluginNotFound, $"Plugin '{pluginEntity.Name}' could be not found.");
+        
         var plugin = pluginHandle.Instance;
         plugin.Specifications = specifications;
         await plugin.Initialize(new PluginLoggerAdapter(_logger));

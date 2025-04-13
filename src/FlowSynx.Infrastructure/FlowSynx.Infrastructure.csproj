@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.Amazon.S3\FlowSynx.Plugins.Amazon.S3.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.Azure.Blobs\FlowSynx.Plugins.Azure.Blobs.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.Azure.Files\FlowSynx.Plugins.Azure.Files.csproj" />
     <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj" />
