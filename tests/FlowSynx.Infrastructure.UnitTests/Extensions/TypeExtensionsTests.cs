@@ -1,6 +1,6 @@
-﻿using FlowSynx.Application.Extensions;
+﻿using FlowSynx.Infrastructure.Extensions;
 
-namespace FlowSynx.Application.UnitTests.Extensions;
+namespace FlowSynx.Infrastructure.UnitTests.Extensions;
 
 public class TypeExtensionsTests
 {

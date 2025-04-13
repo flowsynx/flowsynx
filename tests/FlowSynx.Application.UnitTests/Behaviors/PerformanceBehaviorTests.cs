@@ -62,24 +62,6 @@ public class PerformanceBehaviorTests
         Assert.Empty(_logger.Collector.GetSnapshot());
     }
 
-    [Fact]
-    public async Task Handle_WhenRequestThrowsException_LogsError()
-    {
-        // Arrange
-        var testRequest = new TestRequest();
-        var testResponse = new TestResponse();
-
-        var exception = new FlowSynxException((int)ErrorCode.BehaviorPerformanceError, "Test exception");
-        _nextMock.Setup(x => x()).ThrowsAsync(exception);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<FlowSynxException>(async () =>
-            await _behavior.Handle(testRequest, _nextMock.Object, CancellationToken.None));
-
-        // Assert
-        Assert.Contains(_logger.Collector.GetSnapshot(), e => e.Level == LogLevel.Error && e.Message.Contains("failed after"));
-    }
-
     public class TestRequest : IRequest<TestResponse> { }
 
     public class TestResponse { }

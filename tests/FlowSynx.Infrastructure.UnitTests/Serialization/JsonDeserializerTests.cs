@@ -1,10 +1,11 @@
 ﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 
-namespace FlowSynx.Infrastructure.UnitTests.Services;
+namespace FlowSynx.Infrastructure.UnitTests.Serialization;
 
 public class JsonDeserializerTests
 {

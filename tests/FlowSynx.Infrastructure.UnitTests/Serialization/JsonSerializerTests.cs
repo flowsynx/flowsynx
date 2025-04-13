@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Testing;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.Serialization;
 
-namespace FlowSynx.Infrastructure.UnitTests.Services;
+namespace FlowSynx.Infrastructure.UnitTests.Serialization;
 
 public class JsonSerializerTests
 {
