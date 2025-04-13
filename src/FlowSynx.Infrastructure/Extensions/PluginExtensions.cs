@@ -13,6 +13,7 @@ public static class PluginExtensions
         var specificationsType = plugin.SpecificationsType;
         return specificationsType
             .GetProperties()
+            .Where(p=>p.CanWrite && p.GetIndexParameters().Length == 0)
             .Select(property => new PluginSpecification
             {
                 Name = property.Name,
