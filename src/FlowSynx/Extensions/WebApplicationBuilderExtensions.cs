@@ -18,7 +18,7 @@ public static class WebApplicationBuilderExtensions
             builder.WebHost.ConfigureKestrel((context, kestrelOptions) =>
             {
                 var httpPort = endpointConfiguration.Http;
-                kestrelOptions.ListenAnyIP(httpPort ?? 5860);
+                kestrelOptions.ListenAnyIP(httpPort ?? 6262);
             });
 
             builder.WebHost.UseKestrel(option =>
