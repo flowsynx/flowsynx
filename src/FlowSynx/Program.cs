@@ -5,11 +5,20 @@ using FlowSynx.Persistence.SQLite.Extensions;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Services;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder();
-IConfiguration config = builder.Configuration;
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 try
 {
+    var customConfigPath = builder.Configuration["config"];
+    if (!string.IsNullOrEmpty(customConfigPath))
+    {
+        builder.Configuration.Sources.Clear(); // Optional: clear defaults
+        builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
+    }
+
+    builder.Configuration.AddEnvironmentVariables();
+    IConfiguration config = builder.Configuration;
+
     builder.Services
            .AddCancellationTokenSource()
            .AddHttpContextAccessor()
