@@ -7,60 +7,36 @@ public class WorkflowValidator : IWorkflowValidator
 {
     public List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
     {
-        var allNodeNames = workflowTasks.Select(n => n.Name).ToHashSet();
-        var missingDependencies = new HashSet<string>();
+        var definedTaskNames = workflowTasks.Select(t => t.Name).ToHashSet();
+        var missingDependencies = workflowTasks
+            .SelectMany(t => t.Dependencies)
+            .Where(dep => !definedTaskNames.Contains(dep))
+            .Distinct()
+            .ToList();
 
-        foreach (var dependency in workflowTasks.SelectMany(node =>
-                     node.Dependencies.Where(dependency => !allNodeNames.Contains(dependency))))
-        {
-            missingDependencies.Add(dependency);
-        }
-
-        return missingDependencies.ToList();
+        return missingDependencies;
     }
 
     public WorkflowValidatorResult CheckCyclic(List<WorkflowTask> workflowTasks)
     {
-        var inDegree = new Dictionary<string, int>();
-        var graph = new Dictionary<string, List<string>>();
+        var graph = BuildGraph(workflowTasks, out var inDegree);
 
-        // Initialize the graph and in-degree dictionary
-        foreach (var task in workflowTasks)
-        {
-            if (!graph.ContainsKey(task.Name))
-                graph[task.Name] = new List<string>();
-
-            if (!inDegree.ContainsKey(task.Name))
-                inDegree[task.Name] = 0;
-
-            foreach (var dep in task.Dependencies)
-            {
-                if (!graph.ContainsKey(dep))
-                    graph[dep] = new List<string>();
-
-                graph[dep].Add(task.Name);
-                inDegree[task.Name] = inDegree.GetValueOrDefault(task.Name, 0) + 1;
-            }
-        }
-
-        // Kahn's Algorithm
-        var zeroInDegreeQueue = new Queue<string>(inDegree.Where(kv => kv.Value == 0).Select(kv => kv.Key));
-        var executionOrder = new List<string>();
+        var queue = new Queue<string>(inDegree.Where(kv => kv.Value == 0).Select(kv => kv.Key));
         var visitedCount = 0;
+        var executionOrder = new List<string>();
 
-        while (zeroInDegreeQueue.Any())
+        while (queue.Any())
         {
-            var node = zeroInDegreeQueue.Dequeue();
-            executionOrder.Add(node);
+            var current = queue.Dequeue();
+            executionOrder.Add(current);
             visitedCount++;
 
-            foreach (var neighbor in graph[node])
+            foreach (var neighbor in graph[current])
             {
                 inDegree[neighbor]--;
-
                 if (inDegree[neighbor] == 0)
                 {
-                    zeroInDegreeQueue.Enqueue(neighbor);
+                    queue.Enqueue(neighbor);
                 }
             }
         }
@@ -75,15 +51,37 @@ public class WorkflowValidator : IWorkflowValidator
             };
         }
 
-        return new WorkflowValidatorResult
-        {
-            Cyclic = false
-        };
+        return new WorkflowValidatorResult { Cyclic = false };
     }
 
     public bool HasDuplicateNames(List<WorkflowTask> workflowTasks)
     {
-        var knownKeys = new HashSet<string>();
-        return workflowTasks.Any(item => !knownKeys.Add(item.Name));
+        var seen = new HashSet<string>();
+        return workflowTasks.Any(task => !seen.Add(task.Name));
+    }
+
+    private Dictionary<string, List<string>> BuildGraph(List<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
+    {
+        var graph = new Dictionary<string, List<string>>();
+        inDegree = new Dictionary<string, int>();
+
+        foreach (var task in tasks)
+        {
+            if (!graph.ContainsKey(task.Name))
+                graph[task.Name] = new List<string>();
+
+            inDegree.TryAdd(task.Name, 0);
+
+            foreach (var dep in task.Dependencies)
+            {
+                if (!graph.ContainsKey(dep))
+                    graph[dep] = new List<string>();
+
+                graph[dep].Add(task.Name);
+                inDegree[task.Name] = inDegree.GetValueOrDefault(task.Name) + 1;
+            }
+        }
+
+        return graph;
     }
 }

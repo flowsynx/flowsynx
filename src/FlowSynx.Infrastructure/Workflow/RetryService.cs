@@ -6,6 +6,7 @@ namespace FlowSynx.Infrastructure.Workflow;
 public class RetryService : IRetryService
 {
     private readonly ILogger<RetryService> _logger;
+    private readonly Random _random = new();
 
     public RetryService(ILogger<RetryService> logger)
     {
@@ -14,56 +15,38 @@ public class RetryService : IRetryService
 
     public async Task<T> ExecuteAsync<T>(Func<Task<T>> action, RetryPolicy policy)
     {
-        int attempt = 0;
-
-        while (attempt < policy.MaxRetries)
+        for (int attempt = 1; attempt <= policy.MaxRetries; attempt++)
         {
             try
             {
                 return await action();
             }
-            catch (Exception ex)
+            catch (Exception ex) when (attempt < policy.MaxRetries)
             {
-                attempt++;
                 _logger.LogWarning($"Attempt {attempt} failed: {ex.Message}");
 
-                if (attempt >= policy.MaxRetries)
-                {
-                    _logger.LogError($"Operation failed after {policy.MaxRetries} attempts.");
-                    throw new Exception(ex.Message);
-                }
-
                 int delay = CalculateDelay(policy, attempt);
-                _logger.LogInformation($"Retrying in {delay}ms...");
+                _logger.LogInformation($"Waiting {delay}ms before retry...");
                 await Task.Delay(delay);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Operation failed after {MaxRetries} attempts.", policy.MaxRetries);
+                throw;
             }
         }
 
-        throw new Exception("Retry mechanism failed unexpectedly.");
+        throw new InvalidOperationException("Retry mechanism failed unexpectedly.");
     }
 
     private int CalculateDelay(RetryPolicy policy, int attempt)
     {
-        int delay = policy.InitialDelay;
-
-        switch (policy.BackoffStrategy)
+        return policy.BackoffStrategy switch
         {
-            case BackoffStrategy.Exponential:
-                delay = policy.InitialDelay * (int)Math.Pow(2, attempt - 1);
-                break;
-            case BackoffStrategy.Linear:
-                delay = policy.InitialDelay * attempt;
-                break;
-            case BackoffStrategy.Jitter:
-                var rand = new Random();
-                delay = rand.Next(policy.InitialDelay, policy.MaxDelay);
-                break;
-            case BackoffStrategy.Fixed:
-            default:
-                delay = policy.InitialDelay;
-                break;
-        }
-
-        return Math.Min(delay, policy.MaxDelay);
+            BackoffStrategy.Exponential => Math.Min(policy.InitialDelay * (int)Math.Pow(2, attempt - 1), policy.MaxDelay),
+            BackoffStrategy.Linear => Math.Min(policy.InitialDelay * attempt, policy.MaxDelay),
+            BackoffStrategy.Jitter => _random.Next(policy.InitialDelay, policy.MaxDelay),
+            _ => policy.InitialDelay
+        };
     }
 }
