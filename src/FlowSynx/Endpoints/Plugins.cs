@@ -1,6 +1,8 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Features.PluginConfig.Command.Add;
 using FlowSynx.Application.Features.Plugins.Command.Add;
+using FlowSynx.Application.Features.Plugins.Command.Delete;
+using FlowSynx.Application.Features.Plugins.Command.Update;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;
@@ -28,6 +30,16 @@ public class Plugins : EndpointGroupBase
             .WithName("AddPlugin")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
+
+        group.MapPost("/update", UpdatePlugin)
+            .WithName("UpdatePlugin")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
+
+        group.MapDelete("/delete", DeletePlugin)
+            .WithName("DeletePlugin")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
     }
 
     public async Task<IResult> PluginsList([FromServices] IMediator mediator,
@@ -45,13 +57,35 @@ public class Plugins : EndpointGroupBase
     }
 
     public async Task<IResult> AddPlugin(HttpContext context,
-    [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
-    CancellationToken cancellationToken)
+        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+        CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
         var request = jsonDeserializer.Deserialize<AddPluginRequest>(jsonString);
 
         var result = await mediator.AddPlugin(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> UpdatePlugin(HttpContext context,
+        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+        CancellationToken cancellationToken)
+    {
+        var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
+        var request = jsonDeserializer.Deserialize<UpdatePluginRequest>(jsonString);
+
+        var result = await mediator.UpdatePlugin(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> DeletePlugin(HttpContext context,
+        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+        CancellationToken cancellationToken)
+    {
+        var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
+        var request = jsonDeserializer.Deserialize<DeletePluginRequest>(jsonString);
+
+        var result = await mediator.DeletePlugin(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

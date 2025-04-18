@@ -6,15 +6,15 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Add;
+namespace FlowSynx.Application.Features.Plugins.Command.Delete;
 
-internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>>
+internal class DeletePluginHandler : IRequestHandler<DeletePluginRequest, Result<Unit>>
 {
-    private readonly ILogger<AddPluginHandler> _logger;
+    private readonly ILogger<DeletePluginHandler> _logger;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public AddPluginHandler(ILogger<AddPluginHandler> logger, ICurrentUserService currentUserService,
+    public DeletePluginHandler(ILogger<DeletePluginHandler> logger, ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -25,14 +25,15 @@ internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>
         _pluginManager = pluginManager;
     }
 
-    public async Task<Result<Unit>> Handle(AddPluginRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(DeletePluginRequest request, CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                    "Access is denied. Authentication is required.");
 
-            await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
+            await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.AddConfigHandlerSuccessfullyAdded);
         }
         catch (FlowSynxException ex)

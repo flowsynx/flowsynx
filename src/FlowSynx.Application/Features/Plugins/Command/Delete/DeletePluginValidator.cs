@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Add;
+namespace FlowSynx.Application.Features.Plugins.Command.Delete;
 
-public class AddPluginValidator : AbstractValidator<AddPluginRequest>
+public class DeletePluginValidator : AbstractValidator<DeletePluginRequest>
 {
-    public AddPluginValidator()
+    public DeletePluginValidator()
     {
         RuleFor(request => request.Type)
             .NotNull()

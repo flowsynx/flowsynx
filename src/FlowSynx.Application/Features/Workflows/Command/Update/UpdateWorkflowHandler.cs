@@ -46,7 +46,7 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
             if (workflowDefinition == null)
                 throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, "Workflow definition must be not empty!");
 
-            if (workflowDefinition.Name == null)
+            if (string.IsNullOrEmpty(workflowDefinition.Name))
                 throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, "Workflow name shold have value!");
 
             if (!string.Equals(workflow.Name, workflowDefinition.Name, StringComparison.OrdinalIgnoreCase))

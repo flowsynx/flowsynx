@@ -6,15 +6,15 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Add;
+namespace FlowSynx.Application.Features.Plugins.Command.Update;
 
-internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>>
+internal class UpdatePluginHandler : IRequestHandler<UpdatePluginRequest, Result<Unit>>
 {
-    private readonly ILogger<AddPluginHandler> _logger;
+    private readonly ILogger<UpdatePluginHandler> _logger;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public AddPluginHandler(ILogger<AddPluginHandler> logger, ICurrentUserService currentUserService,
+    public UpdatePluginHandler(ILogger<UpdatePluginHandler> logger, ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -25,14 +25,15 @@ internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>
         _pluginManager = pluginManager;
     }
 
-    public async Task<Result<Unit>> Handle(AddPluginRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(UpdatePluginRequest request, CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                    "Access is denied. Authentication is required.");
 
-            await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
+            await _pluginManager.UpdateAsync(request.Type, request.OldVersion, request.NewVersion, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.AddConfigHandlerSuccessfullyAdded);
         }
         catch (FlowSynxException ex)

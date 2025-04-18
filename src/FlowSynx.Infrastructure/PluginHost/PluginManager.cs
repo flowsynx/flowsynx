@@ -103,14 +103,29 @@ public class PluginManager : IPluginManager
     public async Task Uninstall(string pluginType, string version, CancellationToken cancellationToken)
     {
         var pluginEntity = await _pluginService.Get(_currentUserService.UserId, pluginType, version, cancellationToken);
-        if (pluginEntity != null)
+        if (pluginEntity is null)
         {
-            var pluginLocation = pluginEntity.PluginLocation;
-            if (Directory.Exists(pluginLocation))
-            {
-                Directory.Delete(pluginLocation, true);
-                _logger.LogInformation($"Uninstalled: '{pluginType}' version '{version}'");
-            }
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
+                    $"The plugin type '{pluginType}' with version '{version}' not found!");
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+
+        if (pluginEntity.PluginConfigurations.Any())
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginConfigurationIsAlreadyExist, 
+                $"The plugin type '{pluginEntity.Type}' with version '{pluginEntity.Version}' " +
+                $"has related and defined configurations. " +
+                $"Please first delete configuraion(s) and then try again.");
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+
+        var pluginLocation = pluginEntity.PluginLocation;
+        if (Directory.Exists(pluginLocation))
+        {
+            Directory.Delete(pluginLocation, true);
+            _logger.LogInformation($"Uninstalled: '{pluginType}' version '{version}'");
         }
     }
 }

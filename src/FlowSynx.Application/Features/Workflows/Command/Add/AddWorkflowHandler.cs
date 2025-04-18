@@ -57,7 +57,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             if (workflowDefinition == null)
                 throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, "Workflow definition must be not empty!");
 
-            if (workflowDefinition.Name == null)
+            if (string.IsNullOrEmpty(workflowDefinition.Name))
                 throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, "Workflow name shold have value!");
 
             ValidateWorkflow(workflowDefinition.Tasks);

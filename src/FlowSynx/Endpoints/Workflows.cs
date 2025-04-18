@@ -75,8 +75,6 @@ public class Workflows : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var request = jsonDeserializer.Deserialize<UpdateWorkflowRequest>(jsonString);
-
         var result = await mediator.UpdateWorkflow(id, jsonString, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
