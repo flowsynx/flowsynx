@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
 using FlowSynx.Application.Models;
-using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
@@ -61,11 +60,12 @@ public class WorkflowExecutor : IWorkflowExecutor
 
         try
         {
-            var deserializeWorkflow = DeserializeWorkflow(workflow.Definition);
+            var workflowDefinition = DeserializeWorkflow(workflow.Definition);
 
-            ValidateWorkflow(deserializeWorkflow.Tasks);
+            ApplyRetryPolicies(workflowDefinition);
+            ValidateWorkflow(workflowDefinition);
 
-            var taskMap = deserializeWorkflow.Tasks.ToDictionary(t => t.Name);
+            var taskMap = workflowDefinition.Tasks.ToDictionary(t => t.Name);
 
             foreach (var item in taskMap)
             {
@@ -85,7 +85,7 @@ public class WorkflowExecutor : IWorkflowExecutor
 
                 var executionTasks = readyTasks.Select(taskId => taskMap[taskId]);
                 var errors = await ProcessWithDegreeOfParallelismAsync(userId, workflowExecutionEntity.Id, executionTasks,
-                    deserializeWorkflow.Configuration, cancellationToken);
+                    workflowDefinition.Configuration, cancellationToken);
 
                 if (errors.Any())
                 {
@@ -128,8 +128,9 @@ public class WorkflowExecutor : IWorkflowExecutor
         }
     }
 
-    private void ValidateWorkflow(List<WorkflowTask> workflowTasks)
+    private void ValidateWorkflow(WorkflowDefinition workflow)
     {
+        var workflowTasks = workflow.Tasks;
         var hasWorkflowPipelinesDuplicateNames = _workflowValidator.HasDuplicateNames(workflowTasks);
         if (hasWorkflowPipelinesDuplicateNames)
             throw new Exception("There is a duplicated pipeline name in the workflow pipelines.");
@@ -152,6 +153,61 @@ public class WorkflowExecutor : IWorkflowExecutor
 
             throw new Exception(sb.ToString());
         }
+
+        var errors = new List<string>();
+        foreach (var task in workflowTasks)
+        {
+            var retry = task.RetryPolicy;
+            if (retry?.MaxRetries is < 0)
+                errors.Add($"Task '{task.Name}' has negative MaxRetries: '{retry.MaxRetries}'");
+
+            if (retry?.InitialDelay is < 0)
+                errors.Add($"Task '{task.Name}' has negative Initial Delay: '{retry.InitialDelay}'");
+
+            if (retry?.MaxDelay is < 0)
+                errors.Add($"Task '{task.Name}' has negative Max Delay: '{retry.MaxDelay}'");
+        }
+
+        if (errors.Any())
+            throw new Exception(string.Join(Environment.NewLine, errors));
+    }
+
+    private void ApplyRetryPolicies(WorkflowDefinition workflow)
+    {
+        foreach (var task in workflow.Tasks)
+        {
+            var getRetryPolicy = GetRetryPolicy(task, workflow.Configuration);
+            task.RetryPolicy = getRetryPolicy;
+        }
+    }
+
+    private RetryPolicy? GetRetryPolicy(WorkflowTask task, WorkflowConfiguration workflowConfiguration)
+    {
+        if (workflowConfiguration.RetryPolicy is null)
+            return null;
+
+        if (task.RetryPolicy is null)
+            return workflowConfiguration.RetryPolicy;
+
+        // Merge with default for missing fields (optional, for partial overrides)
+        return new RetryPolicy
+        {
+            MaxRetries = task.RetryPolicy.MaxRetries > 0 
+                ? task.RetryPolicy.MaxRetries 
+                : workflowConfiguration.RetryPolicy.MaxRetries,
+
+            BackoffStrategy = Enum.IsDefined(typeof(BackoffStrategy), task.RetryPolicy.BackoffStrategy)
+                ? task.RetryPolicy.BackoffStrategy
+                : workflowConfiguration.RetryPolicy.BackoffStrategy,
+
+            InitialDelay = task.RetryPolicy.InitialDelay > 0 
+                ? task.RetryPolicy.InitialDelay 
+                : workflowConfiguration.RetryPolicy.InitialDelay,
+
+            MaxDelay = task.RetryPolicy.MaxDelay > 0 
+                ? task.RetryPolicy.MaxDelay 
+                : workflowConfiguration.RetryPolicy.MaxDelay
+        };
     }
 
     private async Task<WorkflowEntity> GetWorkflow(string userId, Guid workflowId, CancellationToken cancellationToken)
@@ -229,12 +285,12 @@ public class WorkflowExecutor : IWorkflowExecutor
         var exceptions = new List<Exception>();
 
         var parser = new ExpressionParser(_taskOutputs.ToDictionary());
-        var tasks = workflowTasks.Select(async item =>
+        var tasks = workflowTasks.Select(async task =>
         {
             await semaphore.WaitAsync(cancellationToken);
             try
             {
-                await ExecuteTaskAsync(userId, workflowExecutionId, item, workflowConfiguration.Retry, parser, cancellationToken);
+                await ExecuteTaskAsync(userId, workflowExecutionId, task, parser, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -254,7 +310,7 @@ public class WorkflowExecutor : IWorkflowExecutor
     }
 
     private async Task ExecuteTaskAsync(string userId, Guid workflowExecutionId, WorkflowTask task,
-        WorkflowRetry? workflowRetry, ExpressionParser parser, CancellationToken cancellationToken)
+        ExpressionParser parser, CancellationToken cancellationToken)
     {
         try
         {
@@ -262,7 +318,7 @@ public class WorkflowExecutor : IWorkflowExecutor
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name, 
                 WorkflowTaskExecutionStatus.Running, cancellationToken);
-            var executionResult = await TryExecuteAsync(userId, task, workflowRetry, parser, cancellationToken);
+            var executionResult = await TryExecuteAsync(userId, task, parser, cancellationToken);
             _taskOutputs[task.Name] = executionResult;
 
             await ChangetWorkflowTaskExecutionStatus(workflowExecutionId, task.Name,
@@ -289,7 +345,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         await _workflowTaskExecutionService.Update(workflowTaskExecutionEntity, cancellationToken);
     }
 
-    private async Task<object?> TryExecuteAsync(string userId, WorkflowTask task, WorkflowRetry? workflowRetry,
+    private async Task<object?> TryExecuteAsync(string userId, WorkflowTask task, 
         ExpressionParser parser, CancellationToken cancellationToken)
     {
         var plugin = await _pluginTypeService.Get(userId, task.Type, cancellationToken).ConfigureAwait(false);
@@ -300,18 +356,14 @@ public class WorkflowExecutor : IWorkflowExecutor
         
         var pluginParameters = resolvedParameters.ToPluginParameters();
 
-        if (workflowRetry is null || workflowRetry.Max is <= 0)
+        if (task.RetryPolicy is null)
         {
             return await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false);
         }
 
-        var maxRetries = workflowRetry.Max ?? 3;
-        var delay = workflowRetry.Delay ?? 1000;
-
         return await _retryService.ExecuteAsync(
             async () => await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false),
-            maxRetries: maxRetries,
-            delay: TimeSpan.FromMilliseconds(delay)
+            task.RetryPolicy
         );
     }
 
