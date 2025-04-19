@@ -9,13 +9,11 @@ public class UpdateWorkflowValidator : AbstractValidator<UpdateWorkflowRequest>
         RuleFor(x => x.Id)
             .NotNull()
             .NotEmpty()
-            .Must(BeAValidGuid)
-            .WithMessage(Resources.ConnectorValidatorConnectorNamespaceValueMustBeValidMessage);
+            .WithMessage(Resources.Features_Validation_Id_MustHaveValue);
 
-        RuleFor(x => x.Definition)
-            .NotNull()
-            .NotEmpty()
-            .WithMessage(Resources.ConnectorValidatorConnectorNamespaceValueMustBeValidMessage);
+        RuleFor(x => x.Id)
+            .Must(BeAValidGuid)
+            .WithMessage(Resources.Features_Validation_Id_InvalidGuidFormat);
     }
 
     private bool BeAValidGuid(string id)

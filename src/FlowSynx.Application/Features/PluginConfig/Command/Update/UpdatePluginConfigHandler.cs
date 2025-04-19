@@ -38,18 +38,24 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
     {
         try
         {
+            if (string.IsNullOrEmpty(_currentUserService.UserId))
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+
             var configId = Guid.Parse(request.Id);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfiguration == null)
-                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"The config with id '{request.Id}' not found");
+            {
+                var message = string.Format(Resources.Feature_PluginConfig_Update_ConfigIdNotFound, request.Id);
+                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
+            }
 
             if (!string.Equals(request.Name, pluginConfiguration.Name, StringComparison.OrdinalIgnoreCase))
             {
                 var ispluginConfigExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, request.Name, cancellationToken);
                 if (ispluginConfigExist)
                 {
-                    var pluginConfigExistMessage = string.Format(Resources.AddWorkflowNameIsAlreadyExist, request.Name);
-                    var exception = new FlowSynxException((int)ErrorCode.PluginConfigurationIsAlreadyExist, pluginConfigExistMessage);
+                    var message = string.Format(Resources.Features_PluginConfig_Update_PluginConfigAlreadyExists, request.Name);
+                    var exception = new FlowSynxException((int)ErrorCode.PluginConfigurationIsAlreadyExist, message);
                     _logger.LogWarning(exception.ToString());
                     throw exception;
                 }
@@ -57,13 +63,15 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
 
             var isTypeExist = await _pluginService.IsExist(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
             if (!isTypeExist)
-                throw new FlowSynxException((int)ErrorCode.PluginTypeNotFound,
-                    string.Format(Resources.AddConfigValidatorTypeValueIsNotValid, request.Name));
+            {
+                var message = string.Format(Resources.Features_PluginConfig_Update_PluginCouldNotBeFound, request.Type, request.Version);
+                throw new FlowSynxException((int)ErrorCode.PluginTypeNotFound, message);
+            }
 
             var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
-            var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, pluginEntity.Specifications);
+            var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, pluginEntity?.Specifications);
             if (!isPluginSpecificationsValid.Valid)
-                return await Result<Unit>.FailAsync(isPluginSpecificationsValid.Messages);
+                return await Result<Unit>.FailAsync(isPluginSpecificationsValid.Messages!);
 
             pluginConfiguration.Name = request.Name;
             pluginConfiguration.Type = request.Type;
@@ -71,7 +79,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
             pluginConfiguration.Specifications = request.Specifications.ToPluginConfigurationSpecifications();
 
             await _pluginConfigurationService.Update(pluginConfiguration, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_PluginConfig_Update_UpdatedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

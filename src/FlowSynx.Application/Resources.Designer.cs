@@ -61,470 +61,416 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given config name {0} is already exist!.
+        ///   Looks up a localized string similar to Access is denied. Please check and ensure you using a valid credentials..
         /// </summary>
-        internal static string AddConfigHandlerItemIsAlreadyExist {
+        internal static string Authentication_Access_Denied {
             get {
-                return ResourceManager.GetString("AddConfigHandlerItemIsAlreadyExist", resourceCulture);
+                return ResourceManager.GetString("Authentication_Access_Denied", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The configuration was added successfully..
+        ///   Looks up a localized string similar to Audit details for &apos;{0}&apos; has been retrieved successfully..
         /// </summary>
-        internal static string AddConfigHandlerSuccessfullyAdded {
+        internal static string Feature_Audit_DetailesRetrievedSuccessfully {
             get {
-                return ResourceManager.GetString("AddConfigHandlerSuccessfullyAdded", resourceCulture);
+                return ResourceManager.GetString("Feature_Audit_DetailesRetrievedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Name should be not empty..
+        ///   Looks up a localized string similar to The audit details, id &apos;{0}&apos;, are not found..
         /// </summary>
-        internal static string AddConfigValidatorNameValueMustNotNullOrEmptyMessage {
+        internal static string Feature_Audit_DetailsNotFound {
             get {
-                return ResourceManager.GetString("AddConfigValidatorNameValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_Audit_DetailsNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The config name accepts only Latin letters and numbers, as well as underscores. Additionally, the name must begin with an alphabetic letter..
+        ///   Looks up a localized string similar to The audit list has been retrieved successfully..
         /// </summary>
-        internal static string AddConfigValidatorNameValueOnlyAcceptLatingCharacters {
+        internal static string Feature_Audit_ListRetrievedSuccessfully {
             get {
-                return ResourceManager.GetString("AddConfigValidatorNameValueOnlyAcceptLatingCharacters", resourceCulture);
+                return ResourceManager.GetString("Feature_Audit_ListRetrievedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The entered type for connector &apos;{0}&apos; is not valid or not exist!.
+        ///   Looks up a localized string similar to The plugin has been added successfully..
         /// </summary>
-        internal static string AddConfigValidatorTypeValueIsNotValid {
+        internal static string Feature_Plugin_Add_AddedSuccessfully {
             get {
-                return ResourceManager.GetString("AddConfigValidatorTypeValueIsNotValid", resourceCulture);
+                return ResourceManager.GetString("Feature_Plugin_Add_AddedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type should be not empty..
+        ///   Looks up a localized string similar to The plugin has been deleted successfully..
         /// </summary>
-        internal static string AddConfigValidatorTypeValueMustNotNullOrEmptyMessage {
+        internal static string Feature_Plugin_Delete_DeletedSuccessfully {
             get {
-                return ResourceManager.GetString("AddConfigValidatorTypeValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_Plugin_Delete_DeletedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Workflow &apos;{0}&apos; is already exist..
+        ///   Looks up a localized string similar to The plugin has been updated successfully..
         /// </summary>
-        internal static string AddWorkflowNameIsAlreadyExist {
+        internal static string Feature_Plugin_Update_UpdatedSuccessfully {
             get {
-                return ResourceManager.GetString("AddWorkflowNameIsAlreadyExist", resourceCulture);
+                return ResourceManager.GetString("Feature_Plugin_Update_UpdatedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The compression was done successfully..
+        ///   Looks up a localized string similar to The plugin config has been added successfully..
         /// </summary>
-        internal static string CompressHandlerSuccessfullyCompress {
+        internal static string Feature_PluginConfig_Add_AddedSuccessfully {
             get {
-                return ResourceManager.GetString("CompressHandlerSuccessfullyCompress", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_Add_AddedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to The plugin config with ID &apos;{configId}&apos; was not found..
         /// </summary>
-        internal static string CompressValidatorEntityShouldNotBeNullOrEmptyMessage {
+        internal static string Feature_PluginConfig_Delete_ConfigIdNotFound {
             get {
-                return ResourceManager.GetString("CompressValidatorEntityShouldNotBeNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_Delete_ConfigIdNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Compress type value must be [ Zip | GZip | Tar ]. By default it is Zip..
+        ///   Looks up a localized string similar to The plugin config has been deleted successfully..
         /// </summary>
-        internal static string CompressValidatorTypeValueShouldBeValidMessage {
+        internal static string Feature_PluginConfig_Delete_DeletedSuccessfully {
             get {
-                return ResourceManager.GetString("CompressValidatorTypeValueShouldBeValidMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_Delete_DeletedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error in initializing &apos;{0}&apos; connector instance!.
+        ///   Looks up a localized string similar to Plugin config details for &apos;{0}&apos; has been retrieved successfully..
         /// </summary>
-        internal static string ConnectorInItializingInstanceErrorMessage {
+        internal static string Feature_PluginConfig_DetailesRetrievedSuccessfully {
             get {
-                return ResourceManager.GetString("ConnectorInItializingInstanceErrorMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_DetailesRetrievedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Namespace value must be [ Storage| Messaging | Stream ]. By default it is Storage..
+        ///   Looks up a localized string similar to The Plugin config details, id &apos;{0}&apos;, are not found..
         /// </summary>
-        internal static string ConnectorValidatorConnectorNamespaceValueMustBeValidMessage {
+        internal static string Feature_PluginConfig_DetailsNotFound {
             get {
-                return ResourceManager.GetString("ConnectorValidatorConnectorNamespaceValueMustBeValidMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_DetailsNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specified destination-path is of a different type than the source-path..
+        ///   Looks up a localized string similar to Plugin Config List has been retrieved successfully..
         /// </summary>
-        internal static string CopyDestinationPathIsDifferentThanSourcePath {
+        internal static string Feature_PluginConfig_ListRetrievedSuccessfully {
             get {
-                return ResourceManager.GetString("CopyDestinationPathIsDifferentThanSourcePath", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_ListRetrievedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The copy was done successfully..
+        ///   Looks up a localized string similar to The plugin config with ID &apos;{configId}&apos; was not found..
         /// </summary>
-        internal static string CopyHandlerSuccessfullyCopy {
+        internal static string Feature_PluginConfig_Update_ConfigIdNotFound {
             get {
-                return ResourceManager.GetString("CopyHandlerSuccessfullyCopy", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_Update_ConfigIdNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Destination entity should be not empty..
+        ///   Looks up a localized string similar to The plugin config has been updated successfully..
         /// </summary>
-        internal static string CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Feature_PluginConfig_Update_UpdatedSuccessfully {
             get {
-                return ResourceManager.GetString("CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_PluginConfig_Update_UpdatedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Source entity should be not empty..
+        ///   Looks up a localized string similar to The workflow has been added successfully..
         /// </summary>
-        internal static string CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Feature_Workflow_Add_AddedSuccessfully {
             get {
-                return ResourceManager.GetString("CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_Add_AddedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The entity was created successfully..
+        ///   Looks up a localized string similar to The workflow has been deleted successfully..
         /// </summary>
-        internal static string CreateHandlerSuccessfullyDeleted {
+        internal static string Feature_Workflow_Delete_DeletedSuccessfully {
             get {
-                return ResourceManager.GetString("CreateHandlerSuccessfullyDeleted", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_Delete_DeletedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to Plugin workflow details has been retrieved successfully..
         /// </summary>
-        internal static string CreateValidatorEntityShouldNotBeNullOrEmptyMessage {
+        internal static string Feature_Workflow_Details_DataRetrievedSuccessfully {
             get {
-                return ResourceManager.GetString("CreateValidatorEntityShouldNotBeNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_Details_DataRetrievedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given configs are deleted..
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; not found..
         /// </summary>
-        internal static string DeleteConfigHandlerSuccessfullyDeleted {
+        internal static string Feature_Workflow_Details_WorkflowNotFound {
             get {
-                return ResourceManager.GetString("DeleteConfigHandlerSuccessfullyDeleted", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_Details_WorkflowNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Name should be not empty..
+        ///   Looks up a localized string similar to Plugin workflow has been retrieved successfully..
         /// </summary>
-        internal static string DeleteConfigValidatorNameValueMustNotNullOrEmptyMessage {
+        internal static string Feature_Workflow_ListRetrievedSuccessfully {
             get {
-                return ResourceManager.GetString("DeleteConfigValidatorNameValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_ListRetrievedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The entities were deleted successfully..
+        ///   Looks up a localized string similar to The workflow has been updated successfully..
         /// </summary>
-        internal static string DeleteHandlerSuccessfullyDeleted {
+        internal static string Feature_Workflow_Update_AddedSuccessfully {
             get {
-                return ResourceManager.GetString("DeleteHandlerSuccessfullyDeleted", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_Update_AddedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; not found..
         /// </summary>
-        internal static string DeleteValidatorEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Feature_Workflow_Update_WorkflowNotFound {
             get {
-                return ResourceManager.GetString("DeleteValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Feature_Workflow_Update_WorkflowNotFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to There is something wrong happened during compress data..
+        ///   Looks up a localized string similar to The plugin with ID &apos;{1}&apos; could not be found..
         /// </summary>
-        internal static string ErrorDuringCompressData {
+        internal static string Features_Plugin_Details_PluginCouldNotBeFound {
             get {
-                return ResourceManager.GetString("ErrorDuringCompressData", resourceCulture);
+                return ResourceManager.GetString("Features_Plugin_Details_PluginCouldNotBeFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to The plugin new version must have value..
         /// </summary>
-        internal static string ExistValidatorEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Features_Plugin_Validation_NewVersion_MustHaveValue {
             get {
-                return ResourceManager.GetString("ExistValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Features_Plugin_Validation_NewVersion_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The value from ({0}) could not be extracted!.
+        ///   Looks up a localized string similar to The plugin old version must have value..
         /// </summary>
-        internal static string FileSystemDateParserCannotExtractValue {
+        internal static string Features_Plugin_Validation_OldVersion_MustHaveValue {
             get {
-                return ResourceManager.GetString("FileSystemDateParserCannotExtractValue", resourceCulture);
+                return ResourceManager.GetString("Features_Plugin_Validation_OldVersion_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given datetime is not valid!.
+        ///   Looks up a localized string similar to The plugin type must have value..
         /// </summary>
-        internal static string FileSystemDateParserInvalidInput {
+        internal static string Features_Plugin_Validation_Type_MustHaveValue {
             get {
-                return ResourceManager.GetString("FileSystemDateParserInvalidInput", resourceCulture);
+                return ResourceManager.GetString("Features_Plugin_Validation_Type_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{0}&apos; FileSystem not found!.
+        ///   Looks up a localized string similar to The plugin version must have value..
         /// </summary>
-        internal static string FileSystemRemotePathParserFileSystemNotFoumd {
+        internal static string Features_Plugin_Validation_Version_MustHaveValue {
             get {
-                return ResourceManager.GetString("FileSystemRemotePathParserFileSystemNotFoumd", resourceCulture);
+                return ResourceManager.GetString("Features_Plugin_Validation_Version_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The value from ({0}) could not be extracted!.
+        ///   Looks up a localized string similar to The plugin config &apos;{0}&apos; already exists..
         /// </summary>
-        internal static string FileSystemSizeParserCannotExtractValue {
+        internal static string Features_PluginConfig_Add_PluginConfigAlreadyExists {
             get {
-                return ResourceManager.GetString("FileSystemSizeParserCannotExtractValue", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Add_PluginConfigAlreadyExists", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given size is not valid!.
+        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; could not be found..
         /// </summary>
-        internal static string FileSystemSizeParserInvalidInput {
+        internal static string Features_PluginConfig_Add_PluginCouldNotBeFound {
             get {
-                return ResourceManager.GetString("FileSystemSizeParserInvalidInput", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Add_PluginCouldNotBeFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid Property. Order By Format: Property, Property2 ASC, Property2 DESC.
+        ///   Looks up a localized string similar to The plugin config &apos;{0}&apos; already exists..
         /// </summary>
-        internal static string FileSystemSortParserInvalidProperty {
+        internal static string Features_PluginConfig_Update_PluginConfigAlreadyExists {
             get {
-                return ResourceManager.GetString("FileSystemSortParserInvalidProperty", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Update_PluginConfigAlreadyExists", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid Property. Given sorting property name &apos;{0}&apos; is not valid..
+        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; could not be found..
         /// </summary>
-        internal static string FileSystemSortParserInvalidPropertyName {
+        internal static string Features_PluginConfig_Update_PluginCouldNotBeFound {
             get {
-                return ResourceManager.GetString("FileSystemSortParserInvalidPropertyName", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Update_PluginCouldNotBeFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Sort direction &apos;{0}&apos; for &apos;{1}&apos; is not valid..
+        ///   Looks up a localized string similar to The plugin config name must have value..
         /// </summary>
-        internal static string FileSystemSortParserInvalidSortDirection {
+        internal static string Features_PluginConfig_Validation_Name_MustHaveValue {
             get {
-                return ResourceManager.GetString("FileSystemSortParserInvalidSortDirection", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Validation_Name_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Invalid Sorting string &apos;{0}&apos;. Order By Format: Property, Property2 ASC, Property2 DESC.
+        ///   Looks up a localized string similar to The value for plugin config name is invalid. Only Latin alphabet characters (A–Z, a–z), numbers, and underscore are permitted..
         /// </summary>
-        internal static string FileSystemSortParserInvalidSortingTerm {
+        internal static string Features_PluginConfig_Validation_Name_OnlyAcceptLatingCharacters {
             get {
-                return ResourceManager.GetString("FileSystemSortParserInvalidSortingTerm", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Validation_Name_OnlyAcceptLatingCharacters", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to One or more validation failures have occurred..
+        ///   Looks up a localized string similar to The plugin config type must have value..
         /// </summary>
-        internal static string InputValidationExceptionBaseMessage {
+        internal static string Features_PluginConfig_Validation_Type_MustHaveValue {
             get {
-                return ResourceManager.GetString("InputValidationExceptionBaseMessage", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Validation_Type_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to The plugin config version must have value..
         /// </summary>
-        internal static string ListValidatorEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Features_PluginConfig_Validation_Version_MustHaveValue {
             get {
-                return ResourceManager.GetString("ListValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Features_PluginConfig_Validation_Version_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Level value must be [ Dbug | Info | Warn | Fail | Crit ]. By default it is Info..
+        ///   Looks up a localized string similar to Invalid Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
         /// </summary>
-        internal static string LogsValidatorKindValueMustBeValidMessage {
+        internal static string Features_Validation_Id_InvalidGuidFormat {
             get {
-                return ResourceManager.GetString("LogsValidatorKindValueMustBeValidMessage", resourceCulture);
+                return ResourceManager.GetString("Features_Validation_Id_InvalidGuidFormat", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The specified destination-path is of a different type than the source-path..
+        ///   Looks up a localized string similar to The id value must have value..
         /// </summary>
-        internal static string MoveDestinationPathIsDifferentThanSourcePath {
+        internal static string Features_Validation_Id_MustHaveValue {
             get {
-                return ResourceManager.GetString("MoveDestinationPathIsDifferentThanSourcePath", resourceCulture);
+                return ResourceManager.GetString("Features_Validation_Id_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The move was done successfully..
+        ///   Looks up a localized string similar to The workflow &apos;{0}&apos; is already exists..
         /// </summary>
-        internal static string MoveHandlerSuccessfullyMoved {
+        internal static string Features_Workflow_Add_WorkflowAlreadyExists {
             get {
-                return ResourceManager.GetString("MoveHandlerSuccessfullyMoved", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Add_WorkflowAlreadyExists", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The source and destination path are identical and overlap..
+        ///   Looks up a localized string similar to Workflow definition must be not empty!.
         /// </summary>
-        internal static string MoveTheSourceAndDestinationPathAreIdenticalAndOverlap {
+        internal static string Features_Workflow_Add_WorkflowDefinitionMustHaveValue {
             get {
-                return ResourceManager.GetString("MoveTheSourceAndDestinationPathAreIdenticalAndOverlap", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Add_WorkflowDefinitionMustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Destination entity should be not empty..
+        ///   Looks up a localized string similar to Workflow name must have value..
         /// </summary>
-        internal static string MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Features_Workflow_Add_WorkflowNameMustHaveValue {
             get {
-                return ResourceManager.GetString("MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Add_WorkflowNameMustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Source entity should be not empty..
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; could not be found..
         /// </summary>
-        internal static string MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage {
+        internal static string Features_Workflow_Delete_WorkflowCouldNotBeFound {
             get {
-                return ResourceManager.GetString("MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Delete_WorkflowCouldNotBeFound", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The given type {0} is not valid!.
+        ///   Looks up a localized string similar to The workflow &apos;{0}&apos; is already exists..
         /// </summary>
-        internal static string NamespaceParserInvalidType {
+        internal static string Features_Workflow_Update_WorkflowAlreadyExists {
             get {
-                return ResourceManager.GetString("NamespaceParserInvalidType", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Update_WorkflowAlreadyExists", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to There is no data found for compress..
+        ///   Looks up a localized string similar to Workflow definition must be not empty!.
         /// </summary>
-        internal static string NoDataToCompress {
+        internal static string Features_Workflow_Update_WorkflowDefinitionMustHaveValue {
             get {
-                return ResourceManager.GetString("NoDataToCompress", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Update_WorkflowDefinitionMustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The directory was purged successfully..
+        ///   Looks up a localized string similar to Workflow name must have value..
         /// </summary>
-        internal static string PurgeDirectoryHandlerSuccessfullyPurged {
+        internal static string Features_Workflow_Update_WorkflowNameMustHaveValue {
             get {
-                return ResourceManager.GetString("PurgeDirectoryHandlerSuccessfullyPurged", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Update_WorkflowNameMustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to The workflow definition must have value..
         /// </summary>
-        internal static string PurgeDirectoryValidatorPathValueMustNotNullOrEmptyMessage {
+        internal static string Features_Workflow_Validation_Definition_MustHaveValue {
             get {
-                return ResourceManager.GetString("PurgeDirectoryValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("Features_Workflow_Validation_Definition_MustHaveValue", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
+        ///   Looks up a localized string similar to FlowSynx Long Running Request: Request {0} took {1}ms.
         /// </summary>
-        internal static string ReadValidatorEntityValueShouldNotNullOrEmptyMessage {
+        internal static string PerformanceBehavior_LongRunning_Request {
             get {
-                return ResourceManager.GetString("ReadValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Kind value must be [ File | Directory | FileAndDirectory ]. By default it is FileAndDirectory..
-        /// </summary>
-        internal static string SizeValidatorKindValueMustBeValidMessage {
-            get {
-                return ResourceManager.GetString("SizeValidatorKindValueMustBeValidMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to {PropertyName} should be not empty..
-        /// </summary>
-        internal static string SizeValidatorPathValueMustNotNullOrEmptyMessage {
-            get {
-                return ResourceManager.GetString("SizeValidatorPathValueMustNotNullOrEmptyMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to TransferKind value must be Copy or Move. By default it is Copy..
-        /// </summary>
-        internal static string TransferKindValidatorTypeValueShouldBeValidMessage {
-            get {
-                return ResourceManager.GetString("TransferKindValidatorTypeValueShouldBeValidMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The file was writen successfully..
-        /// </summary>
-        internal static string WriteHandlerSuccessfullyWriten {
-            get {
-                return ResourceManager.GetString("WriteHandlerSuccessfullyWriten", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Data should be not empty..
-        /// </summary>
-        internal static string WriteValidatorDataValueShouldNotNullOrEmptyMessage {
-            get {
-                return ResourceManager.GetString("WriteValidatorDataValueShouldNotNullOrEmptyMessage", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Entity should be not empty..
-        /// </summary>
-        internal static string WriteValidatorEntityValueShouldNotNullOrEmptyMessage {
-            get {
-                return ResourceManager.GetString("WriteValidatorEntityValueShouldNotNullOrEmptyMessage", resourceCulture);
+                return ResourceManager.GetString("PerformanceBehavior_LongRunning_Request", resourceCulture);
             }
         }
     }

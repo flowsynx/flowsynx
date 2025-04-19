@@ -15,7 +15,7 @@ public class PluginLoader : IPluginLoader
         try
         {
             if (!File.Exists(pluginLocation))
-                return PluginHandle.Fail($"Plugin file not found: {pluginLocation}");
+                return PluginHandle.Fail(string.Format(Resources.Plugin_Loader_FileNotFound, pluginLocation));
 
             var interfaceType = typeof(IPlugin);
             var pluginAssembly = Assembly.LoadFrom(pluginLocation);
@@ -33,11 +33,11 @@ public class PluginLoader : IPluginLoader
                 }
             }
 
-            return PluginHandle.Fail("No plugin type found.");
+            return PluginHandle.Fail(Resources.Plugin_Loader_NoPluginFound);
         }
         catch (Exception ex)
         {
-            return PluginHandle.Fail($"Failed to load plugin: {ex.Message}");
+            return PluginHandle.Fail(string.Format(Resources.Plugin_Loader_FailedToLoadPlugin, ex.Message));
         }
     }
 }

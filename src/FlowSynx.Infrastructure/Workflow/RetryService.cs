@@ -23,20 +23,20 @@ public class RetryService : IRetryService
             }
             catch (Exception ex) when (attempt < policy.MaxRetries)
             {
-                _logger.LogWarning($"Attempt {attempt} failed: {ex.Message}");
+                _logger.LogWarning(string.Format(Resources.RetryService_AttemptFailed, attempt, ex.Message));
 
                 int delay = CalculateDelay(policy, attempt);
-                _logger.LogInformation($"Waiting {delay}ms before retry...");
+                _logger.LogInformation(string.Format(Resources.RetryService_WaitingBeforeRetry, delay));
                 await Task.Delay(delay);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Operation failed after {MaxRetries} attempts.", policy.MaxRetries);
+                _logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, policy.MaxRetries));
                 throw;
             }
         }
 
-        throw new InvalidOperationException("Retry mechanism failed unexpectedly.");
+        throw new InvalidOperationException(Resources.RetryService_RetryFailedUnexpectedly);
     }
 
     private int CalculateDelay(RetryPolicy policy, int attempt)

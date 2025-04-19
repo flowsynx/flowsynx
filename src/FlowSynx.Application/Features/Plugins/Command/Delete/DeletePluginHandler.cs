@@ -30,11 +30,10 @@ internal class DeletePluginHandler : IRequestHandler<DeletePluginRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
-                    "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.AddConfigHandlerSuccessfullyAdded);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Delete_DeletedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

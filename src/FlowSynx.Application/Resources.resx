@@ -117,160 +117,142 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="FileSystemDateParserCannotExtractValue" xml:space="preserve">
-    <value>The value from ({0}) could not be extracted!</value>
+  <data name="Authentication_Access_Denied" xml:space="preserve">
+    <value>Access is denied. Please check and ensure you using a valid credentials.</value>
   </data>
-  <data name="FileSystemDateParserInvalidInput" xml:space="preserve">
-    <value>The given datetime is not valid!</value>
+  <data name="Features_PluginConfig_Add_PluginConfigAlreadyExists" xml:space="preserve">
+    <value>The plugin config '{0}' already exists.</value>
   </data>
-  <data name="FileSystemRemotePathParserFileSystemNotFoumd" xml:space="preserve">
-    <value>'{0}' FileSystem not found!</value>
+  <data name="Features_PluginConfig_Add_PluginCouldNotBeFound" xml:space="preserve">
+    <value>The plugin type '{0}' with version '{1}' could not be found.</value>
   </data>
-  <data name="FileSystemSizeParserCannotExtractValue" xml:space="preserve">
-    <value>The value from ({0}) could not be extracted!</value>
+  <data name="Features_PluginConfig_Update_PluginConfigAlreadyExists" xml:space="preserve">
+    <value>The plugin config '{0}' already exists.</value>
   </data>
-  <data name="FileSystemSizeParserInvalidInput" xml:space="preserve">
-    <value>The given size is not valid!</value>
+  <data name="Features_PluginConfig_Update_PluginCouldNotBeFound" xml:space="preserve">
+    <value>The plugin type '{0}' with version '{1}' could not be found.</value>
   </data>
-  <data name="FileSystemSortParserInvalidProperty" xml:space="preserve">
-    <value>Invalid Property. Order By Format: Property, Property2 ASC, Property2 DESC</value>
+  <data name="Features_PluginConfig_Validation_Name_MustHaveValue" xml:space="preserve">
+    <value>The plugin config name must have value.</value>
   </data>
-  <data name="FileSystemSortParserInvalidPropertyName" xml:space="preserve">
-    <value>Invalid Property. Given sorting property name '{0}' is not valid.</value>
+  <data name="Features_PluginConfig_Validation_Name_OnlyAcceptLatingCharacters" xml:space="preserve">
+    <value>The value for plugin config name is invalid. Only Latin alphabet characters (A–Z, a–z), numbers, and underscore are permitted.</value>
   </data>
-  <data name="FileSystemSortParserInvalidSortDirection" xml:space="preserve">
-    <value>Sort direction '{0}' for '{1}' is not valid.</value>
+  <data name="Features_PluginConfig_Validation_Type_MustHaveValue" xml:space="preserve">
+    <value>The plugin config type must have value.</value>
   </data>
-  <data name="FileSystemSortParserInvalidSortingTerm" xml:space="preserve">
-    <value>Invalid Sorting string '{0}'. Order By Format: Property, Property2 ASC, Property2 DESC</value>
+  <data name="Features_PluginConfig_Validation_Version_MustHaveValue" xml:space="preserve">
+    <value>The plugin config version must have value.</value>
   </data>
-  <data name="InputValidationExceptionBaseMessage" xml:space="preserve">
-    <value>One or more validation failures have occurred.</value>
+  <data name="Features_Plugin_Details_PluginCouldNotBeFound" xml:space="preserve">
+    <value>The plugin with ID '{1}' could not be found.</value>
   </data>
-  <data name="ListValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
+  <data name="Features_Plugin_Validation_NewVersion_MustHaveValue" xml:space="preserve">
+    <value>The plugin new version must have value.</value>
   </data>
-  <data name="NamespaceParserInvalidType" xml:space="preserve">
-    <value>The given type {0} is not valid!</value>
+  <data name="Features_Plugin_Validation_OldVersion_MustHaveValue" xml:space="preserve">
+    <value>The plugin old version must have value.</value>
   </data>
-  <data name="ConnectorInItializingInstanceErrorMessage" xml:space="preserve">
-    <value>Error in initializing '{0}' connector instance!</value>
+  <data name="Features_Plugin_Validation_Type_MustHaveValue" xml:space="preserve">
+    <value>The plugin type must have value.</value>
   </data>
-  <data name="ReadValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
+  <data name="Features_Plugin_Validation_Version_MustHaveValue" xml:space="preserve">
+    <value>The plugin version must have value.</value>
   </data>
-  <data name="SizeValidatorKindValueMustBeValidMessage" xml:space="preserve">
-    <value>Kind value must be [ File | Directory | FileAndDirectory ]. By default it is FileAndDirectory.</value>
+  <data name="Features_Validation_Id_InvalidGuidFormat" xml:space="preserve">
+    <value>Invalid Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
   </data>
-  <data name="SizeValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>{PropertyName} should be not empty.</value>
+  <data name="Features_Validation_Id_MustHaveValue" xml:space="preserve">
+    <value>The id value must have value.</value>
   </data>
-  <data name="CopyHandlerSuccessfullyCopy" xml:space="preserve">
-    <value>The copy was done successfully.</value>
+  <data name="Features_Workflow_Add_WorkflowAlreadyExists" xml:space="preserve">
+    <value>The workflow '{0}' is already exists.</value>
   </data>
-  <data name="CopyValidatorDestinationEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Destination entity should be not empty.</value>
+  <data name="Features_Workflow_Add_WorkflowDefinitionMustHaveValue" xml:space="preserve">
+    <value>Workflow definition must be not empty!</value>
   </data>
-  <data name="CopyValidatorSourceEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Source entity should be not empty.</value>
+  <data name="Features_Workflow_Add_WorkflowNameMustHaveValue" xml:space="preserve">
+    <value>Workflow name must have value.</value>
   </data>
-  <data name="CopyDestinationPathIsDifferentThanSourcePath" xml:space="preserve">
-    <value>The specified destination-path is of a different type than the source-path.</value>
+  <data name="Features_Workflow_Delete_WorkflowCouldNotBeFound" xml:space="preserve">
+    <value>The workflow with id '{0}' could not be found.</value>
   </data>
-  <data name="MoveDestinationPathIsDifferentThanSourcePath" xml:space="preserve">
-    <value>The specified destination-path is of a different type than the source-path.</value>
+  <data name="Features_Workflow_Update_WorkflowAlreadyExists" xml:space="preserve">
+    <value>The workflow '{0}' is already exists.</value>
   </data>
-  <data name="MoveTheSourceAndDestinationPathAreIdenticalAndOverlap" xml:space="preserve">
-    <value>The source and destination path are identical and overlap.</value>
+  <data name="Features_Workflow_Update_WorkflowDefinitionMustHaveValue" xml:space="preserve">
+    <value>Workflow definition must be not empty!</value>
   </data>
-  <data name="DeleteHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The entities were deleted successfully.</value>
+  <data name="Features_Workflow_Update_WorkflowNameMustHaveValue" xml:space="preserve">
+    <value>Workflow name must have value.</value>
   </data>
-  <data name="DeleteValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
+  <data name="Features_Workflow_Validation_Definition_MustHaveValue" xml:space="preserve">
+    <value>The workflow definition must have value.</value>
   </data>
-  <data name="CreateHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The entity was created successfully.</value>
+  <data name="Feature_Audit_DetailesRetrievedSuccessfully" xml:space="preserve">
+    <value>Audit details for '{0}' has been retrieved successfully.</value>
   </data>
-  <data name="CreateValidatorEntityShouldNotBeNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
+  <data name="Feature_Audit_DetailsNotFound" xml:space="preserve">
+    <value>The audit details, id '{0}', are not found.</value>
   </data>
-  <data name="MoveHandlerSuccessfullyMoved" xml:space="preserve">
-    <value>The move was done successfully.</value>
+  <data name="Feature_Audit_ListRetrievedSuccessfully" xml:space="preserve">
+    <value>The audit list has been retrieved successfully.</value>
   </data>
-  <data name="MoveValidatorDestinationEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Destination entity should be not empty.</value>
+  <data name="Feature_PluginConfig_Add_AddedSuccessfully" xml:space="preserve">
+    <value>The plugin config has been added successfully.</value>
   </data>
-  <data name="MoveValidatorSourceEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Source entity should be not empty.</value>
+  <data name="Feature_PluginConfig_Delete_ConfigIdNotFound" xml:space="preserve">
+    <value>The plugin config with ID '{configId}' was not found.</value>
   </data>
-  <data name="ConnectorValidatorConnectorNamespaceValueMustBeValidMessage" xml:space="preserve">
-    <value>Namespace value must be [ Storage| Messaging | Stream ]. By default it is Storage.</value>
+  <data name="Feature_PluginConfig_Delete_DeletedSuccessfully" xml:space="preserve">
+    <value>The plugin config has been deleted successfully.</value>
   </data>
-  <data name="PurgeDirectoryHandlerSuccessfullyPurged" xml:space="preserve">
-    <value>The directory was purged successfully.</value>
+  <data name="Feature_PluginConfig_DetailesRetrievedSuccessfully" xml:space="preserve">
+    <value>Plugin config details for '{0}' has been retrieved successfully.</value>
   </data>
-  <data name="PurgeDirectoryValidatorPathValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
+  <data name="Feature_PluginConfig_DetailsNotFound" xml:space="preserve">
+    <value>The Plugin config details, id '{0}', are not found.</value>
   </data>
-  <data name="WriteHandlerSuccessfullyWriten" xml:space="preserve">
-    <value>The file was writen successfully.</value>
+  <data name="Feature_PluginConfig_ListRetrievedSuccessfully" xml:space="preserve">
+    <value>Plugin Config List has been retrieved successfully.</value>
   </data>
-  <data name="AddConfigHandlerItemIsAlreadyExist" xml:space="preserve">
-    <value>The given config name {0} is already exist!</value>
+  <data name="Feature_PluginConfig_Update_ConfigIdNotFound" xml:space="preserve">
+    <value>The plugin config with ID '{configId}' was not found.</value>
   </data>
-  <data name="AddConfigHandlerSuccessfullyAdded" xml:space="preserve">
-    <value>The configuration was added successfully.</value>
+  <data name="Feature_PluginConfig_Update_UpdatedSuccessfully" xml:space="preserve">
+    <value>The plugin config has been updated successfully.</value>
   </data>
-  <data name="AddConfigValidatorNameValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Name should be not empty.</value>
+  <data name="Feature_Plugin_Add_AddedSuccessfully" xml:space="preserve">
+    <value>The plugin has been added successfully.</value>
   </data>
-  <data name="AddConfigValidatorTypeValueIsNotValid" xml:space="preserve">
-    <value>The entered type for connector '{0}' is not valid or not exist!</value>
+  <data name="Feature_Plugin_Delete_DeletedSuccessfully" xml:space="preserve">
+    <value>The plugin has been deleted successfully.</value>
   </data>
-  <data name="AddConfigValidatorTypeValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Type should be not empty.</value>
+  <data name="Feature_Plugin_Update_UpdatedSuccessfully" xml:space="preserve">
+    <value>The plugin has been updated successfully.</value>
   </data>
-  <data name="DeleteConfigHandlerSuccessfullyDeleted" xml:space="preserve">
-    <value>The given configs are deleted.</value>
+  <data name="Feature_Workflow_Add_AddedSuccessfully" xml:space="preserve">
+    <value>The workflow has been added successfully.</value>
   </data>
-  <data name="DeleteConfigValidatorNameValueMustNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Name should be not empty.</value>
+  <data name="Feature_Workflow_Delete_DeletedSuccessfully" xml:space="preserve">
+    <value>The workflow has been deleted successfully.</value>
   </data>
-  <data name="LogsValidatorKindValueMustBeValidMessage" xml:space="preserve">
-    <value>Level value must be [ Dbug | Info | Warn | Fail | Crit ]. By default it is Info.</value>
+  <data name="Feature_Workflow_Details_DataRetrievedSuccessfully" xml:space="preserve">
+    <value>Plugin workflow details has been retrieved successfully.</value>
   </data>
-  <data name="CompressValidatorTypeValueShouldBeValidMessage" xml:space="preserve">
-    <value>Compress type value must be [ Zip | GZip | Tar ]. By default it is Zip.</value>
+  <data name="Feature_Workflow_Details_WorkflowNotFound" xml:space="preserve">
+    <value>The workflow with id '{0}' not found.</value>
   </data>
-  <data name="ErrorDuringCompressData" xml:space="preserve">
-    <value>There is something wrong happened during compress data.</value>
+  <data name="Feature_Workflow_ListRetrievedSuccessfully" xml:space="preserve">
+    <value>Plugin workflow has been retrieved successfully.</value>
   </data>
-  <data name="NoDataToCompress" xml:space="preserve">
-    <value>There is no data found for compress.</value>
+  <data name="Feature_Workflow_Update_AddedSuccessfully" xml:space="preserve">
+    <value>The workflow has been updated successfully.</value>
   </data>
-  <data name="CompressValidatorEntityShouldNotBeNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
+  <data name="Feature_Workflow_Update_WorkflowNotFound" xml:space="preserve">
+    <value>The workflow with id '{0}' not found.</value>
   </data>
-  <data name="CompressHandlerSuccessfullyCompress" xml:space="preserve">
-    <value>The compression was done successfully.</value>
-  </data>
-  <data name="ExistValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
-  </data>
-  <data name="WriteValidatorDataValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Data should be not empty.</value>
-  </data>
-  <data name="WriteValidatorEntityValueShouldNotNullOrEmptyMessage" xml:space="preserve">
-    <value>Entity should be not empty.</value>
-  </data>
-  <data name="AddConfigValidatorNameValueOnlyAcceptLatingCharacters" xml:space="preserve">
-    <value>The config name accepts only Latin letters and numbers, as well as underscores. Additionally, the name must begin with an alphabetic letter.</value>
-  </data>
-  <data name="TransferKindValidatorTypeValueShouldBeValidMessage" xml:space="preserve">
-    <value>TransferKind value must be Copy or Move. By default it is Copy.</value>
-  </data>
-  <data name="AddWorkflowNameIsAlreadyExist" xml:space="preserve">
-    <value>Workflow '{0}' is already exist.</value>
+  <data name="PerformanceBehavior_LongRunning_Request" xml:space="preserve">
+    <value>FlowSynx Long Running Request: Request {0} took {1}ms</value>
   </data>
 </root>

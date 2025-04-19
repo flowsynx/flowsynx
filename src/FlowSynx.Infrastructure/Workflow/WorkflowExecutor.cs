@@ -338,7 +338,7 @@ public class WorkflowExecutor : IWorkflowExecutor
     {
         var workflowTaskExecutionEntity = await _workflowTaskExecutionService.Get(workflowExecutionId, name, cancellationToken);
         if (workflowTaskExecutionEntity == null)
-            throw new Exception($"No workflow task execution found with name '{name}'");
+            throw new Exception(string.Format(Resources.Workflow_Executor_NoWorkflowTaskExecutionFoumd, name));
 
         workflowTaskExecutionEntity.Status = status;
         workflowTaskExecutionEntity.EndTime = _systemClock.UtcNow;

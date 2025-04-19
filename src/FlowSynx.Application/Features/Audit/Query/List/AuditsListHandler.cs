@@ -30,7 +30,7 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEn
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var audits = await _auditService.All(cancellationToken);
             var response = audits.Select(audit => new AuditsListResponse
@@ -45,7 +45,7 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEn
                 NewValues = audit.NewValues,
                 DateTime = audit.DateTime
             }).ToList();
-            _logger.LogInformation("Audits List is got successfully.");
+            _logger.LogInformation(Resources.Feature_Audit_ListRetrievedSuccessfully);
             return await Result<IEnumerable<AuditsListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

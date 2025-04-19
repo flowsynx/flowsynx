@@ -24,8 +24,9 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
 
         if (stopwatch.ElapsedMilliseconds > 500)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorPerformanceLongRunning, 
-                $"FlowSynx Long Running Request: Request {typeof(TRequest).Name} took {stopwatch.ElapsedMilliseconds}ms");
+            var message = string.Format(Resources.PerformanceBehavior_LongRunning_Request, 
+                typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
+            var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorPerformanceLongRunning, message);;
             _logger.LogWarning(errorMessage.ToString());
         }
 

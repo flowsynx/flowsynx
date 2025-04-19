@@ -30,10 +30,10 @@ internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.AddConfigHandlerSuccessfullyAdded);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Add_AddedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

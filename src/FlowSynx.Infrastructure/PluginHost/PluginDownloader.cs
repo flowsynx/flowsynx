@@ -1,4 +1,6 @@
-﻿using FlowSynx.Application.Serialization;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Serialization;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.IO.Compression;
 using System.Security.Cryptography;
@@ -21,15 +23,14 @@ public class PluginDownloader : IPluginDownloader
 
     public async Task<byte[]> GetPluginDataAsync(string url)
     {
-        var client = _httpClientFactory.CreateClient();
+        var client = _httpClientFactory.CreateClient("PluginRegistry");
         var response = await client.GetAsync(url);
 
         if (response.IsSuccessStatusCode)
-        {
             return await response.Content.ReadAsByteArrayAsync();
-        }
 
-        throw new Exception("Failed to fetch file from URL.");
+        var message = string.Format(Resources.Plugin_Download_FailedToFetchDataFromUrl, (int)response.StatusCode, response.ReasonPhrase);
+        throw new FlowSynxException((int)ErrorCode.PluginRegistryFailedToFetchDataFromUrl, message);
     }
 
     public async Task<PluginInstallMetadata> GetPluginMetadataAsync(string url, string pluginType, string pluginVersion)
@@ -42,7 +43,10 @@ public class PluginDownloader : IPluginDownloader
         var metadata = plugins.FirstOrDefault(x=>x.Type.ToLower() == pluginType.ToLower() && x.Version == pluginVersion);
 
         if (metadata == null)
-            throw new Exception($"No plugin with type '{pluginType}' and version '{pluginVersion}' found.");
+        {
+            var message = string.Format(Resources.Plugin_Download_PluginNotFound, pluginType, pluginVersion);
+            throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
+        }
 
         return metadata;
     }
@@ -53,7 +57,7 @@ public class PluginDownloader : IPluginDownloader
         {
             await Task.Run(() => DeleteAllFiles(pluginDirectory), cancellationToken);
             await ExtractZipFromBytesAsync(pluginDirectory, data, cancellationToken);
-            _logger.LogInformation($"Plugin successfully extracted to: {pluginDirectory}");
+            _logger.LogInformation(string.Format(Resources.Plugin_Download_Extraction_Successfully, pluginDirectory));
         }
         catch (Exception ex)
         {
@@ -80,7 +84,7 @@ public class PluginDownloader : IPluginDownloader
     {
         if (!Directory.Exists(directoryPath))
         {
-            _logger.LogWarning($"Directory not found: {directoryPath}");
+            _logger.LogWarning(string.Format(Resources.Plugin_Download_Extraction_DirectoryNotFound, directoryPath));
             return;
         }
 
@@ -91,11 +95,11 @@ public class PluginDownloader : IPluginDownloader
             {
                 File.Delete(file);
             }
-            _logger.LogInformation("All files deleted successfully.");
+            _logger.LogInformation(Resources.Plugin_Download_Extraction_AllFilesDeletedSuccessfully);
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Error deleting files: {ex.Message}");
+            _logger.LogError(string.Format(Resources.Plugin_Download_Extraction_ErrorDuringDelete, ex.Message));
         }
     }
 

@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text;
 
@@ -26,9 +28,15 @@ internal static class LogTemplate
                 }
                 else
                 {
-                    var propertyInfo = logMessage.GetType().GetProperty(sbCurrentTerm.ToString(), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    var propertyInfo = logMessage
+                        .GetType()
+                        .GetProperty(sbCurrentTerm.ToString(), BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    
                     if (propertyInfo == null)
-                        throw new Exception($"The property '{sbCurrentTerm.ToString()}' is not valid!");
+                    {
+                        var message = string.Format(Resources.Logging_Invalid_Property, sbCurrentTerm.ToString());
+                        throw new FlowSynxException((int)ErrorCode.LoggerTemplateInvalidProperty, message);
+                    }
 
                     var propertyValue = propertyInfo.GetValue(logMessage);
 

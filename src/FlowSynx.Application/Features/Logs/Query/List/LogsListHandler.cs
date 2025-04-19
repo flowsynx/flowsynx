@@ -5,6 +5,7 @@ using FlowSynx.Application.Services;
 using FlowSynx.Application.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain.Log;
+using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.Features.Logs.Query.List;
 
@@ -29,6 +30,9 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
     {
         try
         {
+            if (string.IsNullOrEmpty(_currentUserService.UserId))
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+
             var predicate = PredicateBuilder.Create<LogEntity>(p => p.UserId == _currentUserService.UserId);
 
             if (!string.IsNullOrEmpty(request.Level))

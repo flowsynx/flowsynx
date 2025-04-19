@@ -30,7 +30,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId, cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
@@ -40,7 +40,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
                 Type = config.Type,
                 ModifiedTime = config.LastModifiedOn
             });
-            _logger.LogInformation("Plugin Config List is got successfully.");
+            _logger.LogInformation(Resources.Feature_PluginConfig_ListRetrievedSuccessfully);
             return await Result<IEnumerable<PluginConfigListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

@@ -9,16 +9,16 @@ public class UpdatePluginValidator : AbstractValidator<UpdatePluginRequest>
         RuleFor(request => request.Type)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.AddConfigValidatorNameValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.Features_Plugin_Validation_Type_MustHaveValue);
 
         RuleFor(request => request.OldVersion)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.AddConfigValidatorTypeValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.Features_Plugin_Validation_OldVersion_MustHaveValue);
 
         RuleFor(request => request.NewVersion)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.AddConfigValidatorTypeValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.Features_Plugin_Validation_NewVersion_MustHaveValue);
     }
 }

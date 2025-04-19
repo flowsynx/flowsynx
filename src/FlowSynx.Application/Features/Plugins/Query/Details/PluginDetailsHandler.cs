@@ -30,13 +30,16 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var pluginId = Guid.Parse(request.Id);
             var plugin = await _pluginService.Get(_currentUserService.UserId, pluginId, cancellationToken);
             if (plugin is null)
-                throw new FlowSynxException((int)ErrorCode.PluginNotFound, $"The plugin '{pluginId}' not found.");
-            
+            {
+                var message = string.Format(Resources.Features_Plugin_Details_PluginCouldNotBeFound, pluginId);
+                throw new FlowSynxException((int)ErrorCode.PluginNotFound, message);
+            }
+
             var specifications = plugin.Specifications?
                 .Select(property => new PluginDetailsSpecification
                 {

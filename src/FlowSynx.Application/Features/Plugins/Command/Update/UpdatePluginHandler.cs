@@ -30,11 +30,10 @@ internal class UpdatePluginHandler : IRequestHandler<UpdatePluginRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
-                    "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.UpdateAsync(request.Type, request.OldVersion, request.NewVersion, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.AddConfigHandlerSuccessfullyAdded);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Update_UpdatedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

@@ -50,22 +50,22 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
             if (workflowDefinition == null)
-                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, "Workflow definition must be not empty!");
+                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, Resources.Features_Workflow_Add_WorkflowDefinitionMustHaveValue);
 
             if (string.IsNullOrEmpty(workflowDefinition.Name))
-                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, "Workflow name shold have value!");
+                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, Resources.Features_Workflow_Add_WorkflowNameMustHaveValue);
 
             ValidateWorkflow(workflowDefinition.Tasks);
 
             var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId, workflowDefinition.Name, cancellationToken);
             if (isWorkflowExist)
             {
-                var workflowExistMessage = string.Format(Resources.AddWorkflowNameIsAlreadyExist, workflowDefinition.Name);
+                var workflowExistMessage = string.Format(Resources.Features_Workflow_Add_WorkflowAlreadyExists, workflowDefinition.Name);
                 var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowCheckExistence, workflowExistMessage);
                 _logger.LogWarning(errorMessage.ToString());
                 return await Result<AddWorkflowResponse>.FailAsync(errorMessage.ToString());
@@ -104,7 +104,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 Id = workflowEntity.Id,
                 Name = workflowDefinition.Name,
             };
-            return await Result<AddWorkflowResponse>.SuccessAsync(response, Resources.AddConfigHandlerSuccessfullyAdded);
+            return await Result<AddWorkflowResponse>.SuccessAsync(response, Resources.Feature_Workflow_Add_AddedSuccessfully);
         }
         catch (FlowSynxException ex) when (ex.ErrorCode == (int)ErrorCode.Serialization)
         {

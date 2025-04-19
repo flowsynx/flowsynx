@@ -30,12 +30,15 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var configId = Guid.Parse(request.Id);
             var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfig is null)
-                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"The config '{configId}' not found.");
+            {
+                var message = string.Format(Resources.Feature_PluginConfig_DetailsNotFound, configId);
+                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
+            }
 
             var response = new PluginConfigDetailsResponse
             {
@@ -44,7 +47,7 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
                 Type = pluginConfig.Type,
                 Specifications = pluginConfig.Specifications,
             };
-            _logger.LogInformation($"Plugin details for '{configId}' is executed successfully.");
+            _logger.LogInformation(string.Format(Resources.Feature_PluginConfig_DetailesRetrievedSuccessfully, configId));
             return await Result<PluginConfigDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

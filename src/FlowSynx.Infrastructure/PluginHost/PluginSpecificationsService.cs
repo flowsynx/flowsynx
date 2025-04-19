@@ -15,9 +15,11 @@ public class PluginSpecificationsService : IPluginSpecificationsService
         _logger = logger;
     }
 
-    public PluginSpecificationsResult Validate(Dictionary<string, object?> inputSpecifications,
-        List<PluginSpecification> pluginSpecifications)
+    public PluginSpecificationsResult Validate(Dictionary<string, object?>? inputSpecifications,
+        List<PluginSpecification>? pluginSpecifications)
     {
+        inputSpecifications ??= new Dictionary<string, object?>();
+        pluginSpecifications ??= new List<PluginSpecification>();
         var errors = new List<string>();
         var convertedSpecifications = ConvertKeysToLowerCase(inputSpecifications);
 
@@ -38,7 +40,8 @@ public class PluginSpecificationsService : IPluginSpecificationsService
 
                 if (valid) continue;
 
-                var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound, string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, specification.Name));
+                var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound, 
+                    string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, specification.Name));
                 _logger.LogError(errorMessage.ToString());
                 errors.Add(errorMessage.ToString());
                 continue;

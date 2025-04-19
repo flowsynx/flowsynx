@@ -1,6 +1,4 @@
 ﻿using FluentValidation;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace FlowSynx.Application.Features.Workflows.Command.Add;
 
@@ -11,6 +9,6 @@ public class AddWorkflowValidator : AbstractValidator<AddWorkflowRequest>
         RuleFor(request => request.Definition)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.AddConfigValidatorNameValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.Features_Workflow_Validation_Definition_MustHaveValue);
     }
 }

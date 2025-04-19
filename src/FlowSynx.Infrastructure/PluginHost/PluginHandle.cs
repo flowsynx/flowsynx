@@ -12,7 +12,7 @@ public class PluginHandle
     public static PluginHandle Ok(IPlugin pluginInstance, string location) => new PluginHandle
     {
         Success = true,
-        Message = "Plugin loaded successfully.",
+        Message = Resources.Plugin_Handle_LoadedSuccessfully,
         Instance = pluginInstance,
         Location = location
     };

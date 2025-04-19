@@ -79,11 +79,146 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The property &apos;{0}&apos; is not valid!.
+        /// </summary>
+        internal static string Logging_Invalid_Property {
+            get {
+                return ResourceManager.GetString("Logging_Invalid_Property", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to All files deleted successfully..
+        /// </summary>
+        internal static string Plugin_Download_Extraction_AllFilesDeletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Plugin_Download_Extraction_AllFilesDeletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Directory not found: &apos;{0}&apos;.
+        /// </summary>
+        internal static string Plugin_Download_Extraction_DirectoryNotFound {
+            get {
+                return ResourceManager.GetString("Plugin_Download_Extraction_DirectoryNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error deleting files: {0}.
+        /// </summary>
+        internal static string Plugin_Download_Extraction_ErrorDuringDelete {
+            get {
+                return ResourceManager.GetString("Plugin_Download_Extraction_ErrorDuringDelete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin successfully extracted to: &apos;{0}&apos;.
+        /// </summary>
+        internal static string Plugin_Download_Extraction_Successfully {
+            get {
+                return ResourceManager.GetString("Plugin_Download_Extraction_Successfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error {0} {1}. Failed to fetch data from URL..
+        /// </summary>
+        internal static string Plugin_Download_FailedToFetchDataFromUrl {
+            get {
+                return ResourceManager.GetString("Plugin_Download_FailedToFetchDataFromUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No plugin with type &apos;{0}&apos; and version &apos;{1}&apos; found..
+        /// </summary>
+        internal static string Plugin_Download_PluginNotFound {
+            get {
+                return ResourceManager.GetString("Plugin_Download_PluginNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin loaded successfully..
+        /// </summary>
+        internal static string Plugin_Handle_LoadedSuccessfully {
+            get {
+                return ResourceManager.GetString("Plugin_Handle_LoadedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to load plugin: {0}.
+        /// </summary>
+        internal static string Plugin_Loader_FailedToLoadPlugin {
+            get {
+                return ResourceManager.GetString("Plugin_Loader_FailedToLoadPlugin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin file not found: {0}.
+        /// </summary>
+        internal static string Plugin_Loader_FileNotFound {
+            get {
+                return ResourceManager.GetString("Plugin_Loader_FileNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No plugin type found..
+        /// </summary>
+        internal static string Plugin_Loader_NoPluginFound {
+            get {
+                return ResourceManager.GetString("Plugin_Loader_NoPluginFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin {0} could not found!.
         /// </summary>
         internal static string PluginServiceCouldNotFoundPlugin {
             get {
                 return ResourceManager.GetString("PluginServiceCouldNotFoundPlugin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Attempt {0} failed: {1}..
+        /// </summary>
+        internal static string RetryService_AttemptFailed {
+            get {
+                return ResourceManager.GetString("RetryService_AttemptFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Operation failed after {0} attempts..
+        /// </summary>
+        internal static string RetryService_OperationFailedAfterAttempts {
+            get {
+                return ResourceManager.GetString("RetryService_OperationFailedAfterAttempts", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Retry mechanism failed unexpectedly..
+        /// </summary>
+        internal static string RetryService_RetryFailedUnexpectedly {
+            get {
+                return ResourceManager.GetString("RetryService_RetryFailedUnexpectedly", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Waiting {0}ms before retry....
+        /// </summary>
+        internal static string RetryService_WaitingBeforeRetry {
+            get {
+                return ResourceManager.GetString("RetryService_WaitingBeforeRetry", resourceCulture);
             }
         }
         
@@ -102,6 +237,15 @@ namespace FlowSynx.Infrastructure {
         internal static string SpecificationsRequiredMemberMustHaveValue {
             get {
                 return ResourceManager.GetString("SpecificationsRequiredMemberMustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No workflow task execution found with name &apos;{0}&apos;.
+        /// </summary>
+        internal static string Workflow_Executor_NoWorkflowTaskExecutionFoumd {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_NoWorkflowTaskExecutionFoumd", resourceCulture);
             }
         }
     }

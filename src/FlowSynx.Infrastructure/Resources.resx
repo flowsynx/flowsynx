@@ -123,13 +123,61 @@
   <data name="JsonSerializerValueCanNotBeEmpty" xml:space="preserve">
     <value>Input value can't be empty or null.</value>
   </data>
+  <data name="Logging_Invalid_Property" xml:space="preserve">
+    <value>The property '{0}' is not valid!</value>
+  </data>
   <data name="PluginServiceCouldNotFoundPlugin" xml:space="preserve">
     <value>Plugin {0} could not found!</value>
+  </data>
+  <data name="Plugin_Download_Extraction_AllFilesDeletedSuccessfully" xml:space="preserve">
+    <value>All files deleted successfully.</value>
+  </data>
+  <data name="Plugin_Download_Extraction_DirectoryNotFound" xml:space="preserve">
+    <value>Directory not found: '{0}'</value>
+  </data>
+  <data name="Plugin_Download_Extraction_ErrorDuringDelete" xml:space="preserve">
+    <value>Error deleting files: {0}</value>
+  </data>
+  <data name="Plugin_Download_Extraction_Successfully" xml:space="preserve">
+    <value>Plugin successfully extracted to: '{0}'</value>
+  </data>
+  <data name="Plugin_Download_FailedToFetchDataFromUrl" xml:space="preserve">
+    <value>Error {0} {1}. Failed to fetch data from URL.</value>
+  </data>
+  <data name="Plugin_Download_PluginNotFound" xml:space="preserve">
+    <value>No plugin with type '{0}' and version '{1}' found.</value>
+  </data>
+  <data name="Plugin_Handle_LoadedSuccessfully" xml:space="preserve">
+    <value>Plugin loaded successfully.</value>
+  </data>
+  <data name="Plugin_Loader_FailedToLoadPlugin" xml:space="preserve">
+    <value>Failed to load plugin: {0}</value>
+  </data>
+  <data name="Plugin_Loader_FileNotFound" xml:space="preserve">
+    <value>Plugin file not found: {0}</value>
+  </data>
+  <data name="Plugin_Loader_NoPluginFound" xml:space="preserve">
+    <value>No plugin type found.</value>
+  </data>
+  <data name="RetryService_AttemptFailed" xml:space="preserve">
+    <value>Attempt {0} failed: {1}.</value>
+  </data>
+  <data name="RetryService_OperationFailedAfterAttempts" xml:space="preserve">
+    <value>Operation failed after {0} attempts.</value>
+  </data>
+  <data name="RetryService_RetryFailedUnexpectedly" xml:space="preserve">
+    <value>Retry mechanism failed unexpectedly.</value>
+  </data>
+  <data name="RetryService_WaitingBeforeRetry" xml:space="preserve">
+    <value>Waiting {0}ms before retry...</value>
   </data>
   <data name="SpecificationsMustHaveValue" xml:space="preserve">
     <value>The specification(s) [{0}] are required and must have value.</value>
   </data>
   <data name="SpecificationsRequiredMemberMustHaveValue" xml:space="preserve">
     <value>The value of '{0}' in specifications is required and must have a value.</value>
+  </data>
+  <data name="Workflow_Executor_NoWorkflowTaskExecutionFoumd" xml:space="preserve">
+    <value>No workflow task execution found with name '{0}'</value>
   </data>
 </root>

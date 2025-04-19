@@ -29,13 +29,19 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
     {
         try
         {
+            if (string.IsNullOrEmpty(_currentUserService.UserId))
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+
             var configId = Guid.Parse(request.Id);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfiguration == null)
-                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"The config '{configId}' not found");
+            {
+                var message = string.Format(Resources.Feature_PluginConfig_Delete_ConfigIdNotFound, configId);
+                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
+            }
 
             var deleteResult = await _pluginConfigurationService.Delete(pluginConfiguration, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.DeleteConfigHandlerSuccessfullyDeleted);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_PluginConfig_Delete_DeletedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

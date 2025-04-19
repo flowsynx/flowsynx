@@ -54,6 +54,7 @@ public enum ErrorCode
     LogGetItem                                      = 2002,
     LogAdd                                          = 2003,
     LoggerCreation                                  = 2004,
+    LoggerTemplateInvalidProperty                   = 2005,
     #endregion
 
     #region Auding error codes
@@ -80,6 +81,8 @@ public enum ErrorCode
     PluginSpecificationsInvalid                     = 2303,
     PluginTypeGetItem                               = 2304,
     PluginCheckExistence                            = 2305,
+    PluginRegistryFailedToFetchDataFromUrl          = 2306,
+    PluginRegistryPluginNotFound                    = 2307,
     #endregion
 
     #region Workflow error codes

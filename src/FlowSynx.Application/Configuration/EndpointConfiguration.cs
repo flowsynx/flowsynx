@@ -2,5 +2,5 @@
 
 public class EndpointConfiguration
 {
-    public int? Http { get; set; } = 5860;
+    public int? Http { get; set; } = 6262;
 }

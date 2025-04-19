@@ -9,11 +9,11 @@ public class DeletePluginValidator : AbstractValidator<DeletePluginRequest>
         RuleFor(request => request.Type)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.AddConfigValidatorNameValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.Features_Plugin_Validation_Type_MustHaveValue);
 
         RuleFor(request => request.Version)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.AddConfigValidatorTypeValueMustNotNullOrEmptyMessage);
+            .WithMessage(Resources.Features_Plugin_Validation_Version_MustHaveValue);
     }
 }

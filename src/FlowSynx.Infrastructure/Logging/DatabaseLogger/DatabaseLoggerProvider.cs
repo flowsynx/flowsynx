@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Services;
-using FlowSynx.Domain.Log;
+﻿using FlowSynx.Domain.Log;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 

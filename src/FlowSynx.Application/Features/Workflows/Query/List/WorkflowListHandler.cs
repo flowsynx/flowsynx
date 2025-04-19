@@ -34,7 +34,7 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var workflows = await _workflowService.All(_currentUserService.UserId, cancellationToken);
             var response = workflows.Select(workflow => new WorkflowListResponse
@@ -44,7 +44,7 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
                 ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow
 
             });
-            _logger.LogInformation("Plugin Config List is got successfully.");
+            _logger.LogInformation(Resources.Feature_Workflow_ListRetrievedSuccessfully);
             return await Result<IEnumerable<WorkflowListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

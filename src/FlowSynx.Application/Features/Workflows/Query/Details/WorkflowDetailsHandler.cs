@@ -30,12 +30,15 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var workflowId = Guid.Parse(request.Id);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow is null)
-                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, $"The workflow with id '{request.Id}' not found");
+            {
+                var message = string.Format(Resources.Feature_Workflow_Details_WorkflowNotFound, request.Id);
+                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
+            }
 
             var response = new WorkflowDetailsResponse
             {
@@ -43,7 +46,7 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
                 Name = workflow.Name,
                 Workflow = workflow.Definition
             };
-            _logger.LogInformation("Workflow details is executed successfully.");
+            _logger.LogInformation(Resources.Feature_Workflow_Details_DataRetrievedSuccessfully);
             return await Result<WorkflowDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)
