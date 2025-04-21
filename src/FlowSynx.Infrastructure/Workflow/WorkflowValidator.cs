@@ -1,11 +1,90 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Workflow;
+using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
 public class WorkflowValidator : IWorkflowValidator
 {
-    public List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
+    public void Validate(WorkflowDefinition definition)
+    {
+        var tasks = definition.Tasks;
+        EnsureNoDuplicateTaskNames(tasks);
+        EnsureAllDependenciesExist(tasks);
+        EnsureNoCyclicDependencies(tasks);
+        ValidateRetryPolicies(tasks);
+    }
+
+    private void EnsureNoDuplicateTaskNames(IEnumerable<WorkflowTask> tasks)
+    {
+        if (HasDuplicateNames(tasks))
+        {
+            throw new FlowSynxException(
+                (int)ErrorCode.WorkflowHasDuplicateNames,
+                Resources.Workflow_Executor_DuplicatedTasksName);
+        }
+    }
+
+    private void EnsureAllDependenciesExist(IEnumerable<WorkflowTask> tasks)
+    {
+        var missingDependencies = AllDependenciesExist(tasks);
+        if (missingDependencies.Any())
+        {
+            var message = string.Format(
+                Resources.Workflow_Executor_MissingDependencies,
+                string.Join(",", missingDependencies));
+
+            throw new FlowSynxException(
+                (int)ErrorCode.WorkflowMissingDependencies,
+                message);
+        }
+    }
+
+    private void EnsureNoCyclicDependencies(IEnumerable<WorkflowTask> tasks)
+    {
+        var validation = CheckCyclic(tasks);
+        if (validation.Cyclic)
+        {
+            var message = string.Format(
+                Resources.Workflow_Executor_CyclicDependencies,
+                string.Join(" -> ", validation.CyclicNodes));
+
+            throw new FlowSynxException(
+                (int)ErrorCode.WorkflowCyclicDependencies,
+                message);
+        }
+    }
+
+    private void ValidateRetryPolicies(IEnumerable<WorkflowTask> tasks)
+    {
+        var errors = tasks
+            .SelectMany(task =>
+            {
+                var retry = task.RetryPolicy;
+                var taskErrors = new List<string>();
+
+                if (retry?.MaxRetries is < 0)
+                    taskErrors.Add($"Task '{task.Name}' has negative MaxRetries: '{retry.MaxRetries}'");
+
+                if (retry?.InitialDelay is < 0)
+                    taskErrors.Add($"Task '{task.Name}' has negative Initial Delay: '{retry.InitialDelay}'");
+
+                if (retry?.MaxDelay is < 0)
+                    taskErrors.Add($"Task '{task.Name}' has negative Max Delay: '{retry.MaxDelay}'");
+
+                return taskErrors;
+            })
+            .ToList();
+
+        if (errors.Any())
+        {
+            throw new Exception(string.Join(Environment.NewLine, errors));
+        }
+    }
+
+    #region private methods
+    private List<string> AllDependenciesExist(IEnumerable<WorkflowTask> workflowTasks)
     {
         var definedTaskNames = workflowTasks.Select(t => t.Name).ToHashSet();
         var missingDependencies = workflowTasks
@@ -17,7 +96,7 @@ public class WorkflowValidator : IWorkflowValidator
         return missingDependencies;
     }
 
-    public WorkflowValidatorResult CheckCyclic(List<WorkflowTask> workflowTasks)
+    private WorkflowValidatorResult CheckCyclic(IEnumerable<WorkflowTask> workflowTasks)
     {
         var graph = BuildGraph(workflowTasks, out var inDegree);
 
@@ -54,13 +133,13 @@ public class WorkflowValidator : IWorkflowValidator
         return new WorkflowValidatorResult { Cyclic = false };
     }
 
-    public bool HasDuplicateNames(List<WorkflowTask> workflowTasks)
+    private bool HasDuplicateNames(IEnumerable<WorkflowTask> workflowTasks)
     {
         var seen = new HashSet<string>();
         return workflowTasks.Any(task => !seen.Add(task.Name));
     }
 
-    private Dictionary<string, List<string>> BuildGraph(List<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
+    private Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
     {
         var graph = new Dictionary<string, List<string>>();
         inDegree = new Dictionary<string, int>();
@@ -84,4 +163,5 @@ public class WorkflowValidator : IWorkflowValidator
 
         return graph;
     }
+    #endregion
 }

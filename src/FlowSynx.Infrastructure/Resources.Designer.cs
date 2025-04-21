@@ -61,11 +61,56 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Output &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string ExpressionParser_OutputNotFound {
+            get {
+                return ResourceManager.GetString("ExpressionParser_OutputNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reader Error at Line {0}, Position {1}: {2}.
+        /// </summary>
+        internal static string JsonDeserializer_ErrorInReader {
+            get {
+                return ResourceManager.GetString("JsonDeserializer_ErrorInReader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Input value can&apos;t be empty or null..
+        /// </summary>
+        internal static string JsonDeserializer_InputValueCanNotBeEmpty {
+            get {
+                return ResourceManager.GetString("JsonDeserializer_InputValueCanNotBeEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Input value can&apos;t be empty or null..
         /// </summary>
         internal static string JsonDeserializerValueCanNotBeEmpty {
             get {
                 return ResourceManager.GetString("JsonDeserializerValueCanNotBeEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reader Error at Line {0}, Position {1}: {2}.
+        /// </summary>
+        internal static string JsonSerializer_ErrorInReader {
+            get {
+                return ResourceManager.GetString("JsonSerializer_ErrorInReader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Input value can&apos;t be empty or null..
+        /// </summary>
+        internal static string JsonSerializer_InputValueCanNotBeEmpty {
+            get {
+                return ResourceManager.GetString("JsonSerializer_InputValueCanNotBeEmpty", resourceCulture);
             }
         }
         
@@ -241,11 +286,110 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Workflow execution with Id: &apos;{0}&apos; was completed successfully..
+        /// </summary>
+        internal static string Workflow_Executor_CompletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_CompletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic: {0}.
+        /// </summary>
+        internal static string Workflow_Executor_CyclicDependencies {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_CyclicDependencies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There is a duplicated task name in the workflow tasks..
+        /// </summary>
+        internal static string Workflow_Executor_DuplicatedTasksName {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_DuplicatedTasksName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workflow execution error: {0}.
+        /// </summary>
+        internal static string Workflow_Executor_ErrorInExecution {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_ErrorInExecution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to There are failed task in dependencies..
+        /// </summary>
+        internal static string Workflow_Executor_FailedDependenciesTask {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_FailedDependenciesTask", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Get Workflow failed. Meesage: {0}.
+        /// </summary>
+        internal static string Workflow_Executor_GetWorkflowFailed {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_GetWorkflowFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid workflow: missing dependencies. There are list of missing dependencies: {0}.
+        /// </summary>
+        internal static string Workflow_Executor_MissingDependencies {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_MissingDependencies", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to No workflow task execution found with name &apos;{0}&apos;.
         /// </summary>
-        internal static string Workflow_Executor_NoWorkflowTaskExecutionFoumd {
+        internal static string Workflow_Executor_NoWorkflowTaskExecutionFound {
             get {
-                return ResourceManager.GetString("Workflow_Executor_NoWorkflowTaskExecutionFoumd", resourceCulture);
+                return ResourceManager.GetString("Workflow_Executor_NoWorkflowTaskExecutionFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; could not be found..
+        /// </summary>
+        internal static string Workflow_Executor_WorkflowCouldNotBeFound {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_WorkflowCouldNotBeFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Initilize WorkflowExecution failed. Meesage: {0}.
+        /// </summary>
+        internal static string Workflow_Executor_WorkflowInitilizeFailed {
+            get {
+                return ResourceManager.GetString("Workflow_Executor_WorkflowInitilizeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to execute workflow with ID &apos;{0}&apos; for user &apos;{1}&apos;..
+        /// </summary>
+        internal static string Workflow_TimeBased_TriggerProcessor_FailedExecution {
+            get {
+                return ResourceManager.GetString("Workflow_TimeBased_TriggerProcessor_FailedExecution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Missing or invalid &apos;cron&apos; expression for workflow with ID &apos;{0}&apos;..
+        /// </summary>
+        internal static string Workflow_TimeBased_TriggerProcessor_InvalidCornExpression {
+            get {
+                return ResourceManager.GetString("Workflow_TimeBased_TriggerProcessor_InvalidCornExpression", resourceCulture);
             }
         }
     }

@@ -29,9 +29,18 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddSingleton<ISystemClock, SystemClock>()
+            
+            //.AddScoped<IExpressionParser, ExpressionParser>()
+            .AddScoped<IExpressionParserFactory, ExpressionParserFactory>()
+            .AddScoped<IPlaceholderReplacer, PlaceholderReplacer>()
+            .AddScoped<IRetryPolicyApplier, RetryPolicyApplier>()
+            .AddScoped<ISemaphoreFactory, SemaphoreFactory>()
+            .AddScoped<IWorkflowExecutionTracker, WorkflowExecutionTracker>()
+            .AddScoped<IWorkflowOrchestrator, WorkflowOrchestrator>()
+            .AddScoped<IWorkflowTaskExecutor, WorkflowTaskExecutor>()
+            .AddScoped<IRetryService, RetryService>()
             .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
-            .AddScoped<IRetryService, RetryService>()
             .AddScoped<WorkflowTimeBasedTriggerProcessor>();
 
         return services;

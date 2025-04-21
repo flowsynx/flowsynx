@@ -28,20 +28,29 @@ public class JsonDeserializer : IJsonDeserializer
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                _logger.LogError("Input value can't be empty or null.");
-                throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
+                var errorMessage = new ErrorMessage((int)ErrorCode.DeserializerEmptyValue, 
+                    Resources.JsonDeserializer_InputValueCanNotBeEmpty);
+                _logger.LogError(errorMessage.ToString());
+                throw new FlowSynxException(errorMessage);
             }
 
             var settings = new JsonSerializerSettings
             {
                 Formatting = configuration.Indented ? Formatting.Indented : Formatting.None,
-                ContractResolver = configuration.NameCaseInsensitive ? new DefaultContractResolver() : new CamelCasePropertyNamesContractResolver()
+                ContractResolver = configuration.NameCaseInsensitive 
+                                   ? new DefaultContractResolver() 
+                                   : new CamelCasePropertyNamesContractResolver()
             };
 
             if (configuration.Converters is not null)
                 settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
 
             return JsonConvert.DeserializeObject<T>(input, settings);
+        }
+        catch (JsonReaderException ex)
+        {
+            var message = string.Format(Resources.JsonDeserializer_ErrorInReader, ex.LineNumber, ex.LinePosition, ex.Message);
+            throw new FlowSynxException((int)ErrorCode.DeserializerReader, message);
         }
         catch (Exception ex)
         {

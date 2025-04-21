@@ -14,5 +14,6 @@ public class WorkflowTask
     public object? Type { get; set; }
     public Dictionary<string, object?>? Parameters { get; set; }
     public RetryPolicy? RetryPolicy { get; set; }
+    public int? Timeout { get; set; }
     public List<string> Dependencies { get; set; }
 }

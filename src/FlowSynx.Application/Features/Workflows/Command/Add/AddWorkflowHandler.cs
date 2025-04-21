@@ -60,7 +60,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             if (string.IsNullOrEmpty(workflowDefinition.Name))
                 throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, Resources.Features_Workflow_Add_WorkflowNameMustHaveValue);
 
-            ValidateWorkflow(workflowDefinition.Tasks);
+            _workflowValidator.Validate(workflowDefinition);
 
             var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId, workflowDefinition.Name, cancellationToken);
             if (isWorkflowExist)
@@ -118,34 +118,6 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         {
             _logger.LogError(ex.ToString());
             return await Result<AddWorkflowResponse>.FailAsync(ex.ToString());
-        }
-    }
-
-    private void ValidateWorkflow(List<WorkflowTask> workflowTasks)
-    {
-        var hasWorkflowPipelinesDuplicateNames = _workflowValidator.HasDuplicateNames(workflowTasks);
-        if (hasWorkflowPipelinesDuplicateNames)
-        {
-            throw new FlowSynxException((int)ErrorCode.WorkflowHasDuplicateNames,
-                "There is a duplicated pipeline name in the workflow pipelines."); ;
-        }
-
-        var missingDependencies = _workflowValidator.AllDependenciesExist(workflowTasks);
-        if (missingDependencies.Any())
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("Invalid workflow: missing dependencies.. There are list of missing dependencies:");
-            sb.AppendLine(string.Join(",", missingDependencies));
-            throw new FlowSynxException((int)ErrorCode.WorkflowMissingDependencies, sb.ToString()); ;
-        }
-
-        var validation = _workflowValidator.CheckCyclic(workflowTasks);
-        if (validation.Cyclic)
-        {
-            var sb = new StringBuilder();
-            sb.AppendLine("The workflow has cyclic dependencies. Please resolve them and try again!. There are Cyclic:");
-            sb.AppendLine(string.Join(" -> ", validation.CyclicNodes));
-            throw new FlowSynxException((int)ErrorCode.WorkflowCyclicDependencies, sb.ToString());
         }
     }
 }

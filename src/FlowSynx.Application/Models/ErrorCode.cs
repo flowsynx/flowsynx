@@ -22,7 +22,11 @@ public enum ErrorCode
     #endregion
 
     #region Serialization error codes
-    Serialization                                   = 1302,
+    Serialization                                   = 1301,
+    DeserializerEmptyValue                          = 1302,
+    DeserializerReader                              = 1303,
+    SerializerEmptyValue                            = 1304,
+    SerializerReader                                = 1305,
     #endregion
 
     #region Validation error codes
@@ -79,10 +83,14 @@ public enum ErrorCode
     PluginNotFound                                  = 2301,
     PluginTypeNotFound                              = 2302,
     PluginSpecificationsInvalid                     = 2303,
-    PluginTypeGetItem                               = 2304,
-    PluginCheckExistence                            = 2305,
-    PluginRegistryFailedToFetchDataFromUrl          = 2306,
-    PluginRegistryPluginNotFound                    = 2307,
+    PluginsGetList                                  = 2304,
+    PluginGetItem                                   = 2305,
+    PluginTypeGetItem                               = 2306,
+    PluginCheckExistence                            = 2307,
+    PluginRegistryFailedToFetchDataFromUrl          = 2308,
+    PluginRegistryPluginNotFound                    = 2309,
+    PluginAdd                                       = 2310,
+    PluginDelete                                    = 2311,
     #endregion
 
     #region Workflow error codes
@@ -115,6 +123,15 @@ public enum ErrorCode
     WorkflowTriggersAdd                             = 2427,
     WorkflowTriggersUpdate                          = 2428,
     WorkflowTriggersDelete                          = 2429,
+    WorkflowFailedDependenciesTask                  = 2430,
+    WorkflowFailedExecution                         = 2431,
+    WorkflowExecutionInitilizeFailed                = 2432,
+    WorkflowTaskExecutionTimeout                    = 2433,
+    WorkflowExecutionTimeout                        = 2434,
+    #endregion
+
+    #region ExpressionParser
+    ExpressionParserOutputNotFound = 2601,
     #endregion
 
     #region Unknown error codes

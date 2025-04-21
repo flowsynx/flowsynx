@@ -1,4 +1,6 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
+using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow;
@@ -6,32 +8,55 @@ namespace FlowSynx.Infrastructure.Workflow;
 public class RetryService : IRetryService
 {
     private readonly ILogger<RetryService> _logger;
+    private readonly IWorkflowTaskExecutor _taskExecutor;
     private readonly Random _random = new();
 
-    public RetryService(ILogger<RetryService> logger)
+    public RetryService(ILogger<RetryService> logger, 
+        IWorkflowTaskExecutor taskExecutor)
     {
         _logger = logger;
+        _taskExecutor = taskExecutor;
     }
 
-    public async Task<T> ExecuteAsync<T>(Func<Task<T>> action, RetryPolicy policy)
+    public async Task<object?> ExecuteAsync(
+        string userId,
+        WorkflowTask task,
+        IExpressionParser parser,
+        CancellationToken cancellationToken)
     {
-        for (int attempt = 1; attempt <= policy.MaxRetries; attempt++)
+        if (task.RetryPolicy == null)
+            task.RetryPolicy = new RetryPolicy { MaxRetries = 1};
+
+        for (int attempt = 1; attempt <= task.RetryPolicy.MaxRetries; attempt++)
         {
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            if (task.Timeout.HasValue)
+                timeoutCts.CancelAfter(TimeSpan.FromMilliseconds(task.Timeout.Value));
+
             try
             {
-                return await action();
+                return await _taskExecutor.ExecuteAsync(userId, task, parser, timeoutCts.Token);
             }
-            catch (Exception ex) when (attempt < policy.MaxRetries)
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+            {
+                throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionTimeout, $"Task '{task.Name}' timeout on attempt {attempt}.");
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw new FlowSynxException((int)ErrorCode.WorkflowExecutionTimeout, $"Workflow execution timeout");
+            }
+            catch (Exception ex) when (attempt < task.RetryPolicy.MaxRetries)
             {
                 _logger.LogWarning(string.Format(Resources.RetryService_AttemptFailed, attempt, ex.Message));
 
-                int delay = CalculateDelay(policy, attempt);
+                int delay = CalculateDelay(task.RetryPolicy, attempt);
                 _logger.LogInformation(string.Format(Resources.RetryService_WaitingBeforeRetry, delay));
-                await Task.Delay(delay);
+                await Task.Delay(delay, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, policy.MaxRetries));
+                _logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, task.RetryPolicy.MaxRetries));
                 throw;
             }
         }

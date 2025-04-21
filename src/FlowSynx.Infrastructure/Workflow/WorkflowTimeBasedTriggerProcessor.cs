@@ -50,7 +50,7 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
 
         if (!triggerEntity.Properties.TryGetValue("cron", out var cronValue) || cronValue is not string expr)
         {
-            _logger.LogError($"Missing or invalid 'cron' expression for workflow with ID '{triggerEntity.WorkflowId}'.");
+            _logger.LogError(string.Format(Resources.Workflow_TimeBased_TriggerProcessor_InvalidCornExpression, triggerEntity.WorkflowId));
             return false;
         }
 
@@ -75,7 +75,7 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
         }
         catch (Exception ex)
         {
-            _logger.LogError($"Failed to execute workflow with ID '{trigger.WorkflowId}' for user '{trigger.UserId}'.");
+            _logger.LogError(ex, string.Format(Resources.Workflow_TimeBased_TriggerProcessor_FailedExecution, trigger.WorkflowId, trigger.UserId));
         }
     }
 }

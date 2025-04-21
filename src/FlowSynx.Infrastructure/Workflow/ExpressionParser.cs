@@ -1,12 +1,14 @@
-﻿using System.Collections;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
-public class ExpressionParser
+public class ExpressionParser : IExpressionParser
 {
-    private Dictionary<string, object?> _outputs;
+    private readonly Dictionary<string, object?> _outputs;
 
     public ExpressionParser(Dictionary<string, object?> outputs)
     {
@@ -16,10 +18,10 @@ public class ExpressionParser
     public object? Parse(string? expression)
     {
         if (expression == null)
-            return expression;
+            return null;
 
-        string pattern = @"\$\[Outputs\('([^']+)'\)(.*?)\]";
-        Regex regex = new Regex(pattern);
+        const string pattern = @"\$\[Outputs\('([^']+)'\)(.*?)\]";
+        var regex = new Regex(pattern);
         var matches = regex.Matches(expression);
 
         foreach (Match match in matches)
@@ -28,12 +30,15 @@ public class ExpressionParser
             string accessPath = match.Groups[2].Value; // Includes dot properties and array indices
 
             if (!_outputs.ContainsKey(outputName))
-                throw new ArgumentException($"Output '{outputName}' not found.");
+            {
+                string message = string.Format(Resources.ExpressionParser_OutputNotFound, outputName);
+                throw new FlowSynxException((int)ErrorCode.ExpressionParserOutputNotFound, message);
+            }
 
             var outputValue = _outputs[outputName];
 
-            if (outputValue is null)
-                return outputValue;
+            if (outputValue == null)
+                return null;
 
             if (!string.IsNullOrEmpty(accessPath))
             {
@@ -48,21 +53,25 @@ public class ExpressionParser
 
     private object? GetNestedValue(object? obj, string accessPath)
     {
-        if (obj is null) 
-            return obj;
+        if (obj == null)
+            return null;
 
         // Match properties or array indices: .Property, [index], .Nested[index], etc.
-        string pattern = @"(?:\.(\w+))|(?:\[(\d+)\])";
-        Regex regex = new Regex(pattern);
-        MatchCollection matches = regex.Matches(accessPath);
+        const string pattern = @"(?:\.(\w+))|(?:\[(\d+)\])";
+        var regex = new Regex(pattern);
+        var matches = regex.Matches(accessPath);
 
         foreach (Match match in matches)
         {
-            if (match.Groups[1].Success) // Property access: .PropertyName
+            if (match.Groups[1].Success)
+            {
                 obj = GetPropertyValue(obj, match.Groups[1].Value);
-            else if (match.Groups[2].Success) // Array index access: [index]
+            }
+            else if (match.Groups[2].Success)
+            {
                 obj = GetArrayItem(obj, int.Parse(match.Groups[2].Value));
-            
+            }
+
             if (obj == null)
                 return null;
         }
@@ -82,10 +91,6 @@ public class ExpressionParser
     private object? GetPropertyValue(object obj, string propertyKey)
     {
         var propertyInfo = obj?.GetType().GetProperty(propertyKey, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
-        if (propertyInfo != null)
-        {
-            return propertyInfo.GetValue(obj);
-        }
-        return null;
+        return propertyInfo?.GetValue(obj);
     }
 }

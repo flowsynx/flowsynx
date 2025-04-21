@@ -30,8 +30,10 @@ public class JsonSerializer : IJsonSerializer
         {
             if (input is null)
             {
-                _logger.LogError("Input value can't be empty or null.");
-                throw new FlowSynxException((int)ErrorCode.Serialization, "Input value can't be empty or null.");
+                var errorMessage = new ErrorMessage((int)ErrorCode.SerializerEmptyValue,
+                                    Resources.JsonSerializer_InputValueCanNotBeEmpty);
+                _logger.LogError(errorMessage.ToString());
+                throw new FlowSynxException(errorMessage);
             }
 
             var settings = new JsonSerializerSettings
@@ -46,6 +48,11 @@ public class JsonSerializer : IJsonSerializer
                 settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
 
             return JsonConvert.SerializeObject(input, settings);
+        }
+        catch (JsonReaderException ex)
+        {
+            var message = string.Format(Resources.JsonSerializer_ErrorInReader, ex.LineNumber, ex.LinePosition, ex.Message);
+            throw new FlowSynxException((int)ErrorCode.SerializerReader, message);
         }
         catch (Exception ex)
         {

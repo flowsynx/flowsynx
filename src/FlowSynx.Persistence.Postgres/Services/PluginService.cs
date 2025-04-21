@@ -35,7 +35,7 @@ public class PluginService : IPluginService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowsGetList, ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginsGetList, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -52,7 +52,7 @@ public class PluginService : IPluginService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetItem, ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginGetItem, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -73,7 +73,7 @@ public class PluginService : IPluginService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetItem, ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginGetItem, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -96,7 +96,7 @@ public class PluginService : IPluginService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowCheckExistence, ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginCheckExistence, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -117,7 +117,7 @@ public class PluginService : IPluginService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowAdd, ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginAdd, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -139,7 +139,7 @@ public class PluginService : IPluginService
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowDelete, ex.Message);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginDelete, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }

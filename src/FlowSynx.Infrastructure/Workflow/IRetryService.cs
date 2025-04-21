@@ -4,5 +4,9 @@ namespace FlowSynx.Infrastructure.Workflow;
 
 public interface IRetryService
 {
-    Task<T> ExecuteAsync<T>(Func<Task<T>> action, RetryPolicy policy);
+    Task<object?> ExecuteAsync(
+        string userId, 
+        WorkflowTask task, 
+        IExpressionParser parser,
+        CancellationToken cancellationToken);
 }
