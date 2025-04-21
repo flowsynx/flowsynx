@@ -16,57 +16,85 @@ internal class LocalFileManager : ILocalFileManager
         _logger = logger;
     }
 
-    public async Task Create(PluginParameters parameters)
+    public async Task Create(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var createParameters = parameters.ToObject<CreateParameters>();
-        await CreateEntity(createParameters).ConfigureAwait(false);
+        await CreateEntity(createParameters, cancellationToken)
+             .ConfigureAwait(false);
     }
 
-    public async Task Delete(PluginParameters parameters)
+    public async Task Delete(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var deleteParameter = parameters.ToObject<DeleteParameters>();
-        await DeleteEntity(deleteParameter).ConfigureAwait(false);
+        await DeleteEntity(deleteParameter, cancellationToken)
+             .ConfigureAwait(false);
     }
 
-    public async Task<bool> Exist(PluginParameters parameters)
+    public async Task<bool> Exist(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var existParameters = parameters.ToObject<ExistParameters>();
-        return await ExistEntity(existParameters).ConfigureAwait(false);
+        return await ExistEntity(existParameters, cancellationToken)
+                    .ConfigureAwait(false);
     }
 
-    public async Task<IEnumerable<PluginContext>> List(PluginParameters parameters)
+    public async Task<IEnumerable<PluginContext>> List(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var listParameter = parameters.ToObject<ListParameters>();
-        return await ListEntities(listParameter).ConfigureAwait(false);
+        return await ListEntities(listParameter, cancellationToken)
+                    .ConfigureAwait(false);
     }
 
-    public async Task Purge(PluginParameters parameters)
+    public async Task Purge(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var purgeParameters = parameters.ToObject<PurgeParameters>();
-        await PurgeEntity(purgeParameters).ConfigureAwait(false);
+        await PurgeEntity(purgeParameters, cancellationToken)
+             .ConfigureAwait(false);
     }
 
-    public async Task<PluginContext> Read(PluginParameters parameters)
+    public async Task<PluginContext> Read(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var readParameters = parameters.ToObject<ReadParameters>();
-        return await ReadEntity(readParameters).ConfigureAwait(false);
+        return await ReadEntity(readParameters, cancellationToken)
+                    .ConfigureAwait(false);
     }
 
-    public async Task Rename(PluginParameters parameters)
+    public async Task Rename(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var renameParameters = parameters.ToObject<RenameParameters>();
-        await RenameEntity(renameParameters).ConfigureAwait(false);
+        await RenameEntity(renameParameters, cancellationToken)
+             .ConfigureAwait(false);
     }
 
-    public async Task Write(PluginParameters parameters)
+    public async Task Write(
+        PluginParameters parameters, 
+        CancellationToken cancellationToken)
     {
         var writeParameters = parameters.ToObject<WriteParameters>();
-        await WriteEntity(writeParameters).ConfigureAwait(false);
+        await WriteEntity(writeParameters, cancellationToken)
+             .ConfigureAwait(false);
     }
 
     #region internal methods
-    private Task CreateEntity(CreateParameters createParameters)
+    private Task CreateEntity(
+        CreateParameters createParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(createParameters.Path);
         if (string.IsNullOrEmpty(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -81,8 +109,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task DeleteEntity(DeleteParameters deleteParameters)
+    private Task DeleteEntity(
+        DeleteParameters deleteParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(deleteParameters.Path);
         if (string.IsNullOrEmpty(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -99,8 +131,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<bool> ExistEntity(ExistParameters existParameters)
+    private Task<bool> ExistEntity(
+        ExistParameters existParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(existParameters.Path);
         if (string.IsNullOrWhiteSpace(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -109,8 +145,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.FromResult(isExist);
     }
 
-    private Task<IEnumerable<PluginContext>> ListEntities(ListParameters listParameters)
+    private Task<IEnumerable<PluginContext>> ListEntities(
+        ListParameters listParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(listParameters.Path);
         if (string.IsNullOrEmpty(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -131,8 +171,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.FromResult<IEnumerable<PluginContext>>(fileEntities);
     }
 
-    private Task PurgeEntity(PurgeParameters purgeParameters)
+    private Task PurgeEntity(
+        PurgeParameters purgeParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(purgeParameters.Path);
         if (string.IsNullOrEmpty(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -152,8 +196,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<PluginContext> ReadEntity(ReadParameters readParameters)
+    private Task<PluginContext> ReadEntity(
+        ReadParameters readParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(readParameters.Path);
         if (string.IsNullOrEmpty(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -170,8 +218,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.FromResult(entity);
     }
 
-    private Task RenameEntity(RenameParameters renameParameters)
+    private Task RenameEntity(
+        RenameParameters renameParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var sourcePath = PathHelper.ToUnixPath(renameParameters.Path);
         var targetPath = PathHelper.ToUnixPath(renameParameters.TargetPath);
 
@@ -195,8 +247,12 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private async Task WriteEntity(WriteParameters writeParameters)
+    private async Task WriteEntity(
+        WriteParameters writeParameters, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var path = PathHelper.ToUnixPath(writeParameters.Path);
         if (string.IsNullOrEmpty(path))
             throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
@@ -233,11 +289,14 @@ internal class LocalFileManager : ILocalFileManager
 
         foreach (var contextData in pluginContextes)
         {
-            await WriteEntityFromContextData(path, contextData, writeParameters.Overwrite).ConfigureAwait(false);
+            await WriteEntityFromContextData(path, contextData, writeParameters.Overwrite, cancellationToken)
+                  .ConfigureAwait(false);
         }
     }
 
-    private PluginContext CreateContextDataFromStringData(string path, string data)
+    private PluginContext CreateContextDataFromStringData(
+        string path, 
+        string data)
     {
         var root = Path.GetPathRoot(path);
         var relativePath = Path.GetRelativePath(root, path);
@@ -249,8 +308,14 @@ internal class LocalFileManager : ILocalFileManager
         };
     }
 
-    private Task WriteEntityFromContextData(string path, PluginContext pluginContext, bool overwrite)
+    private Task WriteEntityFromContextData(
+        string path, 
+        PluginContext pluginContext, 
+        bool overwrite, 
+        CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         byte[] dataToWrite;
 
         if (pluginContext.RawData is not null)
@@ -283,7 +348,7 @@ internal class LocalFileManager : ILocalFileManager
             if (overwrite is false)
                 throw new Exception(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath));
             else
-                DeleteEntity(new DeleteParameters { Path = fullPath });
+                DeleteEntity(new DeleteParameters { Path = fullPath }, cancellationToken);
         }
 
         File.WriteAllBytes(fullPath, dataToWrite);
