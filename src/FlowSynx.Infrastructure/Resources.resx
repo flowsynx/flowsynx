@@ -123,17 +123,11 @@
   <data name="JsonDeserializerValueCanNotBeEmpty" xml:space="preserve">
     <value>Input value can't be empty or null.</value>
   </data>
-  <data name="JsonDeserializer_ErrorInReader" xml:space="preserve">
-    <value>Reader Error at Line {0}, Position {1}: {2}</value>
-  </data>
   <data name="JsonDeserializer_InputValueCanNotBeEmpty" xml:space="preserve">
     <value>Input value can't be empty or null.</value>
   </data>
   <data name="JsonSerializerValueCanNotBeEmpty" xml:space="preserve">
     <value>Input value can't be empty or null.</value>
-  </data>
-  <data name="JsonSerializer_ErrorInReader" xml:space="preserve">
-    <value>Reader Error at Line {0}, Position {1}: {2}</value>
   </data>
   <data name="JsonSerializer_InputValueCanNotBeEmpty" xml:space="preserve">
     <value>Input value can't be empty or null.</value>
@@ -191,6 +185,12 @@
   </data>
   <data name="SpecificationsRequiredMemberMustHaveValue" xml:space="preserve">
     <value>The value of '{0}' in specifications is required and must have a value.</value>
+  </data>
+  <data name="Workflow_ExecutionTracker_NoWorkflowExecutionFound" xml:space="preserve">
+    <value>The workflow with id '{0}' could not be found.</value>
+  </data>
+  <data name="Workflow_ExecutionTracker_NoWorkflowTaskExecutionFound" xml:space="preserve">
+    <value>The workflow task with name '{0}' could not be found.</value>
   </data>
   <data name="Workflow_Executor_CompletedSuccessfully" xml:space="preserve">
     <value>Workflow execution with Id: '{0}' was completed successfully.</value>

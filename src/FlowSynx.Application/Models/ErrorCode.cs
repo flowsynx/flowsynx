@@ -24,9 +24,7 @@ public enum ErrorCode
     #region Serialization error codes
     Serialization                                   = 1301,
     DeserializerEmptyValue                          = 1302,
-    DeserializerReader                              = 1303,
-    SerializerEmptyValue                            = 1304,
-    SerializerReader                                = 1305,
+    SerializerEmptyValue                            = 1303,
     #endregion
 
     #region Validation error codes

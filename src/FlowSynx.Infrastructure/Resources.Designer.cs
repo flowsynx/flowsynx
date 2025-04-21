@@ -70,15 +70,6 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Reader Error at Line {0}, Position {1}: {2}.
-        /// </summary>
-        internal static string JsonDeserializer_ErrorInReader {
-            get {
-                return ResourceManager.GetString("JsonDeserializer_ErrorInReader", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Input value can&apos;t be empty or null..
         /// </summary>
         internal static string JsonDeserializer_InputValueCanNotBeEmpty {
@@ -93,15 +84,6 @@ namespace FlowSynx.Infrastructure {
         internal static string JsonDeserializerValueCanNotBeEmpty {
             get {
                 return ResourceManager.GetString("JsonDeserializerValueCanNotBeEmpty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Reader Error at Line {0}, Position {1}: {2}.
-        /// </summary>
-        internal static string JsonSerializer_ErrorInReader {
-            get {
-                return ResourceManager.GetString("JsonSerializer_ErrorInReader", resourceCulture);
             }
         }
         
@@ -286,6 +268,24 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; could not be found..
+        /// </summary>
+        internal static string Workflow_ExecutionTracker_NoWorkflowExecutionFound {
+            get {
+                return ResourceManager.GetString("Workflow_ExecutionTracker_NoWorkflowExecutionFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow task with name &apos;{0}&apos; could not be found..
+        /// </summary>
+        internal static string Workflow_ExecutionTracker_NoWorkflowTaskExecutionFound {
+            get {
+                return ResourceManager.GetString("Workflow_ExecutionTracker_NoWorkflowTaskExecutionFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Workflow execution with Id: &apos;{0}&apos; was completed successfully..
         /// </summary>
         internal static string Workflow_Executor_CompletedSuccessfully {
@@ -351,9 +351,9 @@ namespace FlowSynx.Infrastructure {
         /// <summary>
         ///   Looks up a localized string similar to No workflow task execution found with name &apos;{0}&apos;.
         /// </summary>
-        internal static string Workflow_Executor_NoWorkflowTaskExecutionFound {
+        internal static string Workflow_Executor_NoWorkflowTaskExecutionFoumd {
             get {
-                return ResourceManager.GetString("Workflow_Executor_NoWorkflowTaskExecutionFound", resourceCulture);
+                return ResourceManager.GetString("Workflow_Executor_NoWorkflowTaskExecutionFoumd", resourceCulture);
             }
         }
         

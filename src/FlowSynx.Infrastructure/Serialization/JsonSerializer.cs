@@ -49,11 +49,6 @@ public class JsonSerializer : IJsonSerializer
 
             return JsonConvert.SerializeObject(input, settings);
         }
-        catch (JsonReaderException ex)
-        {
-            var message = string.Format(Resources.JsonSerializer_ErrorInReader, ex.LineNumber, ex.LinePosition, ex.Message);
-            throw new FlowSynxException((int)ErrorCode.SerializerReader, message);
-        }
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.Serialization, ex.Message);

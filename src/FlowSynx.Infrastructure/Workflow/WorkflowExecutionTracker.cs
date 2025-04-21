@@ -71,7 +71,7 @@ public class WorkflowExecutionTracker : IWorkflowExecutionTracker
     {
         var entity = await _taskExecutionService.Get(workflowExecutionId, taskName, cancellationToken);
         if (entity == null)
-            throw new Exception(string.Format(Resources.Workflow_Executor_NoWorkflowTaskExecutionFound, taskName));
+            throw new Exception(string.Format(Resources.Workflow_ExecutionTracker_NoWorkflowTaskExecutionFound, taskName));
 
         entity.Status = status;
         entity.EndTime = _systemClock.UtcNow;
@@ -82,7 +82,8 @@ public class WorkflowExecutionTracker : IWorkflowExecutionTracker
     {
         var entity = await _workflowExecutionService.Get(userId, executionId, cancellationToken);
         if (entity == null)
-            throw new FlowSynxException((int)ErrorCode.WorkflowExecutionUpdate, string.Format(Resources.Workflow_Executor_NoWorkflowTaskExecutionFound, executionId));
+            throw new FlowSynxException((int)ErrorCode.WorkflowExecutionUpdate, 
+                string.Format(Resources.Workflow_ExecutionTracker_NoWorkflowExecutionFound, executionId));
 
         entity.Status = status;
         entity.ExecutionEnd = _systemClock.UtcNow;

@@ -47,11 +47,6 @@ public class JsonDeserializer : IJsonDeserializer
 
             return JsonConvert.DeserializeObject<T>(input, settings);
         }
-        catch (JsonReaderException ex)
-        {
-            var message = string.Format(Resources.JsonDeserializer_ErrorInReader, ex.LineNumber, ex.LinePosition, ex.Message);
-            throw new FlowSynxException((int)ErrorCode.DeserializerReader, message);
-        }
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.Serialization, ex.Message);
