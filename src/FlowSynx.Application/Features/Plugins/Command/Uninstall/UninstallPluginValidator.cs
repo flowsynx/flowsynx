@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Delete;
+namespace FlowSynx.Application.Features.Plugins.Command.Uninstall;
 
-public class DeletePluginValidator : AbstractValidator<DeletePluginRequest>
+public class UninstallPluginValidator : AbstractValidator<UninstallPluginRequest>
 {
-    public DeletePluginValidator()
+    public UninstallPluginValidator()
     {
         RuleFor(request => request.Type)
             .NotNull()

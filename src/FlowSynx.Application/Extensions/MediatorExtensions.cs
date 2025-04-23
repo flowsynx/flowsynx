@@ -6,8 +6,8 @@ using FlowSynx.Application.Features.PluginConfig.Command.Delete;
 using FlowSynx.Application.Features.PluginConfig.Command.Update;
 using FlowSynx.Application.Features.PluginConfig.Query.Details;
 using FlowSynx.Application.Features.PluginConfig.Query.List;
-using FlowSynx.Application.Features.Plugins.Command.Add;
-using FlowSynx.Application.Features.Plugins.Command.Delete;
+using FlowSynx.Application.Features.Plugins.Command.Uninstall;
+using FlowSynx.Application.Features.Plugins.Command.Install;
 using FlowSynx.Application.Features.Plugins.Command.Update;
 using FlowSynx.Application.Features.Plugins.Query.Details;
 using FlowSynx.Application.Features.Plugins.Query.List;
@@ -83,8 +83,8 @@ public static class MediatorExtensions
         return mediator.Send(new PluginDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<Unit>> AddPlugin(this IMediator mediator,
-        AddPluginRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> InstallPlugin(this IMediator mediator,
+        InstallPluginRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
@@ -95,8 +95,8 @@ public static class MediatorExtensions
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<Unit>> DeletePlugin(this IMediator mediator,
-        DeletePluginRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> UninstallPlugin(this IMediator mediator,
+        UninstallPluginRequest request, CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }

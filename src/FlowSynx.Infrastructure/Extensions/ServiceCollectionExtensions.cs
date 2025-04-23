@@ -29,8 +29,6 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddSingleton<ISystemClock, SystemClock>()
-            
-            //.AddScoped<IExpressionParser, ExpressionParser>()
             .AddScoped<IExpressionParserFactory, ExpressionParserFactory>()
             .AddScoped<IPlaceholderReplacer, PlaceholderReplacer>()
             .AddScoped<IRetryPolicyApplier, RetryPolicyApplier>()

@@ -6,15 +6,15 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Add;
+namespace FlowSynx.Application.Features.Plugins.Command.Uninstall;
 
-internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>>
+internal class UninstallPluginHandler : IRequestHandler<UninstallPluginRequest, Result<Unit>>
 {
-    private readonly ILogger<AddPluginHandler> _logger;
+    private readonly ILogger<UninstallPluginHandler> _logger;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public AddPluginHandler(ILogger<AddPluginHandler> logger, ICurrentUserService currentUserService,
+    public UninstallPluginHandler(ILogger<UninstallPluginHandler> logger, ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -25,15 +25,15 @@ internal class AddPluginHandler : IRequestHandler<AddPluginRequest, Result<Unit>
         _pluginManager = pluginManager;
     }
 
-    public async Task<Result<Unit>> Handle(AddPluginRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(UninstallPluginRequest request, CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
-            await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Add_AddedSuccessfully);
+            await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Delete_DeletedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

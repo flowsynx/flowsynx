@@ -6,15 +6,15 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Delete;
+namespace FlowSynx.Application.Features.Plugins.Command.Install;
 
-internal class DeletePluginHandler : IRequestHandler<DeletePluginRequest, Result<Unit>>
+internal class InstallPluginHandler : IRequestHandler<InstallPluginRequest, Result<Unit>>
 {
-    private readonly ILogger<DeletePluginHandler> _logger;
+    private readonly ILogger<InstallPluginHandler> _logger;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public DeletePluginHandler(ILogger<DeletePluginHandler> logger, ICurrentUserService currentUserService,
+    public InstallPluginHandler(ILogger<InstallPluginHandler> logger, ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -25,15 +25,15 @@ internal class DeletePluginHandler : IRequestHandler<DeletePluginRequest, Result
         _pluginManager = pluginManager;
     }
 
-    public async Task<Result<Unit>> Handle(DeletePluginRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(InstallPluginRequest request, CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
 
-            await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Delete_DeletedSuccessfully);
+            await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Add_AddedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

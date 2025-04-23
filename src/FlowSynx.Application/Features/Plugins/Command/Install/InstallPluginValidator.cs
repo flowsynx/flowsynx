@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Application.Features.Plugins.Command.Add;
+namespace FlowSynx.Application.Features.Plugins.Command.Install;
 
-public class AddPluginValidator : AbstractValidator<AddPluginRequest>
+public class AddPluginValidator : AbstractValidator<InstallPluginRequest>
 {
     public AddPluginValidator()
     {

@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.PluginConfig.Command.Add;
-using FlowSynx.Application.Features.Plugins.Command.Add;
-using FlowSynx.Application.Features.Plugins.Command.Delete;
+using FlowSynx.Application.Features.Plugins.Command.Install;
+using FlowSynx.Application.Features.Plugins.Command.Uninstall;
 using FlowSynx.Application.Features.Plugins.Command.Update;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
@@ -26,8 +25,8 @@ public class Plugins : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
-        group.MapPost("/add", AddPlugin)
-            .WithName("AddPlugin")
+        group.MapPost("/install", InstallPlugin)
+            .WithName("InstallPlugin")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
@@ -36,8 +35,8 @@ public class Plugins : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
-        group.MapDelete("/delete", DeletePlugin)
-            .WithName("DeletePlugin")
+        group.MapDelete("/uninstall", UninstallPlugin)
+            .WithName("UninstallPlugin")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
     }
@@ -56,14 +55,14 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> AddPlugin(HttpContext context,
+    public async Task<IResult> InstallPlugin(HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var request = jsonDeserializer.Deserialize<AddPluginRequest>(jsonString);
+        var request = jsonDeserializer.Deserialize<InstallPluginRequest>(jsonString);
 
-        var result = await mediator.AddPlugin(request, cancellationToken);
+        var result = await mediator.InstallPlugin(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -78,14 +77,14 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeletePlugin(HttpContext context,
+    public async Task<IResult> UninstallPlugin(HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var request = jsonDeserializer.Deserialize<DeletePluginRequest>(jsonString);
+        var request = jsonDeserializer.Deserialize<UninstallPluginRequest>(jsonString);
 
-        var result = await mediator.DeletePlugin(request, cancellationToken);
+        var result = await mediator.UninstallPlugin(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }
