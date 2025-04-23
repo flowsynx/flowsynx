@@ -40,11 +40,12 @@ public class RetryService : IRetryService
             }
             catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
             {
-                throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionTimeout, $"Task '{task.Name}' timeout on attempt {attempt}.");
+                throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionTimeout, 
+                    string.Format(Resources.RetryService_TaskTimeoutOnAttempt, task.Name, attempt));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                throw new FlowSynxException((int)ErrorCode.WorkflowExecutionTimeout, $"Workflow execution timeout");
+                throw new FlowSynxException((int)ErrorCode.WorkflowExecutionTimeout, Resources.RetryService_WorkflowTimeout);
             }
             catch (Exception ex) when (attempt < task.RetryPolicy.MaxRetries)
             {

@@ -65,13 +65,13 @@ public class WorkflowValidator : IWorkflowValidator
                 var taskErrors = new List<string>();
 
                 if (retry?.MaxRetries is < 0)
-                    taskErrors.Add($"Task '{task.Name}' has negative MaxRetries: '{retry.MaxRetries}'");
+                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeMaxRetries, task.Name, retry.MaxRetries));
 
                 if (retry?.InitialDelay is < 0)
-                    taskErrors.Add($"Task '{task.Name}' has negative Initial Delay: '{retry.InitialDelay}'");
+                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeInitialDelay, task.Name, retry.InitialDelay));
 
                 if (retry?.MaxDelay is < 0)
-                    taskErrors.Add($"Task '{task.Name}' has negative Max Delay: '{retry.MaxDelay}'");
+                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeMaxDelay, task.Name, retry.MaxDelay));
 
                 return taskErrors;
             })

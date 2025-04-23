@@ -38,7 +38,8 @@ public class PluginManager : IPluginManager
         var isPlugineExist = await _pluginService.IsExist(_currentUserService.UserId, pluginType, pluginVersion, cancellationToken);
         if (isPlugineExist)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.PluginCheckExistence, $"The plugin type '{pluginType}' with version '{pluginVersion}' is already exist.");
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginCheckExistence, 
+                string.Format(Resources.PluginManager_Install_PluginIsAlreadyExist, pluginType, pluginVersion));
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -54,7 +55,7 @@ public class PluginManager : IPluginManager
         bool isChecksumValid = _pluginDownloader.ValidateChecksum(pluginData, pluginMetadata.Checksum);
         if (!isChecksumValid)
         {
-            _logger.LogError("Checksum validation failed. Package may be corrupted or tampered with.");
+            _logger.LogError(Resources.PluginManager_Install_ChecksumValidationFailed);
             return;
         }
 
@@ -85,11 +86,11 @@ public class PluginManager : IPluginManager
                 };
 
                 await _pluginService.Add(pluginEntity, cancellationToken);
-                _logger.LogInformation($"Plugin {pluginType} v{pluginVersion} installed successfully.");
+                _logger.LogInformation(string.Format(Resources.PluginManager_Install_PluginInstalledSuccessfully, pluginType, pluginVersion));
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error loading {pluginLocation}: {ex.Message}");
+                _logger.LogError(string.Format(Resources.PluginManager_Install_ErrorLoading, pluginLocation, ex.Message));
             }
         }
     }
@@ -106,7 +107,7 @@ public class PluginManager : IPluginManager
         if (pluginEntity is null)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
-                    $"The plugin type '{pluginType}' with version '{version}' not found!");
+                    string.Format(Resources.PluginManager_PluginCouldNotFound, pluginType, version));
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -114,9 +115,7 @@ public class PluginManager : IPluginManager
         if (pluginEntity.PluginConfigurations.Any())
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.PluginConfigurationIsAlreadyExist, 
-                $"The plugin type '{pluginEntity.Type}' with version '{pluginEntity.Version}' " +
-                $"has related and defined configurations. " +
-                $"Please first delete configuraion(s) and then try again.");
+                string.Format(Resources.PluginManager_AssociatedPluginConfigIsExist, pluginEntity.Type, pluginEntity.Version));
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -125,7 +124,7 @@ public class PluginManager : IPluginManager
         if (Directory.Exists(pluginLocation))
         {
             Directory.Delete(pluginLocation, true);
-            _logger.LogInformation($"Uninstalled: '{pluginType}' version '{version}'");
+            _logger.LogInformation(string.Format(Resources.PluginManager_PluginUninstalledSuccessfully, pluginType, version));
         }
     }
 }

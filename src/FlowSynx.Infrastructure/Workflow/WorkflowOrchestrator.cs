@@ -97,12 +97,12 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Task {TaskName} failed", task.Name);
+                _logger.LogError(string.Format(Resources.WorkflowOrchestrator_TaskFailed, task.Name, ex.Message));
 
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
                     WorkflowTaskExecutionStatus.Failed, cancellationToken).ConfigureAwait(false);
 
-                exceptions.Add(new Exception($"Task {task.Name} failed: {ex.Message}", ex));
+                exceptions.Add(new Exception(string.Format(Resources.WorkflowOrchestrator_TaskFailed, task.Name, ex.Message), ex));
             }
             finally
             {

@@ -205,11 +205,110 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occurred while extracting the package: {0}.
+        /// </summary>
+        internal static string PluginDownloader_ErrorInExtractingPackage {
+            get {
+                return ResourceManager.GetString("PluginDownloader_ErrorInExtractingPackage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; has associated configurations. Please remove the existing configuration(s) before proceeding..
+        /// </summary>
+        internal static string PluginManager_AssociatedPluginConfigIsExist {
+            get {
+                return ResourceManager.GetString("PluginManager_AssociatedPluginConfigIsExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Checksum validation failed. Package may be corrupted or tampered with..
+        /// </summary>
+        internal static string PluginManager_Install_ChecksumValidationFailed {
+            get {
+                return ResourceManager.GetString("PluginManager_Install_ChecksumValidationFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error loading {0}: {1}..
+        /// </summary>
+        internal static string PluginManager_Install_ErrorLoading {
+            get {
+                return ResourceManager.GetString("PluginManager_Install_ErrorLoading", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin &apos;{0}&apos; v{1} installed successfully..
+        /// </summary>
+        internal static string PluginManager_Install_PluginInstalledSuccessfully {
+            get {
+                return ResourceManager.GetString("PluginManager_Install_PluginInstalledSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; is already exist..
+        /// </summary>
+        internal static string PluginManager_Install_PluginIsAlreadyExist {
+            get {
+                return ResourceManager.GetString("PluginManager_Install_PluginIsAlreadyExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; not found!.
+        /// </summary>
+        internal static string PluginManager_PluginCouldNotFound {
+            get {
+                return ResourceManager.GetString("PluginManager_PluginCouldNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{pluginType}&apos; version &apos;{version}&apos; is uninstalled successfully..
+        /// </summary>
+        internal static string PluginManager_PluginUninstalledSuccessfully {
+            get {
+                return ResourceManager.GetString("PluginManager_PluginUninstalledSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Plugin {0} could not found!.
         /// </summary>
         internal static string PluginServiceCouldNotFoundPlugin {
             get {
                 return ResourceManager.GetString("PluginServiceCouldNotFoundPlugin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Configuration &apos;{0}&apos; could be not found..
+        /// </summary>
+        internal static string PluginTypeService_ConfigurationCouldNotFound {
+            get {
+                return ResourceManager.GetString("PluginTypeService_ConfigurationCouldNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin &apos;{0}&apos; could be not found..
+        /// </summary>
+        internal static string PluginTypeService_PluginCouldNotFound {
+            get {
+                return ResourceManager.GetString("PluginTypeService_PluginCouldNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &apos;{0}&apos; plugin is found in Cache..
+        /// </summary>
+        internal static string PluginTypeService_PluginFoundInCache {
+            get {
+                return ResourceManager.GetString("PluginTypeService_PluginFoundInCache", resourceCulture);
             }
         }
         
@@ -241,11 +340,29 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; timeout on attempt {1}..
+        /// </summary>
+        internal static string RetryService_TaskTimeoutOnAttempt {
+            get {
+                return ResourceManager.GetString("RetryService_TaskTimeoutOnAttempt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Waiting {0}ms before retry....
         /// </summary>
         internal static string RetryService_WaitingBeforeRetry {
             get {
                 return ResourceManager.GetString("RetryService_WaitingBeforeRetry", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workflow execution timeout.
+        /// </summary>
+        internal static string RetryService_WorkflowTimeout {
+            get {
+                return ResourceManager.GetString("RetryService_WorkflowTimeout", resourceCulture);
             }
         }
         
@@ -390,6 +507,42 @@ namespace FlowSynx.Infrastructure {
         internal static string Workflow_TimeBased_TriggerProcessor_InvalidCornExpression {
             get {
                 return ResourceManager.GetString("Workflow_TimeBased_TriggerProcessor_InvalidCornExpression", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task {0} failed: {1}..
+        /// </summary>
+        internal static string WorkflowOrchestrator_TaskFailed {
+            get {
+                return ResourceManager.GetString("WorkflowOrchestrator_TaskFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; has negative Initial Delay: &apos;{1}&apos;..
+        /// </summary>
+        internal static string WorkflowValidator_TaskHasNegativeInitialDelay {
+            get {
+                return ResourceManager.GetString("WorkflowValidator_TaskHasNegativeInitialDelay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; has negative Max Delay: &apos;{1}&apos;.
+        /// </summary>
+        internal static string WorkflowValidator_TaskHasNegativeMaxDelay {
+            get {
+                return ResourceManager.GetString("WorkflowValidator_TaskHasNegativeMaxDelay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; has negative MaxRetries: &apos;{1}&apos;..
+        /// </summary>
+        internal static string WorkflowValidator_TaskHasNegativeMaxRetries {
+            get {
+                return ResourceManager.GetString("WorkflowValidator_TaskHasNegativeMaxRetries", resourceCulture);
             }
         }
     }

@@ -71,7 +71,8 @@ public class PluginTypeService : IPluginTypeService
             return await GetLocalPlugin(userId);
 
         if (!await _pluginConfigurationService.IsExist(userId, configName, cancellationToken))
-            throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, $"Configuration '{configName}' could be not found.");
+            throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, 
+                string.Format(Resources.PluginTypeService_ConfigurationCouldNotFound, configName));
 
         var config = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
         var pluginEntity = await _pluginService.Get(userId, config.Type, config.Version, cancellationToken);
@@ -101,7 +102,7 @@ public class PluginTypeService : IPluginTypeService
 
         if (cached != null)
         {
-            _logger.LogInformation("LocalFileSystem plugin is found in Cache.");
+            _logger.LogInformation(string.Format(Resources.PluginTypeService_PluginFoundInCache, "LocalFileSystem"));
             return cached;
         }
 
@@ -117,13 +118,13 @@ public class PluginTypeService : IPluginTypeService
 
         if (cached != null)
         {
-            _logger.LogInformation($"{pluginEntity.Name} is found in Cache.");
+            _logger.LogInformation(string.Format(Resources.PluginTypeService_PluginFoundInCache, pluginEntity.Name));
             return cached;
         }
 
         var pluginHandle = _pluginLoader.LoadPlugin(pluginEntity.PluginLocation);
         if (!pluginHandle.Success)
-            throw new FlowSynxException((int)ErrorCode.PluginNotFound, $"Plugin '{pluginEntity.Name}' could be not found.");
+            throw new FlowSynxException((int)ErrorCode.PluginNotFound, string.Format(Resources.PluginTypeService_PluginCouldNotFound, pluginEntity.Name));
         
         var plugin = pluginHandle.Instance;
         plugin.Specifications = specifications;

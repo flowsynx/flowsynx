@@ -61,8 +61,8 @@ public class LoggerService : ILoggerService
         }
         catch (Exception ex)
         {
-            var message = ex.InnerException is null ? "An error occurred saving changes." : ex.InnerException.Message;
-            var errorMessage = new ErrorMessage((int)ErrorCode.LogGetItem, message);
+            var message = ex.InnerException is null ? Resources.LoggerService_AddLogError: ex.InnerException.Message;
+            var errorMessage = new ErrorMessage((int)ErrorCode.LogAdd, message);
             Console.WriteLine(errorMessage.ToString());
         }
     }

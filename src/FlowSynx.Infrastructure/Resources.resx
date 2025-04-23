@@ -135,8 +135,41 @@
   <data name="Logging_Invalid_Property" xml:space="preserve">
     <value>The property '{0}' is not valid!</value>
   </data>
+  <data name="PluginDownloader_ErrorInExtractingPackage" xml:space="preserve">
+    <value>An error occurred while extracting the package: {0}</value>
+  </data>
+  <data name="PluginManager_AssociatedPluginConfigIsExist" xml:space="preserve">
+    <value>The plugin type '{0}' with version '{1}' has associated configurations. Please remove the existing configuration(s) before proceeding.</value>
+  </data>
+  <data name="PluginManager_Install_ChecksumValidationFailed" xml:space="preserve">
+    <value>Checksum validation failed. Package may be corrupted or tampered with.</value>
+  </data>
+  <data name="PluginManager_Install_ErrorLoading" xml:space="preserve">
+    <value>Error loading {0}: {1}.</value>
+  </data>
+  <data name="PluginManager_Install_PluginInstalledSuccessfully" xml:space="preserve">
+    <value>Plugin '{0}' v{1} installed successfully.</value>
+  </data>
+  <data name="PluginManager_Install_PluginIsAlreadyExist" xml:space="preserve">
+    <value>The plugin type '{0}' with version '{1}' is already exist.</value>
+  </data>
+  <data name="PluginManager_PluginCouldNotFound" xml:space="preserve">
+    <value>The plugin type '{0}' with version '{1}' not found!</value>
+  </data>
+  <data name="PluginManager_PluginUninstalledSuccessfully" xml:space="preserve">
+    <value>'{pluginType}' version '{version}' is uninstalled successfully.</value>
+  </data>
   <data name="PluginServiceCouldNotFoundPlugin" xml:space="preserve">
     <value>Plugin {0} could not found!</value>
+  </data>
+  <data name="PluginTypeService_ConfigurationCouldNotFound" xml:space="preserve">
+    <value>Configuration '{0}' could be not found.</value>
+  </data>
+  <data name="PluginTypeService_PluginCouldNotFound" xml:space="preserve">
+    <value>Plugin '{0}' could be not found.</value>
+  </data>
+  <data name="PluginTypeService_PluginFoundInCache" xml:space="preserve">
+    <value>'{0}' plugin is found in Cache.</value>
   </data>
   <data name="Plugin_Download_Extraction_AllFilesDeletedSuccessfully" xml:space="preserve">
     <value>All files deleted successfully.</value>
@@ -177,14 +210,32 @@
   <data name="RetryService_RetryFailedUnexpectedly" xml:space="preserve">
     <value>Retry mechanism failed unexpectedly.</value>
   </data>
+  <data name="RetryService_TaskTimeoutOnAttempt" xml:space="preserve">
+    <value>Task '{0}' timeout on attempt {1}.</value>
+  </data>
   <data name="RetryService_WaitingBeforeRetry" xml:space="preserve">
     <value>Waiting {0}ms before retry...</value>
+  </data>
+  <data name="RetryService_WorkflowTimeout" xml:space="preserve">
+    <value>Workflow execution timeout</value>
   </data>
   <data name="SpecificationsMustHaveValue" xml:space="preserve">
     <value>The specification(s) [{0}] are required and must have value.</value>
   </data>
   <data name="SpecificationsRequiredMemberMustHaveValue" xml:space="preserve">
     <value>The value of '{0}' in specifications is required and must have a value.</value>
+  </data>
+  <data name="WorkflowOrchestrator_TaskFailed" xml:space="preserve">
+    <value>Task {0} failed: {1}.</value>
+  </data>
+  <data name="WorkflowValidator_TaskHasNegativeInitialDelay" xml:space="preserve">
+    <value>Task '{0}' has negative Initial Delay: '{1}'.</value>
+  </data>
+  <data name="WorkflowValidator_TaskHasNegativeMaxDelay" xml:space="preserve">
+    <value>Task '{0}' has negative Max Delay: '{1}'</value>
+  </data>
+  <data name="WorkflowValidator_TaskHasNegativeMaxRetries" xml:space="preserve">
+    <value>Task '{0}' has negative MaxRetries: '{1}'.</value>
   </data>
   <data name="Workflow_ExecutionTracker_NoWorkflowExecutionFound" xml:space="preserve">
     <value>The workflow with id '{0}' could not be found.</value>

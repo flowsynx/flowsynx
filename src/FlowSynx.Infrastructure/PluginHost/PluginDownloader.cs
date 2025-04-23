@@ -61,7 +61,7 @@ public class PluginDownloader : IPluginDownloader
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"An error occurred while extracting the package: {ex.Message}", ex);
+            throw new InvalidOperationException(string.Format(Resources.PluginDownloader_ErrorInExtractingPackage, ex.Message), ex);
         }
     }
 
