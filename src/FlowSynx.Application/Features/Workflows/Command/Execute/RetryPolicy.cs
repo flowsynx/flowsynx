@@ -6,4 +6,5 @@ public class RetryPolicy
     public BackoffStrategy BackoffStrategy { get; set; } = Execute.BackoffStrategy.Fixed;
     public int InitialDelay { get; set; } = 1000;    // In millisecond
     public int MaxDelay { get; set; } = 10000;  // In millisecond
+    public double Factor { get; set; } = 2;
 }

@@ -1,6 +1,8 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Workflow;
+using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
+using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
@@ -11,7 +13,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 {
     private readonly ILogger<WorkflowOrchestrator> _logger;
     private readonly IWorkflowExecutionTracker _executionTracker;
-    private readonly IRetryService _retryService;
+    private readonly IWorkflowTaskExecutor _taskExecutor;
     private readonly IExpressionParserFactory _parserFactory;
     private readonly ISemaphoreFactory _semaphoreFactory;
     private readonly ConcurrentDictionary<string, object?> _taskOutputs = new();
@@ -19,13 +21,13 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     public WorkflowOrchestrator(
         ILogger<WorkflowOrchestrator> logger,
         IWorkflowExecutionTracker executionTracker,
-        IRetryService retryService,
+        IWorkflowTaskExecutor taskExecutor,
         IExpressionParserFactory parserFactory,
         ISemaphoreFactory semaphoreFactory)
     {
         _logger = logger;
         _executionTracker = executionTracker;
-        _retryService = retryService;
+        _taskExecutor = taskExecutor;
         _parserFactory = parserFactory;
         _semaphoreFactory = semaphoreFactory;
     }
@@ -89,7 +91,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
                     WorkflowTaskExecutionStatus.Running, cancellationToken).ConfigureAwait(false);
 
-                var result = await _retryService.ExecuteAsync(userId, task, parser, linkedCts.Token);
+                var result = await _taskExecutor.ExecuteAsync(userId, task, parser, linkedCts.Token);
                 _taskOutputs[task.Name] = result;
 
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
@@ -108,7 +110,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             {
                 semaphore.Release();
             }
-        });
+        }).ToList();
 
         await Task.WhenAll(executionTasks).ConfigureAwait(false);
         return exceptions.ToList();

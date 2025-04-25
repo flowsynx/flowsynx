@@ -520,6 +520,15 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; has negative Factor: &apos;{1}&apos;..
+        /// </summary>
+        internal static string WorkflowValidator_TaskHasNegativeFactor {
+            get {
+                return ResourceManager.GetString("WorkflowValidator_TaskHasNegativeFactor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Task &apos;{0}&apos; has negative Initial Delay: &apos;{1}&apos;..
         /// </summary>
         internal static string WorkflowValidator_TaskHasNegativeInitialDelay {

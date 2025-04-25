@@ -61,7 +61,7 @@ public class WorkflowValidator : IWorkflowValidator
         var errors = tasks
             .SelectMany(task =>
             {
-                var retry = task.RetryPolicy;
+                var retry = task.ErrorHandling?.RetryPolicy;
                 var taskErrors = new List<string>();
 
                 if (retry?.MaxRetries is < 0)
@@ -72,6 +72,9 @@ public class WorkflowValidator : IWorkflowValidator
 
                 if (retry?.MaxDelay is < 0)
                     taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeMaxDelay, task.Name, retry.MaxDelay));
+
+                if (retry?.Factor is < 0)
+                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeFactor, task.Name, retry.MaxDelay));
 
                 return taskErrors;
             })

@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Infrastructure.Workflow;
+﻿namespace FlowSynx.Infrastructure.Workflow.Parsers;
 
 public interface IExpressionParser
 {

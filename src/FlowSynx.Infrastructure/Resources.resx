@@ -228,6 +228,9 @@
   <data name="WorkflowOrchestrator_TaskFailed" xml:space="preserve">
     <value>Task {0} failed: {1}.</value>
   </data>
+  <data name="WorkflowValidator_TaskHasNegativeFactor" xml:space="preserve">
+    <value>Task '{0}' has negative Factor: '{1}'.</value>
+  </data>
   <data name="WorkflowValidator_TaskHasNegativeInitialDelay" xml:space="preserve">
     <value>Task '{0}' has negative Initial Delay: '{1}'.</value>
   </data>

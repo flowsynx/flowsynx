@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Infrastructure.Workflow;
+﻿using FlowSynx.Infrastructure.Workflow.Parsers;
+
+namespace FlowSynx.Infrastructure.Workflow;
 
 public interface IPlaceholderReplacer
 {

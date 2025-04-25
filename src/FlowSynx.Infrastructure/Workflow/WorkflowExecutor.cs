@@ -3,6 +3,7 @@ using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
+using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +17,7 @@ public class WorkflowExecutor : IWorkflowExecutor
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly IWorkflowValidator _workflowValidator;
     private readonly IWorkflowOrchestrator _workflowOrchestrator;
-    private readonly IRetryPolicyApplier _retryPolicyApplier;
+    private readonly IErrorHandlingResolver _errorHandlingResolver;
 
     public WorkflowExecutor(
         ILogger<WorkflowExecutor> logger, 
@@ -25,7 +26,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         IJsonDeserializer jsonDeserializer, 
         IWorkflowValidator workflowValidator, 
         IWorkflowOrchestrator workflowOrchestrator,
-        IRetryPolicyApplier retryPolicyApplier)
+        IErrorHandlingResolver errorHandlingResolver)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowService);
@@ -38,7 +39,7 @@ public class WorkflowExecutor : IWorkflowExecutor
         _jsonDeserializer = jsonDeserializer;
         _workflowValidator = workflowValidator;
         _workflowOrchestrator = workflowOrchestrator;
-        _retryPolicyApplier = retryPolicyApplier;
+        _errorHandlingResolver = errorHandlingResolver;
     }
 
     public async Task ExecuteAsync(string userId, Guid workflowId, 
@@ -80,7 +81,7 @@ public class WorkflowExecutor : IWorkflowExecutor
     private WorkflowDefinition DeserializeAndValidateWorkflow(string definitionJson)
     {
         var definition = _jsonDeserializer.Deserialize<WorkflowDefinition>(definitionJson);
-        _retryPolicyApplier.Apply(definition);
+        _errorHandlingResolver.Resolve(definition);
         _workflowValidator.Validate(definition);
         return definition;
     }

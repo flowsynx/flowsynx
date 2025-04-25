@@ -4,7 +4,7 @@ using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
-namespace FlowSynx.Infrastructure.Workflow;
+namespace FlowSynx.Infrastructure.Workflow.Parsers;
 
 public class ExpressionParser : IExpressionParser
 {

@@ -7,6 +7,8 @@ using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
+using FlowSynx.Infrastructure.Workflow.Parsers;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -31,12 +33,12 @@ public static class ServiceCollectionExtensions
             .AddSingleton<ISystemClock, SystemClock>()
             .AddScoped<IExpressionParserFactory, ExpressionParserFactory>()
             .AddScoped<IPlaceholderReplacer, PlaceholderReplacer>()
-            .AddScoped<IRetryPolicyApplier, RetryPolicyApplier>()
+            .AddScoped<IErrorHandlingResolver, ErrorHandlingResolver>()
             .AddScoped<ISemaphoreFactory, SemaphoreFactory>()
             .AddScoped<IWorkflowExecutionTracker, WorkflowExecutionTracker>()
             .AddScoped<IWorkflowOrchestrator, WorkflowOrchestrator>()
             .AddScoped<IWorkflowTaskExecutor, WorkflowTaskExecutor>()
-            .AddScoped<IRetryService, RetryService>()
+            .AddSingleton<IErrorHandlingStrategyFactory, ErrorHandlingStrategyFactory>()
             .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
             .AddScoped<WorkflowTimeBasedTriggerProcessor>();
