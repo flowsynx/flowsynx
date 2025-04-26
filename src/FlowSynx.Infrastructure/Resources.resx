@@ -168,9 +168,6 @@
   <data name="PluginTypeService_PluginCouldNotFound" xml:space="preserve">
     <value>Plugin '{0}' could be not found.</value>
   </data>
-  <data name="PluginTypeService_PluginFoundInCache" xml:space="preserve">
-    <value>'{0}' plugin is found in Cache.</value>
-  </data>
   <data name="Plugin_Download_Extraction_AllFilesDeletedSuccessfully" xml:space="preserve">
     <value>All files deleted successfully.</value>
   </data>
@@ -205,7 +202,7 @@
     <value>Attempt {0} failed: {1}.</value>
   </data>
   <data name="RetryService_OperationFailedAfterAttempts" xml:space="preserve">
-    <value>Operation failed after {0} attempts.</value>
+    <value>Task '{0}' failed after {1} attempts.</value>
   </data>
   <data name="RetryService_RetryFailedUnexpectedly" xml:space="preserve">
     <value>Retry mechanism failed unexpectedly.</value>
@@ -226,7 +223,7 @@
     <value>The value of '{0}' in specifications is required and must have a value.</value>
   </data>
   <data name="WorkflowOrchestrator_TaskFailed" xml:space="preserve">
-    <value>Task {0} failed: {1}.</value>
+    <value>Task '{0}' failed — {1}</value>
   </data>
   <data name="WorkflowValidator_TaskHasNegativeFactor" xml:space="preserve">
     <value>Task '{0}' has negative Factor: '{1}'.</value>

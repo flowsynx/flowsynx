@@ -304,15 +304,6 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{0}&apos; plugin is found in Cache..
-        /// </summary>
-        internal static string PluginTypeService_PluginFoundInCache {
-            get {
-                return ResourceManager.GetString("PluginTypeService_PluginFoundInCache", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Attempt {0} failed: {1}..
         /// </summary>
         internal static string RetryService_AttemptFailed {
@@ -322,7 +313,7 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Operation failed after {0} attempts..
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; failed after {1} attempts..
         /// </summary>
         internal static string RetryService_OperationFailedAfterAttempts {
             get {
@@ -511,7 +502,7 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Task {0} failed: {1}..
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; failed — {1}.
         /// </summary>
         internal static string WorkflowOrchestrator_TaskFailed {
             get {
