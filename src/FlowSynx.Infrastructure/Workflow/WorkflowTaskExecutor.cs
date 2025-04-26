@@ -31,6 +31,22 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         IExpressionParser parser,
         CancellationToken cancellationToken)
     {
+        var errorHandlingContext = new ErrorHandlingContext
+        {
+            TaskName = task.Name,
+            RetryCount = 0
+        };
+
+        return await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<object?> ExecuteTaskAsync(
+        string userId,
+        WorkflowTask task,
+        IExpressionParser parser,
+        ErrorHandlingContext errorHandlingContext,
+        CancellationToken cancellationToken)
+    {
         using var timeoutCts = CreateTimeoutToken(task.Timeout, cancellationToken);
         var token = timeoutCts.Token;
 
@@ -38,11 +54,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         var pluginParameters = PreparePluginParameters(task.Parameters, parser);
 
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
-        var errorHandlingContext = new ErrorHandlingContext
-        {
-            TaskName = task.Name,
-            RetryCount = 0
-        };
 
         try
         {
@@ -67,7 +78,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
             return result switch
             {
-                { ShouldRetry: true } => await ExecuteAsync(userId, task, parser, cancellationToken),
+                { ShouldRetry: true } => await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, cancellationToken),
                 { ShouldSkip: true } => null,
                 { ShouldAbortWorkflow: true } => throw new Exception(ex.Message),
                 _ => throw new Exception(ex.Message)
