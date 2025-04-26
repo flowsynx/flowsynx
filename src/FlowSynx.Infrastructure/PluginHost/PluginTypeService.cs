@@ -101,11 +101,8 @@ public class PluginTypeService : IPluginTypeService
         var cached = _pluginCacheService.Get(key);
 
         if (cached != null)
-        {
-            _logger.LogInformation(string.Format(Resources.PluginTypeService_PluginFoundInCache, "LocalFileSystem"));
             return cached;
-        }
-
+        
         await localFileSystemPlugin.Initialize(new PluginLoggerAdapter(_logger));
         _pluginCacheService.Set(key, localFileSystemPlugin);
         return localFileSystemPlugin;
@@ -117,10 +114,7 @@ public class PluginTypeService : IPluginTypeService
         var cached = _pluginCacheService.Get(key);
 
         if (cached != null)
-        {
-            _logger.LogInformation(string.Format(Resources.PluginTypeService_PluginFoundInCache, pluginEntity.Name));
             return cached;
-        }
 
         var pluginHandle = _pluginLoader.LoadPlugin(pluginEntity.PluginLocation);
         if (!pluginHandle.Success)

@@ -99,8 +99,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             }
             catch (Exception ex)
             {
-                _logger.LogError(string.Format(Resources.WorkflowOrchestrator_TaskFailed, task.Name, ex.Message));
-
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
                     WorkflowTaskExecutionStatus.Failed, cancellationToken).ConfigureAwait(false);
 
@@ -123,7 +121,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             string.Join(Environment.NewLine, exceptions.Select(e => e.Message))
         );
 
-        _logger.LogError(errorMessage.ToString());
         throw new FlowSynxException(errorMessage);
     }
 }

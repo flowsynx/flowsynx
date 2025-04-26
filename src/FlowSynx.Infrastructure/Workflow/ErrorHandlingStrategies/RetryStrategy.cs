@@ -35,7 +35,8 @@ public class RetryStrategy : IErrorHandlingStrategy
                 return new ErrorHandlingResult { ShouldAbortWorkflow = true };
             }
         }
-        _logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, _maxRetries));
+
+        _logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, context.TaskName, _maxRetries));
         return new ErrorHandlingResult { ShouldAbortWorkflow = true };
     }
 }
