@@ -8,6 +8,7 @@ internal class ConsoleLogger : ILogger, IDisposable
     private readonly string _category;
     private readonly ConsoleLoggerOptions _options;
     private readonly Task _workerTask;
+    private static readonly object _consoleLock = new object();
 
     private Dictionary<LogLevel, ConsoleColor> ColorMap { get; set; } = new()
     {
@@ -75,23 +76,25 @@ internal class ConsoleLogger : ILogger, IDisposable
 
     private void WriteLine(LogMessage logMessage, CancellationToken cancellationToken)
     {
-        var originalColor = Console.ForegroundColor;
-        try
+        lock (_consoleLock)
         {
-            Console.ForegroundColor = ColorMap[logMessage.Level];
-            Console.WriteLine(LogTemplate.Format(logMessage, _options.OutputTemplate));
-            Console.ForegroundColor = originalColor;
-        }
-        catch (Exception ex)
-        {
-            Console.ForegroundColor = ColorMap[LogLevel.Error];
-            Console.WriteLine(ex.Message);
-            Console.ForegroundColor = originalColor;
-            throw;
-        }
-        finally
-        {
-            Console.ForegroundColor = originalColor;
+            var originalColor = Console.ForegroundColor;
+            try
+            {
+                Console.ForegroundColor = ColorMap[logMessage.Level];
+                Console.WriteLine(LogTemplate.Format(logMessage, _options.OutputTemplate));
+                Console.ForegroundColor = originalColor;
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ColorMap[LogLevel.Error];
+                Console.WriteLine(ex.Message);
+                Console.ForegroundColor = originalColor;
+            }
+            finally
+            {
+                Console.ForegroundColor = originalColor;
+            }
         }
     }
 
