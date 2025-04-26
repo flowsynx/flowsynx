@@ -1,4 +1,5 @@
-﻿namespace FlowSynx.Application.Wrapper;
+﻿
+namespace FlowSynx.Application.Wrapper;
 
 public class Result : IResult
 {
@@ -9,6 +10,8 @@ public class Result : IResult
     public List<string> Messages { get; set; } = new List<string>();
 
     public bool Succeeded { get; set; }
+
+    public DateTime GeneratedAtUtc { get; } = DateTime.UtcNow;
 
     public static IResult Fail()
     {

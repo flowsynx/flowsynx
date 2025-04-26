@@ -109,11 +109,7 @@ public static class ApplicationBuilderExtensions
         {
             var result = context.Database.EnsureCreated();
             var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            if (result)
-                logger.LogInformation("Logger created successfully.");
-            else
-                logger.LogInformation("Logger already exists.");
+            logger.LogInformation("Logger loaded successfully.");
 
             return app;
         }
