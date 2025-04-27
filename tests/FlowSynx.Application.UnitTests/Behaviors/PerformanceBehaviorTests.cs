@@ -2,9 +2,6 @@
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Behaviors;
 using Microsoft.Extensions.Logging.Testing;
-using Moq;
-using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Application.Models;
 
 namespace FlowSynx.Application.UnitTests;
 
@@ -12,13 +9,11 @@ public class PerformanceBehaviorTests
 {
     private readonly FakeLogger<PerformanceBehavior<TestRequest, TestResponse>> _logger;
     private readonly PerformanceBehavior<TestRequest, TestResponse> _behavior;
-    private readonly Mock<RequestHandlerDelegate<TestResponse>> _nextMock;
 
     public PerformanceBehaviorTests()
     {
         _logger = new FakeLogger<PerformanceBehavior<TestRequest, TestResponse>>();
         _behavior = new PerformanceBehavior<TestRequest, TestResponse>(_logger);
-        _nextMock = new Mock<RequestHandlerDelegate<TestResponse>>();
     }
 
     [Fact]
@@ -28,18 +23,17 @@ public class PerformanceBehaviorTests
         var testRequest = new TestRequest();
         var testResponse = new TestResponse();
 
-        _nextMock.Setup(x => x()).ReturnsAsync(testResponse);
-
         var cancellationToken = CancellationToken.None;
         var delayTime = 1500;
 
-        _nextMock.Setup(x => x()).Returns(async () => { 
-            await Task.Delay(delayTime); 
-            return testResponse; 
-        });
+        RequestHandlerDelegate<TestResponse> next = async (x) =>
+        {
+            await Task.Delay(delayTime);
+            return testResponse;
+        };
 
         // Act
-        await _behavior.Handle(testRequest, _nextMock.Object, cancellationToken);
+        await _behavior.Handle(testRequest, next, cancellationToken);
 
         // Assert
         Assert.NotEmpty(_logger.Collector.GetSnapshot());
@@ -52,11 +46,10 @@ public class PerformanceBehaviorTests
         // Arrange
         var testRequest = new TestRequest();
         var testResponse = new TestResponse();
-
-        _nextMock.Setup(x => x()).ReturnsAsync(testResponse);
+        RequestHandlerDelegate<TestResponse> next = (x) => Task.FromResult(testResponse);
 
         // Act
-        await _behavior.Handle(testRequest, _nextMock.Object, CancellationToken.None);
+        await _behavior.Handle(testRequest, next, CancellationToken.None);
 
         // Assert
         Assert.Empty(_logger.Collector.GetSnapshot());
