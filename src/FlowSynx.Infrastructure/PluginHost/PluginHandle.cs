@@ -1,25 +1,58 @@
-﻿using FlowSynx.PluginCore;
+﻿//using FlowSynx.PluginCore;
 
-namespace FlowSynx.Infrastructure.PluginHost;
+//namespace FlowSynx.Infrastructure.PluginHost;
 
-public class PluginHandle
-{
-    public bool Success { get; set; }
-    public string? Message { get; set; }
-    public IPlugin Instance { get; private set; } = default!;
-    public string Location { get; private set; } = default!;
+//public class PluginHandle : IDisposable
+//{
+//    public bool Succeeded { get; }
+//    public IPlugin? PluginInstance { get; set; }
+//    public List<string> ErrorMessage { get; } = new List<string>();
 
-    public static PluginHandle Ok(IPlugin pluginInstance, string location) => new PluginHandle
-    {
-        Success = true,
-        Message = Resources.Plugin_Handle_LoadedSuccessfully,
-        Instance = pluginInstance,
-        Location = location
-    };
+//    private PluginHandle(bool succeeded, string errorMessage)
+//    {
+//        Succeeded = succeeded;
+//        ErrorMessage = new List<string> { errorMessage };
+//    }
 
-    public static PluginHandle Fail(string message) => new PluginHandle
-    {
-        Success = false,
-        Message = message
-    };
-}
+//    private PluginHandle(bool succeeded, IPlugin? pluginInstance = null)
+//    {
+//        Succeeded = succeeded;
+//        PluginInstance = pluginInstance;
+//    }
+
+//    public static PluginHandle Success(IPlugin pluginInstance) => new PluginHandle(true, pluginInstance);
+//    public static PluginHandle Fail(string message) => new PluginHandle(false, message);
+
+
+
+
+
+
+
+
+//    ////public PluginLoadContext? LoadContext { get; set; }
+//    //public IPlugin? PluginInstance { get; set; }
+
+//    ////public PluginHandle(IPlugin pluginInstance) : this(pluginInstance, null) { }
+//    //public PluginHandle(IPlugin pluginInstance) 
+//    //{
+//    //    PluginInstance = pluginInstance;
+//    //}
+
+//    ////public PluginHandle(IPlugin pluginInstance, PluginLoadContext? loadContext)
+//    ////{
+//    ////    //LoadContext = loadContext;
+//    ////    PluginInstance = pluginInstance;
+//    ////}
+
+//    public void Dispose()
+//    {
+//        //LoadContext?.Dispose();
+//        //LoadContext = null;
+//        PluginInstance = null;
+
+//        GC.Collect();
+//        GC.WaitForPendingFinalizers();
+//        GC.Collect();
+//    }
+//}

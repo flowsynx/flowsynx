@@ -39,6 +39,10 @@ public class PluginEntityConfiguration : IEntityTypeConfiguration<PluginEntity>
                .HasMaxLength(128)
                .IsRequired();
 
+        builder.Property(t => t.Version)
+               .HasMaxLength(128)
+               .IsRequired();
+
         builder.Property(t => t.Checksum)
                .HasMaxLength(1024)
                .IsRequired();

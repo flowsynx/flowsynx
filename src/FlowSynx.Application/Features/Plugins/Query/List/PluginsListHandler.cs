@@ -37,6 +37,7 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
             {
                 Id = p.Id,
                 Type = p.Type,
+                Version = p.Version,
                 Description = p.Description,
             });
             return await Result<IEnumerable<PluginsListResponse>>.SuccessAsync(response);

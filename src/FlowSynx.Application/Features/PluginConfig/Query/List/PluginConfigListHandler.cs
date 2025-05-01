@@ -38,6 +38,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
                 Id = config.Id,
                 Name = config.Name,
                 Type = config.Type,
+                Version = config.Version,
                 ModifiedTime = config.LastModifiedOn
             });
             _logger.LogInformation(Resources.Feature_PluginConfig_ListRetrievedSuccessfully);

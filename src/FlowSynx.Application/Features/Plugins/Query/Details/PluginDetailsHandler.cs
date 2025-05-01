@@ -52,6 +52,7 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
             {
                 Id = plugin.Id,
                 Type = plugin.Type,
+                Version = plugin.Version,
                 Description = plugin.Description,
                 Specifications = specifications
             };

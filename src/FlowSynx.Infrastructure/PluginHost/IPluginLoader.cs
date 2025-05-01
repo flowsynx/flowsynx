@@ -1,8 +1,10 @@
-﻿using FlowSynx.PluginCore;
+﻿//using FlowSynx.PluginCore;
 
-namespace FlowSynx.Infrastructure.PluginHost;
+//namespace FlowSynx.Infrastructure.PluginHost;
 
-public interface IPluginLoader
-{
-    PluginHandle LoadPlugin(string pluginLocation);
-}
+//public interface IPluginLoader: IDisposable
+//{
+//    IPlugin Plugin { get; }
+//    bool IsUnloaded { get; }
+//    PluginHandle LoadPlugin(string pluginLocation);
+//}

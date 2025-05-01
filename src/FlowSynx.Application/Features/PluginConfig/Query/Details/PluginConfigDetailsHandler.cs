@@ -45,6 +45,7 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
                 Id = pluginConfig.Id,
                 Name = pluginConfig.Name,
                 Type = pluginConfig.Type,
+                Version = pluginConfig.Version,
                 Specifications = pluginConfig.Specifications,
             };
             _logger.LogInformation(string.Format(Resources.Feature_PluginConfig_DetailesRetrievedSuccessfully, configId));

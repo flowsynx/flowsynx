@@ -1,11 +1,6 @@
-﻿using FlowSynx.HealthCheck;
-using FlowSynx.Services;
-using FlowSynx.Application.Services;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
-using FlowSynx.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication;
-using FlowSynx.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -14,6 +9,12 @@ using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain.Log;
 using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Persistence.SQLite.Contexts;
+using FlowSynx.HealthCheck;
+using FlowSynx.Services;
+using FlowSynx.Application.Services;
+using FlowSynx.Middleware;
+using FlowSynx.Infrastructure.Extensions;
 
 namespace FlowSynx.Extensions;
 
@@ -58,10 +59,10 @@ public static class ServiceCollectionExtensions
         configuration.GetSection("Logger").Bind(loggerConfiguration);
         services.AddSingleton(loggerConfiguration);
 
-        var serviceProvider = services.BuildServiceProvider();
-        var httpContextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
-        var logService = serviceProvider.GetRequiredService<ILoggerService>();
-        var cancellationTokenSource = serviceProvider.GetRequiredService<CancellationTokenSource>();
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var httpContextAccessor = serviceProviderScope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+        var logService = serviceProviderScope.ServiceProvider.GetRequiredService<ILoggerService>();
+        var cancellationTokenSource = serviceProviderScope.ServiceProvider.GetRequiredService<CancellationTokenSource>();
 
         var cancellationToken = cancellationTokenSource.Token;
         var logLevel = loggerConfiguration.Level.ToLogLevel();
@@ -74,13 +75,30 @@ public static class ServiceCollectionExtensions
             options.CancellationToken = cancellationToken;
         }));
 
+        services.EnsureLogDatabaseCreated();
         services.AddLogging(builder => builder.AddDatabaseLogger(options =>
         {
-            options.MinLevel = logLevel;
+            options.MinLevel = LogLevel.Debug;
             options.CancellationToken = cancellationToken;
         }, httpContextAccessor, logService));
 
         return services;
+    }
+
+    private static IServiceCollection EnsureLogDatabaseCreated(this IServiceCollection services)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var context = serviceProviderScope.ServiceProvider.GetRequiredService<LoggerContext>();
+
+        try
+        {
+            var result = context.Database.EnsureCreated();
+            return services;
+        }
+        catch (Exception ex)
+        {
+            throw new FlowSynxException((int)ErrorCode.LoggerCreation, $"Error occurred while creating the logger: {ex.Message}");
+        }
     }
 
     private static LogLevel ToLogLevel(this string logsLevel)
@@ -121,8 +139,8 @@ public static class ServiceCollectionExtensions
     {
         try
         {
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+            var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
             var openApiConfiguration = new OpenApiConfiguration();
             configuration.GetSection("OpenApi").Bind(openApiConfiguration);
@@ -236,8 +254,8 @@ public static class ServiceCollectionExtensions
     {
         try
         {
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+            var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
             logger.LogInformation("Initializing security");
 
@@ -330,8 +348,8 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection ParseArguments(this IServiceCollection services, string[] args)
     {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         bool hasStartArgument = args.Contains("--start");
         if (!hasStartArgument)

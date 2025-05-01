@@ -63,7 +63,6 @@ try
        .UseRouting()
        .UseAuthentication()
        .UseAuthorization()
-       .EnsureLogDatabaseCreated()
        .EnsureApplicationDatabaseCreated()
        .UseApplicationDataSeeder()
        .UseHealthCheck();

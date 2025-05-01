@@ -51,10 +51,5 @@ public class PluginConfigEntityConfiguration : IEntityTypeConfiguration<PluginCo
         builder.Property(e => e.Specifications)
                .HasColumnType("jsonb")
                .HasConversion(dictionaryConverter, dictionaryComparer);
-
-        builder.HasOne(we => we.Plugin)
-               .WithMany(w => w.PluginConfigurations)
-               .HasForeignKey(we => we.PluginId)
-               .OnDelete(DeleteBehavior.Cascade);
     }
 }

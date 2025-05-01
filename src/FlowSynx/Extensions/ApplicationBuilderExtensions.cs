@@ -100,25 +100,6 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder EnsureLogDatabaseCreated(this IApplicationBuilder app)
-    {
-        using var serviceScope = app.ApplicationServices.CreateScope();
-        var context = serviceScope.ServiceProvider.GetRequiredService<LoggerContext>();
-
-        try
-        {
-            var result = context.Database.EnsureCreated();
-            var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogInformation("Logger loaded successfully.");
-
-            return app;
-        }
-        catch (Exception ex)
-        {
-            throw new FlowSynxException((int)ErrorCode.LoggerCreation, $"Error occurred while creating the logger: {ex.Message}");
-        }
-    }
-
     public static IApplicationBuilder EnsureApplicationDatabaseCreated(this IApplicationBuilder app)
     {
         using var serviceScope = app.ApplicationServices.CreateScope();

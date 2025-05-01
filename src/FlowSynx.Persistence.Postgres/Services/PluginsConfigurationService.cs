@@ -45,7 +45,6 @@ public class PluginConfigurationService : IPluginConfigurationService
         {
             using var context = _appContextFactory.CreateDbContext();
             return await context.PluginConfiguration
-                .Include(x=>x.Plugin)
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == configId && x.IsDeleted == false, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -63,7 +62,6 @@ public class PluginConfigurationService : IPluginConfigurationService
         {
             using var context = _appContextFactory.CreateDbContext();
             return await context.PluginConfiguration
-                .Include(x => x.Plugin)
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.Name.ToLower() == configName.ToLower() && x.IsDeleted == false,
                 cancellationToken)
                 .ConfigureAwait(false);

@@ -232,7 +232,7 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error loading {0}: {1}..
+        ///   Looks up a localized string similar to Error loading: {0}..
         /// </summary>
         internal static string PluginManager_Install_ErrorLoading {
             get {
@@ -268,7 +268,7 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to &apos;{pluginType}&apos; version &apos;{version}&apos; is uninstalled successfully..
+        ///   Looks up a localized string similar to &apos;{0}&apos; version &apos;{1}&apos; is uninstalled successfully..
         /// </summary>
         internal static string PluginManager_PluginUninstalledSuccessfully {
             get {
@@ -295,11 +295,20 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Plugin &apos;{0}&apos; could be not found..
+        ///   Looks up a localized string similar to Plugin with type &apos;{0}&apos; and version &apos;{1}&apos; could be not found..
         /// </summary>
         internal static string PluginTypeService_PluginCouldNotFound {
             get {
                 return ResourceManager.GetString("PluginTypeService_PluginCouldNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Plugin with type &apos;{0}&apos; and version &apos;{1}&apos; could be not load..
+        /// </summary>
+        internal static string PluginTypeService_PluginCouldNotLoad {
+            get {
+                return ResourceManager.GetString("PluginTypeService_PluginCouldNotLoad", resourceCulture);
             }
         }
         

@@ -89,6 +89,11 @@ public enum ErrorCode
     PluginRegistryPluginNotFound                    = 2309,
     PluginAdd                                       = 2310,
     PluginDelete                                    = 2311,
+    PluginInstall                                   = 2312,
+    PluginUninstall                                 = 2313,
+    PluginInstallationNotFound                      = 2314,
+    PluginLoader                                    = 2315,
+    PluginCouldNotLoad                              = 2316,
     #endregion
 
     #region Workflow error codes

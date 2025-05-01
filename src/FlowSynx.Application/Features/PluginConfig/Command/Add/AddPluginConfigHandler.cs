@@ -19,8 +19,11 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginSpecificationsService _pluginSpecificationsService;
 
-    public AddPluginConfigHandler(ILogger<AddPluginConfigHandler> logger, IPluginService pluginService, 
-        IPluginConfigurationService pluginConfigurationService, ICurrentUserService currentUserService, 
+    public AddPluginConfigHandler(
+        ILogger<AddPluginConfigHandler> logger, 
+        IPluginService pluginService, 
+        IPluginConfigurationService pluginConfigurationService, 
+        ICurrentUserService currentUserService, 
         IPluginSpecificationsService pluginSpecificationsService)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -35,41 +38,34 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
         _pluginSpecificationsService = pluginSpecificationsService;
     }
 
-    public async Task<Result<AddPluginConfigResponse>> Handle(AddPluginConfigRequest request, CancellationToken cancellationToken)
+    public async Task<Result<AddPluginConfigResponse>> Handle(
+        AddPluginConfigRequest request, 
+        CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                    Resources.Authentication_Access_Denied);
 
-            var isTypeExist = await _pluginService.IsExist(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
-            if (!isTypeExist)
+            var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, 
+                request.Version, cancellationToken);
+            if (pluginEntity is null)
             {
-                var message = string.Format(Resources.Features_PluginConfig_Add_PluginCouldNotBeFound, request.Type, request.Version);
+                var message = string.Format(Resources.Features_PluginConfig_Add_PluginCouldNotBeFound, 
+                    request.Type, request.Version);
                 var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeNotFound, message);
                 _logger.LogError(errorMessage.ToString());
                 return await Result<AddPluginConfigResponse>.FailAsync(errorMessage.ToString());
             }
 
-            var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, request.Version, cancellationToken);
-            var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, pluginEntity?.Specifications);
+            var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, 
+                pluginEntity?.Specifications);
             if (!isPluginSpecificationsValid.Valid)
-            {
                 return await Result<AddPluginConfigResponse>.FailAsync(isPluginSpecificationsValid.Messages!);
-            }
-
-            var pluginConfiguration = new PluginConfigurationEntity
-            {
-                Id = Guid.NewGuid(),
-                PluginId = pluginEntity.Id,
-                UserId = _currentUserService.UserId,
-                Name = request.Name,
-                Type = request.Type,
-                Version = request.Version,
-                Specifications = request.Specifications.ToPluginConfigurationSpecifications(),
-            };
-
-            var ispluginConfigurationExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, request.Name, cancellationToken);
+            
+            var ispluginConfigurationExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, 
+                request.Name, cancellationToken);
             if (ispluginConfigurationExist)
             {
                 var message = string.Format(Resources.Features_PluginConfig_Add_PluginConfigAlreadyExists, request.Name);
@@ -78,6 +74,15 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
                 return await Result<AddPluginConfigResponse>.FailAsync(errorMessage.ToString());
             }
 
+            var pluginConfiguration = new PluginConfigurationEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = _currentUserService.UserId,
+                Name = request.Name,
+                Type = request.Type,
+                Version = request.Version,
+                Specifications = request.Specifications.ToPluginConfigurationSpecifications(),
+            };
             await _pluginConfigurationService.Add(pluginConfiguration, cancellationToken);
             var response = new AddPluginConfigResponse 
             { 
@@ -85,7 +90,8 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
                 Name = pluginConfiguration.Name 
             };
 
-            return await Result<AddPluginConfigResponse>.SuccessAsync(response, Resources.Feature_PluginConfig_Add_AddedSuccessfully);
+            return await Result<AddPluginConfigResponse>.SuccessAsync(response, 
+                Resources.Feature_PluginConfig_Add_AddedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

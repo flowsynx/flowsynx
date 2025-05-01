@@ -7,7 +7,6 @@ using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Application.Serialization;
-using System.Security.Cryptography;
 using FlowSynx.Plugins.LocalFileSystem;
 
 namespace FlowSynx.Infrastructure.PluginHost;
@@ -20,11 +19,18 @@ public class PluginTypeService : IPluginTypeService
     private readonly IJsonDeserializer _deserializer;
     private readonly IJsonSerializer _serializer;
     private readonly IPluginCacheService _pluginCacheService;
-    private readonly IPluginLoader _pluginLoader;
+    //private readonly IPluginLoader _pluginLoader;
+    private readonly IPluginCacheKeyGeneratorService _pluginCacheKeyGeneratorService;
 
-    public PluginTypeService(ILogger<PluginTypeService> logger, IPluginConfigurationService pluginConfigurationService, 
-        IPluginService pluginService, IJsonDeserializer deserializer, IJsonSerializer serializer, 
-        IPluginCacheService pluginCacheService, IPluginLoader pluginLoader)
+    public PluginTypeService(
+        ILogger<PluginTypeService> logger, 
+        IPluginConfigurationService pluginConfigurationService, 
+        IPluginService pluginService, 
+        IJsonDeserializer deserializer, 
+        IJsonSerializer serializer, 
+        IPluginCacheService pluginCacheService, 
+        //IPluginLoader pluginLoader,
+        IPluginCacheKeyGeneratorService pluginCacheKeyGeneratorService)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginConfigurationService);
@@ -32,14 +38,16 @@ public class PluginTypeService : IPluginTypeService
         ArgumentNullException.ThrowIfNull(deserializer);
         ArgumentNullException.ThrowIfNull(serializer);
         ArgumentNullException.ThrowIfNull(pluginCacheService);
-        ArgumentNullException.ThrowIfNull(pluginLoader);
+        //ArgumentNullException.ThrowIfNull(pluginLoader);
+        ArgumentNullException.ThrowIfNull(pluginCacheKeyGeneratorService);
         _logger = logger;
         _pluginConfigurationService = pluginConfigurationService;
         _pluginService = pluginService;
         _deserializer = deserializer;
         _serializer = serializer;
         _pluginCacheService = pluginCacheService;
-        _pluginLoader = pluginLoader;
+        //_pluginLoader = pluginLoader;
+        _pluginCacheKeyGeneratorService = pluginCacheKeyGeneratorService;
     }
 
     public Task<IPlugin> Get(string userId, object? type, CancellationToken cancellationToken)
@@ -58,26 +66,20 @@ public class PluginTypeService : IPluginTypeService
         }
     }
 
-    public Task<IPlugin> Resolve(string userId, object? type, CancellationToken cancellationToken)
-    {
-        return type is string str
-            ? ResolveByConfig(userId, str, cancellationToken)
-            : ResolveByType(userId, type, cancellationToken);
-    }
-
     private async Task<IPlugin> ResolveByConfig(string userId, string? configName, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(configName))
             return await GetLocalPlugin(userId);
 
-        if (!await _pluginConfigurationService.IsExist(userId, configName, cancellationToken))
-            throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, 
+        var config = await _pluginConfigurationService.Get(userId, configName, cancellationToken) 
+            ?? throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, 
                 string.Format(Resources.PluginTypeService_ConfigurationCouldNotFound, configName));
 
-        var config = await _pluginConfigurationService.Get(userId, configName, cancellationToken);
-        var pluginEntity = await _pluginService.Get(userId, config.Type, config.Version, cancellationToken);
-        var specs = config.Specifications.ToPluginSpecifications();
+        var pluginEntity = await _pluginService.Get(userId, config.Type, config.Version, cancellationToken) 
+            ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, 
+                string.Format(Resources.PluginTypeService_PluginCouldNotFound, config.Type, config.Version));
 
+        var specs = config.Specifications.ToPluginSpecifications();
         return await GetOrLoadPlugin(pluginEntity, configName, specs, cancellationToken);
     }
 
@@ -90,68 +92,67 @@ public class PluginTypeService : IPluginTypeService
         if (string.IsNullOrEmpty(typeConfig.Plugin))
             return await GetLocalPlugin(userId);
 
-        var pluginEntity = await _pluginService.Get(userId, typeConfig.Plugin, typeConfig.Version, cancellationToken);
+        var pluginEntity = await _pluginService.Get(userId, typeConfig.Plugin, typeConfig.Version, cancellationToken)
+            ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
+                string.Format(Resources.PluginTypeService_PluginCouldNotFound, typeConfig.Plugin, typeConfig.Version));
+
         return await GetOrLoadPlugin(pluginEntity, typeConfig.Plugin, typeConfig.Specifications, cancellationToken);
     }
 
     private async Task<IPlugin> GetLocalPlugin(string userId)
     {
         var localFileSystemPlugin = new LocalFileSystemPlugin();
-        var key = GenerateKey(localFileSystemPlugin.Metadata.Id, userId, "LocalFileSystem", null);
-        var cached = _pluginCacheService.Get(key);
 
+        var pluginType = localFileSystemPlugin.Metadata.Type;
+        var pluginVersion = localFileSystemPlugin.Metadata.Version.ToString();
+
+        var key = _pluginCacheKeyGeneratorService.GenerateKey(userId, pluginType, pluginVersion, null);
+
+        var cached = _pluginCacheService.Get(key);
         if (cached != null)
-            return cached;
-        
+            return cached.Plugin;
+
+        var index = new PluginCacheIndex(userId, pluginType, pluginVersion);
         await localFileSystemPlugin.Initialize(new PluginLoggerAdapter(_logger));
-        _pluginCacheService.Set(key, localFileSystemPlugin);
+        _pluginCacheService.Set(key, index, localFileSystemPlugin, TimeSpan.FromHours(2), TimeSpan.FromMinutes(15));
         return localFileSystemPlugin;
     }
 
-    private async Task<IPlugin> GetOrLoadPlugin(PluginEntity pluginEntity, string configName, PluginSpecifications? specifications, CancellationToken cancellationToken)
+    private async Task<IPlugin> GetOrLoadPlugin(
+        PluginEntity pluginEntity, 
+        string configName, 
+        PluginSpecifications? specifications, 
+        CancellationToken cancellationToken)
     {
-        var key = GenerateKey(pluginEntity.Id, pluginEntity.UserId, configName, specifications);
+        var userId = pluginEntity.UserId;
+        var pluginType = pluginEntity.Type;
+        var pluginVersion = pluginEntity.Version;
+
+        var key = _pluginCacheKeyGeneratorService.GenerateKey(userId, pluginType, pluginVersion, specifications);
+
         var cached = _pluginCacheService.Get(key);
-
         if (cached != null)
-            return cached;
+            return cached.Plugin;
 
-        var pluginHandle = _pluginLoader.LoadPlugin(pluginEntity.PluginLocation);
-        if (!pluginHandle.Success)
-            throw new FlowSynxException((int)ErrorCode.PluginNotFound, string.Format(Resources.PluginTypeService_PluginCouldNotFound, pluginEntity.Name));
-        
-        var plugin = pluginHandle.Instance;
-        plugin.Specifications = specifications;
-        await plugin.Initialize(new PluginLoggerAdapter(_logger));
-        _pluginCacheService.Set(key, plugin);
-        return plugin;
-    }
-
-    private string GenerateKey(Guid pluginId, string userId, string configName, object? specifications)
-    {
-        var key = $"{pluginId}-{userId}-{configName}";
-        if (specifications != null)
-            key += $"-{_serializer.Serialize(specifications)}";
-
-        return HashKey(key);
-    }
-
-    private string HashKey(string? key)
-    {
         try
         {
-            if (string.IsNullOrEmpty(key))
-                return string.Empty;
+            var pluginResult = new PluginLoader(pluginEntity.PluginLocation);
+            //if (!pluginResult.Succeeded)
+            //    throw new FlowSynxException((int)ErrorCode.PluginLoader, string.Join(Environment.NewLine, pluginResult.ErrorMessage));
 
-            using var hasher = MD5.Create();
-            var inputBytes = System.Text.Encoding.ASCII.GetBytes(key);
-            var hashBytes = hasher.ComputeHash(inputBytes);
+            //if (pluginResult.PluginInstance == null)
+            //    throw new FlowSynxException((int)ErrorCode.PluginNotFound, "Plugin not found.");
 
-            return Convert.ToHexString(hashBytes);
+            var index = new PluginCacheIndex(userId, pluginType, pluginVersion);
+            pluginResult.Plugin.Specifications = specifications;
+            await pluginResult.Plugin.Initialize(new PluginLoggerAdapter(_logger));
+            _pluginCacheService.Set(key, index, pluginResult.Plugin, TimeSpan.FromHours(2), TimeSpan.FromMinutes(15));
+            return pluginResult.Plugin;
         }
-        catch
+        catch (Exception)
         {
-            return string.Empty;
+            throw new FlowSynxException((int)ErrorCode.PluginCouldNotLoad, 
+                string.Format(Resources.PluginTypeService_PluginCouldNotLoad, pluginEntity.Name, pluginEntity.Version));
         }
     }
 }

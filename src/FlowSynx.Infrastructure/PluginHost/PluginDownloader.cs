@@ -84,7 +84,7 @@ public class PluginDownloader : IPluginDownloader
     {
         if (!Directory.Exists(directoryPath))
         {
-            _logger.LogWarning(string.Format(Resources.Plugin_Download_Extraction_DirectoryNotFound, directoryPath));
+            _logger.LogDebug(string.Format(Resources.Plugin_Download_Extraction_DirectoryNotFound, directoryPath));
             return;
         }
 

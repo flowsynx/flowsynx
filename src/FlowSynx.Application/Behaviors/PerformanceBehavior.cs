@@ -27,7 +27,7 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
             var message = string.Format(Resources.PerformanceBehavior_LongRunning_Request, 
                 typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
             var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorPerformanceLongRunning, message);;
-            _logger.LogWarning(errorMessage.ToString());
+            _logger.LogDebug(errorMessage.ToString());
         }
 
         return response;

@@ -145,7 +145,7 @@
     <value>Checksum validation failed. Package may be corrupted or tampered with.</value>
   </data>
   <data name="PluginManager_Install_ErrorLoading" xml:space="preserve">
-    <value>Error loading {0}: {1}.</value>
+    <value>Error loading: {0}.</value>
   </data>
   <data name="PluginManager_Install_PluginInstalledSuccessfully" xml:space="preserve">
     <value>Plugin '{0}' v{1} installed successfully.</value>
@@ -157,7 +157,7 @@
     <value>The plugin type '{0}' with version '{1}' not found!</value>
   </data>
   <data name="PluginManager_PluginUninstalledSuccessfully" xml:space="preserve">
-    <value>'{pluginType}' version '{version}' is uninstalled successfully.</value>
+    <value>'{0}' version '{1}' is uninstalled successfully.</value>
   </data>
   <data name="PluginServiceCouldNotFoundPlugin" xml:space="preserve">
     <value>Plugin {0} could not found!</value>
@@ -166,7 +166,10 @@
     <value>Configuration '{0}' could be not found.</value>
   </data>
   <data name="PluginTypeService_PluginCouldNotFound" xml:space="preserve">
-    <value>Plugin '{0}' could be not found.</value>
+    <value>Plugin with type '{0}' and version '{1}' could be not found.</value>
+  </data>
+  <data name="PluginTypeService_PluginCouldNotLoad" xml:space="preserve">
+    <value>Plugin with type '{0}' and version '{1}' could be not load.</value>
   </data>
   <data name="Plugin_Download_Extraction_AllFilesDeletedSuccessfully" xml:space="preserve">
     <value>All files deleted successfully.</value>

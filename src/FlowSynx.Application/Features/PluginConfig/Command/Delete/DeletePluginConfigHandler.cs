@@ -14,7 +14,9 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
     private readonly IPluginConfigurationService _pluginConfigurationService;
     private readonly ICurrentUserService _currentUserService;
 
-    public DeletePluginConfigHandler(ILogger<DeletePluginConfigHandler> logger, ICurrentUserService currentUserService, 
+    public DeletePluginConfigHandler(
+        ILogger<DeletePluginConfigHandler> logger, 
+        ICurrentUserService currentUserService, 
         IPluginConfigurationService pluginConfigurationService)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -25,15 +27,19 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
         _pluginConfigurationService = pluginConfigurationService;
     }
 
-    public async Task<Result<Unit>> Handle(DeletePluginConfigRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(
+        DeletePluginConfigRequest request, 
+        CancellationToken cancellationToken)
     {
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                    Resources.Authentication_Access_Denied);
 
             var configId = Guid.Parse(request.Id);
-            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
+            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, 
+                cancellationToken);
             if (pluginConfiguration == null)
             {
                 var message = string.Format(Resources.Feature_PluginConfig_Delete_ConfigIdNotFound, configId);
