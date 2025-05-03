@@ -11,5 +11,5 @@ public class WorkflowTriggerEntity : AuditableEntity<Guid>, ISoftDeletable
     public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
     public bool IsDeleted { get; set; } = false;
 
-    public WorkflowEntity Workflow { get; set; }
+    public WorkflowEntity? Workflow { get; set; }
 }

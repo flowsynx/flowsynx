@@ -9,6 +9,6 @@ public class WorkflowExecutionEntity : AuditableEntity<Guid>, ISoftDeletable
     public DateTime? ExecutionEnd { get; set; }
     public bool IsDeleted { get; set; } = false;
 
-    public WorkflowEntity Workflow { get; set; }
+    public WorkflowEntity? Workflow { get; set; }
     public List<WorkflowTaskExecutionEntity> TaskExecutions { get; set; } = new();
 }
