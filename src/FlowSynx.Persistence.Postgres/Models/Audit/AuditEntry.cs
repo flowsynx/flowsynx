@@ -4,16 +4,11 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FlowSynx.Persistence.Postgres.Models.Audit;
 
-public class AuditEntry
+public class AuditEntry(EntityEntry entry, string userId, string tableName)
 {
-    public AuditEntry(EntityEntry entry)
-    {
-        Entry = entry;
-    }
-
-    public EntityEntry Entry { get; }
-    public string UserId { get; set; }
-    public string TableName { get; set; }
+    public EntityEntry Entry { get; } = entry;
+    public string UserId { get; set; } = userId;
+    public string TableName { get; set; } = tableName;
     public Dictionary<string, object> KeyValues { get; } = new();
     public Dictionary<string, object> OldValues { get; } = new();
     public Dictionary<string, object> NewValues { get; } = new();
