@@ -9,12 +9,7 @@ namespace FlowSynx.Infrastructure.UnitTests.Serialization;
 
 public class JsonSerializerTests
 {
-    private readonly FakeLogger<JsonSerializer> _logger;
-
-    public JsonSerializerTests()
-    {
-        _logger = new FakeLogger<JsonSerializer>();
-    }
+    private readonly FakeLogger<JsonSerializer> _logger = new();
 
     [Fact]
     public void Serialize_ShouldThrowFlowSynxException_WhenInputIsNull()
@@ -71,7 +66,7 @@ public class JsonSerializerTests
     {
         // Arrange
         var jsonSerializer = new JsonSerializer(_logger);
-        var invalidInput = new UnserializableClass { SomeAction = () => Console.WriteLine("Hello") };
+        var invalidInput = new UnSerializableClass { SomeAction = () => Console.WriteLine(@"Hello") };
 
         // Act & Assert
         var exception = Assert.Throws<FlowSynxException>(() => jsonSerializer.Serialize(invalidInput));
@@ -82,11 +77,11 @@ public class JsonSerializerTests
 
     public class Person
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public int Age { get; set; }
     }
 
-    public class UnserializableClass
+    public class UnSerializableClass
     {
         public Action? SomeAction { get; set; } // Action cannot be serialized
     }

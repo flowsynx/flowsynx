@@ -45,7 +45,7 @@ public class JsonDeserializerTests
     public void Deserialize_ShouldThrowFlowSynxException_WhenInputIsEmpty()
     {
         // Arrange
-        string input = string.Empty;
+        var input = string.Empty;
 
         // Act
         var exception = Assert.Throws<FlowSynxException>(() => _jsonDeserializer.Deserialize<object>(input));
@@ -60,7 +60,7 @@ public class JsonDeserializerTests
     public void Deserialize_ShouldDeserializeObject_WhenValidJson()
     {
         // Arrange
-        string input = "{\"name\":\"Amin Ziagham\",\"age\":30}";
+        var input = "{\"name\":\"Amin Ziagham\",\"age\":30}";
 
         // Act
         var result = _jsonDeserializer.Deserialize<Person>(input);
@@ -75,7 +75,7 @@ public class JsonDeserializerTests
     public void Deserialize_ShouldApplyIndentedFormatting_WhenConfigurationIsSetToIndented()
     {
         // Arrange
-        string input = "{\"name\":\"Amin Ziagham\",\"age\":30}";
+        var input = "{\"name\":\"Amin Ziagham\",\"age\":30}";
         var config = new JsonSerializationConfiguration { Indented = true };
 
         // Act
@@ -91,7 +91,7 @@ public class JsonDeserializerTests
     public void Deserialize_ShouldHandleSerializationException_WhenJsonIsInvalid()
     {
         // Arrange
-        string invalidJson = "{\"name\":\"Amin Ziagham\", \"age\":}";
+        var invalidJson = "{\"name\":\"Amin Ziagham\", \"age\":}";
 
         // Act
         var exception = Assert.Throws<FlowSynxException>(() => _jsonDeserializer.Deserialize<Person>(invalidJson));
@@ -104,7 +104,7 @@ public class JsonDeserializerTests
 
     public class Person
     {
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public int Age { get; set; }
     }
 }

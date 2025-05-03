@@ -37,7 +37,7 @@ public class PerformanceBehaviorTests
 
         // Assert
         Assert.NotEmpty(_logger.Collector.GetSnapshot());
-        Assert.Contains(_logger.Collector.GetSnapshot(), e => e.Level == LogLevel.Warning && e.Message.Contains("took"));
+        Assert.Contains(_logger.Collector.GetSnapshot(), e => e.Level == LogLevel.Debug && e.Message.Contains("took"));
     }
 
     [Fact]
