@@ -10,23 +10,15 @@ internal static class DirectoryInfoExtensions
     public static IEnumerable<FileInfo> FindFiles(this DirectoryInfo directoryInfo, IPluginLogger logger, ListParameters listParameters)
     {
         if (directoryInfo == null)
-            throw new ArgumentNullException(nameof(directoryInfo), "DirectoryInfo cannot be null.");
+            throw new ArgumentNullException(nameof(directoryInfo), @"DirectoryInfo cannot be null.");
 
         if (!directoryInfo.Exists)
             throw new DirectoryNotFoundException($"The directory '{directoryInfo.FullName}' does not exist.");
 
-        IEnumerable<FileInfo> files;
-        try
-        {
-            var searchOption = listParameters.Recurse is true ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-            files = directoryInfo.EnumerateFiles("*", searchOption);
-        }
-        catch (Exception ex) 
-        {
-            throw;
-        }
+        var searchOption = listParameters.Recurse is true ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+        var files = directoryInfo.EnumerateFiles("*", searchOption);
 
-        List<FileInfo> result = new List<FileInfo>();
+        var result = new List<FileInfo>();
         Regex? regex = null;
         if (!string.IsNullOrEmpty(listParameters.Filter))
         {
@@ -38,24 +30,24 @@ internal static class DirectoryInfoExtensions
         {
             try 
             {
-                int resultCount = 0;
+                var resultCount = 0;
                 var isMatched = regex != null && regex.IsMatch(file.FullName);
-                if (listParameters.Filter == null || isMatched)
-                {
-                    result.Add(file);
-                    resultCount++;
 
-                    // Stop once we reach the maxResults
-                    if (listParameters.MaxResults.HasValue && resultCount >= listParameters.MaxResults)
-                    {
-                        break;
-                    }
+                if (listParameters.Filter != null && !isMatched) 
+                    continue;
+
+                result.Add(file);
+                resultCount++;
+
+                // Stop once we reach the maxResults
+                if (listParameters.MaxResults.HasValue && resultCount >= listParameters.MaxResults)
+                {
+                    break;
                 }
             }
             catch (Exception ex) 
             {
                 logger.LogError(ex.Message);
-                continue; 
             }
         }
 

@@ -298,7 +298,7 @@ internal class LocalFileManager : ILocalFileManager
         string path, 
         string data)
     {
-        var root = Path.GetPathRoot(path);
+        var root = Path.GetPathRoot(path) ?? string.Empty;
         var relativePath = Path.GetRelativePath(root, path);
         var dataBytesArray = data.IsBase64String() ? data.Base64ToByteArray() : data.ToByteArray();
 
