@@ -45,7 +45,7 @@ public class JsonDeserializer : IJsonDeserializer
             if (configuration.Converters is not null)
                 settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
 
-            return JsonConvert.DeserializeObject<T>(input, settings);
+            return JsonConvert.DeserializeObject<T>(input, settings)!;
         }
         catch (Exception ex)
         {

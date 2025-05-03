@@ -1,13 +1,16 @@
 ﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
-using FlowSynx.Application.PluginHost;
+using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.PluginHost.Cache;
+using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
+using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Infrastructure.PluginHost;
+namespace FlowSynx.Infrastructure.PluginHost.Manager;
 
 public class PluginManager : IPluginManager
 {
@@ -17,26 +20,27 @@ public class PluginManager : IPluginManager
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginService _pluginService;
     private readonly IPluginDownloader _pluginDownloader;
-    //private readonly IPluginLoader _pluginLoader;
     private readonly IPluginCacheService _pluginCacheService;
+    private const string PluginSearchPattern = "*.dll";
 
     public PluginManager(
         ILogger<PluginManager> logger,
         PluginRegistryConfiguration pluginRegistryConfiguration,
-        IPluginsLocation pluginsLocation, 
-        ICurrentUserService currentUserService, 
+        IPluginsLocation pluginsLocation,
+        ICurrentUserService currentUserService,
         IPluginService pluginService,
-        IPluginDownloader pluginDownloader, 
-        //IPluginLoader pluginLoader,
+        IPluginDownloader pluginDownloader,
         IPluginCacheService pluginCacheService)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(pluginRegistryConfiguration);
+        ArgumentNullException.ThrowIfNull(pluginsLocation);
         _logger = logger;
         _pluginRegistryConfiguration = pluginRegistryConfiguration;
         _pluginsLocation = pluginsLocation;
         _currentUserService = currentUserService;
         _pluginService = pluginService;
         _pluginDownloader = pluginDownloader;
-        //_pluginLoader = pluginLoader;
         _pluginCacheService = pluginCacheService;
     }
 
@@ -57,7 +61,7 @@ public class PluginManager : IPluginManager
         int installedCount = await InstallPluginAssemblies(pluginDirectory, pluginMetadata, cancellationToken);
 
         if (installedCount == 0)
-            throw new FlowSynxException((int)ErrorCode.PluginInstallationNotFound, 
+            throw new FlowSynxException((int)ErrorCode.PluginInstallationNotFound,
                 "No plugin was installed from the package.");
     }
 
@@ -81,15 +85,13 @@ public class PluginManager : IPluginManager
         {
             var index = new PluginCacheIndex(_currentUserService.UserId, pluginEntity.Type, pluginEntity.Version);
             _pluginCacheService.RemoveByIndex(index);
+            await Task.Delay(1000, cancellationToken);
 
             var parentLocation = Directory.GetParent(pluginEntity.PluginLocation);
-            if (parentLocation != null)
+            if (parentLocation is { Exists: true })
             {
-                if (parentLocation.Exists)
-                {
-                    RemoveReadOnlyAttribute(parentLocation);
-                    parentLocation.Delete(true);
-                }
+                RemoveReadOnlyAttribute(parentLocation);
+                parentLocation.Delete(true);
             }
 
             await _pluginService.Delete(pluginEntity, cancellationToken);
@@ -110,7 +112,7 @@ public class PluginManager : IPluginManager
 
         var errorMessage = new ErrorMessage(
             (int)ErrorCode.PluginCheckExistence,
-            string.Format(Resources.PluginManager_Install_PluginIsAlreadyExist, pluginType, pluginVersion)
+            string.Format(Resources.PluginManager_Install_PluginIsAlreadyInstalled, pluginType, pluginVersion)
         );
 
         throw new FlowSynxException(errorMessage);
@@ -142,30 +144,32 @@ public class PluginManager : IPluginManager
         PluginInstallMetadata metadata,
         CancellationToken cancellationToken)
     {
-        int count = 0;
+        var count = 0;
 
-        foreach (var dllPath in Directory.GetFiles(pluginDirectory, "*.dll"))
+        foreach (var dllPath in Directory.GetFiles(pluginDirectory, PluginSearchPattern))
         {
-            PluginLoader? pluginLoader = null;
+            var loader = new TransientPluginLoader(dllPath);
             try
             {
-                pluginLoader = new PluginLoader(dllPath);
-                var pluginEntity = CreatePluginEntity(metadata, dllPath, pluginLoader);
+                loader.Load();
+                var pluginEntity = CreatePluginEntity(metadata, dllPath, loader.Plugin);
                 await _pluginService.Add(pluginEntity, cancellationToken);
                 _logger.LogInformation(string.Format(Resources.PluginManager_Install_PluginInstalledSuccessfully,
                     metadata.Type, metadata.Version));
 
                 count++;
-                
+            }
+            catch (FlowSynxException ex)
+            {
+                _logger.LogDebug(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogDebug(string.Format(Resources.PluginManager_Install_ErrorLoading, ex.Message));
-                continue;
             }
             finally
             {
-                pluginLoader?.Unload();
+                loader.Unload();
             }
         }
 
@@ -175,7 +179,7 @@ public class PluginManager : IPluginManager
     private PluginEntity CreatePluginEntity(
         PluginInstallMetadata metadata,
         string dllPath,
-        PluginLoader handle)
+        IPlugin plugin)
     {
         return new PluginEntity
         {
@@ -189,7 +193,7 @@ public class PluginManager : IPluginManager
             Author = metadata.Author,
             Description = metadata.Description,
             Type = metadata.Type,
-            Specifications = handle.Plugin.GetPluginSpecification()
+            Specifications = plugin.GetPluginSpecification()
         };
     }
 

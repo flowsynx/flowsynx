@@ -9,6 +9,9 @@ using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.PluginHost.Manager;
+using FlowSynx.Infrastructure.PluginHost.Cache;
+using FlowSynx.Application.PluginHost.Manager;
 
 namespace FlowSynx.Infrastructure.Extensions;
 

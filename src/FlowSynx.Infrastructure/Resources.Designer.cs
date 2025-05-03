@@ -250,11 +250,11 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; is already exist..
+        ///   Looks up a localized string similar to The plugin type &apos;{0}&apos; with version &apos;{1}&apos; is already installed..
         /// </summary>
-        internal static string PluginManager_Install_PluginIsAlreadyExist {
+        internal static string PluginManager_Install_PluginIsAlreadyInstalled {
             get {
-                return ResourceManager.GetString("PluginManager_Install_PluginIsAlreadyExist", resourceCulture);
+                return ResourceManager.GetString("PluginManager_Install_PluginIsAlreadyInstalled", resourceCulture);
             }
         }
         

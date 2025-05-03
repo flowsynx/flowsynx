@@ -1,39 +1,33 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using System.Collections.Concurrent;
+using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
+using Microsoft.Extensions.Caching.Memory;
 
-namespace FlowSynx.Infrastructure.PluginHost;
-
-using FlowSynx.PluginCore;
-using System.Collections.Concurrent;
+namespace FlowSynx.Infrastructure.PluginHost.Cache;
 
 public class PluginCacheService : IPluginCacheService
 {
-    private readonly IMemoryCache _cache;
+    private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
     private readonly ConcurrentDictionary<string, HashSet<string>> _keyIndex = new();
-    private readonly object _indexLock = new();
+    private readonly Lock _indexLock = new();
 
-    public PluginCacheService()
+    public IPluginLoader? Get(string key)
     {
-        _cache = new MemoryCache(new MemoryCacheOptions());
+        return _cache.TryGetValue(key, out IPluginLoader? value) ? value : null;
     }
 
-    public PluginLoader? Get(string key)
-    {
-        return _cache.TryGetValue(key, out PluginLoader? value) ? value : default;
-    }
-
-    public bool TryGetValue(string key, out PluginLoader? value)
+    public bool TryGetValue(string key, out IPluginLoader? value)
     {
         if (_cache.TryGetValue(key, out var raw))
         {
-            value = (PluginLoader?)raw;
+            value = (IPluginLoader?)raw;
             return true;
         }
 
-        value = default;
+        value = null;
         return false;
     }
 
-    public void Set(string key, PluginCacheIndex index, IPlugin value,
+    public void Set(string key, PluginCacheIndex index, IPluginLoader value,
         TimeSpan? absoluteExpiration = null, TimeSpan? slidingExpiration = null)
     {
         var options = new MemoryCacheEntryOptions();
@@ -75,8 +69,10 @@ public class PluginCacheService : IPluginCacheService
     {
         var indexKey = index.ToString();
 
-        if (_keyIndex.TryGetValue(indexKey, out var keys))
+        lock (_indexLock)
         {
+            if (!_keyIndex.TryGetValue(indexKey, out var keys)) return;
+
             foreach (var key in keys)
             {
                 _cache.Remove(key);
@@ -88,13 +84,13 @@ public class PluginCacheService : IPluginCacheService
 
     private void RegisterEvictionCallback(MemoryCacheEntryOptions options)
     {
-        options.RegisterPostEvictionCallback((evictedKey, evictedValue, reason, state) =>
+        options.RegisterPostEvictionCallback((_, evictedValue, reason, _) =>
         {
-            if (reason == EvictionReason.Expired || reason == EvictionReason.Removed)
+            if (reason is EvictionReason.Expired or EvictionReason.Removed)
             {
-                if (evictedValue is IPlugin pluginHandle)
+                if (evictedValue is IPluginLoader pluginHandle)
                 {
-                    pluginHandle = null;
+                    pluginHandle.Unload();
                 }
             }
         });

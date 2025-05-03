@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Infrastructure.PluginHost;
+﻿namespace FlowSynx.Infrastructure.PluginHost.Manager;
 
 public class PluginInstallMetadata
 {

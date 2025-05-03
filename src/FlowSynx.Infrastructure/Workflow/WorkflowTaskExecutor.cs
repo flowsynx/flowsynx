@@ -50,7 +50,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         using var timeoutCts = CreateTimeoutToken(task.Timeout, cancellationToken);
         var token = timeoutCts.Token;
 
-        var plugin = await _pluginTypeService.Get(userId, task.Type, cancellationToken).ConfigureAwait(false);
+        var plugin = await _pluginTypeService.Get(userId, task.Type, token).ConfigureAwait(false);
         var pluginParameters = PreparePluginParameters(task.Parameters, parser);
 
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
@@ -58,7 +58,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         try
         {
             token.ThrowIfCancellationRequested();
-            return await plugin.ExecuteAsync(pluginParameters, cancellationToken).ConfigureAwait(false);
+            return await plugin.ExecuteAsync(pluginParameters, token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
@@ -78,7 +78,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
             return result switch
             {
-                { ShouldRetry: true } => await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, cancellationToken),
+                { ShouldRetry: true } => await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, token),
                 { ShouldSkip: true } => null,
                 { ShouldAbortWorkflow: true } => throw new Exception(ex.Message),
                 _ => throw new Exception(ex.Message)

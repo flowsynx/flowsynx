@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.IO.Compression;
 using System.Security.Cryptography;
 
-namespace FlowSynx.Infrastructure.PluginHost;
+namespace FlowSynx.Infrastructure.PluginHost.Manager;
 
 public class PluginDownloader : IPluginDownloader
 {
@@ -13,9 +13,14 @@ public class PluginDownloader : IPluginDownloader
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJsonDeserializer _jsonDeserializer;
 
-    public PluginDownloader(ILogger<PluginDownloader> logger, IHttpClientFactory httpClientFactory,
+    public PluginDownloader(
+        ILogger<PluginDownloader> logger, 
+        IHttpClientFactory httpClientFactory,
         IJsonDeserializer jsonDeserializer)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _jsonDeserializer = jsonDeserializer;
@@ -40,15 +45,16 @@ public class PluginDownloader : IPluginDownloader
         var indexUrl = new Uri(mainUrl, "index.json");
         var response = await client.GetStringAsync(indexUrl);
         var plugins = _jsonDeserializer.Deserialize<List<PluginInstallMetadata>>(response);
-        var metadata = plugins.FirstOrDefault(x=>x.Type.ToLower() == pluginType.ToLower() && x.Version == pluginVersion);
+        var metadata = plugins
+            .FirstOrDefault(x => 
+                string.Equals(x.Type, pluginType, StringComparison.CurrentCultureIgnoreCase) && x.Version == pluginVersion);
 
-        if (metadata == null)
-        {
-            var message = string.Format(Resources.Plugin_Download_PluginNotFound, pluginType, pluginVersion);
-            throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
-        }
+        if (metadata != null) 
+            return metadata;
 
-        return metadata;
+        var message = string.Format(Resources.Plugin_Download_PluginNotFound, pluginType, pluginVersion);
+        throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
+
     }
 
     public async Task ExtractPluginAsync(string pluginDirectory, byte[] data, CancellationToken cancellationToken)
@@ -67,17 +73,15 @@ public class PluginDownloader : IPluginDownloader
 
     public bool ValidateChecksum(byte[] data, string expectedChecksum)
     {
-        string computedChecksum = ComputeChecksum(data);
+        var computedChecksum = ComputeChecksum(data);
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
     }
 
     private string ComputeChecksum(byte[] data)
     {
-        using (SHA256 sha256 = SHA256.Create())
-        {
-            byte[] hashBytes = sha256.ComputeHash(data);
-            return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
-        }
+        using SHA256 sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(data);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 
     private void DeleteAllFiles(string directoryPath)
@@ -110,19 +114,20 @@ public class PluginDownloader : IPluginDownloader
 
         foreach (var entry in archive.Entries)
         {
-            string destinationPath = Path.Combine(outputDirectory, entry.FullName);
+            var destinationPath = Path.Combine(outputDirectory, entry.FullName);
 
-            string? directoryPath = Path.GetDirectoryName(destinationPath);
+            var directoryPath = Path.GetDirectoryName(destinationPath);
             if (!string.IsNullOrEmpty(directoryPath))
                 Directory.CreateDirectory(directoryPath);
 
-            if (!string.IsNullOrEmpty(entry.Name))
-            {
-                using var entryStream = entry.Open();
-                using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, useAsync: true);
+            if (string.IsNullOrEmpty(entry.Name)) 
+                continue;
 
-                await entryStream.CopyToAsync(outputStream, cancellationToken);
-            }
+            using var entryStream = entry.Open();
+            using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, 
+                FileShare.None, 8192, useAsync: true);
+
+            await entryStream.CopyToAsync(outputStream, cancellationToken);
         }
     }
 }
