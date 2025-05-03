@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Models;
-using FlowSynx.Application.PluginHost;
+using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.PluginCore.Exceptions;

@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.PluginHost;
+﻿namespace FlowSynx.Application.PluginHost.Manager;
 
 public interface IPluginManager
 {
