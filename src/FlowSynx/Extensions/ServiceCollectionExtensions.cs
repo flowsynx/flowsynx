@@ -85,15 +85,14 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection EnsureLogDatabaseCreated(this IServiceCollection services)
+    private static void EnsureLogDatabaseCreated(this IServiceCollection services)
     {
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
         var context = serviceProviderScope.ServiceProvider.GetRequiredService<LoggerContext>();
 
         try
         {
-            var result = context.Database.EnsureCreated();
-            return services;
+            context.Database.EnsureCreated();
         }
         catch (Exception ex)
         {
@@ -139,9 +138,6 @@ public static class ServiceCollectionExtensions
     {
         try
         {
-            using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-            var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
             var openApiConfiguration = new OpenApiConfiguration();
             configuration.GetSection("OpenApi").Bind(openApiConfiguration);
             services.AddSingleton(openApiConfiguration);

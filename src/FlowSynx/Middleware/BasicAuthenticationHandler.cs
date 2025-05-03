@@ -9,20 +9,13 @@ using System.Net.Http.Headers;
 
 namespace FlowSynx.Middleware;
 
-public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+public class BasicAuthenticationHandler(
+    IOptionsMonitor<AuthenticationSchemeOptions> options,
+    ILoggerFactory logger,
+    UrlEncoder encoder,
+    SecurityConfiguration securityConfiguration)
+    : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
 {
-    private readonly SecurityConfiguration _securityConfiguration;
-
-    public BasicAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder,
-        SecurityConfiguration securityConfiguration)
-        : base(options, logger, encoder)
-    {
-        _securityConfiguration = securityConfiguration;
-    }
-
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         if (!Request.Headers.ContainsKey("Authorization"))
@@ -32,7 +25,7 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
 
         try
         {
-            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers.Authorization);
+            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers.Authorization!);
             if (authHeader.Scheme != "Basic")
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Scheme"));
 
@@ -44,7 +37,7 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
             var username = credentials[0];
             var password = credentials[1];
 
-            var users = _securityConfiguration.Basic.Users;
+            var users = securityConfiguration.Basic.Users;
             var user = users.FirstOrDefault(u => u.Name == username && u.Password == password);
             if (user == null)
                 return Task.FromResult(AuthenticateResult.Fail("Invalid Username or Password"));
