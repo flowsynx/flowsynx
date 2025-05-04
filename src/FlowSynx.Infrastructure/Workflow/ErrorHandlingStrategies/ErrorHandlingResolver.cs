@@ -42,7 +42,7 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
             BackoffStrategy = IsDefined(taskPolicy.BackoffStrategy) ? taskPolicy.BackoffStrategy : defaultPolicy.BackoffStrategy,
             InitialDelay = IsPositive(taskPolicy.InitialDelay) ? taskPolicy.InitialDelay : defaultPolicy.InitialDelay,
             MaxDelay = IsPositive(taskPolicy.MaxDelay) ? taskPolicy.MaxDelay : defaultPolicy.MaxDelay,
-            Factor = IsPositive(taskPolicy.Factor) ? taskPolicy.Factor : defaultPolicy.Factor
+            BackoffCoefficient = IsPositive(taskPolicy.BackoffCoefficient) ? taskPolicy.BackoffCoefficient : defaultPolicy.BackoffCoefficient
         };
     }
 

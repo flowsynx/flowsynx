@@ -30,14 +30,14 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
         {
             BackoffStrategy.Exponential => new ExponentialBackoffStrategy(
                 retryPolicy.InitialDelay,
-                retryPolicy.Factor
+                retryPolicy.BackoffCoefficient
             ),
             BackoffStrategy.Linear => new LinearBackoffStrategy(
                 retryPolicy.InitialDelay
             ),
             BackoffStrategy.Jitter => new JitterBackoffStrategy(
                 retryPolicy.InitialDelay,
-                retryPolicy.Factor
+                retryPolicy.BackoffCoefficient
             ),
             BackoffStrategy.Fixed => new FixedBackoffStrategy(
                 retryPolicy.InitialDelay
