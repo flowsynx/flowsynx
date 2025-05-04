@@ -18,25 +18,24 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
 
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
-        if (_validators.Any())
-        {
-            var context = new ValidationContext<TRequest>(request);
+        if (!_validators.Any()) 
+            return await next(cancellationToken);
 
-            var validationResults = await Task.WhenAll(
-                _validators.Select(v =>
-                    v.ValidateAsync(context, cancellationToken)));
+        var context = new ValidationContext<TRequest>(request);
 
-            var failures = validationResults
-                .Where(r => r.Errors.Any())
-                .SelectMany(r => r.Errors)
-                .ToList();
+        var validationResults = await Task.WhenAll(
+            _validators.Select(v =>
+                v.ValidateAsync(context, cancellationToken)));
 
-            if (failures.Any())
-            {
-                var errorMessages = string.Join(", ", failures.Select(x=>x.ErrorMessage));
-                throw new FlowSynxException((int)ErrorCode.InputValidation, errorMessages);
-            }
-        }
-        return await next();
+        var failures = validationResults
+            .Where(result => result.Errors.Any())
+            .SelectMany(result => result.Errors)
+            .ToList();
+
+        if (!failures.Any()) 
+            return await next(cancellationToken);
+
+        var errorMessages = string.Join(", ", failures.Select(x=>x.ErrorMessage));
+        throw new FlowSynxException((int)ErrorCode.InputValidation, errorMessages);
     }
 }

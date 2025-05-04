@@ -25,7 +25,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.Plugins
                 .Where(c => c.UserId == userId && c.IsDeleted == false)
                 .ToListAsync(cancellationToken: cancellationToken)
@@ -45,7 +45,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Plugins
                 .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == pluginId && !x.IsDeleted, cancellationToken)
                 .ConfigureAwait(false);
@@ -62,7 +62,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Plugins
                 .FirstOrDefaultAsync(
                     x => x.UserId == userId 
@@ -83,7 +83,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.Plugins
                 .FirstOrDefaultAsync(
                     x => x.UserId == userId 
@@ -106,7 +106,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             await context.Plugins
                 .AddAsync(pluginEntity, cancellationToken)
                 .ConfigureAwait(false);
@@ -127,7 +127,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Plugins.Remove(pluginEntity);
             context.SoftDelete(pluginEntity);
 
@@ -149,7 +149,7 @@ public class PluginService : IPluginService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Database.CanConnectAsync(cancellationToken);
         }
         catch

@@ -29,6 +29,11 @@ public class ApplicationContext : AuditableContext
         IJsonDeserializer jsonDeserializer)
         : base(contextOptions)
     {
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+        ArgumentNullException.ThrowIfNull(systemClock);
+        ArgumentNullException.ThrowIfNull(jsonSerializer);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(logger);
         _httpContextAccessor = httpContextAccessor;
         _systemClock = systemClock;
         _jsonSerializer = jsonSerializer;
@@ -126,7 +131,7 @@ public class ApplicationContext : AuditableContext
             base.OnModelCreating(builder);
             builder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
             builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer));
-            builder.ApplyConfiguration(new WorkflowEntityfiguration());
+            builder.ApplyConfiguration(new WorkflowEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowTriggerEntityConfiguration(_jsonSerializer, _jsonDeserializer));

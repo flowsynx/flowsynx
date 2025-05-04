@@ -11,6 +11,7 @@ public class FlowSynxVersion : IVersion
 
     public FlowSynxVersion(ILogger<FlowSynxVersion> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
@@ -21,7 +22,10 @@ public class FlowSynxVersion : IVersion
     {
         try
         {
-            var attributes = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+            var attributes = Assembly
+                .GetExecutingAssembly()
+                .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
+
             return attributes.Length == 0 ? "" : ((AssemblyInformationalVersionAttribute)attributes[0]).InformationalVersion;
         }
         catch (Exception ex)

@@ -31,9 +31,6 @@ public static class TypeExtensions
         if (type == typeof(bool))
             return "Boolean";
 
-        if (type == typeof(object))
-            return "Object";
-
         return "Object";
     }
 }

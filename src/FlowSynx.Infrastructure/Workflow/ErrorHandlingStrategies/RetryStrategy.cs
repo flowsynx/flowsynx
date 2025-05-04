@@ -3,26 +3,15 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 
-public class RetryStrategy : IErrorHandlingStrategy
+public class RetryStrategy(int maxRetries, IBackoffStrategy backoffStrategy, ILogger logger) : IErrorHandlingStrategy
 {
-    private readonly int _maxRetries;
-    private readonly IBackoffStrategy _backoffStrategy;
-    private readonly ILogger _logger;
-
-    public RetryStrategy(int maxRetries, IBackoffStrategy backoffStrategy, ILogger logger)
-    {
-        _maxRetries = maxRetries;
-        _backoffStrategy = backoffStrategy;
-        _logger = logger;
-    }
-
     public async Task<ErrorHandlingResult> HandleAsync(
         ErrorHandlingContext context,
         CancellationToken cancellationToken)
     {
-        if (context.RetryCount < _maxRetries)
+        if (context.RetryCount < maxRetries)
         {
-            var delay = _backoffStrategy.GetDelay(context.RetryCount);
+            var delay = backoffStrategy.GetDelay(context.RetryCount);
             context.RetryCount++;
 
             try
@@ -36,7 +25,7 @@ public class RetryStrategy : IErrorHandlingStrategy
             }
         }
 
-        _logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, context.TaskName, _maxRetries));
+        logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, context.TaskName, maxRetries));
         return new ErrorHandlingResult { ShouldAbortWorkflow = true };
     }
 }

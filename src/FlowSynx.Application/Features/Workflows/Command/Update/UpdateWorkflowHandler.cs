@@ -17,8 +17,11 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly ICurrentUserService _currentUserService;
 
-    public UpdateWorkflowHandler(ILogger<UpdateWorkflowHandler> logger, ICurrentUserService currentUserService,
-        IWorkflowService workflowService, IJsonDeserializer jsonDeserializer)
+    public UpdateWorkflowHandler(
+        ILogger<UpdateWorkflowHandler> logger, 
+        ICurrentUserService currentUserService,
+        IWorkflowService workflowService, 
+        IJsonDeserializer jsonDeserializer)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(currentUserService);
@@ -34,7 +37,7 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var workflowId = Guid.Parse(request.Id);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
@@ -64,7 +67,7 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
             }
 
             workflow.Name = workflowDefinition.Name;
-            workflow.Definition = request.Definition.ToString();
+            workflow.Definition = request.Definition;
 
             await _workflowService.Update(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.Feature_Workflow_Update_AddedSuccessfully);

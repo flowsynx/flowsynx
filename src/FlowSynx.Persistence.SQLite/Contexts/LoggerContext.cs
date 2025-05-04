@@ -4,13 +4,8 @@ using FlowSynx.Domain.Log;
 
 namespace FlowSynx.Persistence.SQLite.Contexts;
 
-public class LoggerContext : DbContext
+public class LoggerContext(DbContextOptions<LoggerContext> contextOptions) : DbContext(contextOptions)
 {
-    public LoggerContext(DbContextOptions<LoggerContext> contextOptions)
-        : base(contextOptions)
-    {
-    }
-
     public DbSet<LogEntity> Logs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)

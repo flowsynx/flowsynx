@@ -38,7 +38,7 @@ public enum ErrorCode
     SecurityGetUserRoles                            = 1504,
     SecurityBasicAuthenticationMustHaveUniqueNames  = 1505,
     SecurityInitializedError                        = 1506,
-    SecurityAthenticationIsRequired                 = 1550,
+    SecurityAuthenticationIsRequired                = 1550,
     #endregion
 
     #region Database error codes

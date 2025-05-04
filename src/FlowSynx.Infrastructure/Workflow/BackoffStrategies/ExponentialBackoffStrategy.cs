@@ -1,18 +1,9 @@
 ﻿namespace FlowSynx.Infrastructure.Workflow.BackoffStrategies;
 
-public class ExponentialBackoffStrategy : IBackoffStrategy
+public class ExponentialBackoffStrategy(int initialDelay, double backoffCoefficient = 2.0) : IBackoffStrategy
 {
-    private readonly int _initialDelay;
-    private readonly double _factor;
-
-    public ExponentialBackoffStrategy(int initialDelay, double factor = 2.0)
-    {
-        _initialDelay = initialDelay;
-        _factor = factor;
-    }
-
     public TimeSpan GetDelay(int retryCount)
     {
-        return TimeSpan.FromMilliseconds(_initialDelay * Math.Pow(_factor, retryCount));
+        return TimeSpan.FromMilliseconds(initialDelay * Math.Pow(backoffCoefficient, retryCount));
     }
 }

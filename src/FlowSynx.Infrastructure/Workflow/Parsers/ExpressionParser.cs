@@ -6,15 +6,8 @@ using System.Text.RegularExpressions;
 
 namespace FlowSynx.Infrastructure.Workflow.Parsers;
 
-public class ExpressionParser : IExpressionParser
+public class ExpressionParser(Dictionary<string, object?> outputs) : IExpressionParser
 {
-    private readonly Dictionary<string, object?> _outputs;
-
-    public ExpressionParser(Dictionary<string, object?> outputs)
-    {
-        _outputs = outputs;
-    }
-
     public object? Parse(string? expression)
     {
         if (expression == null)
@@ -26,16 +19,14 @@ public class ExpressionParser : IExpressionParser
 
         foreach (Match match in matches)
         {
-            string outputName = match.Groups[1].Value;
-            string accessPath = match.Groups[2].Value; // Includes dot properties and array indices
+            var outputName = match.Groups[1].Value;
+            var accessPath = match.Groups[2].Value; // Includes dot properties and array indices
 
-            if (!_outputs.ContainsKey(outputName))
+            if (!outputs.TryGetValue(outputName, out var outputValue))
             {
-                string message = string.Format(Resources.ExpressionParser_OutputNotFound, outputName);
+                var message = string.Format(Resources.ExpressionParser_OutputNotFound, outputName);
                 throw new FlowSynxException((int)ErrorCode.ExpressionParserOutputNotFound, message);
             }
-
-            var outputValue = _outputs[outputName];
 
             if (outputValue == null)
                 return null;
@@ -51,7 +42,7 @@ public class ExpressionParser : IExpressionParser
         return expression;
     }
 
-    private object? GetNestedValue(object? obj, string accessPath)
+    private static object? GetNestedValue(object? obj, string accessPath)
     {
         if (obj == null)
             return null;
@@ -79,7 +70,7 @@ public class ExpressionParser : IExpressionParser
         return obj;
     }
 
-    private object? GetArrayItem(object obj, int index)
+    private static object? GetArrayItem(object obj, int index)
     {
         if (obj is IList list && index >= 0 && index < list.Count)
         {
@@ -88,9 +79,11 @@ public class ExpressionParser : IExpressionParser
         return null;
     }
 
-    private object? GetPropertyValue(object obj, string propertyKey)
+    private static object? GetPropertyValue(object? obj, string propertyKey)
     {
-        var propertyInfo = obj?.GetType().GetProperty(propertyKey, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
+        var propertyInfo = obj?.GetType()
+            .GetProperty(propertyKey, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
+
         return propertyInfo?.GetValue(obj);
     }
 }

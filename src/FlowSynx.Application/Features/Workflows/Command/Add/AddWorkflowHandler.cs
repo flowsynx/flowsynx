@@ -11,7 +11,6 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Text;
 
 namespace FlowSynx.Application.Features.Workflows.Command.Add;
 
@@ -25,9 +24,13 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly IWorkflowValidator _workflowValidator;
 
-    public AddWorkflowHandler(ILogger<AddWorkflowHandler> logger, ITransactionService transactionService,
-        IWorkflowService workflowService, IWorkflowTriggerService workflowTriggerService, 
-        ICurrentUserService currentUserService, IJsonDeserializer jsonDeserializer, 
+    public AddWorkflowHandler(
+        ILogger<AddWorkflowHandler> logger, 
+        ITransactionService transactionService,
+        IWorkflowService workflowService, 
+        IWorkflowTriggerService workflowTriggerService, 
+        ICurrentUserService currentUserService, 
+        IJsonDeserializer jsonDeserializer, 
         IWorkflowValidator workflowValidator)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -50,15 +53,18 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
+                    Resources.Authentication_Access_Denied);
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
             if (workflowDefinition == null)
-                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, Resources.Features_Workflow_Add_WorkflowDefinitionMustHaveValue);
+                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, 
+                    Resources.Features_Workflow_Add_WorkflowDefinitionMustHaveValue);
 
             if (string.IsNullOrEmpty(workflowDefinition.Name))
-                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, Resources.Features_Workflow_Add_WorkflowNameMustHaveValue);
+                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, 
+                    Resources.Features_Workflow_Add_WorkflowNameMustHaveValue);
 
             _workflowValidator.Validate(workflowDefinition);
 
@@ -104,15 +110,18 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 Id = workflowEntity.Id,
                 Name = workflowDefinition.Name,
             };
-            return await Result<AddWorkflowResponse>.SuccessAsync(response, Resources.Feature_Workflow_Add_AddedSuccessfully);
+            return await Result<AddWorkflowResponse>.SuccessAsync(response, 
+                Resources.Feature_Workflow_Add_AddedSuccessfully);
         }
         catch (FlowSynxException ex) when (ex.ErrorCode == (int)ErrorCode.Serialization)
         {
-            throw new FlowSynxException((int)ErrorCode.Serialization, $"Json deserialization error: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.Serialization, 
+                $"Json deserialization error: {ex.Message}");
         }
         catch (JsonReaderException ex)
         {
-            throw new FlowSynxException((int)ErrorCode.Serialization, $"Reader Error at Line {ex.LineNumber}, Position {ex.LinePosition}: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.Serialization, 
+                $"Reader Error at Line {ex.LineNumber}, Position {ex.LinePosition}: {ex.Message}");
         }
         catch (FlowSynxException ex)
         {

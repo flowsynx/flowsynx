@@ -14,9 +14,16 @@ public class WorkflowExecutionTracker : IWorkflowExecutionTracker
     private readonly IWorkflowTaskExecutionService _taskExecutionService;
     private readonly IWorkflowExecutionService _workflowExecutionService;
 
-    public WorkflowExecutionTracker(ILogger<WorkflowExecutionTracker> logger, ISystemClock systemClock, IWorkflowTaskExecutionService taskService, 
+    public WorkflowExecutionTracker(
+        ILogger<WorkflowExecutionTracker> logger, 
+        ISystemClock systemClock, 
+        IWorkflowTaskExecutionService taskService, 
         IWorkflowExecutionService workflowService)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(systemClock);
+        ArgumentNullException.ThrowIfNull(taskService);
+        ArgumentNullException.ThrowIfNull(workflowService);
         _logger = logger;
         _systemClock = systemClock;
         _taskExecutionService = taskService;

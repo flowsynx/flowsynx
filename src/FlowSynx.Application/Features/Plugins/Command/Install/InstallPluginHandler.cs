@@ -14,7 +14,9 @@ internal class InstallPluginHandler : IRequestHandler<InstallPluginRequest, Resu
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public InstallPluginHandler(ILogger<InstallPluginHandler> logger, ICurrentUserService currentUserService,
+    public InstallPluginHandler(
+        ILogger<InstallPluginHandler> logger, 
+        ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -30,7 +32,7 @@ internal class InstallPluginHandler : IRequestHandler<InstallPluginRequest, Resu
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Add_AddedSuccessfully);

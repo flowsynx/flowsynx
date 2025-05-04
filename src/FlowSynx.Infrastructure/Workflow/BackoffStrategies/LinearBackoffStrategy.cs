@@ -1,16 +1,9 @@
 ﻿namespace FlowSynx.Infrastructure.Workflow.BackoffStrategies;
 
-public class LinearBackoffStrategy : IBackoffStrategy
+public class LinearBackoffStrategy(int initialDelay) : IBackoffStrategy
 {
-    private readonly int _initialDelay;
-
-    public LinearBackoffStrategy(int initialDelay)
-    {
-        _initialDelay = initialDelay;
-    }
-
     public TimeSpan GetDelay(int retryCount) 
     {
-        return TimeSpan.FromMilliseconds(_initialDelay * retryCount);
+        return TimeSpan.FromMilliseconds(initialDelay * retryCount);
     }
 }

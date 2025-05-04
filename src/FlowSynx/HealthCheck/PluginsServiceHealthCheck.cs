@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Application.Models;
-using FlowSynx.Application.Services;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -31,7 +30,8 @@ public class PluginsServiceHealthCheck : IHealthCheck
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, $"Error in checking plugin service health. Error: {ex.Message}");
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, 
+                $"Error in checking plugin service health. Error: {ex.Message}");
             _logger.LogError(errorMessage.ToString());
             return HealthCheckResult.Unhealthy(Resources.PluginServiceHealthCheckPluginServiceFailed);
         }

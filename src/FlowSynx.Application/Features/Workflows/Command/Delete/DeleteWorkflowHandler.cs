@@ -30,7 +30,7 @@ internal class DeleteWorkflowHandler : IRequestHandler<DeleteWorkflowRequest, Re
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var workflowId = Guid.Parse(request.Id);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);

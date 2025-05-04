@@ -45,9 +45,9 @@ public class PlaceholderReplacer : IPlaceholderReplacer
         return jArray;
     }
 
-    private List<string> ProcessStringList(List<string> stringList, IExpressionParser parser)
+    private static List<string> ProcessStringList(List<string> stringList, IExpressionParser parser)
     {
-        for (int i = 0; i < stringList.Count; i++)
+        for (var i = 0; i < stringList.Count; i++)
         {
             stringList[i] = parser.Parse(stringList[i]) as string ?? stringList[i];
         }
@@ -56,13 +56,12 @@ public class PlaceholderReplacer : IPlaceholderReplacer
 
     private object? ProcessString(string strValue, IExpressionParser parser)
     {
-        if (IsJson(strValue))
-        {
-            var parsedJson = JsonConvert.DeserializeObject(strValue);
-            ReplacePlaceholderInJson(parsedJson, parser);
-            return JsonConvert.SerializeObject(parsedJson);
-        }
-        return parser.Parse(strValue);
+        if (!IsJson(strValue)) 
+            return parser.Parse(strValue);
+
+        var parsedJson = JsonConvert.DeserializeObject(strValue);
+        ReplacePlaceholderInJson(parsedJson, parser);
+        return JsonConvert.SerializeObject(parsedJson);
     }
 
     private void ReplacePlaceholderInJObject(JObject jObject, IExpressionParser parser)
@@ -81,7 +80,7 @@ public class PlaceholderReplacer : IPlaceholderReplacer
 
     private void ReplacePlaceholderInJArray(JArray jArray, IExpressionParser parser)
     {
-        for (int i = 0; i < jArray.Count; i++)
+        for (var i = 0; i < jArray.Count; i++)
         {
             jArray[i] = jArray[i].Type switch
             {
@@ -106,7 +105,7 @@ public class PlaceholderReplacer : IPlaceholderReplacer
         }
     }
 
-    private bool IsJson(string str)
+    private static bool IsJson(string str)
     {
         str = str.Trim();
         return (str.StartsWith("{") && str.EndsWith("}")) || (str.StartsWith("[") && str.EndsWith("]"));

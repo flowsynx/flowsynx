@@ -1,5 +1,4 @@
-﻿using ConnectivityTestingLab.Application.Configurations;
-using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Domain;
 using FlowSynx.Domain.Audit;
 using FlowSynx.Domain.Plugin;
@@ -24,7 +23,9 @@ public static class ServiceCollectionExtensions
         configuration.GetSection("Db").Bind(databaseConfiguration);
         services.AddSingleton(databaseConfiguration);
 
-        var connectionString = $"Host={databaseConfiguration.Host};Port={databaseConfiguration.Port};Database={databaseConfiguration.Name};Username={databaseConfiguration.UserName};Password={databaseConfiguration.Password};";
+        var connectionString = $"Host={databaseConfiguration.Host};Port={databaseConfiguration.Port};" +
+                               $"Database={databaseConfiguration.Name};Username={databaseConfiguration.UserName};" +
+                               $"Password={databaseConfiguration.Password};";
 
         services
             .AddScoped<IAuditService, AuditService>()

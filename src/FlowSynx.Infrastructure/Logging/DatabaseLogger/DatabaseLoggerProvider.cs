@@ -11,9 +11,13 @@ public class DatabaseLoggerProvider : ILoggerProvider
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILoggerService _loggerService;
 
-    public DatabaseLoggerProvider(DatabaseLoggerOptions options, IHttpContextAccessor httpContextAccessor,
+    public DatabaseLoggerProvider(
+        DatabaseLoggerOptions options, 
+        IHttpContextAccessor httpContextAccessor,
         ILoggerService loggerService)
     {
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+        ArgumentNullException.ThrowIfNull(loggerService);
         _httpContextAccessor = httpContextAccessor;
         _loggerService = loggerService;
         _options = options;

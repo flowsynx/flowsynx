@@ -9,29 +9,19 @@ public class PluginLoggerAdapter : IPluginLogger
 
     public PluginLoggerAdapter(ILogger logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
     public void Log(PluginLoggerLevel level, string message)
     {
-        LogLevel logLevel;
-        switch (level)
+        LogLevel logLevel = level switch
         {
-            case PluginLoggerLevel.Information:
-                logLevel = LogLevel.Information;
-                break;
-            case PluginLoggerLevel.Error:
-                logLevel = LogLevel.Error;
-                break;
-            case PluginLoggerLevel.Debug:
-                logLevel = LogLevel.Debug;
-                break;
-            case PluginLoggerLevel.Warning:
-                logLevel = LogLevel.Warning;
-                break;
-            default:
-                logLevel = LogLevel.Information;
-                break;
+            PluginLoggerLevel.Information => LogLevel.Information,
+            PluginLoggerLevel.Error => LogLevel.Error,
+            PluginLoggerLevel.Debug => LogLevel.Debug,
+            PluginLoggerLevel.Warning => LogLevel.Warning,
+            _ => LogLevel.Information
         };
 
         _logger.Log(logLevel, message);

@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Services;
 
 namespace FlowSynx.Extensions;
 
@@ -15,7 +14,7 @@ public static class WebApplicationBuilderExtensions
 
         try
         {
-            builder.WebHost.ConfigureKestrel((context, kestrelOptions) =>
+            builder.WebHost.ConfigureKestrel((_, kestrelOptions) =>
             {
                 var httpPort = endpointConfiguration.Http;
                 kestrelOptions.ListenAnyIP(httpPort ?? 6262);

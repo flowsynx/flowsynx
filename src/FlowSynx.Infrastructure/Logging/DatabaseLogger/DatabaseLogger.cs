@@ -19,6 +19,8 @@ internal class DatabaseLogger : ILogger, IDisposable
     public DatabaseLogger(string category, DatabaseLoggerOptions options,
         IHttpContextAccessor httpContextAccessor, ILoggerService loggerService)
     {
+        ArgumentNullException.ThrowIfNull(httpContextAccessor);
+        ArgumentNullException.ThrowIfNull(loggerService);
         _logQueue = new LogQueue();
         _category = category;
         _options = options;
@@ -40,9 +42,6 @@ internal class DatabaseLogger : ILogger, IDisposable
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
-            return;
-
-        if (formatter == null)
             return;
 
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";

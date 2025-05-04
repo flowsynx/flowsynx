@@ -6,9 +6,8 @@ public static class PluginConfigurationSpecificationsExtensions
 {
     public static PluginConfigurationSpecifications ToPluginConfigurationSpecifications(this Dictionary<string, object?>? dictionary)
     {
-        if (dictionary is null)
-            return new PluginConfigurationSpecifications();
-
-        return new PluginConfigurationSpecifications(dictionary);
+        return dictionary is null 
+            ? new PluginConfigurationSpecifications() 
+            : new PluginConfigurationSpecifications(dictionary);
     }
 }

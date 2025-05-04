@@ -10,7 +10,9 @@ public class CustomHeadersMiddleware
 
     public CustomHeadersMiddleware(RequestDelegate next, CustomHeadersToAddAndRemove headers)
     {
-        _next = next ?? throw new ArgumentNullException(nameof(next));
+        ArgumentNullException.ThrowIfNull(next);
+        ArgumentNullException.ThrowIfNull(headers);
+        _next = next;
         _headers = headers;
     }
 

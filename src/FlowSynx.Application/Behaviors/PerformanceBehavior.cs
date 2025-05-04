@@ -19,16 +19,16 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
     public async Task<TResponse> Handle(TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        var response = await next();
+        var response = await next(cancellationToken);
         stopwatch.Stop();
 
-        if (stopwatch.ElapsedMilliseconds > 500)
-        {
-            var message = string.Format(Resources.PerformanceBehavior_LongRunning_Request, 
-                typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
-            var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorPerformanceLongRunning, message);;
-            _logger.LogDebug(errorMessage.ToString());
-        }
+        if (stopwatch.ElapsedMilliseconds <= 500) 
+            return response;
+
+        var message = string.Format(Resources.PerformanceBehavior_LongRunning_Request, 
+            typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
+        var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorPerformanceLongRunning, message);;
+        _logger.LogDebug(errorMessage.ToString());
 
         return response;
     }

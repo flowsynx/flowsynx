@@ -14,7 +14,9 @@ internal class UninstallPluginHandler : IRequestHandler<UninstallPluginRequest, 
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public UninstallPluginHandler(ILogger<UninstallPluginHandler> logger, ICurrentUserService currentUserService,
+    public UninstallPluginHandler(
+        ILogger<UninstallPluginHandler> logger, 
+        ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -30,7 +32,7 @@ internal class UninstallPluginHandler : IRequestHandler<UninstallPluginRequest, 
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Delete_DeletedSuccessfully);

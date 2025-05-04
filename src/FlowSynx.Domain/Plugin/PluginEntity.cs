@@ -11,6 +11,6 @@ public class PluginEntity : AuditableEntity<Guid>, ISoftDeletable
     public required string Type { get; set; }
     public required string PluginLocation { get; set; }
     public required string Checksum { get; set; }
-    public List<PluginSpecification>? Specifications { get; set; } = new List<PluginSpecification>();
+    public List<PluginSpecification>? Specifications { get; set; } = new();
     public bool IsDeleted { get; set; } = false;
 }

@@ -1,22 +1,13 @@
 ﻿namespace FlowSynx.Infrastructure.Workflow.BackoffStrategies;
 
-public class JitterBackoffStrategy : IBackoffStrategy
+public class JitterBackoffStrategy(int initialDelay, double backoffCoefficient = 0.5) : IBackoffStrategy
 {
-    private readonly int _initialDelay;
-    private readonly double _factor;
-    private readonly Random _random;
-
-    public JitterBackoffStrategy(int initialDelay, double factor = 0.5)
-    {
-        _initialDelay = initialDelay;
-        _factor = factor;
-        _random = new Random();
-    }
+    private readonly Random _random = new();
 
     public TimeSpan GetDelay(int retryCount)
     {
-        var baseMs = _initialDelay * Math.Pow(2, retryCount); // Exponential growth
-        var jitter = _random.NextDouble() * _factor * baseMs;
+        var baseMs = initialDelay * Math.Pow(2, retryCount); // Exponential growth
+        var jitter = _random.NextDouble() * backoffCoefficient * baseMs;
         return TimeSpan.FromMilliseconds(baseMs + jitter);
     }
 }

@@ -8,9 +8,9 @@ namespace FlowSynx.Persistence.SQLite.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddSQLiteLoggerLayer(this IServiceCollection services)
+    public static IServiceCollection AddSqLiteLoggerLayer(this IServiceCollection services)
     {
-        var connectionString = $"Data Source=logs.db";
+        const string connectionString = "Data Source=logs.db";
 
         services
             .AddScoped<ILoggerService, LoggerService>()

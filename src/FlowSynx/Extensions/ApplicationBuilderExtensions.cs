@@ -7,7 +7,6 @@ using FlowSynx.Middleware;
 using FlowSynx.Models;
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Persistence.Postgres.Seeder;
-using FlowSynx.Persistence.SQLite.Contexts;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -128,7 +127,6 @@ public static class ApplicationBuilderExtensions
         {
             using var serviceScope = app.ApplicationServices.CreateScope();
             var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationContext>();
-            var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
             if (!context.Database.CanConnect())
                 throw new FlowSynxException((int)ErrorCode.DatabaseConnection, "Failed to connect to the database.");

@@ -4,5 +4,5 @@ namespace FlowSynx.Application.Configuration;
 
 public class LoggerConfiguration
 {
-    public string Level { get; set; } = LogsLevel.Info.ToString();
+    public string Level { get; set; } = nameof(LogsLevel.Info);
 }

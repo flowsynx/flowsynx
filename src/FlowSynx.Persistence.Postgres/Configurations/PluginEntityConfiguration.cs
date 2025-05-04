@@ -14,6 +14,8 @@ public class PluginEntityConfiguration : IEntityTypeConfiguration<PluginEntity>
 
     public PluginEntityConfiguration(IJsonSerializer jsonSerializer, IJsonDeserializer jsonDeserializer)
     {
+        ArgumentNullException.ThrowIfNull(jsonSerializer);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _jsonSerializer = jsonSerializer;
         _jsonDeserializer = jsonDeserializer;
     }

@@ -22,7 +22,7 @@ try
     builder.Services
            .AddCancellationTokenSource()
            .AddHttpContextAccessor()
-           .AddSQLiteLoggerLayer()
+           .AddSqLiteLoggerLayer()
            .AddLoggingService(config)
            .AddEndpointsApiExplorer()
            .AddHttpClient()

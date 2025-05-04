@@ -8,7 +8,7 @@ internal class ConsoleLogger : ILogger, IDisposable
     private readonly string _category;
     private readonly ConsoleLoggerOptions _options;
     private readonly Task _workerTask;
-    private static readonly object _consoleLock = new object();
+    private readonly Lock _consoleLock = new Lock();
 
     private Dictionary<LogLevel, ConsoleColor> ColorMap { get; set; } = new()
     {
@@ -35,15 +35,15 @@ internal class ConsoleLogger : ILogger, IDisposable
 
     public bool IsEnabled(LogLevel logLevel)
     {
-        return logLevel != LogLevel.None && logLevel >= _options.MinLevel;
+        lock (_consoleLock)
+        {
+            return logLevel != LogLevel.None && logLevel >= _options.MinLevel;
+        }
     }
 
     void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
-            return;
-
-        if (formatter == null)
             return;
 
         var logMessage = new LogMessage
@@ -65,7 +65,7 @@ internal class ConsoleLogger : ILogger, IDisposable
         {
             if (_logQueue.TryDequeue(out var logMessage))
             {
-                WriteLine(logMessage, cancellationToken);
+                WriteLine(logMessage);
             }
             else
             {
@@ -74,7 +74,7 @@ internal class ConsoleLogger : ILogger, IDisposable
         }
     }
 
-    private void WriteLine(LogMessage logMessage, CancellationToken cancellationToken)
+    private void WriteLine(LogMessage logMessage)
     {
         lock (_consoleLock)
         {

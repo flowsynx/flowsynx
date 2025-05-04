@@ -5,7 +5,8 @@ namespace FlowSynx.Persistence.Postgres.Extensions;
 
 public static class ApplicationContextExtensions
 {
-    public static void SoftDelete<TEntity>(this ApplicationContext context, TEntity entity) where TEntity : IAuditableEntity, ISoftDeletable
+    public static void SoftDelete<TEntity>(this ApplicationContext context, TEntity entity) 
+        where TEntity : IAuditableEntity, ISoftDeletable
     {
         entity.IsDeleted = true;
 
@@ -15,7 +16,10 @@ public static class ApplicationContextExtensions
         {
             if (navigation.IsCollection)
             {
-                var relatedEntities = context.Entry(entity).Collection(navigation.Name).Query()
+                var relatedEntities = context
+                    .Entry(entity)
+                    .Collection(navigation.Name)
+                    .Query()
                     .Cast<ISoftDeletable>()
                     .ToList();
 
@@ -26,8 +30,7 @@ public static class ApplicationContextExtensions
             }
             else
             {
-                var relatedEntity = context.Entry(entity).Reference(navigation.Name).CurrentValue as ISoftDeletable;
-                if (relatedEntity != null)
+                if (context.Entry(entity).Reference(navigation.Name).CurrentValue is ISoftDeletable relatedEntity)
                 {
                     relatedEntity.IsDeleted = true;
                 }

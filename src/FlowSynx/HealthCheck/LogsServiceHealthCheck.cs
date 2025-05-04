@@ -31,7 +31,8 @@ public class LogsServiceHealthCheck : IHealthCheck
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, $"Error in checking logger service health. Error: {ex.Message}");
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationHealthCheck, 
+                $"Error in checking logger service health. Error: {ex.Message}");
             _logger.LogError(errorMessage.ToString());
             return HealthCheckResult.Unhealthy(Resources.LoggerServiceHealthCheckFailed);
         }

@@ -3,11 +3,7 @@ namespace FlowSynx.Application.Wrapper;
 
 public class Result : IResult
 {
-    public Result()
-    {
-    }
-
-    public List<string> Messages { get; set; } = new List<string>();
+    public List<string> Messages { get; set; } = new();
 
     public bool Succeeded { get; set; }
 

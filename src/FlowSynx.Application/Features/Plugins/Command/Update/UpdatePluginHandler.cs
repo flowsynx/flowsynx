@@ -14,7 +14,9 @@ internal class UpdatePluginHandler : IRequestHandler<UpdatePluginRequest, Result
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
 
-    public UpdatePluginHandler(ILogger<UpdatePluginHandler> logger, ICurrentUserService currentUserService,
+    public UpdatePluginHandler(
+        ILogger<UpdatePluginHandler> logger, 
+        ICurrentUserService currentUserService,
         IPluginManager pluginManager)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -30,7 +32,7 @@ internal class UpdatePluginHandler : IRequestHandler<UpdatePluginRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.UpdateAsync(request.Type, request.OldVersion, request.NewVersion, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Update_UpdatedSuccessfully);

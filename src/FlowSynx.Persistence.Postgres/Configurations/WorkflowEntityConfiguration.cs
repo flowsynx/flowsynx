@@ -4,7 +4,7 @@ using FlowSynx.Domain.Workflow;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 
-public class WorkflowEntityfiguration : IEntityTypeConfiguration<WorkflowEntity>
+public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEntity>
 {
     public void Configure(EntityTypeBuilder<WorkflowEntity> builder)
     {

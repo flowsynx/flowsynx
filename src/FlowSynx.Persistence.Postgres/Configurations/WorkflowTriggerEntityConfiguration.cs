@@ -14,6 +14,8 @@ public class WorkflowTriggerEntityConfiguration : IEntityTypeConfiguration<Workf
 
     public WorkflowTriggerEntityConfiguration(IJsonSerializer jsonSerializer, IJsonDeserializer jsonDeserializer)
     {
+        ArgumentNullException.ThrowIfNull(jsonSerializer);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _jsonSerializer = jsonSerializer;
         _jsonDeserializer = jsonDeserializer;
     }

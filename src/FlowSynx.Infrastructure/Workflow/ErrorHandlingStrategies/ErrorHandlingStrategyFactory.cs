@@ -10,6 +10,7 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
 
     public ErrorHandlingStrategyFactory(ILogger<ErrorHandlingStrategyFactory> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 

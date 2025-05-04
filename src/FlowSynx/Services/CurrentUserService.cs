@@ -23,7 +23,7 @@ public class CurrentUserService : ICurrentUserService
         {
             try
             {
-                var userId = _httpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+                var userId = _httpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
                 return userId;
             }
             catch (Exception ex)
@@ -41,7 +41,7 @@ public class CurrentUserService : ICurrentUserService
         {
             try
             {
-                var userId = _httpContext?.User?.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+                var userId = _httpContext?.User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
                 return userId;
             }
             catch (Exception ex)
@@ -60,10 +60,7 @@ public class CurrentUserService : ICurrentUserService
             try
             {
                 var identity = _httpContext?.User.Identity;
-                if (identity == null)
-                    return false;
-
-                return identity.IsAuthenticated;
+                return identity is { IsAuthenticated: true };
             }
             catch (Exception ex)
             {

@@ -22,6 +22,7 @@ public static class PluginExtensions
                 IsWritable = property.CanWrite,
                 DeclaringType = property.DeclaringType?.FullName,
                 IsRequired = Attribute.IsDefined(property, typeof(RequiredMemberAttribute))
-            }).ToList();
+            })
+            .ToList();
     }
 }

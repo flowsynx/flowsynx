@@ -19,6 +19,10 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
         IWorkflowExecutor workflowExecutor,
         ISystemClock systemClock)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(workflowTriggerService);
+        ArgumentNullException.ThrowIfNull(workflowExecutor);
+        ArgumentNullException.ThrowIfNull(systemClock);
         _logger = logger;
         _workflowTriggerService = workflowTriggerService;
         _workflowExecutor = workflowExecutor;
@@ -33,14 +37,10 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
         foreach (var trigger in triggers)
         {
             if (!TryParseCronExpression(trigger, out var cronExpression))
-            {
                 continue;
-            }
 
             if (!string.IsNullOrEmpty(cronExpression) && IsTriggerDue(cronExpression))
-            {
                 await ExecuteWorkflowAsync(trigger, cancellationToken);
-            }
         }
     }
 

@@ -13,9 +13,10 @@ public class ExceptionMiddleware
 
     public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IJsonSerializer serializer)
     {
-        this._next = next;
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(serializer);
+        ArgumentNullException.ThrowIfNull(next);
+        _next = next;
         _logger = logger;
         _serializer = serializer;
     }

@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.PluginConfig.Command.Add;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
@@ -44,7 +43,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
                     Resources.Authentication_Access_Denied);
 
             var configId = Guid.Parse(request.Id);
@@ -80,7 +79,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
             }
 
             var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, 
-                pluginEntity?.Specifications);
+                pluginEntity.Specifications);
             if (!isPluginSpecificationsValid.Valid)
                 return await Result<Unit>.FailAsync(isPluginSpecificationsValid.Messages!);
 

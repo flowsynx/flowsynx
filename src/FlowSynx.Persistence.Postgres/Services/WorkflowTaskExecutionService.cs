@@ -15,6 +15,8 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     public WorkflowTaskExecutionService(IDbContextFactory<ApplicationContext> appContextFactory,
         ILogger<WorkflowTaskExecutionService> logger)
     {
+        ArgumentNullException.ThrowIfNull(appContextFactory);
+        ArgumentNullException.ThrowIfNull(logger);
         _appContextFactory = appContextFactory;
         _logger = logger;
     }
@@ -23,7 +25,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTaskExecutions
                 .Where(c => c.WorkflowExecutionId == workflowExecutionId && c.IsDeleted == false)
                 .ToListAsync(cancellationToken: cancellationToken)
@@ -43,7 +45,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowTaskExecutions
                 .FirstOrDefaultAsync(x => x.Id == workflowTaskExecutionId && x.IsDeleted == false, cancellationToken)
                 .ConfigureAwait(false);
@@ -60,7 +62,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowTaskExecutions
                 .FirstOrDefaultAsync(x => x.WorkflowExecutionId == workflowExecutionId && x.Name.ToLower() == taskName.ToLower() && x.IsDeleted == false,
                 cancellationToken)
@@ -78,7 +80,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             await context.WorkflowTaskExecutions
                 .AddAsync(workflowTaskExecutionEntity, cancellationToken)
                 .ConfigureAwait(false);
@@ -99,7 +101,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Entry(workflowTaskExecutionEntity).State = EntityState.Detached;
             context.WorkflowTaskExecutions.Update(workflowTaskExecutionEntity);
 
@@ -119,7 +121,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.WorkflowTaskExecutions.Remove(workflowTaskExecutionEntity);
 
             await context
@@ -140,7 +142,7 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Database.CanConnectAsync(cancellationToken);
         }
         catch

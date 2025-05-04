@@ -12,6 +12,7 @@ public class PluginSpecificationsService : IPluginSpecificationsService
 
     public PluginSpecificationsService(ILogger<PluginSpecificationsService> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 
@@ -21,7 +22,6 @@ public class PluginSpecificationsService : IPluginSpecificationsService
         inputSpecifications ??= new Dictionary<string, object?>();
         pluginSpecifications ??= new List<PluginSpecification>();
         var errors = new List<string>();
-        var convertedSpecifications = ConvertKeysToLowerCase(inputSpecifications);
 
         foreach (var specification in pluginSpecifications)
         {
@@ -44,7 +44,6 @@ public class PluginSpecificationsService : IPluginSpecificationsService
                     string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, specification.Name));
                 _logger.LogError(errorMessage.ToString());
                 errors.Add(errorMessage.ToString());
-                continue;
             }
         }
 
@@ -53,19 +52,5 @@ public class PluginSpecificationsService : IPluginSpecificationsService
             Valid = errors.Count == 0,
             Messages = errors
         };
-    }
-
-    private Dictionary<string, object?>? ConvertKeysToLowerCase(Dictionary<string, object?>? dictionaries)
-    {
-        var convertedDictionary = new Dictionary<string, object?>();
-
-        if (dictionaries == null)
-            return convertedDictionary;
-
-        foreach (string key in dictionaries.Keys)
-        {
-            convertedDictionary.Add(key.ToLower(), dictionaries[key]);
-        }
-        return convertedDictionary;
     }
 }

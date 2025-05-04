@@ -16,7 +16,7 @@ public class WorkflowValidator : IWorkflowValidator
         ValidateRetryPolicies(tasks);
     }
 
-    private void EnsureNoDuplicateTaskNames(IEnumerable<WorkflowTask> tasks)
+    private static void EnsureNoDuplicateTaskNames(IEnumerable<WorkflowTask> tasks)
     {
         if (HasDuplicateNames(tasks))
         {
@@ -26,37 +26,37 @@ public class WorkflowValidator : IWorkflowValidator
         }
     }
 
-    private void EnsureAllDependenciesExist(IEnumerable<WorkflowTask> tasks)
+    private static void EnsureAllDependenciesExist(List<WorkflowTask> tasks)
     {
         var missingDependencies = AllDependenciesExist(tasks);
-        if (missingDependencies.Any())
-        {
-            var message = string.Format(
-                Resources.Workflow_Executor_MissingDependencies,
-                string.Join(",", missingDependencies));
+        if (!missingDependencies.Any()) 
+            return;
 
-            throw new FlowSynxException(
-                (int)ErrorCode.WorkflowMissingDependencies,
-                message);
-        }
+        var message = string.Format(
+            Resources.Workflow_Executor_MissingDependencies,
+            string.Join(",", missingDependencies));
+
+        throw new FlowSynxException(
+            (int)ErrorCode.WorkflowMissingDependencies,
+            message);
     }
 
     private void EnsureNoCyclicDependencies(IEnumerable<WorkflowTask> tasks)
     {
         var validation = CheckCyclic(tasks);
-        if (validation.Cyclic)
-        {
-            var message = string.Format(
-                Resources.Workflow_Executor_CyclicDependencies,
-                string.Join(" -> ", validation.CyclicNodes));
+        if (!validation.Cyclic) 
+            return;
 
-            throw new FlowSynxException(
-                (int)ErrorCode.WorkflowCyclicDependencies,
-                message);
-        }
+        var message = string.Format(
+            Resources.Workflow_Executor_CyclicDependencies,
+            string.Join(" -> ", validation.CyclicNodes));
+
+        throw new FlowSynxException(
+            (int)ErrorCode.WorkflowCyclicDependencies,
+            message);
     }
 
-    private void ValidateRetryPolicies(IEnumerable<WorkflowTask> tasks)
+    private static void ValidateRetryPolicies(IEnumerable<WorkflowTask> tasks)
     {
         var errors = tasks
             .SelectMany(task =>
@@ -87,7 +87,7 @@ public class WorkflowValidator : IWorkflowValidator
     }
 
     #region private methods
-    private List<string> AllDependenciesExist(IEnumerable<WorkflowTask> workflowTasks)
+    private static List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
     {
         var definedTaskNames = workflowTasks.Select(t => t.Name).ToHashSet();
         var missingDependencies = workflowTasks
@@ -99,18 +99,16 @@ public class WorkflowValidator : IWorkflowValidator
         return missingDependencies;
     }
 
-    private WorkflowValidatorResult CheckCyclic(IEnumerable<WorkflowTask> workflowTasks)
+    private static WorkflowValidatorResult CheckCyclic(IEnumerable<WorkflowTask> workflowTasks)
     {
         var graph = BuildGraph(workflowTasks, out var inDegree);
 
         var queue = new Queue<string>(inDegree.Where(kv => kv.Value == 0).Select(kv => kv.Key));
         var visitedCount = 0;
-        var executionOrder = new List<string>();
 
         while (queue.Any())
         {
             var current = queue.Dequeue();
-            executionOrder.Add(current);
             visitedCount++;
 
             foreach (var neighbor in graph[current])
@@ -123,7 +121,8 @@ public class WorkflowValidator : IWorkflowValidator
             }
         }
 
-        if (visitedCount < inDegree.Count)
+        if (visitedCount >= inDegree.Count) 
+            return new WorkflowValidatorResult { Cyclic = false };
         {
             var cyclicNodes = inDegree.Where(kv => kv.Value > 0).Select(kv => kv.Key).ToList();
             return new WorkflowValidatorResult
@@ -132,17 +131,15 @@ public class WorkflowValidator : IWorkflowValidator
                 CyclicNodes = cyclicNodes
             };
         }
-
-        return new WorkflowValidatorResult { Cyclic = false };
     }
 
-    private bool HasDuplicateNames(IEnumerable<WorkflowTask> workflowTasks)
+    private static bool HasDuplicateNames(IEnumerable<WorkflowTask> workflowTasks)
     {
         var seen = new HashSet<string>();
         return workflowTasks.Any(task => !seen.Add(task.Name));
     }
 
-    private Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
+    private static Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
     {
         var graph = new Dictionary<string, List<string>>();
         inDegree = new Dictionary<string, int>();

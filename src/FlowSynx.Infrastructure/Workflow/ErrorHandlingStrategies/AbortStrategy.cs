@@ -8,6 +8,7 @@ public class AbortStrategy: IErrorHandlingStrategy
 
     public AbortStrategy(ILogger logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 

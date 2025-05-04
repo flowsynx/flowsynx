@@ -1,6 +1,4 @@
-﻿using FlowSynx.Domain.Plugin;
-
-namespace FlowSynx.Domain.PluginConfig;
+﻿namespace FlowSynx.Domain.PluginConfig;
 
 public class PluginConfigurationEntity : AuditableEntity<Guid>, IEquatable<PluginConfigurationEntity>, ISoftDeletable
 {
@@ -25,8 +23,6 @@ public class PluginConfigurationEntity : AuditableEntity<Guid>, IEquatable<Plugi
             return true;
 
         if (Name != other.Name) return false;
-        if (UserId != other.UserId) return false;
-
-        return true;
+        return UserId == other.UserId;
     }
 }

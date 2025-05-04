@@ -15,6 +15,8 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     public WorkflowTriggerService(IDbContextFactory<ApplicationContext> appContextFactory,
         ILogger<WorkflowTriggerService> logger)
     {
+        ArgumentNullException.ThrowIfNull(appContextFactory);
+        ArgumentNullException.ThrowIfNull(logger);
         _appContextFactory = appContextFactory;
         _logger = logger;
     }
@@ -23,7 +25,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTriggeres
                 .Where(x => x.IsDeleted == false)
                 .ToListAsync(cancellationToken: cancellationToken)
@@ -43,7 +45,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTriggeres
                 .Where(x => x.Type == type && x.Status == WorkflowTriggerStatus.Active && x.IsDeleted == false)
                 .ToListAsync(cancellationToken: cancellationToken)
@@ -63,7 +65,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowTriggeres
                 .FirstOrDefaultAsync(x => x.Id == workflowTriggerId && x.IsDeleted == false, cancellationToken)
                 .ConfigureAwait(false);
@@ -80,7 +82,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             await context.WorkflowTriggeres
                 .AddAsync(workflowTriggerEntity, cancellationToken)
                 .ConfigureAwait(false);
@@ -101,7 +103,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Entry(workflowTriggerEntity).State = EntityState.Detached;
             context.WorkflowTriggeres.Update(workflowTriggerEntity);
 
@@ -121,7 +123,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.WorkflowTriggeres.Remove(workflowTriggerEntity);
 
             await context
@@ -142,7 +144,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Database.CanConnectAsync(cancellationToken);
         }
         catch

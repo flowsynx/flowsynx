@@ -19,7 +19,7 @@ public class JsonDeserializer : IJsonDeserializer
 
     public T Deserialize<T>(string? input)
     {
-        return Deserialize<T>(input, new JsonSerializationConfiguration { });
+        return Deserialize<T>(input, new JsonSerializationConfiguration());
     }
 
     public T Deserialize<T>(string? input, JsonSerializationConfiguration configuration)

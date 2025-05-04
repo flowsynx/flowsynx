@@ -24,7 +24,7 @@ internal static class LogTemplate
                 string? valueToAppend;
                 if (sbCurrentTerm.ToString() == "NewLine")
                 {
-                    valueToAppend = System.Environment.NewLine;
+                    valueToAppend = Environment.NewLine;
                 }
                 else
                 {
@@ -34,7 +34,7 @@ internal static class LogTemplate
                     
                     if (propertyInfo == null)
                     {
-                        var message = string.Format(Resources.Logging_Invalid_Property, sbCurrentTerm.ToString());
+                        var message = string.Format(Resources.Logging_Invalid_Property, sbCurrentTerm);
                         throw new FlowSynxException((int)ErrorCode.LoggerTemplateInvalidProperty, message);
                     }
 

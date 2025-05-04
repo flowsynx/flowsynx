@@ -13,7 +13,7 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         }
     }
 
-    private ErrorHandling? GetEffectiveErrorHandling(WorkflowTask task, WorkflowConfiguration config)
+    private static ErrorHandling? GetEffectiveErrorHandling(WorkflowTask task, WorkflowConfiguration config)
     {
         var defaultHandling = config.ErrorHandling;
         var taskHandling = task.ErrorHandling;
@@ -31,7 +31,7 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         };
     }
 
-    private RetryPolicy MergeRetryPolicy(RetryPolicy? taskPolicy, RetryPolicy defaultPolicy)
+    private static RetryPolicy MergeRetryPolicy(RetryPolicy? taskPolicy, RetryPolicy defaultPolicy)
     {
         if (taskPolicy is null)
             return defaultPolicy;
@@ -46,8 +46,8 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         };
     }
 
-    private bool IsValid(int value) => value >= 0;
-    private bool IsPositive(int value) => value > 0;
-    private bool IsPositive(double value) => value > 0.0;
-    private bool IsDefined(BackoffStrategy strategy) => Enum.IsDefined(typeof(BackoffStrategy), strategy);
+    private static bool IsValid(int value) => value >= 0;
+    private static bool IsPositive(int value) => value > 0;
+    private static bool IsPositive(double value) => value > 0.0;
+    private static bool IsDefined(BackoffStrategy strategy) => Enum.IsDefined(typeof(BackoffStrategy), strategy);
 }

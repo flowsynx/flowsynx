@@ -30,7 +30,7 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var plugins = await _pluginService.All(_currentUserService.UserId, cancellationToken);
             var response = plugins.Select(p => new PluginsListResponse

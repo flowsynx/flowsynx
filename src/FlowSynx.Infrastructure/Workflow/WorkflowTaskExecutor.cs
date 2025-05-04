@@ -20,6 +20,9 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         IPlaceholderReplacer placeholderReplacer,
         IErrorHandlingStrategyFactory errorHandlingStrategyFactory)
     {
+        ArgumentNullException.ThrowIfNull(pluginTypeService);
+        ArgumentNullException.ThrowIfNull(placeholderReplacer);
+        ArgumentNullException.ThrowIfNull(errorHandlingStrategyFactory);
         _pluginTypeService = pluginTypeService;
         _placeholderReplacer = placeholderReplacer;
         _errorHandlingStrategyFactory = errorHandlingStrategyFactory;
@@ -80,7 +83,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             {
                 { ShouldRetry: true } => await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, token),
                 { ShouldSkip: true } => null,
-                { ShouldAbortWorkflow: true } => throw new Exception(ex.Message),
                 _ => throw new Exception(ex.Message)
             };
         }

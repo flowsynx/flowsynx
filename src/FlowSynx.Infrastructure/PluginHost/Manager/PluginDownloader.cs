@@ -123,9 +123,14 @@ public class PluginDownloader : IPluginDownloader
             if (string.IsNullOrEmpty(entry.Name)) 
                 continue;
 
-            using var entryStream = entry.Open();
-            using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, 
-                FileShare.None, 8192, useAsync: true);
+            await using var entryStream = entry.Open();
+            await using var outputStream = new FileStream(
+                path: destinationPath, 
+                mode: FileMode.Create, 
+                access: FileAccess.Write, 
+                share: FileShare.None, 
+                bufferSize: 8192, 
+                useAsync: true);
 
             await entryStream.CopyToAsync(outputStream, cancellationToken);
         }

@@ -14,6 +14,8 @@ public class AuditService : IAuditService
 
     public AuditService(IDbContextFactory<ApplicationContext> appContextFactory, ILogger<AuditService> logger)
     {
+        ArgumentNullException.ThrowIfNull(appContextFactory);
+        ArgumentNullException.ThrowIfNull(logger);
         _appContextFactory = appContextFactory;
         _logger = logger;
     }
@@ -22,7 +24,7 @@ public class AuditService : IAuditService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var trails = await context.Audits
                 .OrderByDescending(a => a.DateTime)
                 .Take(250)
@@ -43,7 +45,7 @@ public class AuditService : IAuditService
     {
         try
         {
-            using var context = _appContextFactory.CreateDbContext();
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var trail = await context.Audits
                 .Where(x => x.Id == id)
                 .FirstOrDefaultAsync(cancellationToken)

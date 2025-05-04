@@ -30,7 +30,7 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var auditId = Guid.Parse(request.Id);
             var audit = await _auditService.Get(auditId, cancellationToken);

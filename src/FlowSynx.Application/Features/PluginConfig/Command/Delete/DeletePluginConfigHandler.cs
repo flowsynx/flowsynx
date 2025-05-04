@@ -34,7 +34,7 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
                     Resources.Authentication_Access_Denied);
 
             var configId = Guid.Parse(request.Id);
@@ -46,13 +46,13 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
                 throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
             }
 
-            var deleteResult = await _pluginConfigurationService.Delete(pluginConfiguration, cancellationToken);
+            await _pluginConfigurationService.Delete(pluginConfiguration, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.Feature_PluginConfig_Delete_DeletedSuccessfully);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<Unit>.FailAsync(new List<string> { ex.ToString() });
+            return await Result<Unit>.FailAsync(ex.ToString());
         }
     }
 }

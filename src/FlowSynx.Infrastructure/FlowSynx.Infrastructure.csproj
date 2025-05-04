@@ -1,36 +1,41 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Cronos" Version="0.9.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.4" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
-  </ItemGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugSymbols>False</DebugSymbols>
+		<DebugType>None</DebugType>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj" />
-    <ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Cronos" Version="0.9.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.4" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Update="Resources.Designer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj" />
+		<ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Update="Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Update="Resources.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Resources.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Update="Resources.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>Resources.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
 
 </Project>

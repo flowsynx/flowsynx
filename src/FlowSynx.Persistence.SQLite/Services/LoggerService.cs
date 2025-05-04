@@ -13,6 +13,7 @@ public class LoggerService : ILoggerService
 
     public LoggerService(IDbContextFactory<LoggerContext> logContextFactory)
     {
+        ArgumentNullException.ThrowIfNull(logContextFactory);
         _logContextFactory = logContextFactory;
     }
 
@@ -20,7 +21,7 @@ public class LoggerService : ILoggerService
     {
         try
         {
-            using var context = _logContextFactory.CreateDbContext();
+            await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
             var logs = context.Logs;
 
             if (predicate == null)
@@ -39,7 +40,7 @@ public class LoggerService : ILoggerService
     {
         try
         {
-            using var context = _logContextFactory.CreateDbContext();
+            await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Logs
                 .FindAsync(new object?[] { userId, id }, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
@@ -55,8 +56,8 @@ public class LoggerService : ILoggerService
     {
         try
         {
-            using var context = _logContextFactory.CreateDbContext();
-            await context.Logs.AddAsync(logEntity);
+            await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
+            await context.Logs.AddAsync(logEntity, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
         }
         catch (Exception ex)
@@ -71,7 +72,7 @@ public class LoggerService : ILoggerService
     {
         try
         {
-            using var context = _logContextFactory.CreateDbContext();
+            await using var context = await _logContextFactory.CreateDbContextAsync();
             return await context.Database.CanConnectAsync();
         }
         catch

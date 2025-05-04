@@ -45,7 +45,7 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, 
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
                     Resources.Authentication_Access_Denied);
 
             var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, 
@@ -60,13 +60,13 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             }
 
             var isPluginSpecificationsValid = _pluginSpecificationsService.Validate(request.Specifications, 
-                pluginEntity?.Specifications);
+                pluginEntity.Specifications);
             if (!isPluginSpecificationsValid.Valid)
                 return await Result<AddPluginConfigResponse>.FailAsync(isPluginSpecificationsValid.Messages!);
             
-            var ispluginConfigurationExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, 
+            var isPluginConfigurationExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, 
                 request.Name, cancellationToken);
-            if (ispluginConfigurationExist)
+            if (isPluginConfigurationExist)
             {
                 var message = string.Format(Resources.Features_PluginConfig_Add_PluginConfigAlreadyExists, request.Name);
                 var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeNotFound, message);

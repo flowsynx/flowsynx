@@ -8,6 +8,7 @@ public class SkipStrategy: IErrorHandlingStrategy
 
     public SkipStrategy(ILogger logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
     }
 

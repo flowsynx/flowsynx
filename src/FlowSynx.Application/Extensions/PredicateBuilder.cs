@@ -58,29 +58,29 @@ public static class PredicateBuilder
             .ToDictionary(p => p.s, p => p.f);
 
         // replace parameters in the second lambda expression with the parameters in the first    
-        var secondBody = ParameterRebinder.ReplaceParameters(map, second.Body);
+        var secondBody = ParameterReBinder.ReplaceParameters(map, second.Body);
 
         // create a merged lambda expression with parameters from the first expression    
         return Expression.Lambda<T>(merge(first.Body, secondBody), first.Parameters);
     }
 
-    class ParameterRebinder : ExpressionVisitor
+    public class ParameterReBinder : ExpressionVisitor
     {
-        readonly Dictionary<ParameterExpression, ParameterExpression> map;
+        private readonly Dictionary<ParameterExpression, ParameterExpression> _map;
 
-        ParameterRebinder(Dictionary<ParameterExpression, ParameterExpression> map)
+        private ParameterReBinder(Dictionary<ParameterExpression, ParameterExpression> map)
         {
-            this.map = map ?? new Dictionary<ParameterExpression, ParameterExpression>();
+            _map = map;
         }
 
         public static Expression ReplaceParameters(Dictionary<ParameterExpression, ParameterExpression> map, Expression exp)
         {
-            return new ParameterRebinder(map).Visit(exp);
+            return new ParameterReBinder(map).Visit(exp);
         }
 
         protected override Expression VisitParameter(ParameterExpression p)
         {
-            if (map.TryGetValue(p, out var replacement))
+            if (_map.TryGetValue(p, out var replacement))
                 p = replacement;
             
             return base.VisitParameter(p);

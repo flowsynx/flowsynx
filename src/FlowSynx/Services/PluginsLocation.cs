@@ -13,11 +13,11 @@ public class PluginsLocation : IPluginsLocation
         ArgumentNullException.ThrowIfNull(logger);
         _logger = logger;
 
-        if (_rootLocation == null)
-        {
-            logger.LogError("Base location not found");
-            throw new Exception(Resources.FlowSynxLocationBaseLocationNotFound);
-        }
+        if (_rootLocation != null) 
+            return;
+
+        logger.LogError("Base location not found");
+        throw new Exception(Resources.FlowSynxLocationBaseLocationNotFound);
     }
 
     public string Path => GetPluginsPath();

@@ -24,6 +24,11 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         IExpressionParserFactory parserFactory,
         ISemaphoreFactory semaphoreFactory)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(executionTracker);
+        ArgumentNullException.ThrowIfNull(taskExecutor);
+        ArgumentNullException.ThrowIfNull(parserFactory);
+        ArgumentNullException.ThrowIfNull(semaphoreFactory);
         _logger = logger;
         _executionTracker = executionTracker;
         _taskExecutor = taskExecutor;
@@ -84,22 +89,22 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         var executionTasks = tasks.Select(async task =>
         {
-            await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await semaphore.WaitAsync(linkedCts.Token).ConfigureAwait(false);
             try
             {
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
-                    WorkflowTaskExecutionStatus.Running, cancellationToken).ConfigureAwait(false);
+                    WorkflowTaskExecutionStatus.Running, linkedCts.Token).ConfigureAwait(false);
 
                 var result = await _taskExecutor.ExecuteAsync(userId, task, parser, linkedCts.Token);
                 _taskOutputs[task.Name] = result;
 
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
-                    WorkflowTaskExecutionStatus.Completed, cancellationToken).ConfigureAwait(false);
+                    WorkflowTaskExecutionStatus.Completed, linkedCts.Token).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 await _executionTracker.UpdateTaskStatusAsync(workflowExecutionId, task.Name,
-                    WorkflowTaskExecutionStatus.Failed, cancellationToken).ConfigureAwait(false);
+                    WorkflowTaskExecutionStatus.Failed, linkedCts.Token).ConfigureAwait(false);
 
                 exceptions.Add(new Exception(string.Format(Resources.WorkflowOrchestrator_TaskFailed, task.Name, ex.Message), ex));
             }
@@ -113,7 +118,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return exceptions.ToList();
     }
 
-    private void HandleTaskExecutionErrors(List<Exception> exceptions)
+    private static void HandleTaskExecutionErrors(List<Exception> exceptions)
     {
         var errorMessage = new ErrorMessage(
             (int)ErrorCode.WorkflowTaskExecutionsList,

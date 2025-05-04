@@ -16,8 +16,10 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
     private readonly ICurrentUserService _currentUserService;
     private readonly ISystemClock _systemClock;
 
-    public WorkflowListHandler(ILogger<PluginConfigListHandler> logger,
-        IWorkflowService workflowService, ICurrentUserService currentUserService,
+    public WorkflowListHandler(
+        ILogger<PluginConfigListHandler> logger,
+        IWorkflowService workflowService, 
+        ICurrentUserService currentUserService,
         ISystemClock systemClock)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -34,7 +36,8 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
+                    Resources.Authentication_Access_Denied);
 
             var workflows = await _workflowService.All(_currentUserService.UserId, cancellationToken);
             var response = workflows.Select(workflow => new WorkflowListResponse

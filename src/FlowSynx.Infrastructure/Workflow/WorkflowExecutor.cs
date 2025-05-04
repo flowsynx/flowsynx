@@ -91,12 +91,11 @@ public class WorkflowExecutor : IWorkflowExecutor
         try
         {
             var workFlowEntity = await _workflowService.Get(userId, workflowId, cancellationToken);
-            if (workFlowEntity == null) {
-                var message = string.Format(Resources.Workflow_Executor_WorkflowCouldNotBeFound, workflowId);
-                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
-            }
+            if (workFlowEntity != null) 
+                return workFlowEntity;
 
-            return workFlowEntity;
+            var message = string.Format(Resources.Workflow_Executor_WorkflowCouldNotBeFound, workflowId);
+            throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
         }
         catch (Exception ex)
         {

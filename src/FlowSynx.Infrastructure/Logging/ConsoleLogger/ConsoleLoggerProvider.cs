@@ -3,18 +3,11 @@
 namespace FlowSynx.Infrastructure.Logging.ConsoleLogger;
 
 [ProviderAlias("Console")]
-public class ConsoleLoggerProvider : ILoggerProvider
+public class ConsoleLoggerProvider(ConsoleLoggerOptions options) : ILoggerProvider
 {
-    private readonly ConsoleLoggerOptions _options;
-
-    public ConsoleLoggerProvider(ConsoleLoggerOptions options)
-    {
-        _options = options;
-    }
-
     public ILogger CreateLogger(string categoryName)
     {
-        return new ConsoleLogger(categoryName, _options);
+        return new ConsoleLogger(categoryName, options);
     }
 
     public void Dispose()

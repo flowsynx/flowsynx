@@ -29,7 +29,8 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
         try
         {
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAthenticationIsRequired, "Access is denied. Authentication is required.");
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired,
+                    Resources.Authentication_Access_Denied);
 
             await _workflowExecutor.ExecuteAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
             return await Result<Unit>.SuccessAsync("Workflow executed successfully!");

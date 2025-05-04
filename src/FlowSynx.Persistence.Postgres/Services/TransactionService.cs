@@ -12,17 +12,19 @@ public class TransactionService : ITransactionService
     private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
     private readonly ILogger<TransactionService> _logger;
 
-    public TransactionService(IDbContextFactory<ApplicationContext> dbContextFactory,
+    public TransactionService(IDbContextFactory<ApplicationContext> appContextFactory,
         ILogger<TransactionService> logger)
     {
-        _appContextFactory = dbContextFactory ?? throw new ArgumentNullException(nameof(dbContextFactory));
+        ArgumentNullException.ThrowIfNull(appContextFactory);
+        ArgumentNullException.ThrowIfNull(logger);
+        _appContextFactory = appContextFactory ?? throw new ArgumentNullException(nameof(appContextFactory));
         _logger = logger;
     }
 
     public async Task TransactionAsync(Func<Task> action, CancellationToken cancellationToken)
     {
-        using var context = _appContextFactory.CreateDbContext();
-        using var transaction = await context.Database.BeginTransactionAsync();
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         try
         {
@@ -35,11 +37,6 @@ public class TransactionService : ITransactionService
             var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseTransaction, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
-        }
-        finally
-        {
-            transaction?.Dispose();
-            context?.Dispose();
         }
     }
 }

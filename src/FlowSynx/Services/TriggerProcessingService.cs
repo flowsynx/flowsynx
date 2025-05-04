@@ -11,6 +11,8 @@ public class TriggerProcessingService : BackgroundService
 
     public TriggerProcessingService(ILogger<TriggerProcessingService> logger, IServiceProvider serviceProvider)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(serviceProvider);
         _logger = logger;
         _serviceProvider = serviceProvider;
     }

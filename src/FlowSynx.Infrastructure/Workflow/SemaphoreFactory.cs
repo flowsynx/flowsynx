@@ -2,5 +2,5 @@
 
 public class SemaphoreFactory : ISemaphoreFactory
 {
-    public SemaphoreSlim Create(int initialCount) => new SemaphoreSlim(initialCount);
+    public SemaphoreSlim Create(int initialCount) => new(initialCount);
 }
