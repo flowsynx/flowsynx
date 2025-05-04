@@ -1,6 +1,4 @@
-﻿using FlowSynx.PluginCore;
-
-namespace FlowSynx.Plugins.LocalFileSystem.Models;
+﻿namespace FlowSynx.Plugins.LocalFileSystem.Models;
 
 internal class OperationParameter
 {

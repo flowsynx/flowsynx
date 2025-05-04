@@ -2,7 +2,6 @@
 using FlowSynx.Plugins.LocalFileSystem.Models;
 using FlowSynx.PluginCore.Extensions;
 using FlowSynx.Plugins.LocalFileSystem.Extensions;
-using FlowSynx.Plugins.Storage.LocalFileSystem.Extensions;
 using System.Text;
 
 namespace FlowSynx.Plugins.LocalFileSystem.Services;
@@ -89,7 +88,7 @@ internal class LocalFileManager : ILocalFileManager
     }
 
     #region internal methods
-    private Task CreateEntity(
+    private static Task CreateEntity(
         CreateParameters createParameters, 
         CancellationToken cancellationToken)
     {
@@ -131,7 +130,7 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<bool> ExistEntity(
+    private static Task<bool> ExistEntity(
         ExistParameters existParameters, 
         CancellationToken cancellationToken)
     {
@@ -196,7 +195,7 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task<PluginContext> ReadEntity(
+    private static Task<PluginContext> ReadEntity(
         ReadParameters readParameters, 
         CancellationToken cancellationToken)
     {
@@ -294,7 +293,7 @@ internal class LocalFileManager : ILocalFileManager
         }
     }
 
-    private PluginContext CreateContextDataFromStringData(
+    private static PluginContext CreateContextDataFromStringData(
         string path, 
         string data)
     {
@@ -326,7 +325,7 @@ internal class LocalFileManager : ILocalFileManager
             throw new InvalidDataException($"The entered data is invalid for '{pluginContext.Id}'");
 
         var rootPath = Path.GetPathRoot(pluginContext.Id);
-        string relativePath = pluginContext.Id;
+        var relativePath = pluginContext.Id;
 
         if (!string.IsNullOrEmpty(rootPath))
             relativePath = Path.GetRelativePath(rootPath, pluginContext.Id);

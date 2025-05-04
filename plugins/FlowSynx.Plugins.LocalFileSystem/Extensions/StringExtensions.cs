@@ -50,7 +50,7 @@ internal static class StringExtensions
         return value.ToStream(Encoding.UTF8);
     }
 
-    public static Stream ToStream(this string value, Encoding encoding)
+    public static Stream ToStream(this string? value, Encoding encoding)
     {
         return new MemoryStream(encoding.GetBytes(value ?? ""));
     }

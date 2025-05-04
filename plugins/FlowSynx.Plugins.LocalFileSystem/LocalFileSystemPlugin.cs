@@ -9,21 +9,15 @@ public class LocalFileSystemPlugin : IPlugin
 {
     private ILocalFileManager _manager = null!;
 
-    public PluginMetadata Metadata
+    public PluginMetadata Metadata => new()
     {
-        get
-        {
-            return new PluginMetadata
-            {
-                Id = Guid.Parse("f6304870-0294-453e-9598-a82167ace653"),
-                Name = "LocalFileSystem",
-                Description = Resources.ConnectorDescription,
-                Version = new PluginVersion(1, 0, 0),
-                Namespace = PluginNamespace.Connectors,
-                Author = "FlowSynx LLC."
-            };
-        }
-    }
+        Id = Guid.Parse("f6304870-0294-453e-9598-a82167ace653"),
+        Name = "LocalFileSystem",
+        Description = Resources.ConnectorDescription,
+        Version = new PluginVersion(1, 0, 0),
+        Namespace = PluginNamespace.Connectors,
+        Author = "FlowSynx LLC."
+    };
 
     public PluginSpecifications? Specifications { get; set; }
     public Type SpecificationsType => typeof(LocalFileSystemSpecifications);
