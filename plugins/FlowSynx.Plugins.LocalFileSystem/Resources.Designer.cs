@@ -79,6 +79,24 @@ namespace FlowSynx.Plugins.LocalFileSystem {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Directory renamed: &apos;{0}&apos; → &apos;{0}&apos;.
+        /// </summary>
+        internal static string DirectoryRenamed {
+            get {
+                return ResourceManager.GetString("DirectoryRenamed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered data format is not supported!.
+        /// </summary>
+        internal static string EnteredDataIsNotSupported {
+            get {
+                return ResourceManager.GetString("EnteredDataIsNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Entered data is not valid. The data should be in string or Base64 format..
         /// </summary>
         internal static string EnteredDataIsNotValid {
@@ -97,6 +115,15 @@ namespace FlowSynx.Plugins.LocalFileSystem {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to File renamed: &apos;{0}&apos; → &apos;{0}&apos;.
+        /// </summary>
+        internal static string FileRenamed {
+            get {
+                return ResourceManager.GetString("FileRenamed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Kind value must be [ File | Directory ]. By default it is include both Files and Directories..
         /// </summary>
         internal static string ListValidatorKindValueMustBeValidMessage {
@@ -111,6 +138,60 @@ namespace FlowSynx.Plugins.LocalFileSystem {
         internal static string NoFilesFoundWithTheGivenFilter {
             get {
                 return ResourceManager.GetString("NoFilesFoundWithTheGivenFilter", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Local FileSystem plugin: Operation &apos;{0}&apos; is not supported..
+        /// </summary>
+        internal static string OperationIsNotSupported {
+            get {
+                return ResourceManager.GetString("OperationIsNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: Source &apos;{0}&apos; does not exist..
+        /// </summary>
+        internal static string RenameSourcePathDoesNotExist {
+            get {
+                return ResourceManager.GetString("RenameSourcePathDoesNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error: Target &apos;{0}&apos; already exists..
+        /// </summary>
+        internal static string RenameTargetPathIsAlreadyExist {
+            get {
+                return ResourceManager.GetString("RenameTargetPathIsAlreadyExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DirectoryInfo cannot be null..
+        /// </summary>
+        internal static string TheDirectoryCouldNotBeNull {
+            get {
+                return ResourceManager.GetString("TheDirectoryCouldNotBeNull", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The directory &apos;{0}&apos; does not exist..
+        /// </summary>
+        internal static string TheDirectoryDoesNotExist {
+            get {
+                return ResourceManager.GetString("TheDirectoryDoesNotExist", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The entered data is invalid for &apos;{0}&apos;.
+        /// </summary>
+        internal static string TheEnteredDataIsInvalid {
+            get {
+                return ResourceManager.GetString("TheEnteredDataIsInvalid", resourceCulture);
             }
         }
         
@@ -174,6 +255,15 @@ namespace FlowSynx.Plugins.LocalFileSystem {
         internal static string TheSpecifiedPathWasDeleted {
             get {
                 return ResourceManager.GetString("TheSpecifiedPathWasDeleted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The specified path &apos;{0}&apos; was purged successfully..
+        /// </summary>
+        internal static string TheSpecifiedPathWasPurged {
+            get {
+                return ResourceManager.GetString("TheSpecifiedPathWasPurged", resourceCulture);
             }
         }
     }

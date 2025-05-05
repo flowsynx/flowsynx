@@ -125,7 +125,7 @@ internal class LocalFileManager : ILocalFileManager
             throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
 
         File.Delete(path);
-        _logger.LogInfo($"The specified path '{path}' was deleted successfully.");
+        _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
 
         return Task.CompletedTask;
     }
@@ -190,7 +190,7 @@ internal class LocalFileManager : ILocalFileManager
         var deleteRecursively = purgeParameters.Force ?? false;
 
         directoryInfo.Delete(deleteRecursively);
-        _logger.LogInfo($"The specified path '{path}' was deleted successfully.");
+        _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasPurged, path));
 
         return Task.CompletedTask;
     }
@@ -227,20 +227,20 @@ internal class LocalFileManager : ILocalFileManager
         var targetPath = PathHelper.ToUnixPath(renameParameters.TargetPath);
 
         if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
-            throw new Exception($"Error: Source '{sourcePath}' does not exist.");
+            throw new Exception(string.Format(Resources.RenameSourcePathDoesNotExist, sourcePath));
 
         if (File.Exists(targetPath) || Directory.Exists(renameParameters.TargetPath))
-            throw new Exception($"Error: Target '{renameParameters.TargetPath}' already exists.");
+            throw new Exception(string.Format(Resources.RenameTargetPathIsAlreadyExist, renameParameters.TargetPath));
 
         if (File.Exists(sourcePath))
         {
             File.Move(sourcePath, targetPath);
-            _logger.LogInfo($"File renamed: '{sourcePath}' → '{targetPath}'");
+            _logger.LogInfo(string.Format(Resources.FileRenamed, sourcePath, targetPath));
         }
         else if (Directory.Exists(sourcePath))
         {
             Directory.Move(sourcePath, targetPath);
-            _logger.LogInfo($"Directory renamed: '{sourcePath}' → '{targetPath}'");
+            _logger.LogInfo(string.Format(Resources.DirectoryRenamed, sourcePath, targetPath));
         }
 
         return Task.CompletedTask;
@@ -283,7 +283,7 @@ internal class LocalFileManager : ILocalFileManager
         }
         else
         {
-            throw new NotSupportedException("The entered data format is not supported!");
+            throw new NotSupportedException(Resources.EnteredDataIsNotSupported);
         }
 
         foreach (var contextData in pluginContextes)
@@ -322,7 +322,7 @@ internal class LocalFileManager : ILocalFileManager
         else if (pluginContext.Content is not null)
             dataToWrite = Encoding.UTF8.GetBytes(pluginContext.Content);
         else
-            throw new InvalidDataException($"The entered data is invalid for '{pluginContext.Id}'");
+            throw new InvalidDataException(string.Format(Resources.TheEnteredDataIsInvalid, pluginContext.Id));
 
         var rootPath = Path.GetPathRoot(pluginContext.Id);
         var relativePath = pluginContext.Id;

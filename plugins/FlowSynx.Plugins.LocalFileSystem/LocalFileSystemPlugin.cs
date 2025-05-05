@@ -60,7 +60,7 @@ public class LocalFileSystemPlugin : IPlugin
                 await _manager.Write(parameters, cancellationToken).ConfigureAwait(false);
                 return null;
             default:
-                throw new NotSupportedException($"Local FileSystem plugin: Operation '{operation}' is not supported.");
+                throw new NotSupportedException(string.Format(Resources.OperationIsNotSupported, operation));
         }
     }
 }

@@ -10,10 +10,10 @@ internal static class DirectoryInfoExtensions
     public static IEnumerable<FileInfo> FindFiles(this DirectoryInfo directoryInfo, IPluginLogger logger, ListParameters listParameters)
     {
         if (directoryInfo == null)
-            throw new ArgumentNullException(nameof(directoryInfo), @"DirectoryInfo cannot be null.");
+            throw new ArgumentNullException(nameof(directoryInfo), Resources.TheDirectoryCouldNotBeNull);
 
         if (!directoryInfo.Exists)
-            throw new DirectoryNotFoundException($"The directory '{directoryInfo.FullName}' does not exist.");
+            throw new DirectoryNotFoundException(string.Format(Resources.TheDirectoryDoesNotExist,directoryInfo.FullName));
 
         var searchOption = listParameters.Recurse is true ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         var files = directoryInfo.EnumerateFiles("*", searchOption);
