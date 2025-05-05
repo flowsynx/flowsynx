@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.PluginConfig.Command.Add;
-using FlowSynx.Application.Features.PluginConfig.Command.Update;
+using FlowSynx.Application.Features.PluginConfig.Command.AddPluginConfig;
+using FlowSynx.Application.Features.PluginConfig.Command.UpdatePluginConfig;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;

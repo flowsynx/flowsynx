@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.Plugins.Command.Install;
-using FlowSynx.Application.Features.Plugins.Command.Uninstall;
-using FlowSynx.Application.Features.Plugins.Command.Update;
+using FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
+using FlowSynx.Application.Features.Plugins.Command.UninstallPlugin;
+using FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;

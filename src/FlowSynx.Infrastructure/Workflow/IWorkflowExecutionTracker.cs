@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Features.Workflows.Command.Execute;
+﻿using FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
 using FlowSynx.Domain.Workflow;
 
 namespace FlowSynx.Infrastructure.Workflow;

@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.Logs.Query.List;
+using FlowSynx.Application.Features.Logs.Query.LogsList;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;
