@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Application.UnitTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.UnitTests", "tests\FlowSynx.Infrastructure.UnitTests\FlowSynx.Infrastructure.UnitTests.csproj", "{55F6401D-828D-4C24-8083-359759C71D23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.SQLite.UnitTests", "tests\FlowSynx.Persistence.SQLite.UnitTests\FlowSynx.Persistence.SQLite.UnitTests.csproj", "{576F88AE-5AE6-41BD-920B-7E248CF4B573}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{55F6401D-828D-4C24-8083-359759C71D23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{55F6401D-828D-4C24-8083-359759C71D23}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{55F6401D-828D-4C24-8083-359759C71D23}.Release|Any CPU.Build.0 = Release|Any CPU
+		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,6 +92,7 @@ Global
 		{6CF87669-59CF-4CBF-94F4-0EE562E661D0} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 		{92A681E5-A2B1-444E-8FE2-30757DF828A0} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
 		{55F6401D-828D-4C24-8083-359759C71D23} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
+		{576F88AE-5AE6-41BD-920B-7E248CF4B573} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}

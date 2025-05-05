@@ -42,7 +42,7 @@ public class LoggerService : ILoggerService
         {
             await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Logs
-                .FindAsync(new object?[] { userId, id }, cancellationToken: cancellationToken)
+                .FirstOrDefaultAsync(l=>l.Id == id && l.UserId == userId, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
