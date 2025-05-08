@@ -21,7 +21,10 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyCollection<WorkflowExecutionEntity>> All(string userId, Guid workflowId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<WorkflowExecutionEntity>> All(
+        string userId, 
+        Guid workflowId, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -41,14 +44,18 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         }
     }
 
-    public async Task<WorkflowExecutionEntity?> Get(string userId, Guid workflowExecutionId, CancellationToken cancellationToken)
+    public async Task<WorkflowExecutionEntity?> Get(
+        string userId, 
+        Guid workflowId,
+        Guid workflowExecutionId, 
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowExecutions
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.Id == workflowExecutionId && x.IsDeleted == false,
-                cancellationToken)
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.WorkflowId == workflowId 
+                    && x.Id == workflowExecutionId && x.IsDeleted == false, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)

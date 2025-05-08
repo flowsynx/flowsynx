@@ -5,6 +5,7 @@ public enum WorkflowTaskExecutionStatus
     Pending,
     Running,
     Completed,
+    Canceled,
     Failed,
     Retrying
 }

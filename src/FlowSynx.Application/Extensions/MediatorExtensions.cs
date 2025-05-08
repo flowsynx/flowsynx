@@ -20,113 +20,221 @@ using FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowsList;
 using FlowSynx.Application.Wrapper;
 using MediatR;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionDetails;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionDetails;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionLogs;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionLogs;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
 
 namespace FlowSynx.Application.Extensions;
 
 public static class MediatorExtensions
 {
     #region Workflow
-    public static Task<Result<IEnumerable<WorkflowListResponse>>> Workflows(this IMediator mediator, 
+    public static Task<Result<IEnumerable<WorkflowListResponse>>> Workflows(
+        this IMediator mediator, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowListRequest(), cancellationToken);
     }
 
-    public static Task<Result<WorkflowDetailsResponse>> WorkflowDetails(this IMediator mediator,
-        string id, CancellationToken cancellationToken)
+    public static Task<Result<WorkflowDetailsResponse>> WorkflowDetails(
+        this IMediator mediator,
+        string id, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<AddWorkflowResponse>> AddWorkflow(this IMediator mediator,
-        string request, CancellationToken cancellationToken)
+    public static Task<Result<AddWorkflowResponse>> AddWorkflow(
+        this IMediator mediator,
+        string request, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(new AddWorkflowRequest { Definition = request }, cancellationToken);
     }
 
-    public static Task<Result<Unit>> UpdateWorkflow(this IMediator mediator, string id, string definition,
+    public static Task<Result<Unit>> UpdateWorkflow(
+        this IMediator mediator, 
+        string id, 
+        string definition,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new UpdateWorkflowRequest { Id = id, Definition = definition }, cancellationToken);
     }
 
-    public static Task<Result<Unit>> DeleteWorkflow(this IMediator mediator, string id,
+    public static Task<Result<Unit>> DeleteWorkflow(
+        this IMediator mediator, 
+        string id,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new DeleteWorkflowRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<Unit>> ExecuteWorkflow(this IMediator mediator, Guid id,
-    CancellationToken cancellationToken)
+    public static Task<Result<Unit>> ExecuteWorkflow(
+        this IMediator mediator, 
+        Guid id,
+        CancellationToken cancellationToken)
     {
         return mediator.Send(new ExecuteWorkflowRequest { WorkflowId = id }, cancellationToken);
     }
+
+    public static Task<Result<WorkflowExecutionDetailsResponse>> WorkflowExecutionDetails(
+        this IMediator mediator,
+        string id, 
+        string execId, 
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowExecutionDetailsRequest { WorkflowId = id, WorkflowExecutionId = execId }, 
+            cancellationToken);
+    }
+
+    public static Task<Result<WorkflowTaskExecutionDetailsResponse>> WorkflowTaskExecutionDetails(
+        this IMediator mediator,
+        string id, 
+        string execId, 
+        string taskId, 
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowTaskExecutionDetailsRequest { 
+            WorkflowId = id, 
+            WorkflowExecutionId = execId, 
+            WorkflowTaskExecutionId = taskId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<Unit>> CancelWorkflowExecution(
+        this IMediator mediator,
+        string id, 
+        string execId, 
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new CancelWorkflowRequest
+        {
+            WorkflowId = id,
+            WorkflowExecutionId = execId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<IEnumerable<WorkflowExecutionLogsResponse>>> WorkflowExecutionLogs(
+        this IMediator mediator,
+        string id, 
+        string execId, 
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowExecutionLogsRequest
+        {
+            WorkflowId = id,
+            WorkflowExecutionId = execId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<IEnumerable<WorkflowTaskExecutionLogsResponse>>> WorkflowTaskExecutionLogs(
+        this IMediator mediator,
+        string id, 
+        string execId, 
+        string taskId, 
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowTaskExecutionLogsRequest
+        {
+            WorkflowId = id,
+            WorkflowExecutionId = execId,
+            WorkflowTaskExecutionId = taskId
+        },
+        cancellationToken);
+    }
+
     #endregion
 
     #region Version
-    public static Task<Result<VersionResponse>> Version(this IMediator mediator, VersionRequest request, CancellationToken cancellationToken)
+    public static Task<Result<VersionResponse>> Version(
+        this IMediator mediator, 
+        VersionRequest request, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
     #endregion
 
     #region Plugins
-    public static Task<Result<IEnumerable<PluginsListResponse>>> PluginsList(this IMediator mediator, 
+    public static Task<Result<IEnumerable<PluginsListResponse>>> PluginsList(
+        this IMediator mediator, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginsListRequest(), cancellationToken);
     }
 
-    public static Task<Result<PluginDetailsResponse>> PluginDetails(this IMediator mediator, 
-        string id, CancellationToken cancellationToken)
+    public static Task<Result<PluginDetailsResponse>> PluginDetails(
+        this IMediator mediator, 
+        string id, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<Unit>> InstallPlugin(this IMediator mediator,
-        InstallPluginRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> InstallPlugin(
+        this IMediator mediator,
+        InstallPluginRequest request, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<Unit>> UpdatePlugin(this IMediator mediator,
-        UpdatePluginRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> UpdatePlugin(
+        this IMediator mediator,
+        UpdatePluginRequest request, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<Unit>> UninstallPlugin(this IMediator mediator,
-        UninstallPluginRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> UninstallPlugin(
+        this IMediator mediator,
+        UninstallPluginRequest request,
+        CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
     #endregion
 
     #region PluginConfig
-    public static Task<Result<IEnumerable<PluginConfigListResponse>>> PluginsConfiguration(this IMediator mediator,
+    public static Task<Result<IEnumerable<PluginConfigListResponse>>> PluginsConfiguration(
+        this IMediator mediator,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginConfigListRequest(), cancellationToken);
     }
 
-    public static Task<Result<PluginConfigDetailsResponse>> PluginConfigurationDetails(this IMediator mediator, 
-         string id, CancellationToken cancellationToken)
+    public static Task<Result<PluginConfigDetailsResponse>> PluginConfigurationDetails(
+        this IMediator mediator, 
+         string id, 
+         CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginConfigDetailsRequest { Id = id}, cancellationToken);
     }
 
-    public static Task<Result<AddPluginConfigResponse>> AddPluginConfiguration(this IMediator mediator, 
-        AddPluginConfigRequest request, CancellationToken cancellationToken)
+    public static Task<Result<AddPluginConfigResponse>> AddPluginConfiguration(
+        this IMediator mediator, 
+        AddPluginConfigRequest request,
+        CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
 
-    public static Task<Result<Unit>> UpdatePluginConfiguration(this IMediator mediator, 
-        UpdatePluginConfigRequest request, CancellationToken cancellationToken)
+    public static Task<Result<Unit>> UpdatePluginConfiguration(
+        this IMediator mediator, 
+        UpdatePluginConfigRequest request, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
-    public static Task<Result<Unit>> DeletePluginConfiguration(this IMediator mediator, string id, 
+    public static Task<Result<Unit>> DeletePluginConfiguration(
+        this IMediator mediator, 
+        string id, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new DeletePluginConfigRequest { Id = id }, cancellationToken);
@@ -134,7 +242,9 @@ public static class MediatorExtensions
     #endregion
 
     #region Logs
-    public static Task<Result<IEnumerable<LogsListResponse>>> Logs(this IMediator mediator, LogsListRequest request, 
+    public static Task<Result<IEnumerable<LogsListResponse>>> Logs(
+        this IMediator mediator, 
+        LogsListRequest request, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -142,13 +252,17 @@ public static class MediatorExtensions
     #endregion
 
     #region Audits
-    public static Task<Result<IEnumerable<AuditsListResponse>>> Audits(this IMediator mediator, CancellationToken cancellationToken)
+    public static Task<Result<IEnumerable<AuditsListResponse>>> Audits(
+        this IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(new AuditsListRequest(), cancellationToken);
     }
 
-    public static Task<Result<AuditDetailsResponse>> AuditDetails(this IMediator mediator,
-     string id, CancellationToken cancellationToken)
+    public static Task<Result<AuditDetailsResponse>> AuditDetails(
+        this IMediator mediator,
+        string id, 
+        CancellationToken cancellationToken)
     {
         return mediator.Send(new AuditDetailsRequest { Id = id }, cancellationToken);
     }

@@ -10,22 +10,22 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
 {
     private readonly ILogger<WorkflowTimeBasedTriggerProcessor> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
-    private readonly IWorkflowExecutor _workflowExecutor;
+    private readonly IWorkflowOrchestrator _workflowOrchestrator;
     private readonly ISystemClock _systemClock;
 
     public WorkflowTimeBasedTriggerProcessor(
         ILogger<WorkflowTimeBasedTriggerProcessor> logger,
         IWorkflowTriggerService workflowTriggerService,
-        IWorkflowExecutor workflowExecutor,
+        IWorkflowOrchestrator workflowOrchestrator,
         ISystemClock systemClock)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowTriggerService);
-        ArgumentNullException.ThrowIfNull(workflowExecutor);
+        ArgumentNullException.ThrowIfNull(workflowOrchestrator);
         ArgumentNullException.ThrowIfNull(systemClock);
         _logger = logger;
         _workflowTriggerService = workflowTriggerService;
-        _workflowExecutor = workflowExecutor;
+        _workflowOrchestrator = workflowOrchestrator;
         _systemClock = systemClock;
     }
 
@@ -71,7 +71,7 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
     {
         try
         {
-            await _workflowExecutor.ExecuteAsync(trigger.UserId, trigger.WorkflowId, cancellationToken);
+            await _workflowOrchestrator.ExecuteWorkflowAsync(trigger.UserId, trigger.WorkflowId, cancellationToken);
         }
         catch (Exception ex)
         {

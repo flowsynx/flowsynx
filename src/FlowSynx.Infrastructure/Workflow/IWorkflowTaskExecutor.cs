@@ -7,7 +7,10 @@ public interface IWorkflowTaskExecutor
 {
     Task<object?> ExecuteAsync(
         string userId, 
+        Guid workflowId,
+        Guid workflowExecutionId,
         WorkflowTask task, 
         IExpressionParser parser,
-        CancellationToken cancellationToken);
+        CancellationToken globalCancellationToken,
+        CancellationToken taskCancellationToken);
 }

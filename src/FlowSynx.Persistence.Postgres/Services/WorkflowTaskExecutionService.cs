@@ -21,7 +21,8 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyCollection<WorkflowTaskExecutionEntity>> All(Guid workflowExecutionId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<WorkflowTaskExecutionEntity>> All(Guid workflowExecutionId, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -41,7 +42,8 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         }
     }
 
-    public async Task<WorkflowTaskExecutionEntity?> Get(Guid workflowTaskExecutionId, CancellationToken cancellationToken)
+    public async Task<WorkflowTaskExecutionEntity?> Get(Guid workflowTaskExecutionId, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -58,13 +60,18 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         }
     }
 
-    public async Task<WorkflowTaskExecutionEntity?> Get(Guid workflowExecutionId, string taskName, CancellationToken cancellationToken)
+    public async Task<WorkflowTaskExecutionEntity?> Get(Guid workflowId, Guid workflowExecutionId,
+        string taskName, CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowTaskExecutions
-                .FirstOrDefaultAsync(x => x.WorkflowExecutionId == workflowExecutionId && x.Name.ToLower() == taskName.ToLower() && x.IsDeleted == false,
+                .FirstOrDefaultAsync(x => 
+                    x.WorkflowId == workflowId && 
+                    x.WorkflowExecutionId == workflowExecutionId && 
+                    x.Name.ToLower() == taskName.ToLower() && 
+                    x.IsDeleted == false,
                 cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -76,7 +83,32 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         }
     }
 
-    public async Task Add(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, CancellationToken cancellationToken)
+    public async Task<WorkflowTaskExecutionEntity?> Get(
+        Guid workflowId, Guid workflowExecutionId, Guid workflowTaskExecutionId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.WorkflowTaskExecutions
+                .FirstOrDefaultAsync(x =>
+                    x.Id == workflowTaskExecutionId &&
+                    x.WorkflowId == workflowId &&
+                    x.WorkflowExecutionId == workflowExecutionId &&
+                    x.IsDeleted == false,
+                cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetTaskExecutionItem, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task Add(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -97,7 +129,8 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         }
     }
 
-    public async Task Update(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, CancellationToken cancellationToken)
+    public async Task Update(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -117,7 +150,8 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         }
     }
 
-    public async Task<bool> Delete(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, CancellationToken cancellationToken)
+    public async Task<bool> Delete(WorkflowTaskExecutionEntity workflowTaskExecutionEntity, 
+        CancellationToken cancellationToken)
     {
         try
         {

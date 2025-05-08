@@ -15,6 +15,8 @@ using FlowSynx.Services;
 using FlowSynx.Application.Services;
 using FlowSynx.Middleware;
 using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Endpoints;
+using System.Threading.Tasks;
 
 namespace FlowSynx.Extensions;
 
@@ -70,7 +72,7 @@ public static class ServiceCollectionExtensions
         services.AddLogging(c => c.ClearProviders());
         services.AddLogging(builder => builder.AddConsoleLogger(options =>
         {
-            options.OutputTemplate = "[{level} | {timestamp}] Message=\"{message}\"";
+            options.OutputTemplate = "[{level} | {timestamp}] [{Scope}] Message=\"{message}\"";
             options.MinLevel = logLevel;
             options.CancellationToken = cancellationToken;
         }));
@@ -294,7 +296,7 @@ public static class ServiceCollectionExtensions
                 var userList = securityConfiguration.Basic.Users;
                 if (userList == null || userList.GroupBy(u => u.Name).Any(g => g.Count() > 1))
                 {
-                    var errorMessage = new ErrorMessage((int)ErrorCode.SecurityBasicAuthenticationMustHaveUniqueNames, 
+                    var errorMessage = new ErrorMessage((int)ErrorCode.SecurityBasicAuthenticationMustHaveUniqueNames,
                         "Users must have unique names in BasicAuthentication configuration.");
                     throw new FlowSynxException(errorMessage);
                 }

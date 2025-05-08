@@ -117,7 +117,8 @@ public static class ApplicationBuilderExtensions
         }
         catch (Exception ex)
         {
-            throw new FlowSynxException((int)ErrorCode.DatabaseCreation, $"Error occurred while creating the application database: {ex.Message}");
+            throw new FlowSynxException((int)ErrorCode.DatabaseCreation, 
+                $"Error occurred while connecting the application database: {ex.Message}");
         }
     }
 

@@ -19,22 +19,22 @@ public class Config : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
-        group.MapGet("/details/{id}", PluginConfigurationDetails)
+        group.MapGet("/{id}", PluginConfigurationDetails)
             .WithName("PluginConfigurationDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
-        group.MapPost("/add", AddPluginConfiguration)
+        group.MapPost("", AddPluginConfiguration)
             .WithName("AddPluginConfig")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
-        group.MapPost("/update/{id}", UpdatePluginConfiguration)
+        group.MapPut("/{id}", UpdatePluginConfiguration)
             .WithName("UpdatePluginConfiguration")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
-        group.MapDelete("/delete/{id}", DeletePluginConfiguration)
+        group.MapDelete("/{id}", DeletePluginConfiguration)
             .WithName("DeletePluginConfiguration")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));

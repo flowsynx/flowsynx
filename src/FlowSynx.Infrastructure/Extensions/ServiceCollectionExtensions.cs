@@ -34,15 +34,14 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddSingleton<ISystemClock, SystemClock>()
+            .AddSingleton<IWorkflowCancellationRegistry, WorkflowCancellationRegistry>()
             .AddScoped<IExpressionParserFactory, ExpressionParserFactory>()
             .AddScoped<IPlaceholderReplacer, PlaceholderReplacer>()
             .AddScoped<IErrorHandlingResolver, ErrorHandlingResolver>()
             .AddScoped<ISemaphoreFactory, SemaphoreFactory>()
-            .AddScoped<IWorkflowExecutionTracker, WorkflowExecutionTracker>()
             .AddScoped<IWorkflowOrchestrator, WorkflowOrchestrator>()
             .AddScoped<IWorkflowTaskExecutor, WorkflowTaskExecutor>()
             .AddSingleton<IErrorHandlingStrategyFactory, ErrorHandlingStrategyFactory>()
-            .AddScoped<IWorkflowExecutor, WorkflowExecutor>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
             .AddScoped<WorkflowTimeBasedTriggerProcessor>();
 

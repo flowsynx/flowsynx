@@ -20,22 +20,22 @@ public class Plugins : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
-        group.MapGet("/details/{id}", PluginDetails)
+        group.MapGet("/{id}", PluginDetails)
             .WithName("PluginDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
-        group.MapPost("/install", InstallPlugin)
+        group.MapPost("", InstallPlugin)
             .WithName("InstallPlugin")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
-        group.MapPost("/update", UpdatePlugin)
+        group.MapPut("", UpdatePlugin)
             .WithName("UpdatePlugin")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));
 
-        group.MapDelete("/uninstall", UninstallPlugin)
+        group.MapDelete("", UninstallPlugin)
             .WithName("UninstallPlugin")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Plugins"));

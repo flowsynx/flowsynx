@@ -15,6 +15,7 @@ internal class DatabaseLogger : ILogger, IDisposable
     private readonly ILoggerService _loggerService;
     private readonly DatabaseLoggerOptions _options;
     private readonly Task _workerTask;
+    private static readonly AsyncLocal<Scope?> _currentScope = new();
 
     public DatabaseLogger(string category, DatabaseLoggerOptions options,
         IHttpContextAccessor httpContextAccessor, ILoggerService loggerService)
@@ -31,7 +32,10 @@ internal class DatabaseLogger : ILogger, IDisposable
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
-        return null;
+        var parent = _currentScope.Value;
+        var newScope = new Scope(state, parent);
+        _currentScope.Value = newScope;
+        return newScope;
     }
 
     public bool IsEnabled(LogLevel logLevel)
@@ -46,6 +50,8 @@ internal class DatabaseLogger : ILogger, IDisposable
 
         var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
 
+        var scopeInfo = GetScopeInfo();
+
         var logMessage = new LogMessage
         {
             UserId = userId,
@@ -55,10 +61,40 @@ internal class DatabaseLogger : ILogger, IDisposable
             TimeStamp = DateTime.UtcNow,
             Category = _category,
             Exception = exception?.ToString(),
+            Scope = scopeInfo
         };
 
         _logQueue.Enqueue(logMessage);
     }
+
+    private string GetScopeInfo()
+    {
+        var scopes = new List<string>();
+        var current = _currentScope.Value;
+
+        while (current != null)
+        {
+            if (current.State is IEnumerable<KeyValuePair<string, object>> dict)
+            {
+                foreach (var item in dict)
+                {
+                    if (IsFrameworkScopeKey(item.Key))
+                        continue;
+
+                    scopes.Add($"{item.Key}={item.Value}");
+                }
+            }
+            else
+            {
+                scopes.Add(current.State?.ToString() ?? "");
+            }
+            current = current.Parent;
+        }
+
+        return string.Join(" | ", scopes);
+    }
+
+    private static bool IsFrameworkScopeKey(string key) => key is "RequestId" or "ConnectionId" or "RequestPath";
 
     private async Task ProcessQueue(CancellationToken cancellationToken)
     {
@@ -88,6 +124,7 @@ internal class DatabaseLogger : ILogger, IDisposable
                 Message = logMessage.Message,
                 Category = logMessage.Category,
                 Exception = logMessage.Exception,
+                Scope = logMessage.Scope,
             };
 
             await _loggerService.Add(log, cancellationToken);
@@ -117,5 +154,25 @@ internal class DatabaseLogger : ILogger, IDisposable
     {
         if (!_options.CancellationToken.IsCancellationRequested)
             _workerTask.Wait();
+    }
+
+    private class Scope : IDisposable
+    {
+        public object? State { get; }
+        public Scope? Parent { get; }
+
+        public Scope(object? state, Scope? parent)
+        {
+            State = state;
+            Parent = parent;
+        }
+
+        public void Dispose()
+        {
+            if (_currentScope.Value == this)
+            {
+                _currentScope.Value = Parent;
+            }
+        }
     }
 }

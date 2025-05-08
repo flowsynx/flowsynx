@@ -129,8 +129,9 @@ public enum ErrorCode
     WorkflowFailedDependenciesTask                  = 2430,
     WorkflowFailedExecution                         = 2431,
     WorkflowExecutionInitilizeFailed                = 2432,
-    WorkflowTaskExecutionTimeout                    = 2433,
-    WorkflowExecutionTimeout                        = 2434,
+    WorkflowTaskExecutionCanceled                   = 2433,
+    WorkflowExecutionCanceled                       = 2434,
+    WorkflowCancellationRegistry                    = 2435,
     #endregion
 
     #region ExpressionParser

@@ -210,14 +210,14 @@
   <data name="RetryService_RetryFailedUnexpectedly" xml:space="preserve">
     <value>Retry mechanism failed unexpectedly.</value>
   </data>
-  <data name="RetryService_TaskTimeoutOnAttempt" xml:space="preserve">
-    <value>Task '{0}' timeout on attempt {1}.</value>
+  <data name="RetryService_TaskCanceled" xml:space="preserve">
+    <value>Task '{0}' canceled.</value>
   </data>
   <data name="RetryService_WaitingBeforeRetry" xml:space="preserve">
     <value>Waiting {0}ms before retry...</value>
   </data>
-  <data name="RetryService_WorkflowTimeout" xml:space="preserve">
-    <value>Workflow execution timeout</value>
+  <data name="RetryService_WorkflowCanceled" xml:space="preserve">
+    <value>Workflow execution canceled.</value>
   </data>
   <data name="SpecificationsMustHaveValue" xml:space="preserve">
     <value>The specification(s) [{0}] are required and must have value.</value>
@@ -274,7 +274,7 @@
     <value>The workflow with id '{0}' could not be found.</value>
   </data>
   <data name="Workflow_Executor_WorkflowInitilizeFailed" xml:space="preserve">
-    <value>Initilize WorkflowExecution failed. Meesage: {0}</value>
+    <value>Failed to start workflow execution. Meesage: {0}</value>
   </data>
   <data name="Workflow_TimeBased_TriggerProcessor_FailedExecution" xml:space="preserve">
     <value>Failed to execute workflow with ID '{0}' for user '{1}'.</value>

@@ -11,4 +11,5 @@ public class LogMessage
     public required DateTime TimeStamp { get; set; } = DateTime.UtcNow;
     public string Category { get; set; } = string.Empty;
     public string? Exception { get; set; }
+    public string? Scope { get; set; }
 }

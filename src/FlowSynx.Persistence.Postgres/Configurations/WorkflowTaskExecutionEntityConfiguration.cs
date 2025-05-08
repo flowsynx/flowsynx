@@ -18,6 +18,12 @@ public class WorkflowTaskExecutionEntityConfiguration : IEntityTypeConfiguration
                .IsRequired()
                .HasMaxLength(128);
 
+        builder.Property(t => t.WorkflowId)
+               .IsRequired();
+
+        builder.Property(t => t.WorkflowExecutionId)
+               .IsRequired();
+
         var levelConverter = new ValueConverter<WorkflowTaskExecutionStatus, string>(
             v => v.ToString(),
             v => (WorkflowTaskExecutionStatus)Enum.Parse(typeof(WorkflowTaskExecutionStatus), v, true)
@@ -31,6 +37,5 @@ public class WorkflowTaskExecutionEntityConfiguration : IEntityTypeConfiguration
                .WithMany(we => we.TaskExecutions)
                .HasForeignKey(te => te.WorkflowExecutionId)
                .OnDelete(DeleteBehavior.Cascade);
-
     }
 }

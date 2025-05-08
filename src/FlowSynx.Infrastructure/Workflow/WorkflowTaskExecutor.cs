@@ -1,109 +1,192 @@
 ﻿using FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
 using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
+using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
 public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 {
+    private readonly ILogger<WorkflowTaskExecutor> _logger;
     private readonly IPluginTypeService _pluginTypeService;
     private readonly IPlaceholderReplacer _placeholderReplacer;
     private readonly IErrorHandlingStrategyFactory _errorHandlingStrategyFactory;
+    private readonly IWorkflowTaskExecutionService _workflowTaskExecutionService;
+    private readonly ISystemClock _systemClock;
 
     public WorkflowTaskExecutor(
+        ILogger<WorkflowTaskExecutor> logger,
         IPluginTypeService pluginTypeService,
         IPlaceholderReplacer placeholderReplacer,
-        IErrorHandlingStrategyFactory errorHandlingStrategyFactory)
+        IErrorHandlingStrategyFactory errorHandlingStrategyFactory,
+        IWorkflowTaskExecutionService workflowTaskExecutionService,
+        ISystemClock systemClock)
     {
-        ArgumentNullException.ThrowIfNull(pluginTypeService);
-        ArgumentNullException.ThrowIfNull(placeholderReplacer);
-        ArgumentNullException.ThrowIfNull(errorHandlingStrategyFactory);
-        _pluginTypeService = pluginTypeService;
-        _placeholderReplacer = placeholderReplacer;
-        _errorHandlingStrategyFactory = errorHandlingStrategyFactory;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _pluginTypeService = pluginTypeService ?? throw new ArgumentNullException(nameof(pluginTypeService));
+        _placeholderReplacer = placeholderReplacer ?? throw new ArgumentNullException(nameof(placeholderReplacer));
+        _errorHandlingStrategyFactory = errorHandlingStrategyFactory ?? throw new ArgumentNullException(nameof(errorHandlingStrategyFactory));
+        _workflowTaskExecutionService = workflowTaskExecutionService ?? throw new ArgumentNullException(nameof(workflowTaskExecutionService));
+        _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
     }
 
     public async Task<object?> ExecuteAsync(
-        string userId, 
-        WorkflowTask task, 
+        string userId,
+        Guid workflowId,
+        Guid workflowExecutionId,
+        WorkflowTask task,
         IExpressionParser parser,
-        CancellationToken cancellationToken)
+        CancellationToken globalCancellationToken,
+        CancellationToken taskCancellationToken)
     {
-        var errorHandlingContext = new ErrorHandlingContext
-        {
-            TaskName = task.Name,
-            RetryCount = 0
-        };
+        var taskExecution = await _workflowTaskExecutionService.Get(workflowId, workflowExecutionId, task.Name, globalCancellationToken);
 
-        return await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, cancellationToken).ConfigureAwait(false);
+        if (taskExecution == null)
+        {
+            _logger.LogError("Workflow task '{TaskName}' is not initialized.", task.Name);
+            throw new FlowSynxException((int)ErrorCode.WorkflowGetTaskExecutionItem,
+                $"Workflow task '{task.Name}' is not initialized.");
+        }
+
+        var logScopeContext = CreateLogScope(taskExecution.Id, task.Name);
+        using (_logger.BeginScope(logScopeContext))
+        {
+            taskExecution.StartTime = _systemClock.UtcNow;
+            await UpdateTaskStatusAsync(taskExecution, WorkflowTaskExecutionStatus.Running, globalCancellationToken);
+            _logger.LogInformation("Workflow task '{TaskName}' started.", task.Name);
+
+            var context = new ErrorHandlingContext { TaskName = task.Name, RetryCount = 0 };
+            return await ExecuteTaskAsync(userId, task, taskExecution, parser, context, 
+                globalCancellationToken, taskCancellationToken);
+        }
     }
 
     public async Task<object?> ExecuteTaskAsync(
         string userId,
         WorkflowTask task,
+        WorkflowTaskExecutionEntity taskExecution,
         IExpressionParser parser,
-        ErrorHandlingContext errorHandlingContext,
-        CancellationToken cancellationToken)
+        ErrorHandlingContext errorContext,
+        CancellationToken globalCancellationToken,
+        CancellationToken taskCancellationToken)
     {
-        using var timeoutCts = CreateTimeoutToken(task.Timeout, cancellationToken);
+        using var timeoutCts = CreateTimeoutToken(task.Timeout, taskCancellationToken);
         var token = timeoutCts.Token;
 
-        var plugin = await _pluginTypeService.Get(userId, task.Type, token).ConfigureAwait(false);
+        var plugin = await _pluginTypeService.Get(userId, task.Type, token);
         var pluginParameters = PreparePluginParameters(task.Parameters, parser);
-
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
 
         try
         {
             token.ThrowIfCancellationRequested();
-            return await plugin.ExecuteAsync(pluginParameters, token).ConfigureAwait(false);
+            var result = await plugin.ExecuteAsync(pluginParameters, token);
+            await Task.Delay(1000000, token);
+
+            await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
+            _logger.LogInformation("Workflow task '{TaskName}' completed.", task.Name);
+            return result;
         }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
-            throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionTimeout,
-                string.Format(Resources.RetryService_TaskTimeoutOnAttempt, task.Name, 0));
+            await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
+            _logger.LogError($"Workflow task '{task.Name}' canceled.");
+            throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
+                string.Format(Resources.RetryService_TaskCanceled, task.Name, 0));
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (globalCancellationToken.IsCancellationRequested)
         {
-            throw new FlowSynxException((int)ErrorCode.WorkflowExecutionTimeout, Resources.RetryService_WorkflowTimeout);
+            await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
+            _logger.LogError($"Workflow task '{task.Name}' canceled.");
+            throw new FlowSynxException((int)ErrorCode.WorkflowExecutionCanceled,
+                string.Format(Resources.RetryService_WorkflowCanceled, task.Name, 0));
         }
         catch (Exception ex)
         {
             if (token.IsCancellationRequested)
-                throw new TimeoutException($"Task '{task.Name}' timed out.");
-
-            var result = await retryStrategy.HandleAsync(errorHandlingContext, token);
-
-            return result switch
             {
-                { ShouldRetry: true } => await ExecuteTaskAsync(userId, task, parser, errorHandlingContext, token),
-                { ShouldSkip: true } => null,
-                _ => throw new Exception(ex.Message)
-            };
+                await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
+                _logger.LogError($"Workflow task '{task.Name}' canceled.");
+                throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
+                    string.Format(Resources.RetryService_TaskCanceled, task.Name, 0));
+            }
+
+            var result = await retryStrategy.HandleAsync(errorContext, token);
+            if (result?.ShouldRetry == true)
+            {
+                await UpdateTaskStatusAsync(taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
+                _logger.LogWarning("Workflow task '{TaskName}' retrying.", task.Name);
+                return await ExecuteTaskAsync(userId, task, taskExecution, parser, errorContext, globalCancellationToken, token);
+            }
+
+            if (result?.ShouldSkip == true)
+            {
+                await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
+                _logger.LogWarning("Workflow task '{TaskName}' skipped.", task.Name);
+                return null;
+            }
+
+            await FailTaskAsync(taskExecution, ex, globalCancellationToken, task.Name);
         }
+
+        return null; // unreachable, all branches throw
     }
 
-    private CancellationTokenSource CreateTimeoutToken(
-        int? timeoutMs, 
+    private async Task FailTaskAsync(
+        WorkflowTaskExecutionEntity entity,
+        Exception ex,
+        CancellationToken cancellationToken,
+        string taskName)
+    {
+        await CompleteTaskAsync(entity, WorkflowTaskExecutionStatus.Failed, cancellationToken);
+        _logger.LogError(ex, "Workflow task '{TaskName}' failed: {Message}", taskName, ex.Message);
+        throw new Exception(ex.Message, ex);
+    }
+
+    private async Task UpdateTaskStatusAsync(
+        WorkflowTaskExecutionEntity entity,
+        WorkflowTaskExecutionStatus status,
         CancellationToken cancellationToken)
     {
-        var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        entity.Status = status;
+        await _workflowTaskExecutionService.Update(entity, cancellationToken);
+    }
+
+    private async Task CompleteTaskAsync(
+        WorkflowTaskExecutionEntity entity,
+        WorkflowTaskExecutionStatus status,
+        CancellationToken cancellationToken)
+    {
+        entity.EndTime = _systemClock.UtcNow;
+        await UpdateTaskStatusAsync(entity, status, cancellationToken);
+    }
+
+    private static LogScopeContext CreateLogScope(Guid taskId, string taskName) => new()
+    {
+        { "WorkflowExecutionTaskId", taskId },
+        { "WorkflowExecutionTaskName", taskName }
+    };
+
+    private CancellationTokenSource CreateTimeoutToken(int? timeoutMs, CancellationToken token)
+    {
+        var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(token);
         if (timeoutMs.HasValue)
             linkedCts.CancelAfter(TimeSpan.FromMilliseconds(timeoutMs.Value));
         return linkedCts;
     }
 
-    private PluginParameters PreparePluginParameters(
-        Dictionary<string, object?>? parameters, 
-        IExpressionParser parser)
+    private PluginParameters PreparePluginParameters(Dictionary<string, object?>? parameters, IExpressionParser parser)
     {
-        var resolvedParameters = parameters ?? new Dictionary<string, object?>();
-        _placeholderReplacer.ReplacePlaceholdersInParameters(resolvedParameters, parser);
-        return resolvedParameters.ToPluginParameters();
+        var resolved = parameters ?? new Dictionary<string, object?>();
+        _placeholderReplacer.ReplacePlaceholdersInParameters(resolved, parser);
+        return resolved.ToPluginParameters();
     }
 }

@@ -52,6 +52,105 @@ public class LoggerService : ILoggerService
         }
     }
 
+    public async Task<IReadOnlyCollection<LogEntity>> GetWorkflowExecutionLogs(string userId, Guid workflowId, 
+        Guid workflowExecutionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
+            var logs = await context.Logs.Where(l=> l.UserId == userId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var result = new List<LogEntity>();
+
+            foreach (var log in logs)
+            {
+                if (string.IsNullOrWhiteSpace(log.Scope))
+                    continue;
+
+                var scopeParts = log.Scope.Split('|');
+                var scopeDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var part in scopeParts)
+                {
+                    var keyValue = part.Split('=', 2, StringSplitOptions.TrimEntries);
+                    if (keyValue.Length == 2)
+                    {
+                        scopeDict[keyValue[0]] = keyValue[1];
+                    }
+                }
+
+                if (scopeDict.TryGetValue("WorkflowId", out var wId) &&
+                    scopeDict.TryGetValue("WorkflowExecutionId", out var weId) &&
+                    Guid.TryParse(wId, out var parsedWorkflowId) &&
+                    Guid.TryParse(weId, out var parsedWorkflowExecutionId) &&
+                    parsedWorkflowId == workflowId &&
+                    parsedWorkflowExecutionId == workflowExecutionId)
+                {
+                    result.Add(log);
+                }
+            }
+
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.LogsList, ex.Message);
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task<IReadOnlyCollection<LogEntity>> GetWorkflowTaskExecutionLogs(string userId, Guid workflowId,
+        Guid workflowExecutionId, Guid workflowTaskExecutionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
+            var logs = await context.Logs.Where(l => l.UserId == userId).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            var result = new List<LogEntity>();
+
+            foreach (var log in logs)
+            {
+                if (string.IsNullOrWhiteSpace(log.Scope))
+                    continue;
+
+                var scopeParts = log.Scope.Split('|');
+                var scopeDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var part in scopeParts)
+                {
+                    var keyValue = part.Split('=', 2, StringSplitOptions.TrimEntries);
+                    if (keyValue.Length == 2)
+                    {
+                        scopeDict[keyValue[0]] = keyValue[1];
+                    }
+                }
+
+                if (scopeDict.TryGetValue("WorkflowId", out var wId) &&
+                    scopeDict.TryGetValue("WorkflowExecutionId", out var weId) &&
+                    scopeDict.TryGetValue("WorkflowExecutionTaskId", out var wetId) &&
+                    Guid.TryParse(wId, out var parsedWorkflowId) &&
+                    Guid.TryParse(weId, out var parsedWorkflowExecutionId) &&
+                    Guid.TryParse(wetId, out var parsedWorkflowTaskExecutionId) &&
+                    parsedWorkflowId == workflowId &&
+                    parsedWorkflowExecutionId == workflowExecutionId &&
+                    parsedWorkflowTaskExecutionId == workflowTaskExecutionId)
+                {
+                    result.Add(log);
+                }
+            }
+
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.LogsList, ex.Message);
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
     public async Task Add(LogEntity logEntity, CancellationToken cancellationToken)
     {
         try

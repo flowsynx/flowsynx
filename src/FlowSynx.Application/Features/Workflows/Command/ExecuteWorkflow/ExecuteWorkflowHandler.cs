@@ -11,16 +11,16 @@ namespace FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
 internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, Result<Unit>>
 {
     private readonly ILogger<ExecuteWorkflowHandler> _logger;
-    private readonly IWorkflowExecutor _workflowExecutor;
+    private readonly IWorkflowOrchestrator _workflowOrchestrator;
     private readonly ICurrentUserService _currentUserService;
 
-    public ExecuteWorkflowHandler(ILogger<ExecuteWorkflowHandler> logger, IWorkflowExecutor workflowExecutor,
+    public ExecuteWorkflowHandler(ILogger<ExecuteWorkflowHandler> logger, IWorkflowOrchestrator workflowOrchestrator,
        ICurrentUserService currentUserService)
     {
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(workflowExecutor);
+        ArgumentNullException.ThrowIfNull(workflowOrchestrator);
         _logger = logger;
-        _workflowExecutor = workflowExecutor;
+        _workflowOrchestrator = workflowOrchestrator;
         _currentUserService = currentUserService;
     }
 
@@ -32,7 +32,7 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired,
                     Resources.Authentication_Access_Denied);
 
-            await _workflowExecutor.ExecuteAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
+            await _workflowOrchestrator.ExecuteWorkflowAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
             return await Result<Unit>.SuccessAsync("Workflow executed successfully!");
         }
         catch (FlowSynxException ex)

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.IO;
 
 namespace FlowSynx.Infrastructure.Logging.ConsoleLogger;
 
@@ -9,6 +10,7 @@ internal class ConsoleLogger : ILogger, IDisposable
     private readonly ConsoleLoggerOptions _options;
     private readonly Task _workerTask;
     private readonly Lock _consoleLock = new Lock();
+    private static readonly AsyncLocal<Scope?> _currentScope = new();
 
     private Dictionary<LogLevel, ConsoleColor> ColorMap { get; set; } = new()
     {
@@ -30,7 +32,10 @@ internal class ConsoleLogger : ILogger, IDisposable
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull
     {
-        return null;
+        var parent = _currentScope.Value;
+        var newScope = new Scope(state, parent);
+        _currentScope.Value = newScope;
+        return newScope;
     }
 
     public bool IsEnabled(LogLevel logLevel)
@@ -41,10 +46,17 @@ internal class ConsoleLogger : ILogger, IDisposable
         }
     }
 
-    void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    void ILogger.Log<TState>(
+        LogLevel logLevel, 
+        EventId eventId, 
+        TState state, 
+        Exception? exception, 
+        Func<TState, Exception?, string> formatter)
     {
         if (!IsEnabled(logLevel))
             return;
+
+        var scopeInfo = GetScopeInfo();
 
         var logMessage = new LogMessage
         {
@@ -54,10 +66,40 @@ internal class ConsoleLogger : ILogger, IDisposable
             TimeStamp = DateTime.UtcNow,
             Category = _category,
             Exception = exception?.ToString(),
+            Scope = scopeInfo
         };
 
         _logQueue.Enqueue(logMessage);
     }
+
+    private string GetScopeInfo()
+    {
+        var scopes = new List<string>();
+        var current = _currentScope.Value;
+
+        while (current != null)
+        {
+            if (current.State is IEnumerable<KeyValuePair<string, object>> dict)
+            {
+                foreach (var item in dict)
+                {
+                    if (IsFrameworkScopeKey(item.Key))
+                        continue;
+
+                    scopes.Add($"{item.Key}={item.Value}");
+                }
+            }
+            else
+            {
+                scopes.Add(current.State?.ToString() ?? "");
+            }
+            current = current.Parent;
+        }
+
+        return string.Join(" | ", scopes);
+    }
+
+    private static bool IsFrameworkScopeKey(string key) => key is "RequestId" or "ConnectionId" or "RequestPath";
 
     private async Task ProcessQueue(CancellationToken cancellationToken)
     {
@@ -102,5 +144,25 @@ internal class ConsoleLogger : ILogger, IDisposable
     {
         if (!_options.CancellationToken.IsCancellationRequested)
             _workerTask.Wait();
+    }
+
+    private class Scope : IDisposable
+    {
+        public object? State { get; }
+        public Scope? Parent { get; }
+
+        public Scope(object? state, Scope? parent)
+        {
+            State = state;
+            Parent = parent;
+        }
+
+        public void Dispose()
+        {
+            if (_currentScope.Value == this)
+            {
+                _currentScope.Value = Parent;
+            }
+        }
     }
 }

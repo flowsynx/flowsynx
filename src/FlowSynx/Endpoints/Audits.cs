@@ -17,7 +17,7 @@ public class Audits : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Audits"));
 
-        group.MapGet("/details/{id}", AuditDetails)
+        group.MapGet("/{id}", AuditDetails)
             .WithName("AuditDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Audits"));

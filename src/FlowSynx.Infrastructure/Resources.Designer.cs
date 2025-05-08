@@ -340,11 +340,11 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Task &apos;{0}&apos; timeout on attempt {1}..
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; canceled..
         /// </summary>
-        internal static string RetryService_TaskTimeoutOnAttempt {
+        internal static string RetryService_TaskCanceled {
             get {
-                return ResourceManager.GetString("RetryService_TaskTimeoutOnAttempt", resourceCulture);
+                return ResourceManager.GetString("RetryService_TaskCanceled", resourceCulture);
             }
         }
         
@@ -358,11 +358,11 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Workflow execution timeout.
+        ///   Looks up a localized string similar to Workflow execution canceled..
         /// </summary>
-        internal static string RetryService_WorkflowTimeout {
+        internal static string RetryService_WorkflowCanceled {
             get {
-                return ResourceManager.GetString("RetryService_WorkflowTimeout", resourceCulture);
+                return ResourceManager.GetString("RetryService_WorkflowCanceled", resourceCulture);
             }
         }
         
@@ -484,7 +484,7 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Initilize WorkflowExecution failed. Meesage: {0}.
+        ///   Looks up a localized string similar to Failed to start workflow execution. Meesage: {0}.
         /// </summary>
         internal static string Workflow_Executor_WorkflowInitilizeFailed {
             get {
