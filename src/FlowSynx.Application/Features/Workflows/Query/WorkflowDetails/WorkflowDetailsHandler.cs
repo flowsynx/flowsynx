@@ -34,11 +34,11 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
-            var workflowId = Guid.Parse(request.Id);
+            var workflowId = Guid.Parse(request.WorkflowId);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow is null)
             {
-                var message = string.Format(Resources.Feature_Workflow_Details_WorkflowNotFound, request.Id);
+                var message = string.Format(Resources.Feature_Workflow_Details_WorkflowNotFound, request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 

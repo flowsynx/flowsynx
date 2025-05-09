@@ -6,12 +6,12 @@ public class UpdateWorkflowValidator : AbstractValidator<UpdateWorkflowRequest>
 {
     public UpdateWorkflowValidator()
     {
-        RuleFor(x => x.Id)
+        RuleFor(x => x.WorkflowId)
             .NotNull()
             .NotEmpty()
             .WithMessage(Resources.Features_Validation_Id_MustHaveValue);
 
-        RuleFor(x => x.Id)
+        RuleFor(x => x.WorkflowId)
             .Must(BeAValidGuid)
             .WithMessage(Resources.Features_Validation_Id_InvalidGuidFormat);
     }

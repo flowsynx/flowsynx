@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
+﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
@@ -39,11 +39,11 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
-            var workflowId = Guid.Parse(request.Id);
+            var workflowId = Guid.Parse(request.WorkflowId);
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow == null)
             {
-                var message = string.Format(Resources.Feature_Workflow_Update_WorkflowNotFound, request.Id);
+                var message = string.Format(Resources.Feature_Workflow_Update_WorkflowNotFound, request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 

@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
+namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
 
-public class WorkflowDetailsValidator : AbstractValidator<WorkflowDetailsRequest>
+public class WorkflowExecutionListValidator : AbstractValidator<WorkflowExecutionListRequest>
 {
-    public WorkflowDetailsValidator()
+    public WorkflowExecutionListValidator()
     {
         RuleFor(x => x.WorkflowId)
             .NotNull()

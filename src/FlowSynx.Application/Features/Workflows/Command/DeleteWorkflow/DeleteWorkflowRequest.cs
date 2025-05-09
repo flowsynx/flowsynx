@@ -5,5 +5,5 @@ namespace FlowSynx.Application.Features.Workflows.Command.DeleteWorkflow;
 
 public class DeleteWorkflowRequest : IRequest<Result<Unit>>
 {
-    public required string Id { get; set; }
+    public required string WorkflowId { get; set; }
 }

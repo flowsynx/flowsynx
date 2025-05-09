@@ -21,7 +21,8 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> All(CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> GetAllAsync(
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -41,7 +42,31 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         }
     }
 
-    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> ActiveTriggers(WorkflowTriggerType type, CancellationToken cancellationToken)
+    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> GetByWorkflowIdAsync(
+        Guid workflowId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await context.WorkflowTriggeres
+                .Where(x => x.IsDeleted == false && x.WorkflowId == workflowId)
+                .ToListAsync(cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersList, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task<IReadOnlyCollection<WorkflowTriggerEntity>> GetActiveTriggersByTypeAsync(
+        WorkflowTriggerType type, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -61,13 +86,16 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         }
     }
 
-    public async Task<WorkflowTriggerEntity?> Get(Guid workflowTriggerId, CancellationToken cancellationToken)
+    public async Task<WorkflowTriggerEntity?> GetByIdAsync(
+        Guid workflowId, 
+        Guid triggerId,
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowTriggeres
-                .FirstOrDefaultAsync(x => x.Id == workflowTriggerId && x.IsDeleted == false, cancellationToken)
+                .FirstOrDefaultAsync(x => x.Id == triggerId && x.WorkflowId == workflowId && x.IsDeleted == false, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -78,13 +106,15 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         }
     }
 
-    public async Task Add(WorkflowTriggerEntity workflowTriggerEntity, CancellationToken cancellationToken)
+    public async Task AddAsync(
+        WorkflowTriggerEntity triggerEntity, 
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             await context.WorkflowTriggeres
-                .AddAsync(workflowTriggerEntity, cancellationToken)
+                .AddAsync(triggerEntity, cancellationToken)
                 .ConfigureAwait(false);
 
             await context
@@ -99,13 +129,15 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         }
     }
 
-    public async Task Update(WorkflowTriggerEntity workflowTriggerEntity, CancellationToken cancellationToken)
+    public async Task UpdateAsync(
+        WorkflowTriggerEntity triggerEntity, 
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-            context.Entry(workflowTriggerEntity).State = EntityState.Detached;
-            context.WorkflowTriggeres.Update(workflowTriggerEntity);
+            context.Entry(triggerEntity).State = EntityState.Detached;
+            context.WorkflowTriggeres.Update(triggerEntity);
 
             await context
                 .SaveChangesAsync(cancellationToken)
@@ -119,12 +151,14 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         }
     }
 
-    public async Task<bool> Delete(WorkflowTriggerEntity workflowTriggerEntity, CancellationToken cancellationToken)
+    public async Task<bool> DeleteAsync(
+        WorkflowTriggerEntity triggerEntity, 
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-            context.WorkflowTriggeres.Remove(workflowTriggerEntity);
+            context.WorkflowTriggeres.Remove(triggerEntity);
 
             await context
                 .SaveChangesAsync(cancellationToken)
@@ -137,19 +171,6 @@ public class WorkflowTriggerService : IWorkflowTriggerService
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersDelete, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    public async Task<bool> CheckHealthAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-            return await context.Database.CanConnectAsync(cancellationToken);
-        }
-        catch
-        {
-            return false;
         }
     }
 }

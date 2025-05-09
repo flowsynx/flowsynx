@@ -5,5 +5,5 @@ namespace FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 
 public class WorkflowDetailsRequest : IRequest<Result<WorkflowDetailsResponse>>
 {
-    public required string Id { get; set; }
+    public required string WorkflowId { get; set; }
 }

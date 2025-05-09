@@ -6,7 +6,7 @@ using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Workflow;
 
-namespace FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
+namespace FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 
 internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, Result<Unit>>
 {
@@ -32,7 +32,8 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired,
                     Resources.Authentication_Access_Denied);
 
-            await _workflowOrchestrator.ExecuteWorkflowAsync(_currentUserService.UserId, request.WorkflowId, cancellationToken);
+            var workflowId = Guid.Parse(request.WorkflowId);
+            await _workflowOrchestrator.ExecuteWorkflowAsync(_currentUserService.UserId, workflowId, cancellationToken);
             return await Result<Unit>.SuccessAsync("Workflow executed successfully!");
         }
         catch (FlowSynxException ex)

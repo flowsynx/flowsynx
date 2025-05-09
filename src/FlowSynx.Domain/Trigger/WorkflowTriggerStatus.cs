@@ -2,6 +2,6 @@
 
 public enum WorkflowTriggerStatus
 {
-    DeActive = 0,
-    Active = 1
+    Active = 0,
+    DeActive = 1
 }

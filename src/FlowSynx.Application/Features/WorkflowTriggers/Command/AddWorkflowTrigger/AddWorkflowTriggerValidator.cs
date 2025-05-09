@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
+namespace FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 
-public class WorkflowDetailsValidator : AbstractValidator<WorkflowDetailsRequest>
+public class AddWorkflowTriggerValidator : AbstractValidator<AddWorkflowTriggerRequest>
 {
-    public WorkflowDetailsValidator()
+    public AddWorkflowTriggerValidator()
     {
         RuleFor(x => x.WorkflowId)
             .NotNull()

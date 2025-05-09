@@ -1,11 +1,10 @@
-﻿using FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
+﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain;
-using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
@@ -19,7 +18,6 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     private readonly ILogger<AddWorkflowHandler> _logger;
     private readonly ITransactionService _transactionService;
     private readonly IWorkflowService _workflowService;
-    private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly IWorkflowValidator _workflowValidator;
@@ -28,7 +26,6 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ILogger<AddWorkflowHandler> logger, 
         ITransactionService transactionService,
         IWorkflowService workflowService, 
-        IWorkflowTriggerService workflowTriggerService, 
         ICurrentUserService currentUserService, 
         IJsonDeserializer jsonDeserializer, 
         IWorkflowValidator workflowValidator)
@@ -36,13 +33,11 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(transactionService);
         ArgumentNullException.ThrowIfNull(workflowService);
-        ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _logger = logger;
         _transactionService = transactionService;
         _workflowService = workflowService;
-        _workflowTriggerService = workflowTriggerService;
         _currentUserService = currentUserService;
         _jsonDeserializer = jsonDeserializer;
         _workflowValidator = workflowValidator;
@@ -84,26 +79,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 Name = workflowDefinition.Name,
                 Definition = request.Definition,
             };
-
-            await _transactionService.TransactionAsync(async () =>
-            {
-                await _workflowService.Add(workflowEntity, cancellationToken);
-
-                foreach (var trigger in workflowDefinition.Configuration.Triggers)
-                {
-                    var workflowTrigger = new WorkflowTriggerEntity
-                    {
-                        Id = Guid.NewGuid(),
-                        WorkflowId = workflowEntity.Id,
-                        UserId = _currentUserService.UserId,
-                        Type = trigger.Type,
-                        Status = WorkflowTriggerStatus.Active,
-                        Properties = trigger.Properties,
-                    };
-
-                    await _workflowTriggerService.Add(workflowTrigger, cancellationToken);
-                }
-            }, cancellationToken);
+            await _workflowService.Add(workflowEntity, cancellationToken);
 
             var response = new AddWorkflowResponse
             {

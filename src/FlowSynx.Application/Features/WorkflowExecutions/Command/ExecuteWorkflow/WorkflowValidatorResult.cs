@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
+﻿namespace FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 
 public class WorkflowValidatorResult
 {

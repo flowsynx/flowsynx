@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
+﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Workflow;
@@ -89,8 +89,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         {
             token.ThrowIfCancellationRequested();
             var result = await plugin.ExecuteAsync(pluginParameters, token);
-            await Task.Delay(1000000, token);
-
             await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' completed.", task.Name);
             return result;

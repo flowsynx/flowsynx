@@ -1,31 +1,33 @@
 ﻿using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
-using FlowSynx.Domain.Workflow;
+using FlowSynx.Domain.Trigger;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Workflows.Command.DeleteWorkflow;
+namespace FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
 
-internal class DeleteWorkflowHandler : IRequestHandler<DeleteWorkflowRequest, Result<Unit>>
+internal class DeleteWorkflowTriggerHandler : IRequestHandler<DeleteWorkflowTriggerRequest, Result<Unit>>
 {
-    private readonly ILogger<DeleteWorkflowHandler> _logger;
-    private readonly IWorkflowService _workflowService;
+    private readonly ILogger<DeleteWorkflowTriggerHandler> _logger;
+    private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
 
-    public DeleteWorkflowHandler(ILogger<DeleteWorkflowHandler> logger, ICurrentUserService currentUserService,
-        IWorkflowService workflowService)
+    public DeleteWorkflowTriggerHandler(
+        ILogger<DeleteWorkflowTriggerHandler> logger, 
+        IWorkflowTriggerService workflowTriggerService,
+        ICurrentUserService currentUserService)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
-        ArgumentNullException.ThrowIfNull(workflowService);
         _logger = logger;
         _currentUserService = currentUserService;
-        _workflowService = workflowService;
+        _workflowTriggerService = workflowTriggerService;
     }
 
-    public async Task<Result<Unit>> Handle(DeleteWorkflowRequest request, CancellationToken cancellationToken)
+    public async Task<Result<Unit>> Handle(DeleteWorkflowTriggerRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -33,14 +35,15 @@ internal class DeleteWorkflowHandler : IRequestHandler<DeleteWorkflowRequest, Re
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            var triggerId = Guid.Parse(request.TriggerId);
+            var workflow = await _workflowTriggerService.GetByIdAsync(workflowId, triggerId, cancellationToken);
             if (workflow == null)
             {
                 var message = string.Format(Resources.Features_Workflow_Delete_WorkflowCouldNotBeFound, request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 
-            await _workflowService.Delete(workflow, cancellationToken);
+            await _workflowTriggerService.DeleteAsync(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(Resources.Feature_Workflow_Delete_DeletedSuccessfully);
         }
         catch (FlowSynxException ex)

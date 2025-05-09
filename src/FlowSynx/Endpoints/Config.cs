@@ -19,13 +19,13 @@ public class Config : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
-        group.MapGet("/{id}", PluginConfigurationDetails)
-            .WithName("PluginConfigurationDetails")
+        group.MapPost("", AddPluginConfiguration)
+            .WithName("AddPluginConfig")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
-        group.MapPost("", AddPluginConfiguration)
-            .WithName("AddPluginConfig")
+        group.MapGet("/{id}", PluginConfigurationDetails)
+            .WithName("PluginConfigurationDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
 
@@ -47,14 +47,6 @@ public class Config : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> PluginConfigurationDetails(string id,
-        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer, 
-        CancellationToken cancellationToken)
-    {
-        var result = await mediator.PluginConfigurationDetails(id, cancellationToken);
-        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
-    }
-
     public async Task<IResult> AddPluginConfiguration(HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
@@ -63,6 +55,14 @@ public class Config : EndpointGroupBase
         var request = jsonDeserializer.Deserialize<AddPluginConfigRequest>(jsonString);
 
         var result = await mediator.AddPluginConfiguration(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> PluginConfigurationDetails(string id,
+        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer, 
+        CancellationToken cancellationToken)
+    {
+        var result = await mediator.PluginConfigurationDetails(id, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 

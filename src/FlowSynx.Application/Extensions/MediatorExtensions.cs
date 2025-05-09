@@ -1,4 +1,6 @@
-﻿using FlowSynx.Application.Features.Audit.Query.AuditDetails;
+﻿using MediatR;
+using FlowSynx.Application.Wrapper;
+using FlowSynx.Application.Features.Audit.Query.AuditDetails;
 using FlowSynx.Application.Features.Audit.Query.AuditsList;
 using FlowSynx.Application.Features.Logs.Query.LogsList;
 using FlowSynx.Application.Features.PluginConfig.Command.AddPluginConfig;
@@ -14,17 +16,21 @@ using FlowSynx.Application.Features.Plugins.Query.PluginsList;
 using FlowSynx.Application.Features.Version.Query;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.DeleteWorkflow;
-using FlowSynx.Application.Features.Workflows.Command.ExecuteWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflow;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowsList;
-using FlowSynx.Application.Wrapper;
-using MediatR;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionDetails;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionDetails;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionLogs;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionLogs;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
+using FlowSynx.Application.Features.Workflows.Query.WorkflowTriggersList;
+using FlowSynx.Application.Features.Workflows.Query.WorkflowTriggerDetails;
+using FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
+using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
 
 namespace FlowSynx.Application.Extensions;
 
@@ -40,10 +46,10 @@ public static class MediatorExtensions
 
     public static Task<Result<WorkflowDetailsResponse>> WorkflowDetails(
         this IMediator mediator,
-        string id, 
+        string workflowId, 
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new WorkflowDetailsRequest { Id = id }, cancellationToken);
+        return mediator.Send(new WorkflowDetailsRequest { WorkflowId = workflowId }, cancellationToken);
     }
 
     public static Task<Result<AddWorkflowResponse>> AddWorkflow(
@@ -56,49 +62,57 @@ public static class MediatorExtensions
 
     public static Task<Result<Unit>> UpdateWorkflow(
         this IMediator mediator, 
-        string id, 
+        string workflowId, 
         string definition,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new UpdateWorkflowRequest { Id = id, Definition = definition }, cancellationToken);
+        return mediator.Send(new UpdateWorkflowRequest { WorkflowId = workflowId, Definition = definition }, cancellationToken);
     }
 
     public static Task<Result<Unit>> DeleteWorkflow(
         this IMediator mediator, 
-        string id,
+        string workflowId,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new DeleteWorkflowRequest { Id = id }, cancellationToken);
+        return mediator.Send(new DeleteWorkflowRequest { WorkflowId = workflowId }, cancellationToken);
+    }
+
+    public static Task<Result<IEnumerable<WorkflowExecutionListResponse>>> GetWorkflowExecutionsList(
+        this IMediator mediator,
+        string workflowId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowExecutionListRequest { WorkflowId = workflowId }, cancellationToken);
     }
 
     public static Task<Result<Unit>> ExecuteWorkflow(
         this IMediator mediator, 
-        Guid id,
+        string workflowId,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new ExecuteWorkflowRequest { WorkflowId = id }, cancellationToken);
+        return mediator.Send(new ExecuteWorkflowRequest { WorkflowId = workflowId }, cancellationToken);
     }
 
     public static Task<Result<WorkflowExecutionDetailsResponse>> WorkflowExecutionDetails(
         this IMediator mediator,
         string id, 
-        string execId, 
+        string executionId, 
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new WorkflowExecutionDetailsRequest { WorkflowId = id, WorkflowExecutionId = execId }, 
+        return mediator.Send(new WorkflowExecutionDetailsRequest { WorkflowId = id, WorkflowExecutionId = executionId }, 
             cancellationToken);
     }
 
     public static Task<Result<WorkflowTaskExecutionDetailsResponse>> WorkflowTaskExecutionDetails(
         this IMediator mediator,
-        string id, 
-        string execId, 
+        string workflowId, 
+        string executionId, 
         string taskId, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowTaskExecutionDetailsRequest { 
-            WorkflowId = id, 
-            WorkflowExecutionId = execId, 
+            WorkflowId = workflowId, 
+            WorkflowExecutionId = executionId, 
             WorkflowTaskExecutionId = taskId
         },
         cancellationToken);
@@ -106,48 +120,118 @@ public static class MediatorExtensions
 
     public static Task<Result<Unit>> CancelWorkflowExecution(
         this IMediator mediator,
-        string id, 
-        string execId, 
+        string workflowId, 
+        string executionId, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new CancelWorkflowRequest
         {
-            WorkflowId = id,
-            WorkflowExecutionId = execId
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId
         },
         cancellationToken);
     }
 
     public static Task<Result<IEnumerable<WorkflowExecutionLogsResponse>>> WorkflowExecutionLogs(
         this IMediator mediator,
-        string id, 
-        string execId, 
+        string workflowId, 
+        string executionId, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowExecutionLogsRequest
         {
-            WorkflowId = id,
-            WorkflowExecutionId = execId
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId
         },
         cancellationToken);
     }
 
     public static Task<Result<IEnumerable<WorkflowTaskExecutionLogsResponse>>> WorkflowTaskExecutionLogs(
         this IMediator mediator,
-        string id, 
-        string execId, 
+        string workflowId, 
+        string executionId, 
         string taskId, 
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowTaskExecutionLogsRequest
         {
-            WorkflowId = id,
-            WorkflowExecutionId = execId,
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId,
             WorkflowTaskExecutionId = taskId
         },
         cancellationToken);
     }
 
+    public static Task<Result<IEnumerable<WorkflowTriggersListResponse>>> WorkflowTriggersList(
+        this IMediator mediator,
+        string workflowId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowTriggersListRequest
+        {
+            WorkflowId = workflowId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<WorkflowTriggerDetailsResponse>> WorkflowTriggerDetails(
+        this IMediator mediator,
+        string workflowId,
+        string triggerId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowTriggerDetailsRequest
+        {
+            WorkflowId = workflowId,
+            TriggerId = triggerId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<AddWorkflowTriggerResponse>> AddWorkflowTrigger(
+        this IMediator mediator,
+        string workflowId,
+        AddWorkflowTriggerDefinition request,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new AddWorkflowTriggerRequest 
+        { 
+            WorkflowId = workflowId,
+            Type = request.Type,
+            Properties = request.Properties,
+        }, cancellationToken);
+    }
+
+    public static Task<Result<Unit>> UpdateWorkflowTrigger(
+        this IMediator mediator,
+        string workflowId,
+        string triggerId,
+        UpdateWorkflowTriggerDefinition request,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new UpdateWorkflowTriggerRequest
+        {
+            WorkflowId = workflowId,
+            TriggerId = triggerId,
+            Status = request.Status,
+            Type = request.Type,
+            Properties = request.Properties,
+        }, cancellationToken);
+    }
+
+    public static Task<Result<Unit>> DeleteWorkflowTrigger(
+        this IMediator mediator,
+        string workflowId,
+        string triggerId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new DeleteWorkflowTriggerRequest
+        {
+            WorkflowId = workflowId,
+            TriggerId = triggerId
+        },
+        cancellationToken);
+    }
     #endregion
 
     #region Version
