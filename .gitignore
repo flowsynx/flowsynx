@@ -397,3 +397,6 @@ FodyWeavers.xsd
 
 # SQLite Database
 logs.db*
+
+appsettings.*.json
+secrets.json

@@ -9,6 +9,13 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 try
 {
+    builder.Configuration
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json")
+        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+        .AddUserSecrets<Program>(optional: true)
+        .AddEnvironmentVariables();
+
     var customConfigPath = builder.Configuration["config"];
     if (!string.IsNullOrEmpty(customConfigPath))
     {
@@ -16,7 +23,6 @@ try
         builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
     }
 
-    builder.Configuration.AddEnvironmentVariables();
     IConfiguration config = builder.Configuration;
 
     builder.Services
