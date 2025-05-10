@@ -15,12 +15,12 @@ public class Audits : EndpointGroupBase
         group.MapGet("", AuditsList)
             .WithName("AuditsList")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Audits"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "audits"));
 
         group.MapGet("/{id}", AuditDetails)
             .WithName("AuditDetails")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Audits"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "audits"));
     }
 
     public async Task<IResult> AuditsList([FromServices] IMediator mediator, 

@@ -18,90 +18,90 @@ public class Workflows : EndpointGroupBase
         group.MapGet("", GetAllWorkflows)
             .WithName("GetAllWorkflows")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
 
         group.MapPost("", AddWorkflow)
             .WithName("AddWorkflow")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
 
         group.MapGet("/{workflowId}", GetWorkflowById)
             .WithName("GetWorkflowById")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
 
         group.MapPut("/{workflowId}", UpdateWorkflow)
             .WithName("UpdateWorkflow")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
 
         group.MapDelete("/{workflowId}", DeleteWorkflow)
             .WithName("DeleteWorkflow")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
         #endregion
 
         #region Workflow Execution
         group.MapGet("/{workflowId}/executions", GetAllExecutions)
             .WithName("GetAllExecutions")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapPost("/{workflowId}/executions", StartWorkflowExecution)
             .WithName("StartWorkflowExecution")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapGet("/{workflowId}/executions/{executionId}", GetExecutionById)
             .WithName("GetExecutionById")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapPost("/{workflowId}/executions/{executionId}/cancel", CancelExecution)
             .WithName("CancelExecution")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapGet("/{workflowId}/executions/{executionId}/logs", GetExecutionLogs)
             .WithName("GetExecutionLogs")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
         #endregion
 
         group.MapGet("/{workflowId}/executions/{executionId}/tasks/{taskId}", GetTaskExecutionById)
             .WithName("GetTaskExecutionById")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapGet("/{workflowId}/executions/{executionId}/tasks/{taskId}/logs", GetTaskExecutionLogs)
             .WithName("GetTaskExecutionLogs")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapGet("/{workflowId}/triggers", GetAllTriggers)
             .WithName("GetAllTriggers")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
 
         group.MapPost("/{workflowId}/triggers", AddTrigger)
             .WithName("AddTrigger")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
 
         group.MapGet("/{workflowId}/triggers/{triggerId}", GetTriggerById)
             .WithName("GetTriggerById")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
 
         group.MapPut("/{workflowId}/triggers/{triggerId}", UpdateTrigger)
             .WithName("UpdateTrigger")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
 
         group.MapDelete("/{workflowId}/triggers/{triggerId}", DeleteTrigger)
             .WithName("DeleteTrigger")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Workflows"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
     }
 
     public async Task<IResult> GetAllWorkflows([FromServices] IMediator mediator,

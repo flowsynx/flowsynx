@@ -1,9 +1,5 @@
 ﻿using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
 using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
@@ -13,10 +9,8 @@ using FlowSynx.Persistence.SQLite.Contexts;
 using FlowSynx.HealthCheck;
 using FlowSynx.Services;
 using FlowSynx.Application.Services;
-using FlowSynx.Middleware;
 using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Endpoints;
-using System.Threading.Tasks;
+using FlowSynx.Security;
 
 namespace FlowSynx.Extensions;
 
@@ -164,59 +158,40 @@ public static class ServiceCollectionExtensions
                     }
                 });
 
-                if (!securityConfiguration.OAuth2.Enabled)
+                c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
                 {
-                    c.AddSecurityDefinition("basic", new OpenApiSecurityScheme
-                    {
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.Http,
-                        Scheme = "basic",
-                        In = ParameterLocation.Header,
-                        Description = "Input your username and password in the format: username:password"
-                    });
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "basic",
+                    Description = "Basic Authentication using username and password."
+                });
 
-                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
                 {
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "basic"
-                            }
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Basic" }
                         },
-                        Array.Empty<string>()
-                    }
-                });
-                }
-                else
-                {
-                    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                    {
-                        Name = "Authorization",
-                        Type = SecuritySchemeType.Http,
-                        Scheme = "Bearer",
-                        BearerFormat = "JWT",
-                        In = ParameterLocation.Header,
-                        Description = "Enter your JWT Bearer token here"
-                    });
-
-                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
+                        new List<string>()
+                    },
                     {
                         new OpenApiSecurityScheme
                         {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
+                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
                         },
-                        Array.Empty<string>()
+                        new List<string>()
                     }
                 });
-                }
             });
 
             return services;
@@ -261,76 +236,36 @@ public static class ServiceCollectionExtensions
             configuration.GetSection("Security").Bind(securityConfiguration);
             services.AddSingleton(securityConfiguration);
 
-            // Integrate OAuth2/OpenID if enabled
-            if (securityConfiguration.OAuth2.Enabled)
+            securityConfiguration.ValidateDefaultScheme(logger);
+
+            var providers = new List<IAuthenticationProvider>();
+
+            if (securityConfiguration.EnableBasic && securityConfiguration.BasicUsers != null)
+                providers.Add(new BasicAuthenticationProvider(securityConfiguration.BasicUsers));
+
+            foreach (var jwt in securityConfiguration.JwtProviders)
+                providers.Add(new JwtAuthenticationProvider(jwt));
+
+            var authBuilder = services.AddAuthentication(options =>
             {
-                // Add authentication
-                var authBuilder = services.AddAuthentication(options =>
-                {
-                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                });
+                options.DefaultScheme = securityConfiguration.DefaultScheme ?? "Basic";
+            });
 
-                // Add JWT Bearer authentication
-                authBuilder.AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
-                {
-                    options.Authority = securityConfiguration.OAuth2.Authority;
-                    options.Audience = securityConfiguration.OAuth2.Audience;
-                    options.RequireHttpsMetadata = false;
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidIssuer = securityConfiguration.OAuth2.Issuer,
-                        ValidAudience = securityConfiguration.OAuth2.Audience,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(securityConfiguration.OAuth2.Secret))
-                    };
-                });
-
-                logger.LogInformation("OAuth2 authentication initialized.");
-            }
-            else
-            {
-                var userList = securityConfiguration.Basic.Users;
-                if (userList == null || userList.GroupBy(u => u.Name).Any(g => g.Count() > 1))
-                {
-                    var errorMessage = new ErrorMessage((int)ErrorCode.SecurityBasicAuthenticationMustHaveUniqueNames,
-                        "Users must have unique names in BasicAuthentication configuration.");
-                    throw new FlowSynxException(errorMessage);
-                }
-
-                // Add Basic Authentication only if OAuth2/OpenID is not enabled
-                services.AddAuthentication("BasicAuthentication")
-                    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
-
-                logger.LogInformation("Basic authentication initialized.");
-            }
+            foreach (var provider in providers)
+                provider.Configure(authBuilder);
 
             // Add authorization policies
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("JwtOrBasic", policy =>
-                {
-                    if (securityConfiguration.OAuth2.Enabled)
-                    {
-                        policy.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme);
-                    }
-                    else
-                    {
-                        policy.AddAuthenticationSchemes("BasicAuthentication");
-                    }
-
-                    policy.RequireAuthenticatedUser();
-                });
-
-                options.AddPolicy("Admin", policy => policy.RequireRole("Admin"));
-                options.AddPolicy("User", policy => policy.RequireRole("User"));
-                options.AddPolicy("Config", policy => policy.RequireRole("User"));
-                options.AddPolicy("Logs", policy => policy.RequireRole("User"));
-                options.AddPolicy("Plugins", policy => policy.RequireRole("User"));
-                options.AddPolicy("Workflows", policy => policy.RequireRole("User"));
+                options.AddPolicy("admin", policy => policy.RequireRole("admin"));
+                options.AddPolicy("user", policy => policy.RequireRole("user"));
+                options.AddPolicy("audits", policy => policy.RequireRole("audits"));
+                options.AddPolicy("config", policy => policy.RequireRole("config"));
+                options.AddPolicy("logs", policy => policy.RequireRole("logs"));
+                options.AddPolicy("plugins", policy => policy.RequireRole("plugins"));
+                options.AddPolicy("workflows", policy => policy.RequireRole("workflows"));
+                options.AddPolicy("executions", policy => policy.RequireRole("executions"));
+                options.AddPolicy("triggers", policy => policy.RequireRole("triggers"));
 
                 logger.LogInformation("Authorization initialized.");
             });

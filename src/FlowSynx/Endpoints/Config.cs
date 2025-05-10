@@ -17,27 +17,27 @@ public class Config : EndpointGroupBase
         group.MapGet("", PluginsConfiguration)
             .WithName("PluginsConfiguration")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
         group.MapPost("", AddPluginConfiguration)
             .WithName("AddPluginConfig")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
         group.MapGet("/{id}", PluginConfigurationDetails)
             .WithName("PluginConfigurationDetails")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
         group.MapPut("/{id}", UpdatePluginConfiguration)
             .WithName("UpdatePluginConfiguration")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
         group.MapDelete("/{id}", DeletePluginConfiguration)
             .WithName("DeletePluginConfiguration")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Config"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
     }
 
     public async Task<IResult> PluginsConfiguration([FromServices] IMediator mediator,

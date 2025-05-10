@@ -16,7 +16,7 @@ public class Logs : EndpointGroupBase
         group.MapPost("", LogsList)
             .WithName("LogsList")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("Admin", "Logs"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "logs"));
     }
 
     public async Task<IResult> LogsList(HttpContext context,
