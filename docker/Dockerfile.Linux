@@ -3,9 +3,9 @@ ARG BUILD_CONFIGURATION=Release
 ARG NUGET_ORGANIZATION="flowsynx"
 ARG NUGET_USERNAME
 ARG NUGET_PASSWORD
-ARG APP_VERSION="0.1.0"
+ARG APP_VERSION="1.0.0"
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0-${OS_VERSION} AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-${OS_VERSION} AS build
 ARG BUILD_CONFIGURATION
 ARG NUGET_ORGANIZATION
 ARG NUGET_USERNAME
@@ -15,20 +15,15 @@ ARG APP_VERSION
 WORKDIR /code
 
 COPY ["src/FlowSynx/FlowSynx.csproj", "src/FlowSynx/"]
-COPY ["src/FlowSynx.Core/FlowSynx.Core.csproj", "src/FlowSynx.Core/"]
+COPY ["src/FlowSynx.Application/FlowSynx.Application.csproj", "src/FlowSynx.Application/"]
+COPY ["src/FlowSynx.Domain/FlowSynx.Domain.csproj", "src/FlowSynx.Domain/"]
+COPY ["src/FlowSynx.Infrastructure/FlowSynx.Infrastructure.csproj", "src/FlowSynx.Infrastructure/"]
+COPY ["src/FlowSynx.Persistence.Postgres/FlowSynx.Persistence.Postgres.csproj", "src/FlowSynx.Persistence.Postgres/"]
+COPY ["src/FlowSynx.Application/FlowSynx.Application.csproj", "src/FlowSynx.Application/"]
+COPY ["src/FlowSynx.Persistence.SQLite/FlowSynx.Persistence.SQLite.csproj", "src/FlowSynx.Persistence.SQLite/"]
 
-COPY ["connectors/FlowSynx.Connectors.Storage.Amazon.S3/FlowSynx.Connectors.Storage.Amazon.S3.csproj", "connectors/FlowSynx.Connectors.Storage.Amazon.S3/"]
-COPY ["connectors/FlowSynx.Connectors.Storage.Azure.Blobs/FlowSynx.Connectors.Storage.Azure.Blobs.csproj", "connectors/FlowSynx.Connectors.Storage.Azure.Blobs/"]
-COPY ["connectors/FlowSynx.Connectors.Storage.Azure.Files/FlowSynx.Connectors.Storage.Azure.Files.csproj", "connectors/FlowSynx.Connectors.Storage.Azure.Files/"]
-COPY ["connectors/FlowSynx.Connectors.Storage.Google.Cloud/FlowSynx.Connectors.Storage.Google.Cloud.csproj", "connectors/FlowSynx.Connectors.Storage.Google.Cloud/"]
-COPY ["connectors/FlowSynx.Connectors.Storage.Google.Drive/FlowSynx.Connectors.Storage.Google.Drive.csproj", "connectors/FlowSynx.Connectors.Storage.Google.Drive/"]
-COPY ["connectors/FlowSynx.Connectors.Storage.LocalFileSystem/FlowSynx.Connectors.Storage.LocalFileSystem.csproj", "connectors/FlowSynx.Connectors.Storage.LocalFileSystem/"]
-COPY ["connectors/FlowSynx.Connectors.Storage.Memory/FlowSynx.Connectors.Storage.Memory.csproj", "connectors/FlowSynx.Connectors.Storage.Memory/"]
-COPY ["connectors/FlowSynx.Connectors.Stream.Csv/FlowSynx.Connectors.Stream.Csv.csproj", "connectors/FlowSynx.Connectors.Stream.Csv/"]
-COPY ["connectors/FlowSynx.Connectors.Stream.Json/FlowSynx.Connectors.Stream.Json.csproj", "connectors/FlowSynx.Connectors.Stream.Json/"]
+COPY ["plugins/FlowSynx.Plugins.LocalFileSystem/FlowSynx.Plugins.LocalFileSystem.csproj", "plugins/FlowSynx.Plugins.LocalFileSystem/"]
 
-ENV NUGET_URL="https://nuget.pkg.github.com/${NUGET_ORGANIZATION}/index.json"
-RUN dotnet nuget add source --username ${NUGET_USERNAME} --password ${NUGET_PASSWORD} --store-password-in-clear-text --name github ${NUGET_URL}
 RUN dotnet restore "./src/FlowSynx/FlowSynx.csproj"
 
 COPY . .
@@ -40,9 +35,9 @@ ARG BUILD_CONFIGURATION
 ARG APP_VERSION
 RUN dotnet publish "./FlowSynx.csproj" -c ${BUILD_CONFIGURATION} -o /app/publish /p:UseAppHost=false /p:Version=${APP_VERSION} --runtime "linux-x64"
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-${OS_VERSION}
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-${OS_VERSION}
 USER app
 WORKDIR /app
-EXPOSE 5860
+EXPOSE 6262
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "flowsynx.dll"]
