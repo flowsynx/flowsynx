@@ -129,7 +129,7 @@ jobs:
         os: [ubuntu-latest, windows-2019, windows-2022]
         include:
           - os: ubuntu-latest
-            version: alpine3.18
+            version: alpine3.21
             file: docker/Dockerfile.Linux
             tag: ${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}:${{ inputs.rel_version }}-linux-amd64
           - os: windows-2019
