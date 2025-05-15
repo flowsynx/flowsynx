@@ -66,7 +66,7 @@ public static class ServiceCollectionExtensions
         services.AddLogging(c => c.ClearProviders());
         services.AddLogging(builder => builder.AddConsoleLogger(options =>
         {
-            options.OutputTemplate = "[{level} | {timestamp}] [{Scope}] Message=\"{message}\"";
+            options.OutputTemplate = "[{level} | {timestamp}] Message=\"{message}\"";
             options.MinLevel = logLevel;
             options.CancellationToken = cancellationToken;
         }));
