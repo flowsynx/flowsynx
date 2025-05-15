@@ -192,6 +192,12 @@
   <data name="Plugin_Handle_LoadedSuccessfully" xml:space="preserve">
     <value>Plugin loaded successfully.</value>
   </data>
+  <data name="Plugin_Install_NoPluginInstalled" xml:space="preserve">
+    <value>No plugin with type '{0}' and version '{1}' found.</value>
+  </data>
+  <data name="Plugin_Loader_FailedToCreateInstance" xml:space="preserve">
+    <value>Failed to create plugin instance of type '{0}'.</value>
+  </data>
   <data name="Plugin_Loader_FailedToLoadPlugin" xml:space="preserve">
     <value>Failed to load plugin: {0}</value>
   </data>
@@ -240,6 +246,18 @@
   <data name="WorkflowValidator_TaskHasNegativeMaxRetries" xml:space="preserve">
     <value>Task '{0}' has negative MaxRetries: '{1}'.</value>
   </data>
+  <data name="Workflow_AbortStrategy_Handle" xml:space="preserve">
+    <value>Task '{0}' has failed; the workflow will be aborted in accordance with the defined error handling strategy.</value>
+  </data>
+  <data name="Workflow_CancellationRegistry_Execution_NotFound" xml:space="preserve">
+    <value>The workflow execution '{0}' not found.</value>
+  </data>
+  <data name="Workflow_ErrorHandlingStratgeyFactory_UnknownBackkoffStrategyType" xml:space="preserve">
+    <value>Unknown backoff strategy type: {0}</value>
+  </data>
+  <data name="Workflow_ErrorHandlingStratgeyFactory_UnknownErrorHandlingStrategy" xml:space="preserve">
+    <value>Unknown error handling strategy: {0}</value>
+  </data>
   <data name="Workflow_ExecutionTracker_NoWorkflowExecutionFound" xml:space="preserve">
     <value>The workflow with id '{0}' could not be found.</value>
   </data>
@@ -275,6 +293,12 @@
   </data>
   <data name="Workflow_Executor_WorkflowInitilizeFailed" xml:space="preserve">
     <value>Failed to start workflow execution. Meesage: {0}</value>
+  </data>
+  <data name="Workflow_Orchestrator_WorkflowNotFound" xml:space="preserve">
+    <value>Workflow '0}' not found.</value>
+  </data>
+  <data name="Workflow_SkipStrategy_handle" xml:space="preserve">
+    <value>Task '{0}' has failed; however, it has been skipped in accordance with the defined error handling strategy.</value>
   </data>
   <data name="Workflow_TimeBased_TriggerProcessor_FailedExecution" xml:space="preserve">
     <value>Failed to execute workflow with ID '{0}' for user '{1}'.</value>

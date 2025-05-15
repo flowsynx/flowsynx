@@ -35,7 +35,7 @@ internal class UninstallPluginHandler : IRequestHandler<UninstallPluginRequest, 
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Delete_DeletedSuccessfully);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Uninstall_DeletedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

@@ -132,38 +132,68 @@
   <data name="Features_PluginConfig_Update_PluginCouldNotBeFound" xml:space="preserve">
     <value>The plugin type '{0}' with version '{1}' could not be found.</value>
   </data>
-  <data name="Features_PluginConfig_Validation_Name_MustHaveValue" xml:space="preserve">
-    <value>The plugin config name must have value.</value>
-  </data>
-  <data name="Features_PluginConfig_Validation_Name_OnlyAcceptLatingCharacters" xml:space="preserve">
-    <value>The value for plugin config name is invalid. Only Latin alphabet characters (A–Z, a–z), numbers, and underscore are permitted.</value>
-  </data>
-  <data name="Features_PluginConfig_Validation_Type_MustHaveValue" xml:space="preserve">
-    <value>The plugin config type must have value.</value>
-  </data>
-  <data name="Features_PluginConfig_Validation_Version_MustHaveValue" xml:space="preserve">
-    <value>The plugin config version must have value.</value>
-  </data>
   <data name="Features_Plugin_Details_PluginCouldNotBeFound" xml:space="preserve">
     <value>The plugin with ID '{1}' could not be found.</value>
   </data>
-  <data name="Features_Plugin_Validation_NewVersion_MustHaveValue" xml:space="preserve">
-    <value>The plugin new version must have value.</value>
-  </data>
-  <data name="Features_Plugin_Validation_OldVersion_MustHaveValue" xml:space="preserve">
-    <value>The plugin old version must have value.</value>
-  </data>
-  <data name="Features_Plugin_Validation_Type_MustHaveValue" xml:space="preserve">
-    <value>The plugin type must have value.</value>
-  </data>
-  <data name="Features_Plugin_Validation_Version_MustHaveValue" xml:space="preserve">
-    <value>The plugin version must have value.</value>
-  </data>
-  <data name="Features_Validation_Id_InvalidGuidFormat" xml:space="preserve">
+  <data name="Features_Validation_AuditId_InvalidGuidFormat" xml:space="preserve">
     <value>Invalid Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
   </data>
-  <data name="Features_Validation_Id_MustHaveValue" xml:space="preserve">
+  <data name="Features_Validation_AuditId_MustHaveValue" xml:space="preserve">
     <value>The id value must have value.</value>
+  </data>
+  <data name="Features_Validation_ExecutionId_InvalidGuidFormat" xml:space="preserve">
+    <value>Invalid workflow Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
+  </data>
+  <data name="Features_Validation_ExecutionId_MustHaveValue" xml:space="preserve">
+    <value>The workflow id value must have value.</value>
+  </data>
+  <data name="Features_Validation_PluginConfigId_InvalidGuidFormat" xml:space="preserve">
+    <value>Invalid plugin config Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
+  </data>
+  <data name="Features_Validation_PluginConfigId_MustHaveValue" xml:space="preserve">
+    <value>The plugin config id value must have value.</value>
+  </data>
+  <data name="Features_Validation_PluginConfig_Name_MustHaveValue" xml:space="preserve">
+    <value>The plugin config name must have value.</value>
+  </data>
+  <data name="Features_Validation_PluginConfig_Name_OnlyAcceptLatingCharacters" xml:space="preserve">
+    <value>The value for plugin config name is invalid. Only Latin alphabet characters (A–Z, a–z), numbers, and underscore are permitted.</value>
+  </data>
+  <data name="Features_Validation_PluginConfig_Type_MustHaveValue" xml:space="preserve">
+    <value>The plugin config type must have value.</value>
+  </data>
+  <data name="Features_Validation_PluginConfig_Version_MustHaveValue" xml:space="preserve">
+    <value>The plugin config version must have value.</value>
+  </data>
+  <data name="Features_Validation_PluginId_InvalidGuidFormat" xml:space="preserve">
+    <value>Invalid plugin Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
+  </data>
+  <data name="Features_Validation_PluginId_MustHaveValue" xml:space="preserve">
+    <value>The plugin id value must have value.</value>
+  </data>
+  <data name="Features_Validation_Plugin_NewVersion_MustHaveValue" xml:space="preserve">
+    <value>The plugin new version must have value.</value>
+  </data>
+  <data name="Features_Validation_Plugin_OldVersion_MustHaveValue" xml:space="preserve">
+    <value>The plugin old version must have value.</value>
+  </data>
+  <data name="Features_Validation_Plugin_Type_MustHaveValue" xml:space="preserve">
+    <value>The plugin type must have value.</value>
+  </data>
+  <data name="Features_Validation_Plugin_Version_MustHaveValue" xml:space="preserve">
+    <value>The plugin version must have value.</value>
+  </data>
+  <data name="Features_Validation_TriggerId_InvalidGuidFormat" xml:space="preserve">
+    <value>Invalid trigger Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
+  </data>
+  <data name="Features_Validation_TriggerId_MustHaveValue" xml:space="preserve">
+    <value>The trigger id value must have value.</value>
+  </data>
+  <data name="Features_Validation_WorkflowId_InvalidGuidFormat" xml:space="preserve">
+    <value>Invalid workflow Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
+  </data>
+  <data name="Features_Validation_WorkflowId_MustHaveValue" xml:space="preserve">
+    <value>The workflow id value must have value.</value>
   </data>
   <data name="Features_Workflow_Add_WorkflowAlreadyExists" xml:space="preserve">
     <value>The workflow '{0}' is already exists.</value>
@@ -189,14 +219,8 @@
   <data name="Features_Workflow_Validation_Definition_MustHaveValue" xml:space="preserve">
     <value>The workflow definition must have value.</value>
   </data>
-  <data name="Feature_Audit_DetailesRetrievedSuccessfully" xml:space="preserve">
-    <value>Audit details for '{0}' has been retrieved successfully.</value>
-  </data>
   <data name="Feature_Audit_DetailsNotFound" xml:space="preserve">
     <value>The audit details, id '{0}', are not found.</value>
-  </data>
-  <data name="Feature_Audit_ListRetrievedSuccessfully" xml:space="preserve">
-    <value>The audit list has been retrieved successfully.</value>
   </data>
   <data name="Feature_PluginConfig_Add_AddedSuccessfully" xml:space="preserve">
     <value>The plugin config has been added successfully.</value>
@@ -222,14 +246,68 @@
   <data name="Feature_PluginConfig_Update_UpdatedSuccessfully" xml:space="preserve">
     <value>The plugin config has been updated successfully.</value>
   </data>
-  <data name="Feature_Plugin_Add_AddedSuccessfully" xml:space="preserve">
-    <value>The plugin has been added successfully.</value>
+  <data name="Feature_Plugin_Install_AddedSuccessfully" xml:space="preserve">
+    <value>The plugin has been installed successfully.</value>
   </data>
-  <data name="Feature_Plugin_Delete_DeletedSuccessfully" xml:space="preserve">
-    <value>The plugin has been deleted successfully.</value>
+  <data name="Feature_Plugin_Uninstall_DeletedSuccessfully" xml:space="preserve">
+    <value>The plugin has been uninstalled successfully.</value>
   </data>
   <data name="Feature_Plugin_Update_UpdatedSuccessfully" xml:space="preserve">
     <value>The plugin has been updated successfully.</value>
+  </data>
+  <data name="Feature_WorkflowExecution_CancelledSuccessfully" xml:space="preserve">
+    <value>Workflow '{0}' cancelled successfully!</value>
+  </data>
+  <data name="Feature_WorkflowExecution_Details_DataRetrievedSuccessfully" xml:space="preserve">
+    <value>Execution details has been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowExecution_Details_ExecutionNotFound" xml:space="preserve">
+    <value>The execution with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowExecution_ExecutedSuccessfully" xml:space="preserve">
+    <value>Workflow '{0}' executed successfully!</value>
+  </data>
+  <data name="Feature_WorkflowExecution_List_RetrievedSuccessfully" xml:space="preserve">
+    <value>Executions list has been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowExecution_Logs_DataRetrievedSuccessfully" xml:space="preserve">
+    <value>Execution logs have been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowTaskExecution_Details_DataRetrievedSuccessfully" xml:space="preserve">
+    <value>Task Execution details has been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowTaskExecution_Details_TaskExecutionNotFound" xml:space="preserve">
+    <value>The task execution with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowTaskExecution_Logs_DataRetrievedSuccessfully" xml:space="preserve">
+    <value>Task Execution logs have been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_AddedSuccessfully" xml:space="preserve">
+    <value>Triggers with id '{0}' has been added successfully.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_Add_WorkflowNotFound" xml:space="preserve">
+    <value>The workflow with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_Delete_WorkflowNotFound" xml:space="preserve">
+    <value>The workflow with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully" xml:space="preserve">
+    <value>Task workflow trigger details has been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_Details_TriggerNotFound" xml:space="preserve">
+    <value>The workflow trigger with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_List_RetrievedSuccessfully" xml:space="preserve">
+    <value>Triggers list for workflow '{0}' has been retrieved successfully.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_Update_TriggerNotFound" xml:space="preserve">
+    <value>The trigger with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowTriggers_Update_WorkflowNotFound" xml:space="preserve">
+    <value>The workflow with id '{0}' not found.</value>
+  </data>
+  <data name="Feature_WorkflowTrigger_UpdatedSuccessfully" xml:space="preserve">
+    <value>Workflow trigger with id '{0}' updated successfully!</value>
   </data>
   <data name="Feature_Workflow_Add_AddedSuccessfully" xml:space="preserve">
     <value>The workflow has been added successfully.</value>
@@ -252,7 +330,7 @@
   <data name="Feature_Workflow_Update_WorkflowNotFound" xml:space="preserve">
     <value>The workflow with id '{0}' not found.</value>
   </data>
-  <data name="PerformanceBehavior_LongRunning_Request" xml:space="preserve">
-    <value>FlowSynx Long Running Request: Request {0} took {1}ms</value>
+  <data name="SecurityConfiguration_InvalidScheme" xml:space="preserve">
+    <value>Invalid DefaultScheme '{0}'. Must be one of: {1}</value>
   </data>
 </root>

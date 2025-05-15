@@ -51,7 +51,7 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
                 Properties = trigger.Properties,
 
             });
-            _logger.LogInformation(Resources.Feature_Workflow_ListRetrievedSuccessfully);
+            _logger.LogInformation(string.Format(Resources.Feature_WorkflowTriggers_List_RetrievedSuccessfully, workflowId));
             return await Result<IEnumerable<WorkflowTriggersListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

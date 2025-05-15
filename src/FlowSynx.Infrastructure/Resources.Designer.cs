@@ -178,6 +178,24 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No plugin with type &apos;{0}&apos; and version &apos;{1}&apos; found..
+        /// </summary>
+        internal static string Plugin_Install_NoPluginInstalled {
+            get {
+                return ResourceManager.GetString("Plugin_Install_NoPluginInstalled", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Failed to create plugin instance of type &apos;{0}&apos;..
+        /// </summary>
+        internal static string Plugin_Loader_FailedToCreateInstance {
+            get {
+                return ResourceManager.GetString("Plugin_Loader_FailedToCreateInstance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Failed to load plugin: {0}.
         /// </summary>
         internal static string Plugin_Loader_FailedToLoadPlugin {
@@ -385,6 +403,42 @@ namespace FlowSynx.Infrastructure {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; has failed; the workflow will be aborted in accordance with the defined error handling strategy..
+        /// </summary>
+        internal static string Workflow_AbortStrategy_Handle {
+            get {
+                return ResourceManager.GetString("Workflow_AbortStrategy_Handle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow execution &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Workflow_CancellationRegistry_Execution_NotFound {
+            get {
+                return ResourceManager.GetString("Workflow_CancellationRegistry_Execution_NotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown backoff strategy type: {0}.
+        /// </summary>
+        internal static string Workflow_ErrorHandlingStratgeyFactory_UnknownBackkoffStrategyType {
+            get {
+                return ResourceManager.GetString("Workflow_ErrorHandlingStratgeyFactory_UnknownBackkoffStrategyType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown error handling strategy: {0}.
+        /// </summary>
+        internal static string Workflow_ErrorHandlingStratgeyFactory_UnknownErrorHandlingStrategy {
+            get {
+                return ResourceManager.GetString("Workflow_ErrorHandlingStratgeyFactory_UnknownErrorHandlingStrategy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; could not be found..
         /// </summary>
         internal static string Workflow_ExecutionTracker_NoWorkflowExecutionFound {
@@ -489,6 +543,24 @@ namespace FlowSynx.Infrastructure {
         internal static string Workflow_Executor_WorkflowInitilizeFailed {
             get {
                 return ResourceManager.GetString("Workflow_Executor_WorkflowInitilizeFailed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workflow &apos;0}&apos; not found..
+        /// </summary>
+        internal static string Workflow_Orchestrator_WorkflowNotFound {
+            get {
+                return ResourceManager.GetString("Workflow_Orchestrator_WorkflowNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task &apos;{0}&apos; has failed; however, it has been skipped in accordance with the defined error handling strategy..
+        /// </summary>
+        internal static string Workflow_SkipStrategy_handle {
+            get {
+                return ResourceManager.GetString("Workflow_SkipStrategy_handle", resourceCulture);
             }
         }
         

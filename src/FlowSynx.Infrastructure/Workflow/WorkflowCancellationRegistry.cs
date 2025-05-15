@@ -27,7 +27,7 @@ public class WorkflowCancellationRegistry : IWorkflowCancellationRegistry
         else
         {
             throw new FlowSynxException((int)ErrorCode.WorkflowCancellationRegistry,
-                $"The workflow execution '{workflowExecutionId.ToString()}' not found.");
+               string.Format(Resources.Workflow_CancellationRegistry_Execution_NotFound, workflowExecutionId.ToString()));
         }
     }
 
@@ -41,7 +41,7 @@ public class WorkflowCancellationRegistry : IWorkflowCancellationRegistry
         else
         {
             throw new FlowSynxException((int)ErrorCode.WorkflowCancellationRegistry,
-                $"The workflow execution '{workflowExecutionId.ToString()}' not found.");
+                string.Format(Resources.Workflow_CancellationRegistry_Execution_NotFound, workflowExecutionId.ToString()));
         }
     }
 

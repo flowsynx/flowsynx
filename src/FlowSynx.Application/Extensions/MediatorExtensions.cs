@@ -254,10 +254,10 @@ public static class MediatorExtensions
 
     public static Task<Result<PluginDetailsResponse>> PluginDetails(
         this IMediator mediator, 
-        string id, 
+        string pluginId, 
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new PluginDetailsRequest { Id = id }, cancellationToken);
+        return mediator.Send(new PluginDetailsRequest { PluginId = pluginId }, cancellationToken);
     }
 
     public static Task<Result<Unit>> InstallPlugin(
@@ -295,10 +295,10 @@ public static class MediatorExtensions
 
     public static Task<Result<PluginConfigDetailsResponse>> PluginConfigurationDetails(
         this IMediator mediator, 
-         string id, 
+         string configId, 
          CancellationToken cancellationToken)
     {
-        return mediator.Send(new PluginConfigDetailsRequest { Id = id}, cancellationToken);
+        return mediator.Send(new PluginConfigDetailsRequest { ConfigId = configId}, cancellationToken);
     }
 
     public static Task<Result<AddPluginConfigResponse>> AddPluginConfiguration(
@@ -318,10 +318,10 @@ public static class MediatorExtensions
     }
     public static Task<Result<Unit>> DeletePluginConfiguration(
         this IMediator mediator, 
-        string id, 
+        string configId, 
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new DeletePluginConfigRequest { Id = id }, cancellationToken);
+        return mediator.Send(new DeletePluginConfigRequest { ConfigId = configId }, cancellationToken);
     }
     #endregion
 
@@ -345,10 +345,10 @@ public static class MediatorExtensions
 
     public static Task<Result<AuditDetailsResponse>> AuditDetails(
         this IMediator mediator,
-        string id, 
+        string auditId, 
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new AuditDetailsRequest { Id = id }, cancellationToken);
+        return mediator.Send(new AuditDetailsRequest { AuditId = auditId }, cancellationToken);
     }
     #endregion
 }

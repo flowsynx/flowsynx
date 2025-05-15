@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Configuration;
 
@@ -29,8 +31,9 @@ public class SecurityConfiguration
         {
             if (!validSchemes.Contains(DefaultScheme))
             {
-                throw new InvalidOperationException(
-                    $"Invalid DefaultScheme '{DefaultScheme}'. Must be one of: {string.Join(", ", validSchemes)}");
+                throw new FlowSynxException((int)ErrorCode.SecurityConfigurationInvalidScheme, 
+                    string.Format(Resources.SecurityConfiguration_InvalidScheme, DefaultScheme, 
+                    string.Join(", ", validSchemes)));
             }
 
             logger.LogInformation("Default authentication scheme set to: {Scheme}", DefaultScheme);

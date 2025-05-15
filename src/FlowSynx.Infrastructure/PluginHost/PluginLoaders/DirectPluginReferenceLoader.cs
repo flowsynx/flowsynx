@@ -16,5 +16,4 @@ public class DirectPluginReferenceLoader(IPlugin pluginInstance) : IPluginLoader
     {
         GC.SuppressFinalize(this);
     }
-
 }

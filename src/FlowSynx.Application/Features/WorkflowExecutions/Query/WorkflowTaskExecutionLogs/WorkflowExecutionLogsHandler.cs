@@ -53,7 +53,7 @@ internal class WorkflowTaskExecutionLogsHandler : IRequestHandler<WorkflowTaskEx
                 Message = l.Message,
                 Exception = l.Exception
             });
-            _logger.LogInformation(Resources.Feature_Workflow_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(Resources.Feature_WorkflowTaskExecution_Logs_DataRetrievedSuccessfully);
             return await Result<IEnumerable<WorkflowTaskExecutionLogsResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

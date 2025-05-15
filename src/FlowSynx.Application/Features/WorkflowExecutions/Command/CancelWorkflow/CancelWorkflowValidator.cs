@@ -9,11 +9,11 @@ public class CancelWorkflowValidator : AbstractValidator<CancelWorkflowRequest>
         RuleFor(x => x.WorkflowId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Id_MustHaveValue);
+            .WithMessage(Resources.Features_Validation_WorkflowId_MustHaveValue);
 
         RuleFor(x => x.WorkflowExecutionId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_Id_InvalidGuidFormat);
+            .WithMessage(Resources.Features_Validation_WorkflowId_InvalidGuidFormat);
     }
 
     private bool BeAValidGuid(string id)

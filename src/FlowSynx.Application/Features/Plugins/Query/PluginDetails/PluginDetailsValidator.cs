@@ -6,14 +6,14 @@ public class PluginDetailsValidator : AbstractValidator<PluginDetailsRequest>
 {
     public PluginDetailsValidator()
     {
-        RuleFor(x => x.Id)
+        RuleFor(x => x.PluginId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Id_MustHaveValue);
+            .WithMessage(Resources.Features_Validation_PluginId_MustHaveValue);
 
-        RuleFor(x => x.Id)
+        RuleFor(x => x.PluginId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_Id_InvalidGuidFormat);
+            .WithMessage(Resources.Features_Validation_PluginId_InvalidGuidFormat);
     }
 
     private bool BeAValidGuid(string id)

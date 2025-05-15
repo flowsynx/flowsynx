@@ -4,7 +4,6 @@ using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
-using FlowSynx.Domain.Log;
 using FlowSynx.Domain.Workflow;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
@@ -50,7 +49,7 @@ internal class WorkflowExecutionListHandler : IRequestHandler<WorkflowExecutionL
                 ExecutionStart = execution.ExecutionStart,
                 ExecutionEnd = execution.ExecutionEnd,
             });
-            _logger.LogInformation(Resources.Feature_Workflow_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(Resources.Feature_WorkflowExecution_List_RetrievedSuccessfully);
             return await Result<IEnumerable<WorkflowExecutionListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

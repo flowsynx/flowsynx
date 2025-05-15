@@ -58,7 +58,7 @@ public class IsolatedPluginLoader : IPluginLoader
         if (Activator.CreateInstance(pluginType) is not IPlugin instance)
         {
             throw new FlowSynxException((int)ErrorCode.PluginLoader,
-                $"Failed to create plugin instance of type '{pluginType.FullName}'.");
+                string.Format(Resources.Plugin_Loader_FailedToCreateInstance, pluginType.FullName));
         }
         return instance;
     }

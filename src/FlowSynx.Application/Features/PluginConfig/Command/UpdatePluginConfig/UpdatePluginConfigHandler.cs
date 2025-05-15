@@ -46,12 +46,12 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
                     Resources.Authentication_Access_Denied);
 
-            var configId = Guid.Parse(request.Id);
+            var configId = Guid.Parse(request.ConfigId);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, 
                 configId, cancellationToken);
             if (pluginConfiguration == null)
             {
-                var message = string.Format(Resources.Feature_PluginConfig_Update_ConfigIdNotFound, request.Id);
+                var message = string.Format(Resources.Feature_PluginConfig_Update_ConfigIdNotFound, request.ConfigId);
                 throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
             }
 

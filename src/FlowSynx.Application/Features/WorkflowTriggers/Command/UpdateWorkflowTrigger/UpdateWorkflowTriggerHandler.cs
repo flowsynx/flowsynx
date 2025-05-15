@@ -44,7 +44,7 @@ internal class UpdateWorkflowTriggerHandler : IRequestHandler<UpdateWorkflowTrig
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow == null)
             {
-                var message = string.Format(Resources.Features_Workflow_Delete_WorkflowCouldNotBeFound, request.WorkflowId);
+                var message = string.Format(Resources.Feature_WorkflowTriggers_Update_WorkflowNotFound, request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 
@@ -52,8 +52,8 @@ internal class UpdateWorkflowTriggerHandler : IRequestHandler<UpdateWorkflowTrig
             var trigger = await _workflowTriggerService.GetByIdAsync(workflowId, triggerId, cancellationToken);
             if (trigger == null)
             {
-                var message = string.Format(Resources.Features_Workflow_Delete_WorkflowCouldNotBeFound, request.WorkflowId);
-                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
+                var message = string.Format(Resources.Feature_WorkflowTriggers_Update_TriggerNotFound, request.TriggerId);
+                throw new FlowSynxException((int)ErrorCode.WorkflowTriggerNotFound, message);
             }
 
             trigger.Status = request.Status;
@@ -61,7 +61,7 @@ internal class UpdateWorkflowTriggerHandler : IRequestHandler<UpdateWorkflowTrig
             trigger.Properties = request.Properties;
 
             await _workflowTriggerService.UpdateAsync(trigger, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Workflow_Add_AddedSuccessfully);
+            return await Result<Unit>.SuccessAsync(string.Format(Resources.Feature_WorkflowTrigger_UpdatedSuccessfully, triggerId));
         }
         catch (FlowSynxException ex)
         {

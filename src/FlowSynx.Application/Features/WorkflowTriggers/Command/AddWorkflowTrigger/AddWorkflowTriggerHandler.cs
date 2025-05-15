@@ -44,7 +44,7 @@ internal class AddWorkflowTriggerHandler : IRequestHandler<AddWorkflowTriggerReq
             var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
             if (workflow == null)
             {
-                var message = string.Format(Resources.Features_Workflow_Delete_WorkflowCouldNotBeFound, request.WorkflowId);
+                var message = string.Format(Resources.Feature_WorkflowTriggers_Add_WorkflowNotFound, request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 
@@ -65,7 +65,7 @@ internal class AddWorkflowTriggerHandler : IRequestHandler<AddWorkflowTriggerReq
             };
 
             return await Result<AddWorkflowTriggerResponse>.SuccessAsync(response, 
-                Resources.Feature_Workflow_Add_AddedSuccessfully);
+                string.Format(string.Format(Resources.Feature_WorkflowTriggers_AddedSuccessfully, workflowTriggerEntity.Id)));
         }
         catch (FlowSynxException ex)
         {

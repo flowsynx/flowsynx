@@ -6,14 +6,14 @@ public class DeletePluginConfigValidator : AbstractValidator<DeletePluginConfigR
 {
     public DeletePluginConfigValidator()
     {
-        RuleFor(x => x.Id)
+        RuleFor(x => x.ConfigId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Id_MustHaveValue);
+            .WithMessage(Resources.Features_Validation_PluginConfigId_MustHaveValue);
 
-        RuleFor(x => x.Id)
+        RuleFor(x => x.ConfigId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_Id_InvalidGuidFormat);
+            .WithMessage(Resources.Features_Validation_PluginConfigId_InvalidGuidFormat);
     }
 
     private bool BeAValidGuid(string id)

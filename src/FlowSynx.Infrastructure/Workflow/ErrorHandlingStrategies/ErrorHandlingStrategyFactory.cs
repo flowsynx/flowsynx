@@ -21,7 +21,7 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
             ErrorStrategy.Retry => CreateRetry(errorHandling.RetryPolicy),
             ErrorStrategy.Skip => new SkipStrategy(_logger),
             ErrorStrategy.Abort => new AbortStrategy(_logger),
-            _ => throw new ArgumentException($"Unknown error handling strategy: {errorHandling?.Strategy}")
+            _ => throw new ArgumentException(string.Format(Resources.Workflow_ErrorHandlingStratgeyFactory_UnknownErrorHandlingStrategy, errorHandling?.Strategy))
         };
     }
 
@@ -43,7 +43,7 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
             BackoffStrategy.Fixed => new FixedBackoffStrategy(
                 retryPolicy.InitialDelay
             ),
-            _ => throw new ArgumentException($"Unknown backoff strategy type: {retryPolicy?.BackoffStrategy}")
+            _ => throw new ArgumentException(string.Format(Resources.Workflow_ErrorHandlingStratgeyFactory_UnknownBackkoffStrategyType, retryPolicy?.BackoffStrategy))
         };
 
         return new RetryStrategy(retryPolicy.MaxRetries, backoff, _logger);

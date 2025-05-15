@@ -45,8 +45,8 @@ internal class WorkflowTaskExecutionDetailsHandler :
 
             if (workflowTaskExecution is null)
             {
-                var message = string.Format(Resources.Feature_Workflow_Details_WorkflowNotFound, request.WorkflowId);
-                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
+                var message = string.Format(Resources.Feature_WorkflowTaskExecution_Details_TaskExecutionNotFound, request.WorkflowId);
+                throw new FlowSynxException((int)ErrorCode.WorkflowExecutionTaskNotFound, message);
             }
 
             var response = new WorkflowTaskExecutionDetailsResponse
@@ -57,7 +57,7 @@ internal class WorkflowTaskExecutionDetailsHandler :
                 StartTime = workflowTaskExecution.StartTime,
                 EndTime = workflowTaskExecution.EndTime,
             };
-            _logger.LogInformation(Resources.Feature_Workflow_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(Resources.Feature_WorkflowTaskExecution_Details_DataRetrievedSuccessfully);
             return await Result<WorkflowTaskExecutionDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

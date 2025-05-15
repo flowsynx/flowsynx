@@ -39,8 +39,8 @@ internal class WorkflowTriggerDetailsHandler : IRequestHandler<WorkflowTriggerDe
             var trigger = await _workflowTriggerService.GetByIdAsync(workflowId, triggerId, cancellationToken);
             if (trigger is null)
             {
-                var message = string.Format(Resources.Feature_Workflow_Details_WorkflowNotFound, request.WorkflowId);
-                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
+                var message = string.Format(Resources.Feature_WorkflowTriggers_Details_TriggerNotFound, request.TriggerId);
+                throw new FlowSynxException((int)ErrorCode.WorkflowTriggerNotFound, message);
             }
 
             var response = new WorkflowTriggerDetailsResponse
@@ -50,7 +50,7 @@ internal class WorkflowTriggerDetailsHandler : IRequestHandler<WorkflowTriggerDe
                 Status = trigger.Status,
                 Properties = trigger.Properties
             };
-            _logger.LogInformation(Resources.Feature_Workflow_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(Resources.Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully);
             return await Result<WorkflowTriggerDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

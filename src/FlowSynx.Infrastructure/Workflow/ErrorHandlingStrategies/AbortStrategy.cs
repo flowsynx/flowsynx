@@ -16,7 +16,7 @@ public class AbortStrategy: IErrorHandlingStrategy
         ErrorHandlingContext context, 
         CancellationToken cancellation)
     {
-        _logger.LogInformation($"Task '{context.TaskName}' has failed; the workflow will be aborted in accordance with the defined error handling strategy.");
+        _logger.LogInformation(string.Format(Resources.Workflow_AbortStrategy_Handle, context.TaskName));
         return Task.FromResult(new ErrorHandlingResult { ShouldAbortWorkflow = true });
     }
 }

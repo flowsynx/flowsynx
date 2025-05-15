@@ -6,14 +6,14 @@ public class AuditDetailsValidator : AbstractValidator<AuditDetailsRequest>
 {
     public AuditDetailsValidator()
     {
-        RuleFor(x => x.Id)
+        RuleFor(x => x.AuditId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Id_MustHaveValue);
+            .WithMessage(Resources.Features_Validation_AuditId_MustHaveValue);
 
-        RuleFor(x => x.Id)
+        RuleFor(x => x.AuditId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_Id_InvalidGuidFormat);
+            .WithMessage(Resources.Features_Validation_AuditId_InvalidGuidFormat);
     }
 
     private bool BeAValidGuid(string id)

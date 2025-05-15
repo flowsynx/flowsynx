@@ -112,7 +112,9 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         try
         {
             var entity = await _workflowService.Get(userId, workflowId, cancellationToken);
-            return entity ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, $"Workflow '{workflowId}' not found.");
+            return entity 
+                ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, 
+                string.Format(Resources.Workflow_Orchestrator_WorkflowNotFound, workflowId));
         }
         catch (Exception ex)
         {

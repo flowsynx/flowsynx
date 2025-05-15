@@ -1,6 +1,4 @@
-﻿using FlowSynx.Application.Models;
-using FlowSynx.PluginCore.Exceptions;
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
@@ -25,10 +23,8 @@ public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         if (stopwatch.ElapsedMilliseconds <= 500) 
             return response;
 
-        var message = string.Format(Resources.PerformanceBehavior_LongRunning_Request, 
+        _logger.LogInformation("FlowSynx Long Running Request: Request {Request} took {Milliseconds}ms", 
             typeof(TRequest).Name, stopwatch.ElapsedMilliseconds);
-        var errorMessage = new ErrorMessage((int)ErrorCode.BehaviorPerformanceLongRunning, message);;
-        _logger.LogDebug(errorMessage.ToString());
 
         return response;
     }

@@ -62,7 +62,7 @@ public class PluginManager : IPluginManager
 
         if (installedCount == 0)
             throw new FlowSynxException((int)ErrorCode.PluginInstallationNotFound,
-                "No plugin was installed from the package.");
+                Resources.Plugin_Install_NoPluginInstalled);
     }
 
     public async Task UpdateAsync(string pluginType, string oldVersion, string newPluginVersion, CancellationToken cancellationToken)

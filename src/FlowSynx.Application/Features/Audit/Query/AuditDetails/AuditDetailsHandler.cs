@@ -32,12 +32,12 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
-            var auditId = Guid.Parse(request.Id);
+            var auditId = Guid.Parse(request.AuditId);
             var audit = await _auditService.Get(auditId, cancellationToken);
             if (audit is null)
             {
                 var message = string.Format(Resources.Feature_Audit_DetailsNotFound, auditId);
-                throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
+                throw new FlowSynxException((int)ErrorCode.AuditNotFound, message);
             }
 
             var response = new AuditDetailsResponse
@@ -52,7 +52,7 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
                 NewValues = audit.NewValues,
                 DateTime = audit.DateTime
             };
-            _logger.LogInformation(string.Format(Resources.Feature_Audit_DetailesRetrievedSuccessfully, auditId));
+            _logger.LogInformation("Audit details for '{AuditId}' has been retrieved successfully.", auditId);
             return await Result<AuditDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

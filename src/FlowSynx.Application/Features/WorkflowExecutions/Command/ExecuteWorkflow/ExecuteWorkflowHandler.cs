@@ -34,7 +34,7 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
 
             var workflowId = Guid.Parse(request.WorkflowId);
             await _workflowOrchestrator.ExecuteWorkflowAsync(_currentUserService.UserId, workflowId, cancellationToken);
-            return await Result<Unit>.SuccessAsync("Workflow executed successfully!");
+            return await Result<Unit>.SuccessAsync(string.Format(Resources.Feature_WorkflowExecution_ExecutedSuccessfully, workflowId));
         }
         catch (FlowSynxException ex)
         {

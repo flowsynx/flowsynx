@@ -45,7 +45,7 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEn
                 NewValues = audit.NewValues,
                 DateTime = audit.DateTime
             }).ToList();
-            _logger.LogInformation(Resources.Feature_Audit_ListRetrievedSuccessfully);
+            _logger.LogInformation("The audit list has been retrieved successfully.");
             return await Result<IEnumerable<AuditsListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

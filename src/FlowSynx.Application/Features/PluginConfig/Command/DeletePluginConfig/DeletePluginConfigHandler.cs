@@ -37,7 +37,7 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
                     Resources.Authentication_Access_Denied);
 
-            var configId = Guid.Parse(request.Id);
+            var configId = Guid.Parse(request.ConfigId);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, 
                 cancellationToken);
             if (pluginConfiguration == null)

@@ -24,17 +24,17 @@ public class Config : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
-        group.MapGet("/{id}", PluginConfigurationDetails)
+        group.MapGet("/{configId}", PluginConfigurationDetails)
             .WithName("PluginConfigurationDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
-        group.MapPut("/{id}", UpdatePluginConfiguration)
+        group.MapPut("/{configId}", UpdatePluginConfiguration)
             .WithName("UpdatePluginConfiguration")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
 
-        group.MapDelete("/{id}", DeletePluginConfiguration)
+        group.MapDelete("/{configId}", DeletePluginConfiguration)
             .WithName("DeletePluginConfiguration")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
@@ -58,15 +58,15 @@ public class Config : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> PluginConfigurationDetails(string id,
+    public async Task<IResult> PluginConfigurationDetails(string configId,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer, 
         CancellationToken cancellationToken)
     {
-        var result = await mediator.PluginConfigurationDetails(id, cancellationToken);
+        var result = await mediator.PluginConfigurationDetails(configId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UpdatePluginConfiguration(string id, HttpContext context,
+    public async Task<IResult> UpdatePluginConfiguration(string configId, HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
@@ -74,7 +74,7 @@ public class Config : EndpointGroupBase
         var request = jsonDeserializer.Deserialize<UpdatePluginConfigModel>(jsonString);
 
         var updatePluginConfigRequest = new UpdatePluginConfigRequest { 
-            Id = id, 
+            ConfigId = configId, 
             Name = request.Name, 
             Type = request.Type, 
             Version = request.Version,
@@ -84,10 +84,10 @@ public class Config : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeletePluginConfiguration(string id,
+    public async Task<IResult> DeletePluginConfiguration(string configId,
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
-        var result = await mediator.DeletePluginConfiguration(id, cancellationToken);
+        var result = await mediator.DeletePluginConfiguration(configId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

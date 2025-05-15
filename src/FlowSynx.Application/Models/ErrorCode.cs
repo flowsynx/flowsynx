@@ -16,9 +16,6 @@ public enum ErrorCode
     #endregion
 
     #region Behavior error codes
-    BehaviorUnhandledException                      = 1201,
-    BehaviorPerformanceLongRunning                  = 1202,
-    BehaviorPerformanceError                        = 1203,
     #endregion
 
     #region Serialization error codes
@@ -39,6 +36,7 @@ public enum ErrorCode
     SecurityBasicAuthenticationMustHaveUniqueNames  = 1505,
     SecurityInitializedError                        = 1506,
     SecurityAuthenticationIsRequired                = 1550,
+    SecurityConfigurationInvalidScheme              = 1506,
     #endregion
 
     #region Database error codes
@@ -63,6 +61,7 @@ public enum ErrorCode
     AuditsApplying                                  = 2101,
     AuditsGetList                                   = 2102,
     AuditGetItem                                    = 2103,
+    AuditNotFound                                   = 2104,
     #endregion
 
     #region Plugin Configuration error codes
@@ -132,6 +131,9 @@ public enum ErrorCode
     WorkflowTaskExecutionCanceled                   = 2433,
     WorkflowExecutionCanceled                       = 2434,
     WorkflowCancellationRegistry                    = 2435,
+    WorkflowExecutionNotFound                       = 2436,
+    WorkflowExecutionTaskNotFound                   = 2437,
+    WorkflowTriggerNotFound                         = 2438,
     #endregion
 
     #region ExpressionParser

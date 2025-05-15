@@ -39,7 +39,7 @@ internal class DeleteWorkflowTriggerHandler : IRequestHandler<DeleteWorkflowTrig
             var workflow = await _workflowTriggerService.GetByIdAsync(workflowId, triggerId, cancellationToken);
             if (workflow == null)
             {
-                var message = string.Format(Resources.Features_Workflow_Delete_WorkflowCouldNotBeFound, request.WorkflowId);
+                var message = string.Format(Resources.Feature_WorkflowTriggers_Delete_WorkflowNotFound, request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 

@@ -70,15 +70,6 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Audit details for &apos;{0}&apos; has been retrieved successfully..
-        /// </summary>
-        internal static string Feature_Audit_DetailesRetrievedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Audit_DetailesRetrievedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The audit details, id &apos;{0}&apos;, are not found..
         /// </summary>
         internal static string Feature_Audit_DetailsNotFound {
@@ -88,29 +79,20 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The audit list has been retrieved successfully..
+        ///   Looks up a localized string similar to The plugin has been installed successfully..
         /// </summary>
-        internal static string Feature_Audit_ListRetrievedSuccessfully {
+        internal static string Feature_Plugin_Install_AddedSuccessfully {
             get {
-                return ResourceManager.GetString("Feature_Audit_ListRetrievedSuccessfully", resourceCulture);
+                return ResourceManager.GetString("Feature_Plugin_Install_AddedSuccessfully", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The plugin has been added successfully..
+        ///   Looks up a localized string similar to The plugin has been uninstalled successfully..
         /// </summary>
-        internal static string Feature_Plugin_Add_AddedSuccessfully {
+        internal static string Feature_Plugin_Uninstall_DeletedSuccessfully {
             get {
-                return ResourceManager.GetString("Feature_Plugin_Add_AddedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin has been deleted successfully..
-        /// </summary>
-        internal static string Feature_Plugin_Delete_DeletedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Plugin_Delete_DeletedSuccessfully", resourceCulture);
+                return ResourceManager.GetString("Feature_Plugin_Uninstall_DeletedSuccessfully", resourceCulture);
             }
         }
         
@@ -259,47 +241,173 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Workflow &apos;{0}&apos; cancelled successfully!.
+        /// </summary>
+        internal static string Feature_WorkflowExecution_CancelledSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowExecution_CancelledSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Execution details has been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowExecution_Details_DataRetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowExecution_Details_DataRetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The execution with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowExecution_Details_ExecutionNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowExecution_Details_ExecutionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workflow &apos;{0}&apos; executed successfully!.
+        /// </summary>
+        internal static string Feature_WorkflowExecution_ExecutedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowExecution_ExecutedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Executions list has been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowExecution_List_RetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowExecution_List_RetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Execution logs have been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowExecution_Logs_DataRetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowExecution_Logs_DataRetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task Execution details has been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowTaskExecution_Details_DataRetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTaskExecution_Details_DataRetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The task execution with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowTaskExecution_Details_TaskExecutionNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTaskExecution_Details_TaskExecutionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task Execution logs have been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowTaskExecution_Logs_DataRetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTaskExecution_Logs_DataRetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Workflow trigger with id &apos;{0}&apos; updated successfully!.
+        /// </summary>
+        internal static string Feature_WorkflowTrigger_UpdatedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTrigger_UpdatedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_Add_WorkflowNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_Add_WorkflowNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Triggers with id &apos;{0}&apos; has been added successfully..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_AddedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_AddedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_Delete_WorkflowNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_Delete_WorkflowNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Task workflow trigger details has been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow trigger with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_Details_TriggerNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_Details_TriggerNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Triggers list for workflow &apos;{0}&apos; has been retrieved successfully..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_List_RetrievedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_List_RetrievedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The trigger with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_Update_TriggerNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_Update_TriggerNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; not found..
+        /// </summary>
+        internal static string Feature_WorkflowTriggers_Update_WorkflowNotFound {
+            get {
+                return ResourceManager.GetString("Feature_WorkflowTriggers_Update_WorkflowNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The plugin with ID &apos;{1}&apos; could not be found..
         /// </summary>
         internal static string Features_Plugin_Details_PluginCouldNotBeFound {
             get {
                 return ResourceManager.GetString("Features_Plugin_Details_PluginCouldNotBeFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin new version must have value..
-        /// </summary>
-        internal static string Features_Plugin_Validation_NewVersion_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Plugin_Validation_NewVersion_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin old version must have value..
-        /// </summary>
-        internal static string Features_Plugin_Validation_OldVersion_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Plugin_Validation_OldVersion_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin type must have value..
-        /// </summary>
-        internal static string Features_Plugin_Validation_Type_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Plugin_Validation_Type_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin version must have value..
-        /// </summary>
-        internal static string Features_Plugin_Validation_Version_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Plugin_Validation_Version_MustHaveValue", resourceCulture);
             }
         }
         
@@ -340,56 +448,182 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The plugin config name must have value..
-        /// </summary>
-        internal static string Features_PluginConfig_Validation_Name_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_PluginConfig_Validation_Name_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The value for plugin config name is invalid. Only Latin alphabet characters (A–Z, a–z), numbers, and underscore are permitted..
-        /// </summary>
-        internal static string Features_PluginConfig_Validation_Name_OnlyAcceptLatingCharacters {
-            get {
-                return ResourceManager.GetString("Features_PluginConfig_Validation_Name_OnlyAcceptLatingCharacters", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin config type must have value..
-        /// </summary>
-        internal static string Features_PluginConfig_Validation_Type_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_PluginConfig_Validation_Type_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin config version must have value..
-        /// </summary>
-        internal static string Features_PluginConfig_Validation_Version_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_PluginConfig_Validation_Version_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Invalid Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
         /// </summary>
-        internal static string Features_Validation_Id_InvalidGuidFormat {
+        internal static string Features_Validation_AuditId_InvalidGuidFormat {
             get {
-                return ResourceManager.GetString("Features_Validation_Id_InvalidGuidFormat", resourceCulture);
+                return ResourceManager.GetString("Features_Validation_AuditId_InvalidGuidFormat", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to The id value must have value..
         /// </summary>
-        internal static string Features_Validation_Id_MustHaveValue {
+        internal static string Features_Validation_AuditId_MustHaveValue {
             get {
-                return ResourceManager.GetString("Features_Validation_Id_MustHaveValue", resourceCulture);
+                return ResourceManager.GetString("Features_Validation_AuditId_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid workflow Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
+        /// </summary>
+        internal static string Features_Validation_ExecutionId_InvalidGuidFormat {
+            get {
+                return ResourceManager.GetString("Features_Validation_ExecutionId_InvalidGuidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow id value must have value..
+        /// </summary>
+        internal static string Features_Validation_ExecutionId_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_ExecutionId_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin new version must have value..
+        /// </summary>
+        internal static string Features_Validation_Plugin_NewVersion_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_Plugin_NewVersion_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin old version must have value..
+        /// </summary>
+        internal static string Features_Validation_Plugin_OldVersion_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_Plugin_OldVersion_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin type must have value..
+        /// </summary>
+        internal static string Features_Validation_Plugin_Type_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_Plugin_Type_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin version must have value..
+        /// </summary>
+        internal static string Features_Validation_Plugin_Version_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_Plugin_Version_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin config name must have value..
+        /// </summary>
+        internal static string Features_Validation_PluginConfig_Name_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginConfig_Name_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The value for plugin config name is invalid. Only Latin alphabet characters (A–Z, a–z), numbers, and underscore are permitted..
+        /// </summary>
+        internal static string Features_Validation_PluginConfig_Name_OnlyAcceptLatingCharacters {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginConfig_Name_OnlyAcceptLatingCharacters", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin config type must have value..
+        /// </summary>
+        internal static string Features_Validation_PluginConfig_Type_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginConfig_Type_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin config version must have value..
+        /// </summary>
+        internal static string Features_Validation_PluginConfig_Version_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginConfig_Version_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid plugin config Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
+        /// </summary>
+        internal static string Features_Validation_PluginConfigId_InvalidGuidFormat {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginConfigId_InvalidGuidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin config id value must have value..
+        /// </summary>
+        internal static string Features_Validation_PluginConfigId_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginConfigId_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid plugin Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
+        /// </summary>
+        internal static string Features_Validation_PluginId_InvalidGuidFormat {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginId_InvalidGuidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The plugin id value must have value..
+        /// </summary>
+        internal static string Features_Validation_PluginId_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_PluginId_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid trigger Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
+        /// </summary>
+        internal static string Features_Validation_TriggerId_InvalidGuidFormat {
+            get {
+                return ResourceManager.GetString("Features_Validation_TriggerId_InvalidGuidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The trigger id value must have value..
+        /// </summary>
+        internal static string Features_Validation_TriggerId_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_TriggerId_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid workflow Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
+        /// </summary>
+        internal static string Features_Validation_WorkflowId_InvalidGuidFormat {
+            get {
+                return ResourceManager.GetString("Features_Validation_WorkflowId_InvalidGuidFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow id value must have value..
+        /// </summary>
+        internal static string Features_Validation_WorkflowId_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_WorkflowId_MustHaveValue", resourceCulture);
             }
         }
         
@@ -466,11 +700,11 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to FlowSynx Long Running Request: Request {0} took {1}ms.
+        ///   Looks up a localized string similar to Invalid DefaultScheme &apos;{0}&apos;. Must be one of: {1}.
         /// </summary>
-        internal static string PerformanceBehavior_LongRunning_Request {
+        internal static string SecurityConfiguration_InvalidScheme {
             get {
-                return ResourceManager.GetString("PerformanceBehavior_LongRunning_Request", resourceCulture);
+                return ResourceManager.GetString("SecurityConfiguration_InvalidScheme", resourceCulture);
             }
         }
     }

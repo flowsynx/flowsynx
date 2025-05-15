@@ -32,7 +32,7 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
             if (string.IsNullOrEmpty(_currentUserService.UserId))
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
-            var configId = Guid.Parse(request.Id);
+            var configId = Guid.Parse(request.ConfigId);
             var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
             if (pluginConfig is null)
             {

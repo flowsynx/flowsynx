@@ -16,7 +16,7 @@ public class SkipStrategy: IErrorHandlingStrategy
         ErrorHandlingContext context,
         CancellationToken cancellation)
     {
-        _logger.LogInformation($"Task '{context.TaskName}' has failed; however, it has been skipped in accordance with the defined error handling strategy.");
+        _logger.LogInformation(string.Format(Resources.Workflow_SkipStrategy_handle, context.TaskName));
         return Task.FromResult(new ErrorHandlingResult { ShouldSkip = true });
     }
 }

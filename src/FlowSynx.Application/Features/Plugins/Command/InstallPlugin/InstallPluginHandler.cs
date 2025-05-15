@@ -35,7 +35,7 @@ internal class InstallPluginHandler : IRequestHandler<InstallPluginRequest, Resu
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
 
             await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Add_AddedSuccessfully);
+            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Install_AddedSuccessfully);
         }
         catch (FlowSynxException ex)
         {

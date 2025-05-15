@@ -70,7 +70,7 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             {
                 var message = string.Format(Resources.Features_PluginConfig_Add_PluginConfigAlreadyExists, request.Name);
                 var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeNotFound, message);
-                _logger.LogWarning(errorMessage.ToString());
+                _logger.LogWarning("The plugin config '{ConfigName}' already exists.", request.Name);
                 return await Result<AddPluginConfigResponse>.FailAsync(errorMessage.ToString());
             }
 

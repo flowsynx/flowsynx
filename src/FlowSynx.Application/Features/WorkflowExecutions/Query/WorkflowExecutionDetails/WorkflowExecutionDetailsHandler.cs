@@ -41,8 +41,8 @@ internal class WorkflowExecutionDetailsHandler : IRequestHandler<WorkflowExecuti
 
             if (workflowExecution is null)
             {
-                var message = string.Format(Resources.Feature_Workflow_Details_WorkflowNotFound, request.WorkflowId);
-                throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
+                var message = string.Format(Resources.Feature_WorkflowExecution_Details_ExecutionNotFound, request.WorkflowExecutionId);
+                throw new FlowSynxException((int)ErrorCode.WorkflowExecutionNotFound, message);
             }
 
             var response = new WorkflowExecutionDetailsResponse
@@ -52,7 +52,7 @@ internal class WorkflowExecutionDetailsHandler : IRequestHandler<WorkflowExecuti
                 ExecutionStart = workflowExecution.ExecutionStart,
                 ExecutionEnd = workflowExecution.ExecutionEnd,
             };
-            _logger.LogInformation(Resources.Feature_Workflow_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(Resources.Feature_WorkflowExecution_Details_DataRetrievedSuccessfully);
             return await Result<WorkflowExecutionDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)
