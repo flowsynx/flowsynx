@@ -43,7 +43,8 @@ try
            .AddInfrastructurePluginManager(config)
            .AddUserService();
 
-    //builder.Services.ParseArguments(args);
+    if (!builder.Environment.IsDevelopment())
+        builder.Services.ParseArguments(args);
 
     builder.Services
            .AddSecurity(config)
