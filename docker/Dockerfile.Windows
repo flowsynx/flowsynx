@@ -6,6 +6,8 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0-${OS_VERSION} AS build
 ARG BUILD_CONFIGURATION
 ARG APP_VERSION
 
+ENV NUGET_PACKAGES="C:\\nuget"
+
 WORKDIR /code
 
 COPY ["src/FlowSynx/FlowSynx.csproj", "src/FlowSynx/"]
@@ -15,14 +17,13 @@ COPY ["src/FlowSynx.Infrastructure/FlowSynx.Infrastructure.csproj", "src/FlowSyn
 COPY ["src/FlowSynx.Persistence.Postgres/FlowSynx.Persistence.Postgres.csproj", "src/FlowSynx.Persistence.Postgres/"]
 COPY ["src/FlowSynx.Application/FlowSynx.Application.csproj", "src/FlowSynx.Application/"]
 COPY ["src/FlowSynx.Persistence.SQLite/FlowSynx.Persistence.SQLite.csproj", "src/FlowSynx.Persistence.SQLite/"]
-
 COPY ["plugins/FlowSynx.Plugins.LocalFileSystem/FlowSynx.Plugins.LocalFileSystem.csproj", "plugins/FlowSynx.Plugins.LocalFileSystem/"]
 
 RUN dotnet restore "./src/FlowSynx/FlowSynx.csproj"
 
 COPY . .
 WORKDIR "/code/src/FlowSynx"
-RUN dotnet build "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/build
+RUN dotnet build "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/build --no-restore
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION
