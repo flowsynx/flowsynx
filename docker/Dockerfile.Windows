@@ -1,8 +1,7 @@
-ARG OS_VERSION=nanoserver-1809
 ARG BUILD_CONFIGURATION=Release
 ARG APP_VERSION="1.0.0"
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0-${OS_VERSION} AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-nanoserver-ltsc2022 AS build
 ARG BUILD_CONFIGURATION
 ARG APP_VERSION
 
@@ -30,7 +29,7 @@ ARG BUILD_CONFIGURATION
 ARG APP_VERSION
 RUN dotnet publish "./FlowSynx.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:UseAppHost=false /p:Version=%APP_VERSION% --runtime "win-x64"
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-${OS_VERSION}
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-nanoserver-ltsc2022
 WORKDIR /app
 EXPOSE 6262
 COPY --from=publish /app/publish .
