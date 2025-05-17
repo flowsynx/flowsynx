@@ -1,0 +1,72 @@
+services:
+  flowsynx:
+    image: flowsynx/flowsynx:1.0.0-linux-amd64
+    container_name: flowsynx
+    environment:
+      DB__HOST: postgres
+      DB__PORT: 5432
+      DB__NAME: ${FLOWSYNX_DB}
+      DB__USERNAME: ${POSTGRES_USER}
+      DB__PASSWORD: ${POSTGRES_PASSWORD}
+      Security__EnableBasic: false
+      Security__JwtProviders__0__Name: Keycloak
+      Security__JwtProviders__0__Authority: http://localhost:8080/realms/flowsynx
+      Security__JwtProviders__0__Issuer: http://localhost:8080/realms/flowsynx
+      Security__JwtProviders__0__Audience: flowsynx
+      Security__JwtProviders__0__Secret: <YOUR_CLIENT_ID>
+      Security__JwtProviders__0__RequireHttps: false
+      Security__JwtProviders__0__RolesClaim: roles
+      Security__DefaultScheme: Keycloak
+    volumes:
+      - flowsynx-data:/app
+    working_dir: /app
+    ports:
+      - "6262:6262"
+    command: ["--start"]
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - keycloak
+    networks:
+      - keycloak_net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_SCHEMA: public
+      KC_DB_URL_DATABASE: ${KEYCLOAK_DB}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - keycloak_net
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${KEYCLOAK_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - keycloak_net
+
+volumes:
+  flowsynx-data:
+  pgdata:
+  
+networks:
+  keycloak_net:
+    driver: bridge  
