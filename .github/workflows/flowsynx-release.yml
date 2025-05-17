@@ -182,7 +182,7 @@ jobs:
 
   manifest:
     runs-on: ubuntu-latest
-    needs: docker
+    needs: [compute, docker]
 
     steps:
       - uses: actions/checkout@v4
