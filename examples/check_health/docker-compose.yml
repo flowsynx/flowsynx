@@ -1,0 +1,50 @@
+services:
+  flowsynx:
+    image: flowsynx/flowsynx:1.0.0-linux-amd64
+    container_name: flowsynx
+    environment:
+      DB__HOST: postgres
+      DB__PORT: 5432
+      DB__NAME: ${FLOWSYNX_DB}
+      DB__USERNAME: ${POSTGRES_USER}
+      DB__PASSWORD: ${POSTGRES_PASSWORD}
+      Security__EnableBasic: true
+      Security__BasicUsers__0__Id: 0960a93d-e42b-4987-bc07-7bda806a21c7
+      Security__BasicUsers__0__Name: admin
+      Security__BasicUsers__0__Password: admin
+      Security__BasicUsers__0__Roles__0: admin
+      Security__DefaultScheme: Basic
+      HealthCheck__Enabled: true
+    volumes:
+      - flowsynx-data:/app
+    working_dir: /app
+    ports:
+      - "6262:6262"
+    command: ["--start"]
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - basicAuth_net
+
+  postgres:
+    image: postgres:15
+    container_name: flowsynx-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - basicAuth_net
+
+volumes:
+  flowsynx-data:
+  pgdata:
+  
+networks:
+  basicAuth_net:
+    driver: bridge    
