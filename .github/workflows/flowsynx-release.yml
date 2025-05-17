@@ -172,6 +172,18 @@ jobs:
             -t $TAG .
 
           docker push $TAG
+
+          echo "Verifying push: $TAG"
+            for i in {1..5}; do
+              if docker manifest inspect $TAG > /dev/null 2>&1; then
+                echo "$TAG is now available."
+                break
+              else
+                echo "Waiting for $TAG to be available..."
+                sleep 10
+              fi
+            done
+
           echo $TAG >> docker-tags.txt
 
       - name: Upload tag list
@@ -200,6 +212,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Wait for tag propagation
+        run: sleep 30
+
       - name: Create and Push Manifest
         run: |
           IMAGE_NAME=${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}
@@ -207,9 +222,11 @@ jobs:
           TAGS=$(cat docker-tags.txt)
           MANIFEST_TAG="${IMAGE_NAME}:${VERSION}"
 
+          echo "Creating manifest: $MANIFEST_TAG"
           docker manifest create $MANIFEST_TAG $TAGS
 
           docker manifest annotate $MANIFEST_TAG ${IMAGE_NAME}:${VERSION}-linux-amd64 --os linux --arch amd64
           docker manifest annotate $MANIFEST_TAG ${IMAGE_NAME}:${VERSION}-windows-ltsc2022-amd64 --os windows --arch amd64
 
+          echo "Pushing manifest: $MANIFEST_TAG"
           docker manifest push $MANIFEST_TAG
