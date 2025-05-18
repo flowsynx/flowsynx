@@ -29,8 +29,7 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEn
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var audits = await _auditService.All(cancellationToken);
             var response = audits.Select(audit => new AuditsListResponse

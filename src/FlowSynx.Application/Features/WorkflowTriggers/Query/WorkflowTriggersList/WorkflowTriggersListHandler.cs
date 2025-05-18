@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
@@ -15,20 +16,24 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ISystemClock _systemClock;
+    private readonly ILocalization _localization;
 
     public WorkflowTriggersListHandler(
         ILogger<PluginConfigListHandler> logger,
         IWorkflowTriggerService workflowTriggerService, 
         ICurrentUserService currentUserService,
-        ISystemClock systemClock)
+        ISystemClock systemClock,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _workflowTriggerService = workflowTriggerService;
         _currentUserService = currentUserService;
         _systemClock = systemClock;
+        _localization = localization;
     }
 
     public async Task<Result<IEnumerable<WorkflowTriggersListResponse>>> Handle(
@@ -37,9 +42,7 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var triggers = await _workflowTriggerService.GetByWorkflowIdAsync(workflowId, cancellationToken);
@@ -51,7 +54,7 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
                 Properties = trigger.Properties,
 
             });
-            _logger.LogInformation(string.Format(Resources.Feature_WorkflowTriggers_List_RetrievedSuccessfully, workflowId));
+            _logger.LogInformation(_localization.Get("Feature_WorkflowTriggers_List_RetrievedSuccessfully", workflowId));
             return await Result<IEnumerable<WorkflowTriggersListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

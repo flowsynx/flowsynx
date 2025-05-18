@@ -5,6 +5,7 @@ using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Audit;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Application.Features.Audit.Query.AuditDetails;
 
@@ -13,30 +14,39 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
     private readonly ILogger<AuditDetailsHandler> _logger;
     private readonly IAuditService _auditService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
-    public AuditDetailsHandler(ILogger<AuditDetailsHandler> logger,
-        IAuditService auditService, ICurrentUserService currentUserService)
+    public AuditDetailsHandler(
+        ILogger<AuditDetailsHandler> logger,
+        IAuditService auditService, 
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(auditService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _auditService = auditService;
         _currentUserService = currentUserService;
+        _localization = localization;
     }
 
     public async Task<Result<AuditDetailsResponse>> Handle(AuditDetailsRequest request, CancellationToken cancellationToken)
     {
         try
         {
+            _currentUserService.ValidateAuthentication();
+
             if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
+                    _localization.Get("Authentication_Access_Denied"));
 
             var auditId = Guid.Parse(request.AuditId);
             var audit = await _auditService.Get(auditId, cancellationToken);
             if (audit is null)
             {
-                var message = string.Format(Resources.Feature_Audit_DetailsNotFound, auditId);
+                var message = _localization.Get("Feature_Audit_DetailsNotFound", auditId);
                 throw new FlowSynxException((int)ErrorCode.AuditNotFound, message);
             }
 

@@ -11,6 +11,7 @@ using FlowSynx.Services;
 using FlowSynx.Application.Services;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Security;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Extensions;
 
@@ -66,7 +67,7 @@ public static class ServiceCollectionExtensions
         services.AddLogging(c => c.ClearProviders());
         services.AddLogging(builder => builder.AddConsoleLogger(options =>
         {
-            options.OutputTemplate = "[{level} | {timestamp}] Message=\"{message}\"";
+            options.OutputTemplate = "{timestamp} [{level}] Message=\"{message}\"";
             options.MinLevel = logLevel;
             options.CancellationToken = cancellationToken;
         }));
@@ -123,9 +124,9 @@ public static class ServiceCollectionExtensions
 
         services
             .AddHealthChecks()
-            .AddCheck<PluginConfigurationServiceHealthCheck>(name: Resources.AddHealthCheckerConfigurationService)
-            .AddCheck<PluginsServiceHealthCheck>(name: Resources.AddHealthCheckerPluginService)
-            .AddCheck<LogsServiceHealthCheck>(name: Resources.AddHealthCheckerLoggerService);
+            .AddCheck<PluginConfigurationServiceHealthCheck>(name: Localization.Get("AddHealthCheckerConfigurationService"))
+            .AddCheck<PluginsServiceHealthCheck>(name: Localization.Get("AddHealthCheckerPluginService"))
+            .AddCheck<LogsServiceHealthCheck>(name: Localization.Get("AddHealthCheckerLoggerService"));
 
         return services;
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FlowSynx.Application.Localizations;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 
@@ -16,7 +17,7 @@ public class SkipStrategy: IErrorHandlingStrategy
         ErrorHandlingContext context,
         CancellationToken cancellation)
     {
-        _logger.LogInformation(string.Format(Resources.Workflow_SkipStrategy_handle, context.TaskName));
+        _logger.LogInformation(Localization.Get("Workflow_SkipStrategy_handle", context.TaskName));
         return Task.FromResult(new ErrorHandlingResult { ShouldSkip = true });
     }
 }

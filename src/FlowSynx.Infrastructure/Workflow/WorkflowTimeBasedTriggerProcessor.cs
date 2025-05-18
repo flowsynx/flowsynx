@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Trigger;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
@@ -12,21 +13,25 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly IWorkflowOrchestrator _workflowOrchestrator;
     private readonly ISystemClock _systemClock;
+    private readonly ILocalization _localization;
 
     public WorkflowTimeBasedTriggerProcessor(
         ILogger<WorkflowTimeBasedTriggerProcessor> logger,
         IWorkflowTriggerService workflowTriggerService,
         IWorkflowOrchestrator workflowOrchestrator,
-        ISystemClock systemClock)
+        ISystemClock systemClock,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(workflowOrchestrator);
         ArgumentNullException.ThrowIfNull(systemClock);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _workflowTriggerService = workflowTriggerService;
         _workflowOrchestrator = workflowOrchestrator;
         _systemClock = systemClock;
+        _localization = localization;
     }
 
     public async Task ProcessTriggersAsync(CancellationToken cancellationToken)
@@ -50,7 +55,7 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
 
         if (!triggerEntity.Properties.TryGetValue("cron", out var cronValue) || cronValue is not string expr)
         {
-            _logger.LogError(string.Format(Resources.Workflow_TimeBased_TriggerProcessor_InvalidCornExpression, triggerEntity.WorkflowId));
+            _logger.LogError(_localization.Get("Workflow_TimeBased_TriggerProcessor_InvalidCornExpression", triggerEntity.WorkflowId));
             return false;
         }
 
@@ -75,7 +80,7 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, string.Format(Resources.Workflow_TimeBased_TriggerProcessor_FailedExecution, trigger.WorkflowId, trigger.UserId));
+            _logger.LogError(ex, _localization.Get("Workflow_TimeBased_TriggerProcessor_FailedExecution", trigger.WorkflowId, trigger.UserId));
         }
     }
 }

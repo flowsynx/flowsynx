@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
@@ -18,24 +19,28 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
     private readonly IPluginConfigurationService _pluginConfigurationService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginSpecificationsService _pluginSpecificationsService;
+    private readonly ILocalization _localization;
 
     public AddPluginConfigHandler(
         ILogger<AddPluginConfigHandler> logger, 
         IPluginService pluginService, 
         IPluginConfigurationService pluginConfigurationService, 
         ICurrentUserService currentUserService, 
-        IPluginSpecificationsService pluginSpecificationsService)
+        IPluginSpecificationsService pluginSpecificationsService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginService);
         ArgumentNullException.ThrowIfNull(pluginConfigurationService);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(pluginSpecificationsService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _pluginService = pluginService;
         _pluginConfigurationService = pluginConfigurationService;
         _currentUserService = currentUserService;
         _pluginSpecificationsService = pluginSpecificationsService;
+        _localization = localization;
     }
 
     public async Task<Result<AddPluginConfigResponse>> Handle(
@@ -44,15 +49,13 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, 
                 request.Version, cancellationToken);
             if (pluginEntity is null)
             {
-                var message = string.Format(Resources.Features_PluginConfig_Add_PluginCouldNotBeFound, 
+                var message = _localization.Get("Features_PluginConfig_Add_PluginCouldNotBeFound", 
                     request.Type, request.Version);
                 var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeNotFound, message);
                 _logger.LogError(errorMessage.ToString());
@@ -68,7 +71,7 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
                 request.Name, cancellationToken);
             if (isPluginConfigurationExist)
             {
-                var message = string.Format(Resources.Features_PluginConfig_Add_PluginConfigAlreadyExists, request.Name);
+                var message = _localization.Get("Features_PluginConfig_Add_PluginConfigAlreadyExists", request.Name);
                 var errorMessage = new ErrorMessage((int)ErrorCode.PluginTypeNotFound, message);
                 _logger.LogWarning("The plugin config '{ConfigName}' already exists.", request.Name);
                 return await Result<AddPluginConfigResponse>.FailAsync(errorMessage.ToString());
@@ -90,8 +93,8 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
                 Name = pluginConfiguration.Name 
             };
 
-            return await Result<AddPluginConfigResponse>.SuccessAsync(response, 
-                Resources.Feature_PluginConfig_Add_AddedSuccessfully);
+            return await Result<AddPluginConfigResponse>.SuccessAsync(response,
+                _localization.Get("Feature_PluginConfig_Add_AddedSuccessfully"));
         }
         catch (FlowSynxException ex)
         {

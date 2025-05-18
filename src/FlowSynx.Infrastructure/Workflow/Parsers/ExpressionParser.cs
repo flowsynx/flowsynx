@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using System.Collections;
 using System.Reflection;
@@ -24,7 +25,7 @@ public class ExpressionParser(Dictionary<string, object?> outputs) : IExpression
 
             if (!outputs.TryGetValue(outputName, out var outputValue))
             {
-                var message = string.Format(Resources.ExpressionParser_OutputNotFound, outputName);
+                var message = string.Format(Localization.Get("ExpressionParser_OutputNotFound", outputName));
                 throw new FlowSynxException((int)ErrorCode.ExpressionParserOutputNotFound, message);
             }
 

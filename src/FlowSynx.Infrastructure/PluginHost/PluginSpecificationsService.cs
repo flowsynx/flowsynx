@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore.Exceptions;
@@ -9,11 +10,16 @@ namespace FlowSynx.Infrastructure.PluginHost;
 public class PluginSpecificationsService : IPluginSpecificationsService
 {
     private readonly ILogger<PluginSpecificationsService> _logger;
+    private readonly ILocalization _localization;
 
-    public PluginSpecificationsService(ILogger<PluginSpecificationsService> logger)
+    public PluginSpecificationsService(
+        ILogger<PluginSpecificationsService> logger, 
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
+        _localization = localization;
     }
 
     public PluginSpecificationsResult Validate(Dictionary<string, object?>? inputSpecifications,
@@ -40,8 +46,8 @@ public class PluginSpecificationsService : IPluginSpecificationsService
 
                 if (valid) continue;
 
-                var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound, 
-                    string.Format(Resources.SpecificationsRequiredMemberMustHaveValue, specification.Name));
+                var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
+                    _localization.Get("SpecificationsRequiredMemberMustHaveValue", specification.Name));
                 _logger.LogError(errorMessage.ToString());
                 errors.Add(errorMessage.ToString());
             }

@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Workflow;
 using FlowSynx.PluginCore.Exceptions;
 using System.Collections.Concurrent;
@@ -8,6 +9,12 @@ namespace FlowSynx.Infrastructure.Workflow;
 public class WorkflowCancellationRegistry : IWorkflowCancellationRegistry
 {
     private readonly ConcurrentDictionary<CancellationRegistryKey, CancellationTokenSource> _tokens = new();
+    private readonly ILocalization _localization;
+
+    public WorkflowCancellationRegistry(ILocalization localization)
+    {
+        _localization = localization;
+    }
 
     public CancellationToken Register(string userId, Guid workflowId, Guid workflowExecutionId)
     {
@@ -27,7 +34,7 @@ public class WorkflowCancellationRegistry : IWorkflowCancellationRegistry
         else
         {
             throw new FlowSynxException((int)ErrorCode.WorkflowCancellationRegistry,
-               string.Format(Resources.Workflow_CancellationRegistry_Execution_NotFound, workflowExecutionId.ToString()));
+               _localization.Get("Workflow_CancellationRegistry_Execution_NotFound", workflowExecutionId.ToString()));
         }
     }
 
@@ -41,7 +48,7 @@ public class WorkflowCancellationRegistry : IWorkflowCancellationRegistry
         else
         {
             throw new FlowSynxException((int)ErrorCode.WorkflowCancellationRegistry,
-                string.Format(Resources.Workflow_CancellationRegistry_Execution_NotFound, workflowExecutionId.ToString()));
+                _localization.Get("Workflow_CancellationRegistry_Execution_NotFound", workflowExecutionId.ToString()));
         }
     }
 

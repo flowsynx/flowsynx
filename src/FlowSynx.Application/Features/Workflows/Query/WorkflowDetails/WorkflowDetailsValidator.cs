@@ -1,19 +1,20 @@
-﻿using FluentValidation;
+﻿using FlowSynx.Application.Localizations;
+using FluentValidation;
 
 namespace FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 
 public class WorkflowDetailsValidator : AbstractValidator<WorkflowDetailsRequest>
 {
-    public WorkflowDetailsValidator()
+    public WorkflowDetailsValidator(ILocalization localization)
     {
         RuleFor(x => x.WorkflowId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_WorkflowId_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_WorkflowId_MustHaveValue"));
 
         RuleFor(x => x.WorkflowId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_WorkflowId_InvalidGuidFormat);
+            .WithMessage(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
     }
 
     private bool BeAValidGuid(string id)

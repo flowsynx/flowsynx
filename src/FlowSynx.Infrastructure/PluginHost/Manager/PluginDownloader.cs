@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -12,18 +13,22 @@ public class PluginDownloader : IPluginDownloader
     private readonly ILogger<PluginDownloader> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJsonDeserializer _jsonDeserializer;
+    private readonly ILocalization _localization;
 
     public PluginDownloader(
         ILogger<PluginDownloader> logger, 
         IHttpClientFactory httpClientFactory,
-        IJsonDeserializer jsonDeserializer)
+        IJsonDeserializer jsonDeserializer,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _httpClientFactory = httpClientFactory;
         _jsonDeserializer = jsonDeserializer;
+        _localization = localization;
     }
 
     public async Task<byte[]> GetPluginDataAsync(string url)
@@ -34,7 +39,7 @@ public class PluginDownloader : IPluginDownloader
         if (response.IsSuccessStatusCode)
             return await response.Content.ReadAsByteArrayAsync();
 
-        var message = string.Format(Resources.Plugin_Download_FailedToFetchDataFromUrl, (int)response.StatusCode, response.ReasonPhrase);
+        var message = _localization.Get("Plugin_Download_FailedToFetchDataFromUrl", (int)response.StatusCode, response.ReasonPhrase);
         throw new FlowSynxException((int)ErrorCode.PluginRegistryFailedToFetchDataFromUrl, message);
     }
 
@@ -52,7 +57,7 @@ public class PluginDownloader : IPluginDownloader
         if (metadata != null) 
             return metadata;
 
-        var message = string.Format(Resources.Plugin_Download_PluginNotFound, pluginType, pluginVersion);
+        var message = _localization.Get("Plugin_Download_PluginNotFound", pluginType, pluginVersion);
         throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
 
     }
@@ -63,11 +68,11 @@ public class PluginDownloader : IPluginDownloader
         {
             await Task.Run(() => DeleteAllFiles(pluginDirectory), cancellationToken);
             await ExtractZipFromBytesAsync(pluginDirectory, data, cancellationToken);
-            _logger.LogInformation(string.Format(Resources.Plugin_Download_Extraction_Successfully, pluginDirectory));
+            _logger.LogInformation(_localization.Get("Plugin_Download_Extraction_Successfully", pluginDirectory));
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException(string.Format(Resources.PluginDownloader_ErrorInExtractingPackage, ex.Message), ex);
+            throw new InvalidOperationException(_localization.Get("PluginDownloader_ErrorInExtractingPackage", ex.Message), ex);
         }
     }
 
@@ -88,7 +93,7 @@ public class PluginDownloader : IPluginDownloader
     {
         if (!Directory.Exists(directoryPath))
         {
-            _logger.LogDebug(string.Format(Resources.Plugin_Download_Extraction_DirectoryNotFound, directoryPath));
+            _logger.LogDebug(_localization.Get("Plugin_Download_Extraction_DirectoryNotFound", directoryPath));
             return;
         }
 
@@ -99,11 +104,11 @@ public class PluginDownloader : IPluginDownloader
             {
                 File.Delete(file);
             }
-            _logger.LogInformation(Resources.Plugin_Download_Extraction_AllFilesDeletedSuccessfully);
+            _logger.LogInformation(_localization.Get("Plugin_Download_Extraction_AllFilesDeletedSuccessfully"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(string.Format(Resources.Plugin_Download_Extraction_ErrorDuringDelete, ex.Message));
+            _logger.LogError(_localization.Get("Plugin_Download_Extraction_ErrorDuringDelete", ex.Message));
         }
     }
 

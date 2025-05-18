@@ -1,4 +1,5 @@
-﻿using FlowSynx.Infrastructure.Workflow.BackoffStrategies;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Infrastructure.Workflow.BackoffStrategies;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
@@ -25,7 +26,7 @@ public class RetryStrategy(int maxRetries, IBackoffStrategy backoffStrategy, ILo
             }
         }
 
-        logger.LogError(string.Format(Resources.RetryService_OperationFailedAfterAttempts, context.TaskName, maxRetries));
+        logger.LogError(Localization.Get("RetryService_OperationFailedAfterAttempts", context.TaskName, maxRetries));
         return new ErrorHandlingResult { ShouldAbortWorkflow = true };
     }
 }

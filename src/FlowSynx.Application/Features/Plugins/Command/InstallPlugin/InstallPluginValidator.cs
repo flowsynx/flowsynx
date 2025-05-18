@@ -1,19 +1,20 @@
-﻿using FluentValidation;
+﻿using FlowSynx.Application.Localizations;
+using FluentValidation;
 
 namespace FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
 
 public class AddPluginValidator : AbstractValidator<InstallPluginRequest>
 {
-    public AddPluginValidator()
+    public AddPluginValidator(ILocalization localization)
     {
         RuleFor(request => request.Type)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Plugin_Type_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_Plugin_Type_MustHaveValue"));
 
         RuleFor(request => request.Version)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Plugin_Version_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_Plugin_Version_MustHaveValue"));
     }
 }

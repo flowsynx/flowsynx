@@ -1,19 +1,20 @@
-﻿using FluentValidation;
+﻿using FlowSynx.Application.Localizations;
+using FluentValidation;
 
 namespace FlowSynx.Application.Features.Audit.Query.AuditDetails;
 
 public class AuditDetailsValidator : AbstractValidator<AuditDetailsRequest>
 {
-    public AuditDetailsValidator()
+    public AuditDetailsValidator(ILocalization localization)
     {
         RuleFor(x => x.AuditId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_AuditId_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_AuditId_MustHaveValue"));
 
         RuleFor(x => x.AuditId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_AuditId_InvalidGuidFormat);
+            .WithMessage(localization.Get("Features_Validation_AuditId_InvalidGuidFormat"));
     }
 
     private bool BeAValidGuid(string id)

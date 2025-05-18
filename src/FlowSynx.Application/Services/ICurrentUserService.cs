@@ -6,4 +6,5 @@ public interface ICurrentUserService
     string UserName { get; }
     bool IsAuthenticated { get; }
     List<string> Roles { get; }
+    void ValidateAuthentication();
 }

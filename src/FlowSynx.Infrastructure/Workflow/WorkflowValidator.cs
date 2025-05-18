@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Workflow;
 using FlowSynx.PluginCore.Exceptions;
@@ -7,6 +8,13 @@ namespace FlowSynx.Infrastructure.Workflow;
 
 public class WorkflowValidator : IWorkflowValidator
 {
+    private readonly ILocalization _localization;
+
+    public WorkflowValidator(ILocalization localization)
+    {
+        _localization = localization;
+    }
+
     public void Validate(WorkflowDefinition definition)
     {
         var tasks = definition.Tasks;
@@ -16,25 +24,25 @@ public class WorkflowValidator : IWorkflowValidator
         ValidateRetryPolicies(tasks);
     }
 
-    private static void EnsureNoDuplicateTaskNames(IEnumerable<WorkflowTask> tasks)
+    private void EnsureNoDuplicateTaskNames(IEnumerable<WorkflowTask> tasks)
     {
         if (HasDuplicateNames(tasks))
         {
             throw new FlowSynxException(
                 (int)ErrorCode.WorkflowHasDuplicateNames,
-                Resources.Workflow_Executor_DuplicatedTasksName);
+                _localization.Get("Workflow_Executor_DuplicatedTasksName"));
         }
     }
 
-    private static void EnsureAllDependenciesExist(List<WorkflowTask> tasks)
+    private void EnsureAllDependenciesExist(List<WorkflowTask> tasks)
     {
         var missingDependencies = AllDependenciesExist(tasks);
         if (!missingDependencies.Any()) 
             return;
 
         var message = string.Format(
-            Resources.Workflow_Executor_MissingDependencies,
-            string.Join(",", missingDependencies));
+            _localization.Get("Workflow_Executor_MissingDependencies",
+            string.Join(",", missingDependencies)));
 
         throw new FlowSynxException(
             (int)ErrorCode.WorkflowMissingDependencies,
@@ -48,15 +56,15 @@ public class WorkflowValidator : IWorkflowValidator
             return;
 
         var message = string.Format(
-            Resources.Workflow_Executor_CyclicDependencies,
-            string.Join(" -> ", validation.CyclicNodes));
+            _localization.Get("Workflow_Executor_CyclicDependencies",
+            string.Join(" -> ", validation.CyclicNodes)));
 
         throw new FlowSynxException(
             (int)ErrorCode.WorkflowCyclicDependencies,
             message);
     }
 
-    private static void ValidateRetryPolicies(IEnumerable<WorkflowTask> tasks)
+    private void ValidateRetryPolicies(IEnumerable<WorkflowTask> tasks)
     {
         var errors = tasks
             .SelectMany(task =>
@@ -65,16 +73,16 @@ public class WorkflowValidator : IWorkflowValidator
                 var taskErrors = new List<string>();
 
                 if (retry?.MaxRetries is < 0)
-                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeMaxRetries, task.Name, retry.MaxRetries));
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeMaxRetries", task.Name, retry.MaxRetries));
 
                 if (retry?.InitialDelay is < 0)
-                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeInitialDelay, task.Name, retry.InitialDelay));
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeInitialDelay", task.Name, retry.InitialDelay));
 
                 if (retry?.MaxDelay is < 0)
-                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeMaxDelay, task.Name, retry.MaxDelay));
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeMaxDelay", task.Name, retry.MaxDelay));
 
                 if (retry?.BackoffCoefficient is < 0)
-                    taskErrors.Add(string.Format(Resources.WorkflowValidator_TaskHasNegativeFactor, task.Name, retry.MaxDelay));
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeFactor", task.Name, retry.MaxDelay));
 
                 return taskErrors;
             })
@@ -87,7 +95,7 @@ public class WorkflowValidator : IWorkflowValidator
     }
 
     #region private methods
-    private static List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
+    private List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
     {
         var definedTaskNames = workflowTasks.Select(t => t.Name).ToHashSet();
         var missingDependencies = workflowTasks
@@ -99,7 +107,7 @@ public class WorkflowValidator : IWorkflowValidator
         return missingDependencies;
     }
 
-    private static WorkflowValidatorResult CheckCyclic(IEnumerable<WorkflowTask> workflowTasks)
+    private WorkflowValidatorResult CheckCyclic(IEnumerable<WorkflowTask> workflowTasks)
     {
         var graph = BuildGraph(workflowTasks, out var inDegree);
 
@@ -133,13 +141,13 @@ public class WorkflowValidator : IWorkflowValidator
         }
     }
 
-    private static bool HasDuplicateNames(IEnumerable<WorkflowTask> workflowTasks)
+    private bool HasDuplicateNames(IEnumerable<WorkflowTask> workflowTasks)
     {
         var seen = new HashSet<string>();
         return workflowTasks.Any(task => !seen.Add(task.Name));
     }
 
-    private static Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
+    private Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
     {
         var graph = new Dictionary<string, List<string>>();
         inDegree = new Dictionary<string, int>();

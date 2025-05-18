@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
@@ -13,29 +14,32 @@ internal class InstallPluginHandler : IRequestHandler<InstallPluginRequest, Resu
     private readonly ILogger<InstallPluginHandler> _logger;
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginManager _pluginManager;
+    private readonly ILocalization _localization;
 
     public InstallPluginHandler(
         ILogger<InstallPluginHandler> logger, 
         ICurrentUserService currentUserService,
-        IPluginManager pluginManager)
+        IPluginManager pluginManager,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(pluginManager);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _currentUserService = currentUserService;
         _pluginManager = pluginManager;
+        _localization = localization;
     }
 
     public async Task<Result<Unit>> Handle(InstallPluginRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Plugin_Install_AddedSuccessfully);
+            return await Result<Unit>.SuccessAsync(_localization.Get("Feature_Plugin_Install_AddedSuccessfully"));
         }
         catch (FlowSynxException ex)
         {

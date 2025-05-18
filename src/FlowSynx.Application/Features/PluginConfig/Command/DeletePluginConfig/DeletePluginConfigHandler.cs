@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.PluginConfig;
@@ -12,19 +13,23 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
 {
     private readonly ILogger<DeletePluginConfigHandler> _logger;
     private readonly IPluginConfigurationService _pluginConfigurationService;
+    private readonly ILocalization _localization;
     private readonly ICurrentUserService _currentUserService;
 
     public DeletePluginConfigHandler(
         ILogger<DeletePluginConfigHandler> logger, 
         ICurrentUserService currentUserService, 
-        IPluginConfigurationService pluginConfigurationService)
+        IPluginConfigurationService pluginConfigurationService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(pluginConfigurationService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _currentUserService = currentUserService;
         _pluginConfigurationService = pluginConfigurationService;
+        _localization = localization;
     }
 
     public async Task<Result<Unit>> Handle(
@@ -33,21 +38,19 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var configId = Guid.Parse(request.ConfigId);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, 
                 cancellationToken);
             if (pluginConfiguration == null)
             {
-                var message = string.Format(Resources.Feature_PluginConfig_Delete_ConfigIdNotFound, configId);
+                var message = string.Format(_localization.Get("Feature_PluginConfig_Delete_ConfigIdNotFound", configId));
                 throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
             }
 
             await _pluginConfigurationService.Delete(pluginConfiguration, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_PluginConfig_Delete_DeletedSuccessfully);
+            return await Result<Unit>.SuccessAsync(_localization.Get("Feature_PluginConfig_Delete_DeletedSuccessfully"));
         }
         catch (FlowSynxException ex)
         {

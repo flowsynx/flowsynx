@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
@@ -21,6 +22,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     private readonly ICurrentUserService _currentUserService;
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly IWorkflowValidator _workflowValidator;
+    private readonly ILocalization _localization;
 
     public AddWorkflowHandler(
         ILogger<AddWorkflowHandler> logger, 
@@ -28,45 +30,46 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         IWorkflowService workflowService, 
         ICurrentUserService currentUserService, 
         IJsonDeserializer jsonDeserializer, 
-        IWorkflowValidator workflowValidator)
+        IWorkflowValidator workflowValidator,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(transactionService);
         ArgumentNullException.ThrowIfNull(workflowService);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _transactionService = transactionService;
         _workflowService = workflowService;
         _currentUserService = currentUserService;
         _jsonDeserializer = jsonDeserializer;
         _workflowValidator = workflowValidator;
+        _localization = localization;
     }
 
     public async Task<Result<AddWorkflowResponse>> Handle(AddWorkflowRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
             if (workflowDefinition == null)
-                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty, 
-                    Resources.Features_Workflow_Add_WorkflowDefinitionMustHaveValue);
+                throw new FlowSynxException((int)ErrorCode.WorkflowMustBeNotEmpty,
+                    _localization.Get("Features_Workflow_Add_WorkflowDefinitionMustHaveValue"));
 
             if (string.IsNullOrEmpty(workflowDefinition.Name))
-                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue, 
-                    Resources.Features_Workflow_Add_WorkflowNameMustHaveValue);
+                throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue,
+                    _localization.Get("Features_Workflow_Add_WorkflowNameMustHaveValue"));
 
             _workflowValidator.Validate(workflowDefinition);
 
             var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId, workflowDefinition.Name, cancellationToken);
             if (isWorkflowExist)
             {
-                var workflowExistMessage = string.Format(Resources.Features_Workflow_Add_WorkflowAlreadyExists, workflowDefinition.Name);
+                var workflowExistMessage = _localization.Get("Features_Workflow_Add_WorkflowAlreadyExists", workflowDefinition.Name);
                 var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowCheckExistence, workflowExistMessage);
                 _logger.LogWarning(errorMessage.ToString());
                 return await Result<AddWorkflowResponse>.FailAsync(errorMessage.ToString());
@@ -86,8 +89,8 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 Id = workflowEntity.Id,
                 Name = workflowDefinition.Name,
             };
-            return await Result<AddWorkflowResponse>.SuccessAsync(response, 
-                Resources.Feature_Workflow_Add_AddedSuccessfully);
+            return await Result<AddWorkflowResponse>.SuccessAsync(response,
+                _localization.Get("Feature_Workflow_Add_AddedSuccessfully"));
         }
         catch (FlowSynxException ex) when (ex.ErrorCode == (int)ErrorCode.Serialization)
         {

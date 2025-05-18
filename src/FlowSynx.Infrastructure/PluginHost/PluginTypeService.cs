@@ -10,6 +10,7 @@ using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
 using FlowSynx.Plugins.LocalFileSystem;
 using FlowSynx.Infrastructure.PluginHost.Cache;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Infrastructure.PluginHost;
 
@@ -21,6 +22,7 @@ public class PluginTypeService : IPluginTypeService
     private readonly IJsonDeserializer _deserializer;
     private readonly IPluginCacheService _pluginCacheService;
     private readonly IPluginCacheKeyGeneratorService _pluginCacheKeyGeneratorService;
+    private readonly ILocalization _localization;
 
     public PluginTypeService(
         ILogger<PluginTypeService> logger, 
@@ -29,7 +31,8 @@ public class PluginTypeService : IPluginTypeService
         IJsonDeserializer deserializer, 
         IJsonSerializer serializer, 
         IPluginCacheService pluginCacheService,
-        IPluginCacheKeyGeneratorService pluginCacheKeyGeneratorService)
+        IPluginCacheKeyGeneratorService pluginCacheKeyGeneratorService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginConfigurationService);
@@ -38,12 +41,14 @@ public class PluginTypeService : IPluginTypeService
         ArgumentNullException.ThrowIfNull(serializer);
         ArgumentNullException.ThrowIfNull(pluginCacheService);
         ArgumentNullException.ThrowIfNull(pluginCacheKeyGeneratorService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _pluginConfigurationService = pluginConfigurationService;
         _pluginService = pluginService;
         _deserializer = deserializer;
         _pluginCacheService = pluginCacheService;
         _pluginCacheKeyGeneratorService = pluginCacheKeyGeneratorService;
+        _localization = localization;
     }
 
     public Task<IPlugin> Get(string userId, object? type, CancellationToken cancellationToken)
@@ -68,12 +73,12 @@ public class PluginTypeService : IPluginTypeService
             return await GetLocalPlugin(userId);
 
         var config = await _pluginConfigurationService.Get(userId, configName, cancellationToken) 
-            ?? throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, 
-                string.Format(Resources.PluginTypeService_ConfigurationCouldNotFound, configName));
+            ?? throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound,
+                _localization.Get("PluginTypeService_ConfigurationCouldNotFound", configName));
 
         var pluginEntity = await _pluginService.Get(userId, config.Type, config.Version, cancellationToken) 
-            ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, 
-                string.Format(Resources.PluginTypeService_PluginCouldNotFound, config.Type, config.Version));
+            ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
+                _localization.Get("PluginTypeService_PluginCouldNotFound", config.Type, config.Version));
 
         var specs = config.Specifications.ToPluginSpecifications();
         return await GetOrLoadPlugin(pluginEntity, specs);
@@ -90,7 +95,7 @@ public class PluginTypeService : IPluginTypeService
 
         var pluginEntity = await _pluginService.Get(userId, typeConfig.Plugin, typeConfig.Version, cancellationToken)
             ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
-                string.Format(Resources.PluginTypeService_PluginCouldNotFound, typeConfig.Plugin, typeConfig.Version));
+                _localization.Get("PluginTypeService_PluginCouldNotFound", typeConfig.Plugin, typeConfig.Version));
 
         return await GetOrLoadPlugin(pluginEntity, typeConfig.Specifications);
     }
@@ -143,8 +148,8 @@ public class PluginTypeService : IPluginTypeService
         catch (Exception)
         {
             loader.Unload();
-            throw new FlowSynxException((int)ErrorCode.PluginCouldNotLoad, 
-                string.Format(Resources.PluginTypeService_PluginCouldNotLoad, pluginEntity.Name, pluginEntity.Version));
+            throw new FlowSynxException((int)ErrorCode.PluginCouldNotLoad,
+                _localization.Get("PluginTypeService_PluginCouldNotLoad", pluginEntity.Name, pluginEntity.Version));
         }
     }
 }

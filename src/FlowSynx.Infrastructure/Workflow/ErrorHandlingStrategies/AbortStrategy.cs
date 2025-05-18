@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FlowSynx.Application.Localizations;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 
@@ -16,7 +17,7 @@ public class AbortStrategy: IErrorHandlingStrategy
         ErrorHandlingContext context, 
         CancellationToken cancellation)
     {
-        _logger.LogInformation(string.Format(Resources.Workflow_AbortStrategy_Handle, context.TaskName));
+        _logger.LogInformation(Localization.Get("Workflow_AbortStrategy_Handle", context.TaskName));
         return Task.FromResult(new ErrorHandlingResult { ShouldAbortWorkflow = true });
     }
 }

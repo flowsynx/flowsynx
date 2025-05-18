@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
@@ -21,6 +22,7 @@ public class PluginManager : IPluginManager
     private readonly IPluginService _pluginService;
     private readonly IPluginDownloader _pluginDownloader;
     private readonly IPluginCacheService _pluginCacheService;
+    private readonly ILocalization _localization;
     private const string PluginSearchPattern = "*.dll";
 
     public PluginManager(
@@ -30,11 +32,18 @@ public class PluginManager : IPluginManager
         ICurrentUserService currentUserService,
         IPluginService pluginService,
         IPluginDownloader pluginDownloader,
-        IPluginCacheService pluginCacheService)
+        IPluginCacheService pluginCacheService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginRegistryConfiguration);
         ArgumentNullException.ThrowIfNull(pluginsLocation);
+        ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(pluginService);
+        ArgumentNullException.ThrowIfNull(pluginDownloader);
+        ArgumentNullException.ThrowIfNull(pluginCacheService);
+        ArgumentNullException.ThrowIfNull(localization);
+
         _logger = logger;
         _pluginRegistryConfiguration = pluginRegistryConfiguration;
         _pluginsLocation = pluginsLocation;
@@ -42,6 +51,7 @@ public class PluginManager : IPluginManager
         _pluginService = pluginService;
         _pluginDownloader = pluginDownloader;
         _pluginCacheService = pluginCacheService;
+        _localization = localization;
     }
 
     public async Task InstallAsync(string pluginType, string pluginVersion, CancellationToken cancellationToken)
@@ -62,7 +72,7 @@ public class PluginManager : IPluginManager
 
         if (installedCount == 0)
             throw new FlowSynxException((int)ErrorCode.PluginInstallationNotFound,
-                Resources.Plugin_Install_NoPluginInstalled);
+                _localization.Get("Plugin_Install_NoPluginInstalled"));
     }
 
     public async Task UpdateAsync(string pluginType, string oldVersion, string newPluginVersion, CancellationToken cancellationToken)
@@ -77,7 +87,7 @@ public class PluginManager : IPluginManager
         if (pluginEntity is null)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
-                    string.Format(Resources.PluginManager_PluginCouldNotFound, pluginType, version));
+                    _localization.Get("PluginManager_PluginCouldNotFound", pluginType, version));
             throw new FlowSynxException(errorMessage);
         }
 
@@ -95,7 +105,7 @@ public class PluginManager : IPluginManager
             }
 
             await _pluginService.Delete(pluginEntity, cancellationToken);
-            _logger.LogInformation(string.Format(Resources.PluginManager_PluginUninstalledSuccessfully, pluginType, version));
+            _logger.LogInformation(_localization.Get("PluginManager_PluginUninstalledSuccessfully", pluginType, version));
         }
         catch (Exception ex)
         {
@@ -112,7 +122,7 @@ public class PluginManager : IPluginManager
 
         var errorMessage = new ErrorMessage(
             (int)ErrorCode.PluginCheckExistence,
-            string.Format(Resources.PluginManager_Install_PluginIsAlreadyInstalled, pluginType, pluginVersion)
+            _localization.Get("PluginManager_Install_PluginIsAlreadyInstalled", pluginType, pluginVersion)
         );
 
         throw new FlowSynxException(errorMessage);
@@ -129,7 +139,7 @@ public class PluginManager : IPluginManager
         if (_pluginDownloader.ValidateChecksum(pluginData, checksum))
             return true;
 
-        _logger.LogError(Resources.PluginManager_Install_ChecksumValidationFailed);
+        _logger.LogError(_localization.Get("PluginManager_Install_ChecksumValidationFailed"));
         return false;
     }
 
@@ -154,7 +164,7 @@ public class PluginManager : IPluginManager
                 loader.Load();
                 var pluginEntity = CreatePluginEntity(metadata, dllPath, loader.Plugin);
                 await _pluginService.Add(pluginEntity, cancellationToken);
-                _logger.LogInformation(string.Format(Resources.PluginManager_Install_PluginInstalledSuccessfully,
+                _logger.LogInformation(_localization.Get("PluginManager_Install_PluginInstalledSuccessfully",
                     metadata.Type, metadata.Version));
 
                 count++;
@@ -165,7 +175,7 @@ public class PluginManager : IPluginManager
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(string.Format(Resources.PluginManager_Install_ErrorLoading, ex.Message));
+                _logger.LogDebug(_localization.Get("PluginManager_Install_ErrorLoading", ex.Message));
             }
             finally
             {

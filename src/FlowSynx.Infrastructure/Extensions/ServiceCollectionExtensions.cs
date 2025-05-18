@@ -12,6 +12,11 @@ using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.Infrastructure.PluginHost.Manager;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Application.PluginHost.Manager;
+using FlowSynx.Application.Localizations;
+using Microsoft.Extensions.Logging;
+using FlowSynx.Infrastructure.Localizations;
+using Microsoft.Extensions.Configuration;
+using FlowSynx.Application.Configuration;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -53,6 +58,35 @@ public static class ServiceCollectionExtensions
         services
             .AddSingleton<IJsonSerializer, JsonSerializer>()
             .AddSingleton<IJsonDeserializer, JsonDeserializer>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddJsonLocalization(this IServiceCollection services, IConfiguration configuration)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<JsonLocalization>>();
+        var jsonDeserializer = serviceProviderScope.ServiceProvider.GetRequiredService<IJsonDeserializer>();
+
+        var localizationConfiguration = new LocalizationConfiguration();
+        configuration.GetSection("Localization").Bind(localizationConfiguration);
+        services.AddSingleton(localizationConfiguration);
+
+        var language = Language.GetByCode(localizationConfiguration.Language);
+        if (language == null)
+        {
+            logger.LogWarning("The specified language '{Language}' is invalid or unsupported. " +
+                "The FlowSynx language will default to English.", localizationConfiguration.Language);
+            language = Language.English;
+        }
+        logger.LogInformation("FlowSynx language has been set to '{Language}'", language.Name);
+
+        services.AddSingleton<ILocalization>(provider =>
+        {
+            var jsonLocalization = new JsonLocalization(language, logger, jsonDeserializer);
+            Localization.Instance = jsonLocalization;
+            return jsonLocalization;
+        });
 
         return services;
     }

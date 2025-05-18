@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.PluginConfig;
@@ -13,24 +13,29 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
     private readonly ILogger<PluginConfigListHandler> _logger;
     private readonly IPluginConfigurationService _pluginConfigurationService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
-    public PluginConfigListHandler(ILogger<PluginConfigListHandler> logger, 
-        IPluginConfigurationService pluginConfigurationService, ICurrentUserService currentUserService)
+    public PluginConfigListHandler(
+        ILogger<PluginConfigListHandler> logger, 
+        IPluginConfigurationService pluginConfigurationService, 
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginConfigurationService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _pluginConfigurationService = pluginConfigurationService;
         _currentUserService = currentUserService;
+        _localization = localization;
     }
 
     public async Task<Result<IEnumerable<PluginConfigListResponse>>> Handle(PluginConfigListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId, cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
@@ -41,7 +46,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
                 Version = config.Version,
                 ModifiedTime = config.LastModifiedOn
             });
-            _logger.LogInformation(Resources.Feature_PluginConfig_ListRetrievedSuccessfully);
+            _logger.LogInformation(_localization.Get("Feature_PluginConfig_ListRetrievedSuccessfully"));
             return await Result<IEnumerable<PluginConfigListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

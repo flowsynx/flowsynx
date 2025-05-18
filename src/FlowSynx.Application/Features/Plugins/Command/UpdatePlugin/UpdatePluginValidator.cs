@@ -1,24 +1,25 @@
-﻿using FluentValidation;
+﻿using FlowSynx.Application.Localizations;
+using FluentValidation;
 
 namespace FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
 
 public class UpdatePluginValidator : AbstractValidator<UpdatePluginRequest>
 {
-    public UpdatePluginValidator()
+    public UpdatePluginValidator(ILocalization localization)
     {
         RuleFor(request => request.Type)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Plugin_Type_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_Plugin_Type_MustHaveValue"));
 
         RuleFor(request => request.OldVersion)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Plugin_OldVersion_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_Plugin_OldVersion_MustHaveValue"));
 
         RuleFor(request => request.NewVersion)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_Plugin_NewVersion_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_Plugin_NewVersion_MustHaveValue"));
     }
 }

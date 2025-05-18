@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Plugin;
@@ -13,30 +14,35 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
     private readonly ILogger<PluginDetailsHandler> _logger;
     private readonly IPluginService _pluginService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
-    public PluginDetailsHandler(ILogger<PluginDetailsHandler> logger, IPluginService pluginService,
-        ICurrentUserService currentUserService)
+    public PluginDetailsHandler(
+        ILogger<PluginDetailsHandler> logger, 
+        IPluginService pluginService,
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _pluginService = pluginService;
         _currentUserService = currentUserService;
+        _localization = localization;
     }
 
     public async Task<Result<PluginDetailsResponse>> Handle(PluginDetailsRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var pluginId = Guid.Parse(request.PluginId);
             var plugin = await _pluginService.Get(_currentUserService.UserId, pluginId, cancellationToken);
             if (plugin is null)
             {
-                var message = string.Format(Resources.Features_Plugin_Details_PluginCouldNotBeFound, pluginId);
+                var message = _localization.Get("Features_Plugin_Details_PluginCouldNotBeFound", pluginId);
                 throw new FlowSynxException((int)ErrorCode.PluginNotFound, message);
             }
 

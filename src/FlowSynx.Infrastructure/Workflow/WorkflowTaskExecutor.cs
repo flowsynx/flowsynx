@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Workflow;
@@ -21,6 +22,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     private readonly IErrorHandlingStrategyFactory _errorHandlingStrategyFactory;
     private readonly IWorkflowTaskExecutionService _workflowTaskExecutionService;
     private readonly ISystemClock _systemClock;
+    private readonly ILocalization _localization;
 
     public WorkflowTaskExecutor(
         ILogger<WorkflowTaskExecutor> logger,
@@ -28,7 +30,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         IPlaceholderReplacer placeholderReplacer,
         IErrorHandlingStrategyFactory errorHandlingStrategyFactory,
         IWorkflowTaskExecutionService workflowTaskExecutionService,
-        ISystemClock systemClock)
+        ISystemClock systemClock,
+        ILocalization localization)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _pluginTypeService = pluginTypeService ?? throw new ArgumentNullException(nameof(pluginTypeService));
@@ -36,6 +39,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _errorHandlingStrategyFactory = errorHandlingStrategyFactory ?? throw new ArgumentNullException(nameof(errorHandlingStrategyFactory));
         _workflowTaskExecutionService = workflowTaskExecutionService ?? throw new ArgumentNullException(nameof(workflowTaskExecutionService));
         _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
+        _localization = localization ?? throw new ArgumentNullException(nameof(localization));
     }
 
     public async Task<object?> ExecuteAsync(
@@ -98,14 +102,14 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
             _logger.LogError($"Workflow task '{task.Name}' canceled.");
             throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
-                string.Format(Resources.RetryService_TaskCanceled, task.Name, 0));
+                _localization.Get("RetryService_TaskCanceled", task.Name, 0));
         }
         catch (OperationCanceledException) when (globalCancellationToken.IsCancellationRequested)
         {
             await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
             _logger.LogError($"Workflow task '{task.Name}' canceled.");
             throw new FlowSynxException((int)ErrorCode.WorkflowExecutionCanceled,
-                string.Format(Resources.RetryService_WorkflowCanceled, task.Name, 0));
+                _localization.Get("RetryService_WorkflowCanceled", task.Name, 0));
         }
         catch (Exception ex)
         {
@@ -114,7 +118,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                 await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
                 _logger.LogError($"Workflow task '{task.Name}' canceled.");
                 throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
-                    string.Format(Resources.RetryService_TaskCanceled, task.Name, 0));
+                    _localization.Get("RetryService_TaskCanceled", task.Name, 0));
             }
 
             var result = await retryStrategy.HandleAsync(errorContext, token);

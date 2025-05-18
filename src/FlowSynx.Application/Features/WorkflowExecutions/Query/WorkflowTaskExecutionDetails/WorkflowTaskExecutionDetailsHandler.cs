@@ -5,6 +5,7 @@ using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Workflow;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionDetails;
 
@@ -14,18 +15,22 @@ internal class WorkflowTaskExecutionDetailsHandler :
     private readonly ILogger<WorkflowTaskExecutionDetailsHandler> _logger;
     private readonly IWorkflowTaskExecutionService _workflowTaskExecutionService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
     public WorkflowTaskExecutionDetailsHandler(
         ILogger<WorkflowTaskExecutionDetailsHandler> logger,
         IWorkflowTaskExecutionService workflowTaskExecutionService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowTaskExecutionService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _workflowTaskExecutionService = workflowTaskExecutionService;
         _currentUserService = currentUserService;
+        _localization = localization;
     }
 
     public async Task<Result<WorkflowTaskExecutionDetailsResponse>> Handle(
@@ -33,8 +38,7 @@ internal class WorkflowTaskExecutionDetailsHandler :
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
@@ -45,7 +49,7 @@ internal class WorkflowTaskExecutionDetailsHandler :
 
             if (workflowTaskExecution is null)
             {
-                var message = string.Format(Resources.Feature_WorkflowTaskExecution_Details_TaskExecutionNotFound, request.WorkflowId);
+                var message = _localization.Get("Feature_WorkflowTaskExecution_Details_TaskExecutionNotFound", request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowExecutionTaskNotFound, message);
             }
 
@@ -57,7 +61,7 @@ internal class WorkflowTaskExecutionDetailsHandler :
                 StartTime = workflowTaskExecution.StartTime,
                 EndTime = workflowTaskExecution.EndTime,
             };
-            _logger.LogInformation(Resources.Feature_WorkflowTaskExecution_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(_localization.Get("Feature_WorkflowTaskExecution_Details_DataRetrievedSuccessfully"));
             return await Result<WorkflowTaskExecutionDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

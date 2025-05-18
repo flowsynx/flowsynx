@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Application.Models;
 using FlowSynx.Domain.Log;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionLogs;
 
@@ -14,18 +14,22 @@ internal class WorkflowTaskExecutionLogsHandler : IRequestHandler<WorkflowTaskEx
     private readonly ILogger<WorkflowTaskExecutionLogsHandler> _logger;
     private readonly ILoggerService _loggerService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
     public WorkflowTaskExecutionLogsHandler(
         ILogger<WorkflowTaskExecutionLogsHandler> logger,
         ILoggerService loggerService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(loggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _loggerService = loggerService;
         _currentUserService = currentUserService;
+        _localization = localization;
     }
 
     public async Task<Result<IEnumerable<WorkflowTaskExecutionLogsResponse>>> Handle(
@@ -34,9 +38,7 @@ internal class WorkflowTaskExecutionLogsHandler : IRequestHandler<WorkflowTaskEx
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
@@ -53,7 +55,7 @@ internal class WorkflowTaskExecutionLogsHandler : IRequestHandler<WorkflowTaskEx
                 Message = l.Message,
                 Exception = l.Exception
             });
-            _logger.LogInformation(Resources.Feature_WorkflowTaskExecution_Logs_DataRetrievedSuccessfully);
+            _logger.LogInformation(_localization.Get("Feature_WorkflowTaskExecution_Logs_DataRetrievedSuccessfully"));
             return await Result<IEnumerable<WorkflowTaskExecutionLogsResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

@@ -4,6 +4,7 @@ using Newtonsoft.Json.Serialization;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Serialization;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Infrastructure.Serialization;
 
@@ -29,7 +30,7 @@ public class JsonDeserializer : IJsonDeserializer
             if (string.IsNullOrWhiteSpace(input))
             {
                 var errorMessage = new ErrorMessage((int)ErrorCode.DeserializerEmptyValue, 
-                    Resources.JsonDeserializer_InputValueCanNotBeEmpty);
+                    Localization.Get("JsonDeserializer_InputValueCanNotBeEmpty"));
                 _logger.LogError(errorMessage.ToString());
                 throw new FlowSynxException(errorMessage);
             }

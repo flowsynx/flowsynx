@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
@@ -34,7 +35,7 @@ internal static class LogTemplate
                     
                     if (propertyInfo == null)
                     {
-                        var message = string.Format(Resources.Logging_Invalid_Property, sbCurrentTerm);
+                        var message = Localization.Get("Logging_Invalid_Property", sbCurrentTerm);
                         throw new FlowSynxException((int)ErrorCode.LoggerTemplateInvalidProperty, message);
                     }
 

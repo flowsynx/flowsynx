@@ -2,6 +2,7 @@
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.PluginCore;
 using System.Reflection;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Infrastructure.PluginHost.PluginLoaders;
 
@@ -29,7 +30,7 @@ public class TransientPluginLoader : IPluginLoader
 
             if (pluginType == null)
                 throw new FlowSynxException((int)ErrorCode.PluginLoader,
-                    string.Format(Resources.Plugin_Loader_NoPluginFound, _pluginLocation));
+                    Localization.Get("Plugin_Loader_NoPluginFound", _pluginLocation));
 
             _pluginInstance = CreatePluginInstance(pluginType);
         }
@@ -40,7 +41,7 @@ public class TransientPluginLoader : IPluginLoader
         if (!File.Exists(pluginLocation))
         {
             throw new FlowSynxException((int)ErrorCode.PluginNotFound,
-                string.Format(Resources.Plugin_Loader_FileNotFound, pluginLocation));
+                Localization.Get("Plugin_Loader_FileNotFound", pluginLocation));
         }
     }
 
@@ -57,7 +58,7 @@ public class TransientPluginLoader : IPluginLoader
         if (Activator.CreateInstance(pluginType) is not IPlugin instance)
         {
             throw new FlowSynxException((int)ErrorCode.PluginLoader,
-                string.Format(Resources.Plugin_Loader_FailedToCreateInstance, pluginType.FullName));
+                Localization.Get("Plugin_Loader_FailedToCreateInstance", pluginType.FullName));
         }
         return instance;
     }

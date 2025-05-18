@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
@@ -18,22 +19,26 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
     private readonly ICurrentUserService _currentUserService;
     private readonly IPluginService _pluginService;
     private readonly IPluginSpecificationsService _pluginSpecificationsService;
+    private readonly ILocalization _localization;
 
     public UpdatePluginConfigHandler(
         ILogger<UpdatePluginConfigHandler> logger, 
         ICurrentUserService currentUserService,
         IPluginConfigurationService pluginConfigurationService, 
         IPluginService pluginService, 
-        IPluginSpecificationsService pluginSpecificationsService)
+        IPluginSpecificationsService pluginSpecificationsService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(pluginConfigurationService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _currentUserService = currentUserService;
         _pluginConfigurationService = pluginConfigurationService;
         _pluginService = pluginService;
         _pluginSpecificationsService = pluginSpecificationsService;
+        _localization = localization;
     }
 
     public async Task<Result<Unit>> Handle(
@@ -42,16 +47,14 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var configId = Guid.Parse(request.ConfigId);
             var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, 
                 configId, cancellationToken);
             if (pluginConfiguration == null)
             {
-                var message = string.Format(Resources.Feature_PluginConfig_Update_ConfigIdNotFound, request.ConfigId);
+                var message = _localization.Get("Feature_PluginConfig_Update_ConfigIdNotFound", request.ConfigId);
                 throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound, message);
             }
 
@@ -61,7 +64,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
                     request.Name, cancellationToken);
                 if (ispluginConfigExist)
                 {
-                    var message = string.Format(Resources.Features_PluginConfig_Update_PluginConfigAlreadyExists, 
+                    var message = _localization.Get("Features_PluginConfig_Update_PluginConfigAlreadyExists", 
                         request.Name);
                     var errorMessage = new ErrorMessage((int)ErrorCode.PluginConfigurationIsAlreadyExist, message);
                     _logger.LogWarning(errorMessage.ToString());
@@ -73,7 +76,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
                 request.Version, cancellationToken);
             if (pluginEntity is null)
             {
-                var message = string.Format(Resources.Features_PluginConfig_Update_PluginCouldNotBeFound, 
+                var message = _localization.Get("Features_PluginConfig_Update_PluginCouldNotBeFound", 
                     request.Type, request.Version);
                 throw new FlowSynxException((int)ErrorCode.PluginTypeNotFound, message);
             }
@@ -89,7 +92,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
             pluginConfiguration.Specifications = request.Specifications.ToPluginConfigurationSpecifications();
 
             await _pluginConfigurationService.Update(pluginConfiguration, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_PluginConfig_Update_UpdatedSuccessfully);
+            return await Result<Unit>.SuccessAsync(_localization.Get("Feature_PluginConfig_Update_UpdatedSuccessfully"));
         }
         catch (FlowSynxException ex)
         {

@@ -14,7 +14,9 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
     private readonly IPluginService _pluginService;
     private readonly ICurrentUserService _currentUserService;
 
-    public PluginsListHandler(ILogger<PluginsListHandler> logger, IPluginService pluginService, 
+    public PluginsListHandler(
+        ILogger<PluginsListHandler> logger, 
+        IPluginService pluginService, 
         ICurrentUserService currentUserService)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -29,8 +31,7 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var plugins = await _pluginService.All(_currentUserService.UserId, cancellationToken);
             var response = plugins.Select(p => new PluginsListResponse

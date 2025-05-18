@@ -5,6 +5,7 @@ using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Trigger;
+using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggerDetails;
 
@@ -13,33 +14,36 @@ internal class WorkflowTriggerDetailsHandler : IRequestHandler<WorkflowTriggerDe
     private readonly ILogger<WorkflowTriggerDetailsHandler> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
     public WorkflowTriggerDetailsHandler(
         ILogger<WorkflowTriggerDetailsHandler> logger,
         IWorkflowTriggerService workflowTriggerService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _workflowTriggerService = workflowTriggerService;
         _currentUserService = currentUserService;
+        _localization = localization;
     }
 
     public async Task<Result<WorkflowTriggerDetailsResponse>> Handle(WorkflowTriggerDetailsRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var triggerId = Guid.Parse(request.TriggerId);
             var trigger = await _workflowTriggerService.GetByIdAsync(workflowId, triggerId, cancellationToken);
             if (trigger is null)
             {
-                var message = string.Format(Resources.Feature_WorkflowTriggers_Details_TriggerNotFound, request.TriggerId);
+                var message = _localization.Get("Feature_WorkflowTriggers_Details_TriggerNotFound", request.TriggerId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowTriggerNotFound, message);
             }
 
@@ -50,7 +54,7 @@ internal class WorkflowTriggerDetailsHandler : IRequestHandler<WorkflowTriggerDe
                 Status = trigger.Status,
                 Properties = trigger.Properties
             };
-            _logger.LogInformation(Resources.Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully);
+            _logger.LogInformation(_localization.Get("Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully"));
             return await Result<WorkflowTriggerDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

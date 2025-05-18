@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
@@ -27,6 +28,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private readonly IWorkflowValidator _workflowValidator;
     private readonly IErrorHandlingResolver _errorHandlingResolver;
     private readonly IWorkflowCancellationRegistry _workflowCancellationRegistry;
+    private readonly ILocalization _localization;
     private readonly ConcurrentDictionary<string, object?> _taskOutputs = new();
 
     public WorkflowOrchestrator(
@@ -41,7 +43,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         IJsonDeserializer jsonDeserializer,
         IWorkflowValidator workflowValidator,
         IErrorHandlingResolver errorHandlingResolver,
-        IWorkflowCancellationRegistry workflowCancellationRegistry)
+        IWorkflowCancellationRegistry workflowCancellationRegistry,
+        ILocalization localization)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _workflowService = workflowService ?? throw new ArgumentNullException(nameof(workflowService));
@@ -55,6 +58,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         _workflowValidator = workflowValidator ?? throw new ArgumentNullException(nameof(workflowValidator));
         _errorHandlingResolver = errorHandlingResolver ?? throw new ArgumentNullException(nameof(errorHandlingResolver));
         _workflowCancellationRegistry = workflowCancellationRegistry ?? throw new ArgumentNullException(nameof(workflowCancellationRegistry));
+        _localization = localization ?? throw new ArgumentNullException(nameof(localization)); ;
     }
 
     public async Task ExecuteWorkflowAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
@@ -82,7 +86,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
                     if (!readyTasks.Any())
                         throw new FlowSynxException((int)ErrorCode.WorkflowFailedDependenciesTask,
-                            Resources.Workflow_Executor_FailedDependenciesTask);
+                            _localization.Get("Workflow_Executor_FailedDependenciesTask"));
 
                     var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary());
                     var errors = await ExecuteTaskBatchAsync(userId, workflowId, executionEntity.Id,
@@ -113,13 +117,13 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         {
             var entity = await _workflowService.Get(userId, workflowId, cancellationToken);
             return entity 
-                ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, 
-                string.Format(Resources.Workflow_Orchestrator_WorkflowNotFound, workflowId));
+                ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound,
+                _localization.Get("Workflow_Orchestrator_WorkflowNotFound", workflowId));
         }
         catch (Exception ex)
         {
             var messageMessage = new ErrorMessage((int)ErrorCode.WorkflowGetItem,
-                string.Format(Resources.Workflow_Executor_GetWorkflowFailed, ex.Message));
+                _localization.Get("Workflow_Executor_GetWorkflowFailed", ex.Message));
             _logger.LogError(messageMessage.ToString());
             throw new FlowSynxException(messageMessage);
         }
@@ -157,7 +161,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowExecutionInitilizeFailed,
-                string.Format(Resources.Workflow_Executor_WorkflowInitilizeFailed, ex.Message));
+                _localization.Get("Workflow_Executor_WorkflowInitilizeFailed", ex.Message));
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
@@ -215,7 +219,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             }
             catch (Exception ex)
             {
-                errors.Add(new Exception(string.Format(Resources.WorkflowOrchestrator_TaskFailed, task.Name, ex.Message), ex));
+                errors.Add(new Exception(_localization.Get("WorkflowOrchestrator_TaskFailed", task.Name, ex.Message), ex));
             }
             finally
             {

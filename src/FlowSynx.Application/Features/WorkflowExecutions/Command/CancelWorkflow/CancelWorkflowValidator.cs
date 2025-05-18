@@ -1,19 +1,20 @@
-﻿using FluentValidation;
+﻿using FlowSynx.Application.Localizations;
+using FluentValidation;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
 
 public class CancelWorkflowValidator : AbstractValidator<CancelWorkflowRequest>
 {
-    public CancelWorkflowValidator()
+    public CancelWorkflowValidator(ILocalization localization)
     {
         RuleFor(x => x.WorkflowId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(Resources.Features_Validation_WorkflowId_MustHaveValue);
+            .WithMessage(localization.Get("Features_Validation_WorkflowId_MustHaveValue"));
 
         RuleFor(x => x.WorkflowExecutionId)
             .Must(BeAValidGuid)
-            .WithMessage(Resources.Features_Validation_WorkflowId_InvalidGuidFormat);
+            .WithMessage(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
     }
 
     private bool BeAValidGuid(string id)

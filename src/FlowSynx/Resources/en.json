@@ -1,0 +1,23 @@
+{
+  "AddHealthCheckerConfigurationService": "Configuration service",
+  "AddHealthCheckerLoggerService": "Logger service",
+  "AddHealthCheckerPluginService": "Plugins service",
+  "ConfigurationServiceHealthCheckConfigurationServiceAvailable": "Configuration service is available",
+  "ConfigurationServiceHealthCheckConfigurationServiceFailed": "Configuration service is failed",
+  "EntryPointErrorInExecutteApplication": "Something wrong happen during execute the application.",
+  "FailDatabaseConnection": "Database connection failed. Please check the connection details.",
+  "FailedDatabaseInitialization": "Database initialization failed.",
+  "FlowSynxLocationBaseLocationNotFound": "Base location not found",
+  "FlowSynxLocationRootLocationNotFound": "Root location not found",
+  "FlowSynxVersionEntryAssemblyNotFound": "The EntryAssembly not found. Getting ExecutingAssembly!",
+  "FlowSynxVersionErrorInReadingExecutableApplication": "Error in reading executable application.",
+  "LoggerServiceHealthCheckFailed": "Logger Service is failed",
+  "LoggerServiceHealthCheckLoggerServiceAvailable": "Logger service is available",
+  "LoggerServiceHealthCheckLoggerServiceFailed": "Logger Service is failed",
+  "OptionsVerifierErrorInReadingExecutableApplicationPath": "Error in reading executable application path.",
+  "OptionsVerifierTheEnteredConfigFileIsNotExist": "The entered config file '{0}' is not exist!",
+  "PluginServiceHealthCheckPluginServiceAvailable": "Plugins service is available",
+  "PluginServiceHealthCheckPluginServiceFailed": "Plugins Service is failed",
+  "UseCustomHeadersVersionServiceCouldNotBeInitialized": "Version service could not be initialized.",
+  "UseHealthCheckSerializerServiceCouldNotBeInitialized": "Serializer service could not be initialized."
+}

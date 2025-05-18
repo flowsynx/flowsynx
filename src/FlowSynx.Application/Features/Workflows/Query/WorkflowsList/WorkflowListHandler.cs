@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
@@ -15,29 +16,31 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
     private readonly IWorkflowService _workflowService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ISystemClock _systemClock;
+    private readonly ILocalization _localization;
 
     public WorkflowListHandler(
         ILogger<PluginConfigListHandler> logger,
         IWorkflowService workflowService, 
         ICurrentUserService currentUserService,
-        ISystemClock systemClock)
+        ISystemClock systemClock,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _workflowService = workflowService;
         _currentUserService = currentUserService;
         _systemClock = systemClock;
+        _localization = localization;
     }
 
     public async Task<Result<IEnumerable<WorkflowListResponse>>> Handle(WorkflowListRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
-                    Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflows = await _workflowService.All(_currentUserService.UserId, cancellationToken);
             var response = workflows.Select(workflow => new WorkflowListResponse
@@ -47,7 +50,7 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
                 ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow
 
             });
-            _logger.LogInformation(Resources.Feature_Workflow_ListRetrievedSuccessfully);
+            _logger.LogInformation(_localization.Get("Feature_Workflow_ListRetrievedSuccessfully"));
             return await Result<IEnumerable<WorkflowListResponse>>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

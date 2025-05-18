@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
@@ -26,7 +27,7 @@ public static class ApplicationBuilderExtensions
         var serviceProvider = app.ApplicationServices;
         var versionService = serviceProvider.GetService<IVersion>();
         if (versionService == null)
-            throw new ArgumentException(Resources.UseCustomHeadersVersionServiceCouldNotBeInitialized);
+            throw new ArgumentException(Localization.Get("UseCustomHeadersVersionServiceCouldNotBeInitialized"));
 
         var headers = new CustomHeadersToAddAndRemove();
         headers.HeadersToAdd.Add("flowsynx-version", versionService.Version);
@@ -46,7 +47,7 @@ public static class ApplicationBuilderExtensions
 
         app.UseEndpoints(endpoints => {
             if (serializer == null)
-                throw new ArgumentException(Resources.UseHealthCheckSerializerServiceCouldNotBeInitialized);
+                throw new ArgumentException(Localization.Get("UseHealthCheckSerializerServiceCouldNotBeInitialized"));
                 
             endpoints.MapHealthChecks("/health", new HealthCheckOptions
             {

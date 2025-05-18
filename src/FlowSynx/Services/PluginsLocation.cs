@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.PluginCore.Exceptions;
 namespace FlowSynx.Services;
@@ -6,18 +7,22 @@ namespace FlowSynx.Services;
 public class PluginsLocation : IPluginsLocation
 {
     private readonly ILogger<PluginsLocation> _logger;
+    private readonly ILocalization _localization;
     private readonly string? _rootLocation = System.IO.Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
 
-    public PluginsLocation(ILogger<PluginsLocation> logger)
+    public PluginsLocation(
+        ILogger<PluginsLocation> logger,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
-
+        _localization = localization;
         if (_rootLocation != null) 
             return;
 
         logger.LogError("Base location not found");
-        throw new Exception(Resources.FlowSynxLocationBaseLocationNotFound);
+        throw new Exception(_localization.Get("FlowSynxLocationBaseLocationNotFound"));
     }
 
     public string Path => GetPluginsPath();
@@ -36,7 +41,7 @@ public class PluginsLocation : IPluginsLocation
                 return pluginsPath;
             }
 
-            var errorMessage = new ErrorMessage((int)ErrorCode.PluginsLocation, Resources.FlowSynxLocationRootLocationNotFound);
+            var errorMessage = new ErrorMessage((int)ErrorCode.PluginsLocation, _localization.Get("FlowSynxLocationRootLocationNotFound"));
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }

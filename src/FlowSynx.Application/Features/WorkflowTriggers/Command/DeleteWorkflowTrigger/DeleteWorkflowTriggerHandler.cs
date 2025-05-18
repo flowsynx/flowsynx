@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Trigger;
@@ -13,17 +14,21 @@ internal class DeleteWorkflowTriggerHandler : IRequestHandler<DeleteWorkflowTrig
     private readonly ILogger<DeleteWorkflowTriggerHandler> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILocalization _localization;
 
     public DeleteWorkflowTriggerHandler(
         ILogger<DeleteWorkflowTriggerHandler> logger, 
         IWorkflowTriggerService workflowTriggerService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(workflowTriggerService);
         ArgumentNullException.ThrowIfNull(currentUserService);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _currentUserService = currentUserService;
+        _localization = localization;
         _workflowTriggerService = workflowTriggerService;
     }
 
@@ -31,20 +36,19 @@ internal class DeleteWorkflowTriggerHandler : IRequestHandler<DeleteWorkflowTrig
     {
         try
         {
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
-                throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, Resources.Authentication_Access_Denied);
+            _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var triggerId = Guid.Parse(request.TriggerId);
             var workflow = await _workflowTriggerService.GetByIdAsync(workflowId, triggerId, cancellationToken);
             if (workflow == null)
             {
-                var message = string.Format(Resources.Feature_WorkflowTriggers_Delete_WorkflowNotFound, request.WorkflowId);
+                var message = _localization.Get("Feature_WorkflowTriggers_Delete_WorkflowNotFound", request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 
             await _workflowTriggerService.DeleteAsync(workflow, cancellationToken);
-            return await Result<Unit>.SuccessAsync(Resources.Feature_Workflow_Delete_DeletedSuccessfully);
+            return await Result<Unit>.SuccessAsync(_localization.Get("Feature_Workflow_Delete_DeletedSuccessfully"));
         }
         catch (FlowSynxException ex)
         {
