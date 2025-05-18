@@ -1,8 +1,0 @@
-### Plugins
-GET {{FlowSynxAddress}}/plugins/storage
-Content-Type: application/json
-
-
-###PluginDetails
-GET {{FlowSynxAddress}}/plugins/details/cd7d1271-ce52-4cc3-b0b4-3f4f72b2fa5d
-Content-Type: application/json

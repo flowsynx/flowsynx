@@ -1,3 +1,0 @@
-### Version
-GET {{FlowSynxAddress}}/version
-Content-Type: application/json

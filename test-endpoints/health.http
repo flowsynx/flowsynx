@@ -1,3 +1,0 @@
-### Check Health
-GET {{FlowSynxAddress}}/health
-Content-Type: application/json
