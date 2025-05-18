@@ -66,7 +66,6 @@ public static class ServiceCollectionExtensions
     {
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
         var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<JsonLocalization>>();
-        var jsonDeserializer = serviceProviderScope.ServiceProvider.GetRequiredService<IJsonDeserializer>();
 
         var localizationConfiguration = new LocalizationConfiguration();
         configuration.GetSection("Localization").Bind(localizationConfiguration);
@@ -83,7 +82,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<ILocalization>(provider =>
         {
-            var jsonLocalization = new JsonLocalization(language, logger, jsonDeserializer);
+            var jsonLocalization = new JsonLocalization(language, logger);
             Localization.Instance = jsonLocalization;
             return jsonLocalization;
         });

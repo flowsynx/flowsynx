@@ -4,22 +4,32 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging.Testing;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.Serialization;
+using FlowSynx.Application.Localizations;
+using Moq;
 
 namespace FlowSynx.Infrastructure.UnitTests.Serialization;
 
 public class JsonSerializerTests
 {
     private readonly FakeLogger<JsonSerializer> _logger = new();
+    private readonly Mock<ILocalization> localizationMock;
+    private readonly JsonSerializer _jsonSerializer;
+
+    public JsonSerializerTests()
+    {
+        localizationMock = new Mock<ILocalization>();
+        localizationMock.Setup(l => l.Get("JsonSerializer_InputValueCanNotBeEmpty")).Returns("Input value can't be empty or null.");
+        _jsonSerializer = new JsonSerializer(_logger, localizationMock.Object);
+    }
 
     [Fact]
     public void Serialize_ShouldThrowFlowSynxException_WhenInputIsNull()
     {
         // Arrange
-        var jsonSerializer = new JsonSerializer(_logger);
         object? input = null;
 
         // Act & Assert
-        var exception = Assert.Throws<FlowSynxException>(() => jsonSerializer.Serialize(input));
+        var exception = Assert.Throws<FlowSynxException>(() => _jsonSerializer.Serialize(input));
 
         // Assert
         Assert.Equal((int)ErrorCode.Serialization, exception.ErrorCode);
@@ -31,11 +41,10 @@ public class JsonSerializerTests
     public void Serialize_ShouldReturnsSerializedString_WhenValidInput()
     {
         // Arrange
-        var jsonSerializer = new JsonSerializer(_logger);
         var input = new Person { Name = "Amin Ziagham", Age = 30 };
 
         // Act
-        var result = jsonSerializer.Serialize(input);
+        var result = _jsonSerializer.Serialize(input);
 
         // Assert
         Assert.NotNull(result);
@@ -47,12 +56,11 @@ public class JsonSerializerTests
     public void Serialize_ShouldReturnsIndentedJson_WhenWithIndentedConfiguration()
     {
         // Arrange
-        var jsonSerializer = new JsonSerializer(_logger);
         var input = new Person { Name = "Amin Ziagham", Age = 30 };
         var configuration = new JsonSerializationConfiguration { Indented = true };
 
         // Act
-        var result = jsonSerializer.Serialize(input, configuration);
+        var result = _jsonSerializer.Serialize(input, configuration);
 
         // Assert
         Assert.NotNull(result);
@@ -65,11 +73,10 @@ public class JsonSerializerTests
     public void Serialize_ShouldHandleSerializationException_WhenJsonIsInvalid()
     {
         // Arrange
-        var jsonSerializer = new JsonSerializer(_logger);
         var invalidInput = new UnSerializableClass { SomeAction = () => Console.WriteLine(@"Hello") };
 
         // Act & Assert
-        var exception = Assert.Throws<FlowSynxException>(() => jsonSerializer.Serialize(invalidInput));
+        var exception = Assert.Throws<FlowSynxException>(() => _jsonSerializer.Serialize(invalidInput));
 
         Assert.Equal((int)ErrorCode.Serialization, exception.ErrorCode);
         Assert.Contains(_logger.Collector.GetSnapshot(), e => e.Level == LogLevel.Error);

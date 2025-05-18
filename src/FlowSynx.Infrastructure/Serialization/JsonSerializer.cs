@@ -11,11 +11,16 @@ namespace FlowSynx.Infrastructure.Serialization;
 public class JsonSerializer : IJsonSerializer
 {
     private readonly ILogger<JsonSerializer> _logger;
+    private readonly ILocalization _localization;
 
-    public JsonSerializer(ILogger<JsonSerializer> logger)
+    public JsonSerializer(
+        ILogger<JsonSerializer> logger,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
+        _localization = localization;
     }
 
     public string ContentMineType => "application/json";
@@ -32,7 +37,7 @@ public class JsonSerializer : IJsonSerializer
             if (input is null)
             {
                 var errorMessage = new ErrorMessage((int)ErrorCode.SerializerEmptyValue,
-                                    Localization.Get("JsonSerializer_InputValueCanNotBeEmpty"));
+                                    _localization.Get("JsonSerializer_InputValueCanNotBeEmpty"));
                 _logger.LogError(errorMessage.ToString());
                 throw new FlowSynxException(errorMessage);
             }

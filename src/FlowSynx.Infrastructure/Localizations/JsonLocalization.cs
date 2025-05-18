@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Serialization;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace FlowSynx.Infrastructure.Localizations;
@@ -9,18 +9,15 @@ public class JsonLocalization : ILocalization
 {
     private readonly Language _language;
     private readonly ILogger<JsonLocalization> _logger;
-    private readonly IJsonDeserializer _jsonDeserializer;
     private readonly Dictionary<string, Dictionary<string, string>> _localizations;
     private static readonly Regex PlaceholderRegex = new(@"\{([a-zA-Z0-9_]+)\}", RegexOptions.Compiled);
 
     public JsonLocalization(
         Language language,
-        ILogger<JsonLocalization> logger, 
-        IJsonDeserializer jsonDeserializer)
+        ILogger<JsonLocalization> logger)
     {
         _language = language;
         _logger = logger;
-        _jsonDeserializer = jsonDeserializer;
         _localizations = LoadEmbeddedLocalizations();
     }
 
@@ -88,7 +85,7 @@ public class JsonLocalization : ILocalization
                 using var reader = new StreamReader(stream);
                 var json = reader.ReadToEnd();
 
-                var parsed = _jsonDeserializer.Deserialize<Dictionary<string, string>>(json);
+                var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
                 if (parsed == null) continue;
 
                 if (!result.TryGetValue(culture, out var dict))

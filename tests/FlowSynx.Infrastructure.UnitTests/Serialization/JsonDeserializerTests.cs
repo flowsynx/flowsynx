@@ -1,29 +1,33 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Moq;
 
 namespace FlowSynx.Infrastructure.UnitTests.Serialization;
 
 public class JsonDeserializerTests
 {
     private readonly FakeLogger<JsonDeserializer> _logger;
-
+    private readonly Mock<ILocalization> localizationMock;
     private readonly JsonDeserializer _jsonDeserializer;
 
     public JsonDeserializerTests()
     {
         _logger = new FakeLogger<JsonDeserializer>();
-        _jsonDeserializer = new JsonDeserializer(_logger);
+        localizationMock = new Mock<ILocalization>();
+        localizationMock.Setup(l => l.Get("JsonDeserializer_InputValueCanNotBeEmpty")).Returns("Input value can't be empty or null.");
+        _jsonDeserializer = new JsonDeserializer(_logger, localizationMock.Object);
     }
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new JsonDeserializer(null!));
+        Assert.Throws<ArgumentNullException>(() => new JsonDeserializer(null!, localizationMock.Object));
     }
 
     [Fact]
@@ -38,7 +42,8 @@ public class JsonDeserializerTests
         // Assert
         Assert.Equal((int)ErrorCode.Serialization, exception.ErrorCode);
         Assert.Equal("Input value can't be empty or null.", exception.Message);
-        Assert.Contains(_logger.Collector.GetSnapshot(), e => e.Level == LogLevel.Error && e.Message.Contains("Input value can't be empty or null."));
+        Assert.Contains(_logger.Collector.GetSnapshot(), 
+            e => e.Level == LogLevel.Error && e.Message.Contains("Input value can't be empty or null."));
     }
 
     [Fact]

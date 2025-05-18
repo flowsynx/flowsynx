@@ -11,11 +11,16 @@ namespace FlowSynx.Infrastructure.Serialization;
 public class JsonDeserializer : IJsonDeserializer
 {
     private readonly ILogger<JsonDeserializer> _logger;
+    private readonly ILocalization _localization;
 
-    public JsonDeserializer(ILogger<JsonDeserializer> logger)
+    public JsonDeserializer(
+        ILogger<JsonDeserializer> logger,
+        ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
+        _localization = localization;
     }
 
     public T Deserialize<T>(string? input)
@@ -29,8 +34,8 @@ public class JsonDeserializer : IJsonDeserializer
         {
             if (string.IsNullOrWhiteSpace(input))
             {
-                var errorMessage = new ErrorMessage((int)ErrorCode.DeserializerEmptyValue, 
-                    Localization.Get("JsonDeserializer_InputValueCanNotBeEmpty"));
+                var errorMessage = new ErrorMessage((int)ErrorCode.DeserializerEmptyValue,
+                    _localization.Get("JsonDeserializer_InputValueCanNotBeEmpty"));
                 _logger.LogError(errorMessage.ToString());
                 throw new FlowSynxException(errorMessage);
             }
