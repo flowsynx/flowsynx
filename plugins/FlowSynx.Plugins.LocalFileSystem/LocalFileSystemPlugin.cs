@@ -8,6 +8,7 @@ namespace FlowSynx.Plugins.LocalFileSystem;
 public class LocalFileSystemPlugin : IPlugin
 {
     private ILocalFileManager _manager = null!;
+    private bool _isInitialized;
 
     public PluginMetadata Metadata => new()
     {
@@ -26,11 +27,15 @@ public class LocalFileSystemPlugin : IPlugin
     {
         ArgumentNullException.ThrowIfNull(logger);
         _manager = new LocalFileManager(logger);
+        _isInitialized = true;
         return Task.CompletedTask;
     }
 
     public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
+        if (!_isInitialized)
+            throw new InvalidOperationException($"Plugin '{Metadata.Name}' v{Metadata.Version} is not initialized.");
+
         var operationParameter = parameters.ToObject<OperationParameter>();
         var operation = operationParameter.Operation;
 
