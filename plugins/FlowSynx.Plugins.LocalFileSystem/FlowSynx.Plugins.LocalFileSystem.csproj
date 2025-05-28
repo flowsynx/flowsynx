@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlowSynx.PluginCore" Version="1.2.1" />
+    <PackageReference Include="FlowSynx.PluginCore" Version="1.2.2" />
   </ItemGroup>
 
 	<ItemGroup>

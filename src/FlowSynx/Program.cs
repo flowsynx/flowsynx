@@ -39,7 +39,7 @@ try
            .AddEndpoint(config)
            .AddPluginsPath()
            .AddVersion()
-           .AddCore()
+           .AddApplication()
            .AddInfrastructure()
            .AddInfrastructurePluginManager(config)
            .AddUserService();

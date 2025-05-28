@@ -17,7 +17,10 @@ public class LocalFileSystemPlugin : IPlugin
         Description = Resources.ConnectorDescription,
         Version = new PluginVersion(1, 0, 0),
         Namespace = PluginNamespace.Connectors,
-        Author = "FlowSynx LLC."
+        CompanyName = "FlowSynx",
+        Authors = new List<string> { "FlowSynx" },
+        Copyright = "© FlowSynx. All rights reserved.",
+        Tags = new List<string>() { "FlowSynx", "Local", "LocalFileSystem" }
     };
 
     public PluginSpecifications? Specifications { get; set; }
