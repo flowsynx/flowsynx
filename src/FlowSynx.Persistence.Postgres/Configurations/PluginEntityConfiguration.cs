@@ -27,23 +27,43 @@ public class PluginEntityConfiguration : IEntityTypeConfiguration<PluginEntity>
         builder.Property(t => t.Id)
                .IsRequired();
 
-        builder.Property(t => t.PluginId)
-               .IsRequired();
-
         builder.Property(t => t.UserId)
                .IsRequired();
 
-        builder.Property(t => t.Name)
-               .HasMaxLength(128)
-               .IsRequired();
-
         builder.Property(t => t.Type)
-               .HasMaxLength(128)
+               .HasMaxLength(1024)
                .IsRequired();
+        builder.Property(t => t.Description)
+               .HasMaxLength(4096);
 
         builder.Property(t => t.Version)
-               .HasMaxLength(128)
+               .HasMaxLength(50)
                .IsRequired();
+
+        builder.Property(t => t.PluginLocation)
+               .HasMaxLength(4096)
+               .IsRequired();
+
+        builder.Property(t => t.RepositoryUrl)
+               .HasMaxLength(4096);
+
+        builder.Property(t => t.ProjectUrl)
+               .HasMaxLength(4096);
+
+        builder.Property(t => t.Copyright)
+               .HasMaxLength(2048);
+
+        builder.Property(t => t.Icon)
+               .HasMaxLength(4096);
+
+        builder.Property(t => t.License)
+               .HasMaxLength(1024);
+
+        builder.Property(t => t.License)
+               .HasMaxLength(1024);
+
+        builder.Property(t => t.LicenseUrl)
+               .HasMaxLength(4096);
 
         builder.Property(t => t.Checksum)
                .HasMaxLength(1024)

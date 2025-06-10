@@ -93,6 +93,7 @@ public enum ErrorCode
     PluginInstallationNotFound                      = 2314,
     PluginLoader                                    = 2315,
     PluginCouldNotLoad                              = 2316,
+    PluginChecksumValidationFailed                  = 2317,
     #endregion
 
     #region Workflow error codes

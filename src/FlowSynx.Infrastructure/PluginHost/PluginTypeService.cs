@@ -149,7 +149,7 @@ public class PluginTypeService : IPluginTypeService
         {
             loader.Unload();
             throw new FlowSynxException((int)ErrorCode.PluginCouldNotLoad,
-                _localization.Get("PluginTypeService_PluginCouldNotLoad", pluginEntity.Name, pluginEntity.Version));
+                _localization.Get("PluginTypeService_PluginCouldNotLoad", pluginEntity.Type, pluginEntity.Version));
         }
     }
 }

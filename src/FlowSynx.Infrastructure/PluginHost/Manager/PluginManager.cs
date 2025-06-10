@@ -10,6 +10,7 @@ using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
+using System.IO.Compression;
 
 namespace FlowSynx.Infrastructure.PluginHost.Manager;
 
@@ -59,20 +60,36 @@ public class PluginManager : IPluginManager
         if (await PluginAlreadyExists(pluginType, pluginVersion, cancellationToken))
             return;
 
-        var pluginMetadata = await DownloadPluginMetadata(pluginType, pluginVersion);
-        var pluginData = await _pluginDownloader.GetPluginDataAsync(pluginMetadata.Url);
+        var registryUrl = _pluginRegistryConfiguration.Url;
+        var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(registryUrl, pluginType, pluginVersion, cancellationToken);
+        var pluginPackData = await _pluginDownloader.GetPluginDataAsync(registryUrl, pluginType, pluginVersion, cancellationToken);
 
-        if (!ValidatePluginChecksum(pluginData, pluginMetadata.Checksum))
-            return;
+        var pluginBytes = ExtractPluginFile(pluginPackData);
+        ValidatePluginChecksum(pluginBytes, pluginMetadata.Checksum);
 
         string pluginDirectory = GetPluginLocalDirectory(pluginType, pluginVersion);
-        await _pluginDownloader.ExtractPluginAsync(pluginDirectory, pluginData, cancellationToken);
+        await _pluginDownloader.ExtractPluginAsync(pluginDirectory, pluginBytes, cancellationToken);
 
         int installedCount = await InstallPluginAssemblies(pluginDirectory, pluginMetadata, cancellationToken);
 
         if (installedCount == 0)
             throw new FlowSynxException((int)ErrorCode.PluginInstallationNotFound,
                 _localization.Get("Plugin_Install_NoPluginInstalled"));
+    }
+
+    private byte[] ExtractPluginFile(byte[] pluginData)
+    {
+        using var memoryStream = new MemoryStream(pluginData);
+        using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Read, leaveOpen: false);
+
+        var pluginEntry = archive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".plugin", StringComparison.OrdinalIgnoreCase));
+        if (pluginEntry == null)
+            throw new FlowSynxException((int)ErrorCode.PluginNotFound, "No .plugin file found in the package.");
+
+        using var entryStream = pluginEntry.Open();
+        using var pluginStream = new MemoryStream();
+        entryStream.CopyTo(pluginStream);
+        return pluginStream.ToArray();
     }
 
     public async Task UpdateAsync(string pluginType, string oldVersion, string newPluginVersion, CancellationToken cancellationToken)
@@ -128,19 +145,13 @@ public class PluginManager : IPluginManager
         throw new FlowSynxException(errorMessage);
     }
 
-    private async Task<PluginInstallMetadata> DownloadPluginMetadata(string pluginType, string pluginVersion)
-    {
-        var registryUrl = _pluginRegistryConfiguration.Url;
-        return await _pluginDownloader.GetPluginMetadataAsync(registryUrl, pluginType, pluginVersion);
-    }
-
-    private bool ValidatePluginChecksum(byte[] pluginData, string checksum)
+    private void ValidatePluginChecksum(byte[] pluginData, string checksum)
     {
         if (_pluginDownloader.ValidateChecksum(pluginData, checksum))
-            return true;
+            return;
 
-        _logger.LogError(_localization.Get("PluginManager_Install_ChecksumValidationFailed"));
-        return false;
+        throw new FlowSynxException((int)ErrorCode.PluginChecksumValidationFailed, 
+            _localization.Get("PluginManager_Install_ChecksumValidationFailed"));
     }
 
     private string GetPluginLocalDirectory(string pluginType, string pluginVersion)
@@ -194,15 +205,19 @@ public class PluginManager : IPluginManager
         return new PluginEntity
         {
             Id = Guid.NewGuid(),
-            PluginId = metadata.Id,
-            Name = metadata.Name,
+            Type = metadata.Type,
             Version = metadata.Version,
             Checksum = metadata.Checksum,
             PluginLocation = dllPath,
             UserId = _currentUserService.UserId,
-            Author = metadata.Author,
+            Owners = metadata.Owners.ToList(),
             Description = metadata.Description,
-            Type = metadata.Type,
+            Copyright = metadata.Copyright,
+            License = metadata.License,
+            LicenseUrl = metadata.LicenseUrl,
+            ProjectUrl = metadata.ProjectUrl,
+            RepositoryUrl = metadata.RepositoryUrl,
+            LastUpdated = metadata.LastUpdated,
             Specifications = plugin.GetPluginSpecification()
         };
     }

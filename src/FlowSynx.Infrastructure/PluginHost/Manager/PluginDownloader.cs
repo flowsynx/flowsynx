@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
+using FlowSynx.Application.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.IO.Compression;
@@ -31,38 +32,55 @@ public class PluginDownloader : IPluginDownloader
         _localization = localization;
     }
 
-    public async Task<byte[]> GetPluginDataAsync(string url)
+    public async Task<byte[]> GetPluginDataAsync(
+        string url, 
+        string pluginType, 
+        string pluginVersion, 
+        CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient("PluginRegistry");
-        var response = await client.GetAsync(url);
+        var mainUrl = new Uri(url);
+        var pluginUrl = new Uri(mainUrl, $"api/plugins/{pluginType}/{pluginVersion}/download");
+        var response = await client.GetAsync(pluginUrl, cancellationToken);
 
         if (response.IsSuccessStatusCode)
-            return await response.Content.ReadAsByteArrayAsync();
+            return await response.Content.ReadAsByteArrayAsync(cancellationToken);
 
         var message = _localization.Get("Plugin_Download_FailedToFetchDataFromUrl", (int)response.StatusCode, response.ReasonPhrase);
         throw new FlowSynxException((int)ErrorCode.PluginRegistryFailedToFetchDataFromUrl, message);
     }
 
-    public async Task<PluginInstallMetadata> GetPluginMetadataAsync(string url, string pluginType, string pluginVersion)
+    public async Task<PluginInstallMetadata> GetPluginMetadataAsync(
+        string url, 
+        string pluginType, 
+        string pluginVersion, 
+        CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient("PluginRegistry");
         var mainUrl = new Uri(url);
-        var indexUrl = new Uri(mainUrl, "index.json");
-        var response = await client.GetStringAsync(indexUrl);
-        var plugins = _jsonDeserializer.Deserialize<List<PluginInstallMetadata>>(response);
-        var metadata = plugins
-            .FirstOrDefault(x => 
-                string.Equals(x.Type, pluginType, StringComparison.CurrentCultureIgnoreCase) && x.Version == pluginVersion);
+        var pluginUrl = new Uri(mainUrl, $"api/plugins/{pluginType}/{pluginVersion}");
+        var response = await client.GetStringAsync(pluginUrl, cancellationToken);
+        var metadata = _jsonDeserializer.Deserialize<Result<PluginInstallMetadata>>(response);
 
-        if (metadata != null) 
-            return metadata;
+        if (metadata == null)
+        {
+            var message = _localization.Get("Plugin_Download_PluginNotFound", pluginType, pluginVersion);
+            throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
+        }
 
-        var message = _localization.Get("Plugin_Download_PluginNotFound", pluginType, pluginVersion);
-        throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
+        if (!metadata.Succeeded)
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginInstall, 
+                string.Join(Environment.NewLine, metadata.Messages));
+        }
 
+        return metadata.Data;
     }
 
-    public async Task ExtractPluginAsync(string pluginDirectory, byte[] data, CancellationToken cancellationToken)
+    public async Task ExtractPluginAsync(
+        string pluginDirectory, 
+        byte[] data, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -76,7 +94,9 @@ public class PluginDownloader : IPluginDownloader
         }
     }
 
-    public bool ValidateChecksum(byte[] data, string expectedChecksum)
+    public bool ValidateChecksum(
+        byte[] data, 
+        string expectedChecksum)
     {
         var computedChecksum = ComputeChecksum(data);
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
@@ -112,7 +132,10 @@ public class PluginDownloader : IPluginDownloader
         }
     }
 
-    private async Task ExtractZipFromBytesAsync(string outputDirectory, byte[] zipData, CancellationToken cancellationToken)
+    private async Task ExtractZipFromBytesAsync(
+        string outputDirectory, 
+        byte[] zipData, 
+        CancellationToken cancellationToken)
     {
         using var memoryStream = new MemoryStream(zipData);
         using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Read, leaveOpen: false);
