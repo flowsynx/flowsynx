@@ -30,7 +30,7 @@ public class TransientPluginLoader : IPluginLoader
 
             if (pluginType == null)
                 throw new FlowSynxException((int)ErrorCode.PluginLoader,
-                    Localization.Get("Plugin_Loader_NoPluginFound", _pluginLocation));
+                    Localization.Get("Plugin_Loader_NoPluginFound"));
 
             _pluginInstance = CreatePluginInstance(pluginType);
         }
