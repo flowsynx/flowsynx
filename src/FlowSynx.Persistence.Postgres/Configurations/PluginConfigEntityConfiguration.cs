@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Application.Serialization;
+using FlowSynx.Application.Services;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 
@@ -11,13 +12,18 @@ public class PluginConfigEntityConfiguration : IEntityTypeConfiguration<PluginCo
 {
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IJsonDeserializer _jsonDeserializer;
+    private readonly IEncryptionService _encryptionService;
 
-    public PluginConfigEntityConfiguration(IJsonSerializer jsonSerializer, IJsonDeserializer jsonDeserializer)
+    public PluginConfigEntityConfiguration(
+        IJsonSerializer jsonSerializer, 
+        IJsonDeserializer jsonDeserializer,
+        IEncryptionService encryptionService)
     {
         ArgumentNullException.ThrowIfNull(jsonSerializer);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
         _jsonSerializer = jsonSerializer;
         _jsonDeserializer = jsonDeserializer;
+        _encryptionService = encryptionService;
     }
 
     public void Configure(EntityTypeBuilder<PluginConfigurationEntity> builder)
@@ -39,8 +45,8 @@ public class PluginConfigEntityConfiguration : IEntityTypeConfiguration<PluginCo
                .IsRequired();
 
         var dictionaryConverter = new ValueConverter<PluginConfigurationSpecifications?, string>(
-            v => _jsonSerializer.Serialize(v),
-            v => _jsonDeserializer.Deserialize<PluginConfigurationSpecifications?>(v)
+            v => _encryptionService.Encrypt(_jsonSerializer.Serialize(v)),
+            v => _jsonDeserializer.Deserialize<PluginConfigurationSpecifications?>(_encryptionService.Decrypt(v))
         );
 
         var dictionaryComparer = new ValueComparer<PluginConfigurationSpecifications>(
@@ -51,7 +57,7 @@ public class PluginConfigEntityConfiguration : IEntityTypeConfiguration<PluginCo
         );
 
         builder.Property(e => e.Specifications)
-               .HasColumnType("jsonb")
+               .HasColumnType("text")
                .HasConversion(dictionaryConverter, dictionaryComparer);
     }
 }

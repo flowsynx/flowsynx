@@ -22,22 +22,26 @@ public class ApplicationContext : AuditableContext
     private readonly ISystemClock _systemClock;
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IJsonDeserializer _jsonDeserializer;
+    private readonly IEncryptionService _encryptionService;
 
     public ApplicationContext(DbContextOptions<ApplicationContext> contextOptions,
         ILogger<ApplicationContext> logger, IHttpContextAccessor httpContextAccessor, 
         ISystemClock systemClock, IJsonSerializer jsonSerializer, 
-        IJsonDeserializer jsonDeserializer)
+        IJsonDeserializer jsonDeserializer,
+        IEncryptionService encryptionService)
         : base(contextOptions)
     {
         ArgumentNullException.ThrowIfNull(httpContextAccessor);
         ArgumentNullException.ThrowIfNull(systemClock);
         ArgumentNullException.ThrowIfNull(jsonSerializer);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(encryptionService);
         ArgumentNullException.ThrowIfNull(logger);
         _httpContextAccessor = httpContextAccessor;
         _systemClock = systemClock;
         _jsonSerializer = jsonSerializer;
         _jsonDeserializer = jsonDeserializer;
+        _encryptionService = encryptionService;
         _logger = logger;
     }
 
@@ -130,8 +134,8 @@ public class ApplicationContext : AuditableContext
         {
             base.OnModelCreating(builder);
             builder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
-            builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer));
-            builder.ApplyConfiguration(new WorkflowEntityConfiguration());
+            builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer, _encryptionService));
+            builder.ApplyConfiguration(new WorkflowEntityConfiguration(_encryptionService));
             builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowTriggerEntityConfiguration(_jsonSerializer, _jsonDeserializer));
