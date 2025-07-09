@@ -92,10 +92,16 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         try
         {
             token.ThrowIfCancellationRequested();
+            object? output;
             var result = await plugin.ExecuteAsync(pluginParameters, token);
+            if (result is null && !string.IsNullOrEmpty(task.Output)) 
+                output = new PluginContext(task.Name, "Data") { Content = task.Output };
+            else
+                output = result;
+            
             await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' completed.", task.Name);
-            return result;
+            return output;
         }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {

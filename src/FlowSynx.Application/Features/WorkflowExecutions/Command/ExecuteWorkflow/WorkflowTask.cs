@@ -9,4 +9,5 @@ public class WorkflowTask(string name)
     public ErrorHandling? ErrorHandling { get; set; }
     public int? Timeout { get; set; }
     public List<string> Dependencies { get; set; } = new();
+    public string? Output { get; set; } = string.Empty;
 }
