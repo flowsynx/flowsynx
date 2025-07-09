@@ -89,4 +89,21 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    public static IServiceCollection AddEncryptionService(this IServiceCollection services, IConfiguration configuration)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+
+        var encryptionConfiguration = new EncryptionConfiguration();
+        configuration.GetSection("Encryption").Bind(encryptionConfiguration);
+        services.AddSingleton(encryptionConfiguration);
+
+        services.AddSingleton<IEncryptionService>(provider =>
+        {
+            var jsonLocalization = new EncryptionService(encryptionConfiguration.Key);
+            return jsonLocalization;
+        });
+
+        return services;
+    }
 }
