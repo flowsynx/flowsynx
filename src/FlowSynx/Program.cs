@@ -40,6 +40,7 @@ try
            .AddPluginsPath()
            .AddVersion()
            .AddApplication()
+           .AddEncryptionService(config)
            .AddInfrastructure()
            .AddInfrastructurePluginManager(config)
            .AddUserService();
