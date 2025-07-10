@@ -8,9 +8,10 @@ namespace FlowSynx.Endpoints;
 
 public class Audits : EndpointGroupBase
 {
-    public override void Map(WebApplication app)
+    public override void Map(WebApplication app, string rateLimitPolicy)
     {
-        var group = app.MapGroup(this);
+        var group = app.MapGroup(this)
+                       .RequireRateLimiting(rateLimitPolicy);
 
         group.MapGet("", AuditsList)
             .WithName("AuditsList")

@@ -10,9 +10,10 @@ namespace FlowSynx.Endpoints;
 
 public class Workflows : EndpointGroupBase
 {
-    public override void Map(WebApplication app)
+    public override void Map(WebApplication app, string rateLimitPolicy)
     {
-        var group = app.MapGroup(this);
+        var group = app.MapGroup(this)
+                       .RequireRateLimiting(rateLimitPolicy);
 
         #region workflow
         group.MapGet("", GetAllWorkflows)

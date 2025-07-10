@@ -12,6 +12,9 @@ using FlowSynx.Application.Services;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Security;
 using FlowSynx.Application.Localizations;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
+using System.Threading.RateLimiting;
 
 namespace FlowSynx.Extensions;
 
@@ -297,6 +300,26 @@ public static class ServiceCollectionExtensions
 
             Environment.Exit(1);
         }
+
+        return services;
+    }
+
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
+    {
+        var rateLimitingConfiguration = new RateLimitingConfiguration();
+        configuration.GetSection("RateLimiting").Bind(rateLimitingConfiguration);
+        services.AddSingleton(rateLimitingConfiguration);
+
+        services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("Fixed", limiterOptions =>
+            {
+                limiterOptions.Window = TimeSpan.FromSeconds(rateLimitingConfiguration.WindowSeconds);
+                limiterOptions.PermitLimit = rateLimitingConfiguration.PermitLimit;
+                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                limiterOptions.QueueLimit = rateLimitingConfiguration.QueueLimit;
+            });
+        });
 
         return services;
     }

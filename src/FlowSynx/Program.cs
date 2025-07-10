@@ -43,7 +43,8 @@ try
            .AddEncryptionService(config)
            .AddInfrastructure()
            .AddInfrastructurePluginManager(config)
-           .AddUserService();
+           .AddUserService()
+           .AddRateLimiting(config);
 
     if (!builder.Environment.IsDevelopment())
         builder.Services.ParseArguments(args);
@@ -57,6 +58,8 @@ try
     builder.ConfigHttpServer();
 
     var app = builder.Build();
+
+    app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())
     {
@@ -76,7 +79,7 @@ try
        .UseApplicationDataSeeder()
        .UseHealthCheck();
 
-    app.MapEndpoints();
+    app.MapEndpoints("Fixed");
 
     await app.RunAsync();
 }
