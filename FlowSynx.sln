@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Plugins.LocalFileSystem", "plugins\FlowSynx.Plugins.LocalFileSystem\FlowSynx.Plugins.LocalFileSystem.csproj", "{EE1A893C-E84D-4D7D-93C8-0646EC729685}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Connectors", "Connectors", "{2055D7A4-DACB-49D7-988F-E3424935388A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{2055D7A4-DACB-49D7-988F-E3424935388A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Domain", "src\FlowSynx.Domain\FlowSynx.Domain.csproj", "{445387B6-23EC-4C33-8423-AA5B669779DC}"
 EndProject
