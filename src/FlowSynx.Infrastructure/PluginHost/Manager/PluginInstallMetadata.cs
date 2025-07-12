@@ -17,4 +17,6 @@ public class PluginInstallMetadata
     public IEnumerable<string> Versions { get; set; } = new List<string>();
     public IEnumerable<string> Owners { get; set; } = new List<string>();
     public string? Checksum { get; set; }
+    public required string MinimumFlowSynxVersion { get; set; }
+    public string? TargetFlowSynxVersion { get; set; }
 }

@@ -96,7 +96,7 @@ public class PluginDownloader : IPluginDownloader
 
     public bool ValidateChecksum(
         byte[] data, 
-        string expectedChecksum)
+        string? expectedChecksum)
     {
         var computedChecksum = ComputeChecksum(data);
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);

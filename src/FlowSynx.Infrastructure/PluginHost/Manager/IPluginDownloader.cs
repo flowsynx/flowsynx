@@ -11,5 +11,5 @@ public interface IPluginDownloader
     Task ExtractPluginAsync(string pluginDirectory, byte[] data, 
         CancellationToken cancellationToken);
 
-    bool ValidateChecksum(byte[] data, string expectedChecksum);
+    bool ValidateChecksum(byte[] data, string? expectedChecksum);
 }

@@ -24,6 +24,7 @@ public class PluginManager : IPluginManager
     private readonly IPluginDownloader _pluginDownloader;
     private readonly IPluginCacheService _pluginCacheService;
     private readonly ILocalization _localization;
+    private readonly IVersion _version;
     private const string PluginSearchPattern = "*.dll";
 
     public PluginManager(
@@ -34,7 +35,8 @@ public class PluginManager : IPluginManager
         IPluginService pluginService,
         IPluginDownloader pluginDownloader,
         IPluginCacheService pluginCacheService,
-        ILocalization localization)
+        ILocalization localization,
+        IVersion version)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(pluginRegistryConfiguration);
@@ -44,6 +46,7 @@ public class PluginManager : IPluginManager
         ArgumentNullException.ThrowIfNull(pluginDownloader);
         ArgumentNullException.ThrowIfNull(pluginCacheService);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(version);
 
         _logger = logger;
         _pluginRegistryConfiguration = pluginRegistryConfiguration;
@@ -53,6 +56,7 @@ public class PluginManager : IPluginManager
         _pluginDownloader = pluginDownloader;
         _pluginCacheService = pluginCacheService;
         _localization = localization;
+        _version = version;
     }
 
     public async Task InstallAsync(string pluginType, string pluginVersion, CancellationToken cancellationToken)
@@ -66,6 +70,13 @@ public class PluginManager : IPluginManager
 
         var pluginBytes = ExtractPluginFile(pluginPackData);
         ValidatePluginChecksum(pluginBytes, pluginMetadata.Checksum);
+
+        var isPluginCompatible = IsPluginCompatible(pluginMetadata, _version.Version, out var warningMessage);
+        if (!isPluginCompatible) 
+            throw new FlowSynxException((int)ErrorCode.PluginCompatibility, warningMessage);
+
+        if (!string.IsNullOrEmpty(warningMessage))
+            _logger.LogWarning(warningMessage);
 
         string pluginDirectory = GetPluginLocalDirectory(pluginType, pluginVersion);
         await _pluginDownloader.ExtractPluginAsync(pluginDirectory, pluginBytes, cancellationToken);
@@ -145,13 +156,47 @@ public class PluginManager : IPluginManager
         throw new FlowSynxException(errorMessage);
     }
 
-    private void ValidatePluginChecksum(byte[] pluginData, string checksum)
+    private void ValidatePluginChecksum(byte[] pluginData, string? checksum)
     {
         if (_pluginDownloader.ValidateChecksum(pluginData, checksum))
             return;
 
         throw new FlowSynxException((int)ErrorCode.PluginChecksumValidationFailed, 
             _localization.Get("PluginManager_Install_ChecksumValidationFailed"));
+    }
+
+    private bool IsPluginCompatible(PluginInstallMetadata pluginMetadata, Version hostVersion, out string warning)
+    {
+        warning = string.Empty;
+
+        if (!Version.TryParse(pluginMetadata.MinimumFlowSynxVersion, out var minVersion))
+        {
+            warning = _localization.Get("Plugin_Invalid_MinimumFlowSynxVersion", pluginMetadata.MinimumFlowSynxVersion);
+            return false;
+        }
+
+        if (hostVersion < minVersion)
+        {
+            warning = _localization.Get("Plugin_HostVersion_IsOld", hostVersion, pluginMetadata.MinimumFlowSynxVersion);
+            return false;
+        }
+
+        if (!string.IsNullOrEmpty(pluginMetadata.TargetFlowSynxVersion))
+        {
+            if (!Version.TryParse(pluginMetadata.TargetFlowSynxVersion, out var targetVersion))
+            {
+                warning = _localization.Get("Plugin_Invalid_TargetFlowSynxVersion", pluginMetadata.TargetFlowSynxVersion);
+                return false;
+            }
+
+            if (hostVersion > targetVersion)
+            {
+                warning = _localization.Get("Plugin_HostVersion_IsNewer", pluginMetadata.Type, pluginMetadata.TargetFlowSynxVersion, hostVersion);
+                return true;
+            }
+        }
+
+        return true; // Fully compatible
     }
 
     private string GetPluginLocalDirectory(string pluginType, string pluginVersion)
