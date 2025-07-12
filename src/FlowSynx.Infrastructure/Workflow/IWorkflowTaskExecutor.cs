@@ -6,9 +6,7 @@ namespace FlowSynx.Infrastructure.Workflow;
 public interface IWorkflowTaskExecutor
 {
     Task<object?> ExecuteAsync(
-        string userId, 
-        Guid workflowId,
-        Guid workflowExecutionId,
+        WorkflowExecutionContext executionContext,
         WorkflowTask task, 
         IExpressionParser parser,
         CancellationToken globalCancellationToken,

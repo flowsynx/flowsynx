@@ -43,15 +43,17 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     }
 
     public async Task<object?> ExecuteAsync(
-        string userId,
-        Guid workflowId,
-        Guid workflowExecutionId,
+        WorkflowExecutionContext executionContext,
         WorkflowTask task,
         IExpressionParser parser,
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
     {
-        var taskExecution = await _workflowTaskExecutionService.Get(workflowId, workflowExecutionId, task.Name, globalCancellationToken);
+        var taskExecution = await _workflowTaskExecutionService.Get(
+            executionContext.WorkflowId, 
+            executionContext.WorkflowExecutionId, 
+            task.Name, 
+            globalCancellationToken);
 
         if (taskExecution == null)
         {
@@ -68,7 +70,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             _logger.LogInformation("Workflow task '{TaskName}' started.", task.Name);
 
             var context = new ErrorHandlingContext { TaskName = task.Name, RetryCount = 0 };
-            return await ExecuteTaskAsync(userId, task, taskExecution, parser, context, 
+            return await ExecuteTaskAsync(executionContext.UserId, task, taskExecution, parser, context, 
                 globalCancellationToken, taskCancellationToken);
         }
     }

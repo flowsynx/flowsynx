@@ -77,6 +77,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             var taskMap = definition.Tasks.ToDictionary(t => t.Name);
             var pending = new HashSet<string>(taskMap.Keys);
 
+            var executionContext = new WorkflowExecutionContext(userId, workflowId, executionEntity.Id);
             var workflowExecutionLogScopeContext = CreateWorkflowExecutionLogScope(executionEntity.Id);
             using (_logger.BeginScope(workflowExecutionLogScopeContext))
             {
@@ -89,7 +90,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                             _localization.Get("Workflow_Executor_FailedDependenciesTask"));
 
                     var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary());
-                    var errors = await ExecuteTaskBatchAsync(userId, workflowId, executionEntity.Id,
+                    var errors = await ExecuteTaskBatchAsync(executionContext,
                         readyTasks.Select(t => taskMap[t]), parser, definition.Configuration, cancellationToken, registeredToken);
 
                     if (errors.Any())
@@ -109,14 +110,14 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private async Task<WorkflowEntity> GetWorkflowAsync(
-        string userId, 
-        Guid workflowId, 
+        string userId,
+        Guid workflowId,
         CancellationToken cancellationToken)
     {
         try
         {
             var entity = await _workflowService.Get(userId, workflowId, cancellationToken);
-            return entity 
+            return entity
                 ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound,
                 _localization.Get("Workflow_Orchestrator_WorkflowNotFound", workflowId));
         }
@@ -138,8 +139,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private async Task<WorkflowExecutionEntity> StartWorkflowExecutionAsync(
-        string userId, 
-        Guid workflowId, 
+        string userId,
+        Guid workflowId,
         CancellationToken cancellationToken)
     {
         var execution = new WorkflowExecutionEntity
@@ -168,8 +169,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private async Task InitializeTaskExecutionsAsync(
-        Guid workflowId, 
-        Guid executionId, 
+        Guid workflowId,
+        Guid executionId,
         IEnumerable<WorkflowTask> tasks,
         CancellationToken cancellationToken)
     {
@@ -191,9 +192,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private async Task<List<Exception>> ExecuteTaskBatchAsync(
-        string userId,
-        Guid workflowId,
-        Guid executionId,
+        WorkflowExecutionContext executionContext,
         IEnumerable<WorkflowTask> tasks,
         IExpressionParser parser,
         WorkflowConfiguration config,
@@ -202,8 +201,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     {
         var errors = new ConcurrentBag<Exception>();
         var semaphore = _semaphoreFactory.Create(config.DegreeOfParallelism ?? 3);
-        using var globalCts = new CancellationTokenSource(config.Timeout.HasValue 
-            ? TimeSpan.FromMilliseconds(config.Timeout.Value) 
+        using var globalCts = new CancellationTokenSource(config.Timeout.HasValue
+            ? TimeSpan.FromMilliseconds(config.Timeout.Value)
             : Timeout.InfiniteTimeSpan);
 
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, globalCts.Token);
@@ -213,7 +212,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             await semaphore.WaitAsync(linkedCts.Token);
             try
             {
-                var result = await _taskExecutor.ExecuteAsync(userId, workflowId, executionId, task, 
+                var result = await _taskExecutor.ExecuteAsync(executionContext, task,
                     parser, globalCancellationToken, linkedCts.Token);
                 _taskOutputs[task.Name] = result;
             }
@@ -239,7 +238,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private async Task MarkWorkflowAsFailedAsync(
-        WorkflowExecutionEntity execution, 
+        WorkflowExecutionEntity execution,
         CancellationToken cancellationToken)
     {
         execution.ExecutionEnd = _systemClock.UtcNow;
@@ -248,7 +247,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private async Task MarkWorkflowAsCompletedAsync(
-        WorkflowExecutionEntity execution, 
+        WorkflowExecutionEntity execution,
         CancellationToken cancellationToken)
     {
         execution.ExecutionEnd = _systemClock.UtcNow;
