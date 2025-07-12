@@ -30,7 +30,7 @@ public static class ApplicationBuilderExtensions
             throw new ArgumentException(Localization.Get("UseCustomHeadersVersionServiceCouldNotBeInitialized"));
 
         var headers = new CustomHeadersToAddAndRemove();
-        headers.HeadersToAdd.Add("flowsynx-version", versionService.Version);
+        headers.HeadersToAdd.Add("flowsynx-version", versionService.Version.ToString());
 
         app.UseMiddleware<CustomHeadersMiddleware>(headers);
         return app;

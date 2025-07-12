@@ -2,5 +2,5 @@
 
 public interface IVersion
 {
-    string Version { get; }
+    Version Version { get; }
 }

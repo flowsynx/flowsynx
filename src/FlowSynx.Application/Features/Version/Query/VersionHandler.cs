@@ -25,7 +25,7 @@ internal class VersionHandler : IRequestHandler<VersionRequest, Result<VersionRe
         {
             var response = new VersionResponse()
             {
-                Version = _version.Version
+                Version = _version.Version.ToString()
             };
 
             return await Result<VersionResponse>.SuccessAsync(response);

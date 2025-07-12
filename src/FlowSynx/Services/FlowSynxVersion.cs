@@ -15,10 +15,10 @@ public class FlowSynxVersion : IVersion
         _logger = logger;
     }
 
-    public string Version => GetApplicationVersion();
+    public Version Version => GetApplicationVersion();
 
     #region Private function
-    private string GetApplicationVersion()
+    private Version GetApplicationVersion()
     {
         try
         {
@@ -26,7 +26,19 @@ public class FlowSynxVersion : IVersion
                 .GetExecutingAssembly()
                 .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false);
 
-            return attributes.Length == 0 ? "" : ((AssemblyInformationalVersionAttribute)attributes[0]).InformationalVersion;
+            var versionString = attributes.Length == 0
+                ? "0.0.0.0" // Default if no version is found
+                : ((AssemblyInformationalVersionAttribute)attributes[0]).InformationalVersion;
+
+            // Parse the string to a Version object
+            if (Version.TryParse(versionString, out var version))
+            {
+                return version;
+            }
+
+            // Fallback if parsing fails
+            _logger.LogWarning("Failed to parse application version. Using default 0.0.0.0.");
+            return new Version(0, 0, 0, 0);
         }
         catch (Exception ex)
         {
