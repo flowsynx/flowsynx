@@ -61,15 +61,6 @@ namespace FlowSynx.Plugins.LocalFileSystem {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Connector for local file system management. Local paths are considered as normal file system paths, e.g. /path/to/wherever.
-        /// </summary>
-        internal static string ConnectorDescription {
-            get {
-                return ResourceManager.GetString("ConnectorDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Copy operation for file &apos;{0} could not proceed!.
         /// </summary>
         internal static string CopyOperationCouldNotBeProceed {
@@ -147,6 +138,15 @@ namespace FlowSynx.Plugins.LocalFileSystem {
         internal static string OperationIsNotSupported {
             get {
                 return ResourceManager.GetString("OperationIsNotSupported", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Reads and writes files to local or mounted file systems. Supports directory traversal, file watching, and bulk file operations..
+        /// </summary>
+        internal static string PluginDescription {
+            get {
+                return ResourceManager.GetString("PluginDescription", resourceCulture);
             }
         }
         

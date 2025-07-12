@@ -14,13 +14,14 @@ public class LocalFileSystemPlugin : IPlugin
     {
         Id = Guid.Parse("f6304870-0294-453e-9598-a82167ace653"),
         Name = "LocalFileSystem",
-        Description = Resources.ConnectorDescription,
-        Version = new PluginVersion(1, 0, 0),
-        Namespace = PluginNamespace.Connectors,
+        Description = Resources.PluginDescription,
+        Version = new Version(1, 1, 1),
+        Category = PluginCategory.Storage,
         CompanyName = "FlowSynx",
         Authors = new List<string> { "FlowSynx" },
         Copyright = "© FlowSynx. All rights reserved.",
-        Tags = new List<string>() { "FlowSynx", "Local", "LocalFileSystem" }
+        Tags = new List<string>() { "FlowSynx", "Local", "LocalFileSystem" },
+        MinimumFlowSynxVersion = new Version(1, 1, 0),
     };
 
     public PluginSpecifications? Specifications { get; set; }
@@ -36,39 +37,32 @@ public class LocalFileSystemPlugin : IPlugin
 
     public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         if (!_isInitialized)
             throw new InvalidOperationException($"Plugin '{Metadata.Name}' v{Metadata.Version} is not initialized.");
 
         var operationParameter = parameters.ToObject<OperationParameter>();
         var operation = operationParameter.Operation;
 
-        cancellationToken.ThrowIfCancellationRequested();
-
-        switch (operation.ToLower())
+        if (OperationMap.TryGetValue(operation, out var handler))
         {
-            case "create":
-                await _manager.Create(parameters, cancellationToken).ConfigureAwait(false);
-                return null;
-            case "delete":
-                await _manager.Delete(parameters, cancellationToken).ConfigureAwait(false);
-                return null;
-            case "exist":
-                return await _manager.Exist(parameters, cancellationToken).ConfigureAwait(false);
-            case "list":
-                return await _manager.List(parameters, cancellationToken).ConfigureAwait(false);
-            case "purge":
-                await _manager.Purge(parameters, cancellationToken).ConfigureAwait(false);
-                return null;
-            case "read":
-                return await _manager.Read(parameters, cancellationToken).ConfigureAwait(false);
-            case "rename":
-                await _manager.Rename(parameters, cancellationToken).ConfigureAwait(false);
-                return null;
-            case "write":
-                await _manager.Write(parameters, cancellationToken).ConfigureAwait(false);
-                return null;
-            default:
-                throw new NotSupportedException(string.Format(Resources.OperationIsNotSupported, operation));
+            return handler(parameters, cancellationToken);
         }
+
+        throw new NotSupportedException(string.Format(Resources.OperationIsNotSupported, operation));
     }
+
+    private Dictionary<string, Func<PluginParameters, CancellationToken, Task<object?>>> OperationMap => new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["create"] = async (parameters, cancellationToken) => { await _manager.Create(parameters, cancellationToken); return null; },
+        ["delete"] = async (parameters, cancellationToken) => { await _manager.Delete(parameters, cancellationToken); return null; },
+        ["exist"] = async (parameters, cancellationToken) => await _manager.Exist(parameters, cancellationToken),
+        ["list"] = async (parameters, cancellationToken) => await _manager.List(parameters, cancellationToken),
+        ["purge"] = async (parameters, cancellationToken) => { await _manager.Purge(parameters, cancellationToken); return null; },
+        ["read"] = async (parameters, cancellationToken) => await _manager.Read(parameters, cancellationToken),
+        ["write"] = async (parameters, cancellationToken) => { await _manager.Write(parameters, cancellationToken); return null; },
+    };
+
+    public IReadOnlyCollection<string> SupportedOperations => OperationMap.Keys;
 }
