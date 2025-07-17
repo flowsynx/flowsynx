@@ -35,7 +35,7 @@ public class LocalFileSystemPlugin : IPlugin
         return Task.CompletedTask;
     }
 
-    public async Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
+    public Task<object?> ExecuteAsync(PluginParameters parameters, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
