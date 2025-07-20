@@ -1,17 +1,17 @@
-﻿namespace FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
+﻿using System.Collections.Concurrent;
+
+namespace FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 
 public interface IResultStorageProvider
 {
-    string Type { get; }
+    string Name { get; }
 
     Task<string> SaveResultAsync(
         WorkflowExecutionContext executionContext,
-        Guid workflowTaskId,
-        object result,
+        ConcurrentDictionary<string, object?> results,
         CancellationToken cancellationToken = default);
 
-    Task<T?> LoadResultAsync<T>(
+    Task<ConcurrentDictionary<string, object?>?> LoadResultAsync(
         WorkflowExecutionContext executionContext,
-        Guid workflowTaskId,
         CancellationToken cancellationToken = default);
 }

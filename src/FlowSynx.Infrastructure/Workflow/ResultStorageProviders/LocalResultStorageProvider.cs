@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Serialization;
 using Microsoft.Extensions.Logging;
+using System.Collections.Concurrent;
 
 namespace FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 
@@ -20,7 +21,7 @@ public class LocalResultStorageProvider : IResultStorageProvider, IConfigurableR
         _jsonDeserializer = jsonDeserializer;
     }
 
-    public string Type => "Local";
+    public string Name => "Local";
 
     public void Configure(Dictionary<string, string> configuration, long maxLimitSize)
     {
@@ -34,19 +35,10 @@ public class LocalResultStorageProvider : IResultStorageProvider, IConfigurableR
 
     public async Task<string> SaveResultAsync(
         WorkflowExecutionContext executionContext,
-        Guid workflowTaskId,
-        object result,
+        ConcurrentDictionary<string, object?> results,
         CancellationToken cancellationToken = default)
     {
-        var directoryPath = Path.Combine(_basePath,
-            executionContext.UserId,
-            executionContext.WorkflowId.ToString(),
-            executionContext.WorkflowExecutionId.ToString());
-
-        if (!Directory.Exists(directoryPath))
-            Directory.CreateDirectory(directoryPath);
-
-        var json = _jsonSerializer.Serialize(result);
+        var json = _jsonSerializer.Serialize(results);
 
         // Check size
         var sizeInBytes = System.Text.Encoding.UTF8.GetByteCount(json);
@@ -56,24 +48,29 @@ public class LocalResultStorageProvider : IResultStorageProvider, IConfigurableR
             throw new InvalidOperationException($"Result size exceeds maximum allowed size of {_maxLimitSize} bytes.");
         }
 
-        var filePath = Path.Combine(directoryPath, $"{workflowTaskId}.json");
+        var directoryPath = Path.Combine(_basePath,
+            executionContext.UserId,
+            executionContext.WorkflowId.ToString());
+
+        if (!Directory.Exists(directoryPath))
+            Directory.CreateDirectory(directoryPath);
+
+        var filePath = Path.Combine(directoryPath, $"{executionContext.WorkflowExecutionId}.json");
         await File.WriteAllTextAsync(filePath, json, cancellationToken);
         return filePath;
     }
 
-    public async Task<T?> LoadResultAsync<T>(
+    public async Task<ConcurrentDictionary<string, object?>?> LoadResultAsync(
         WorkflowExecutionContext executionContext,
-        Guid workflowTaskId,
         CancellationToken cancellationToken = default)
     {
         var directoryPath = Path.Combine(_basePath,
             executionContext.UserId,
-            executionContext.WorkflowId.ToString(),
-            executionContext.WorkflowExecutionId.ToString());
+            executionContext.WorkflowId.ToString());
 
-        var filePath = Path.Combine(directoryPath, $"{workflowTaskId}.json");
+        var filePath = Path.Combine(directoryPath, $"{executionContext.WorkflowExecutionId}.json");
 
         var json = await File.ReadAllTextAsync(filePath, cancellationToken);
-        return _jsonDeserializer.Deserialize<T>(json);
+        return _jsonDeserializer.Deserialize<ConcurrentDictionary<string, object?>> (json);
     }
 }
