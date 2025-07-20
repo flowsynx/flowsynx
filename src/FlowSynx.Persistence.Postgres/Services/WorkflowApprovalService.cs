@@ -1,0 +1,81 @@
+﻿using Microsoft.EntityFrameworkCore;
+using FlowSynx.Persistence.Postgres.Contexts;
+using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+using Microsoft.Extensions.Logging;
+using FlowSynx.Domain.Workflow;
+
+namespace FlowSynx.Persistence.Postgres.Services;
+
+public class WorkflowApprovalService : IWorkflowApprovalService
+{
+    private readonly IDbContextFactory<ApplicationContext> _appContextFactory;
+    private readonly ILogger<WorkflowTaskExecutionService> _logger;
+
+    public WorkflowApprovalService(IDbContextFactory<ApplicationContext> appContextFactory,
+        ILogger<WorkflowTaskExecutionService> logger)
+    {
+        ArgumentNullException.ThrowIfNull(appContextFactory);
+        ArgumentNullException.ThrowIfNull(logger);
+        _appContextFactory = appContextFactory;
+        _logger = logger;
+    }
+
+    public async Task<WorkflowApprovalEntity?> GetByExecutionIdAsync(Guid executionId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.WorkflowApprovals
+                .FirstOrDefaultAsync(x => x.ExecutionId == executionId, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetTaskExecutionItem, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task AddAsync(WorkflowApprovalEntity approvalEntity, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            await context.WorkflowApprovals
+                .AddAsync(approvalEntity, cancellationToken)
+                .ConfigureAwait(false);
+
+            await context
+                .SaveChangesAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTaskExecutionAdd, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task UpdateAsync(WorkflowApprovalEntity approvalEntity, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            context.Entry(approvalEntity).State = EntityState.Detached;
+            context.WorkflowApprovals.Update(approvalEntity);
+
+            await context
+                .SaveChangesAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTaskExecutionUpdate, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+}

@@ -7,6 +7,7 @@ public class WorkflowExecutionEntity : AuditableEntity<Guid>, ISoftDeletable
     public WorkflowExecutionStatus Status { get; set; } = WorkflowExecutionStatus.Pending;
     public DateTime ExecutionStart { get; set; }
     public DateTime? ExecutionEnd { get; set; }
+    public string? PausedAtTask { get; set; }
     public bool IsDeleted { get; set; } = false;
 
     public WorkflowEntity? Workflow { get; set; }

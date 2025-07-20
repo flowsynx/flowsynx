@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()
             .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()
             .AddScoped<ITransactionService, TransactionService>()
+            .AddScoped<IWorkflowApprovalService, WorkflowApprovalService>()
             .AddDbContextFactory<ApplicationContext>(options =>
             {
                 options.UseNpgsql(connectionString);
