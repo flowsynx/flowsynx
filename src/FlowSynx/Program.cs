@@ -44,7 +44,8 @@ try
            .AddInfrastructure()
            .AddInfrastructurePluginManager(config)
            .AddUserService()
-           .AddRateLimiting(config);
+           .AddRateLimiting(config)
+           .AddResultStorageService(config);
 
     if (!builder.Environment.IsDevelopment())
         builder.Services.ParseArguments(args);

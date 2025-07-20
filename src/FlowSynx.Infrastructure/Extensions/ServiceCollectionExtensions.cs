@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Infrastructure.Localizations;
 using Microsoft.Extensions.Configuration;
 using FlowSynx.Application.Configuration;
+using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -103,6 +104,20 @@ public static class ServiceCollectionExtensions
             var jsonLocalization = new EncryptionService(encryptionConfiguration.Key);
             return jsonLocalization;
         });
+
+        return services;
+    }
+
+    public static IServiceCollection AddResultStorageService(this IServiceCollection services, IConfiguration configuration)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+
+        var resultStorageConfiguration = new ResultStorageConfiguration();
+        configuration.GetSection("ResultStorage").Bind(resultStorageConfiguration);
+        services.AddSingleton(resultStorageConfiguration);
+
+        services.AddScoped<IResultStorageProvider, LocalResultStorageProvider>();
+        services.AddSingleton<ResultStorageFactory>();
 
         return services;
     }
