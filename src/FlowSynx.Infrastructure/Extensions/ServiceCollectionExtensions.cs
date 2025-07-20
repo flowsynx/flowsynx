@@ -18,6 +18,7 @@ using FlowSynx.Infrastructure.Localizations;
 using Microsoft.Extensions.Configuration;
 using FlowSynx.Application.Configuration;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
+using FlowSynx.Infrastructure.Workflow.ManualApprovals;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -49,6 +50,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowTaskExecutor, WorkflowTaskExecutor>()
             .AddSingleton<IErrorHandlingStrategyFactory, ErrorHandlingStrategyFactory>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
+            .AddScoped<IManualApprovalService, ManualApprovalService>()
             .AddScoped<WorkflowTimeBasedTriggerProcessor>();
 
         return services;
@@ -111,13 +113,18 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddResultStorageService(this IServiceCollection services, IConfiguration configuration)
     {
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<StorageConfiguration>>();
 
-        var resultStorageConfiguration = new ResultStorageConfiguration();
-        configuration.GetSection("ResultStorage").Bind(resultStorageConfiguration);
-        services.AddSingleton(resultStorageConfiguration);
+        logger.LogInformation("Initializing storage provider");
 
-        services.AddScoped<IResultStorageProvider, LocalResultStorageProvider>();
-        services.AddSingleton<ResultStorageFactory>();
+        var storageConfiguration = new StorageConfiguration();
+        configuration.GetSection("Storage").Bind(storageConfiguration);
+        services.AddSingleton(storageConfiguration);
+
+        storageConfiguration.ResultStorage.ValidateResultStorage(logger);
+
+        services.AddSingleton<IResultStorageProvider, LocalResultStorageProvider>();
+        services.AddSingleton<IResultStorageFactory, ResultStorageFactory>();
 
         return services;
     }

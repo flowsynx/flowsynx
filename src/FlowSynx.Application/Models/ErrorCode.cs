@@ -136,6 +136,9 @@ public enum ErrorCode
     WorkflowExecutionNotFound                       = 2436,
     WorkflowExecutionTaskNotFound                   = 2437,
     WorkflowTriggerNotFound                         = 2438,
+    WorkflowNotPaused                               = 2439,
+    WorkflowApprovalNotFound                        = 2440,
+    WorkflowAlreadyApprovedOrRejected               = 2441,
     #endregion
 
     #region ExpressionParser
