@@ -67,6 +67,21 @@ public class Workflows : EndpointGroupBase
             .WithName("GetExecutionLogs")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
+
+        group.MapGet("/{workflowId}/executions/{executionId}/approvals", GetExecutionApprovals)
+            .WithName("GetExecutionApprovals")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
+
+        //group.MapPost("/{workflowId}/executions/{executionId}/approvals/approve", CancelExecution)
+        //    .WithName("CancelExecution")
+        //    .WithOpenApi()
+        //    .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
+
+        //group.MapPost("/{workflowId}/executions/{executionId}/approvals/reject", CancelExecution)
+        //    .WithName("CancelExecution")
+        //    .WithOpenApi()
+        //    .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
         #endregion
 
         group.MapGet("/{workflowId}/executions/{executionId}/tasks/{taskId}", GetTaskExecutionById)
@@ -183,6 +198,13 @@ public class Workflows : EndpointGroupBase
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowExecutionLogs(workflowId, executionId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> GetExecutionApprovals(string workflowId, string executionId,
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.GetWorkflowPendingApprovals(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
