@@ -39,8 +39,15 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            await _workflowOrchestrator.ExecuteWorkflowAsync(_currentUserService.UserId, workflowId, cancellationToken);
+            var result = await _workflowOrchestrator.ExecuteWorkflowAsync(
+                _currentUserService.UserId, 
+                workflowId, 
+                cancellationToken);
+            if (result == Domain.Workflow.WorkflowExecutionStatus.Paused)
+                return await Result<Unit>.SuccessAsync(_localization.Get("Feature_WorkflowExecution_PausedForManualApproval", workflowId));
+
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_WorkflowExecution_ExecutedSuccessfully", workflowId));
+
         }
         catch (FlowSynxException ex)
         {
