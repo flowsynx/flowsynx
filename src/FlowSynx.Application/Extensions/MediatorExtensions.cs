@@ -31,6 +31,7 @@ using FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
 
 namespace FlowSynx.Application.Extensions;
 
@@ -229,6 +230,20 @@ public static class MediatorExtensions
         {
             WorkflowId = workflowId,
             TriggerId = triggerId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<IEnumerable<WorkflowExecutionApprovalsResponse>>> GetWorkflowPendingApprovals(
+        this IMediator mediator,
+        string workflowId,
+        string executionId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new WorkflowExecutionApprovalsRequest
+        {
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId
         },
         cancellationToken);
     }
