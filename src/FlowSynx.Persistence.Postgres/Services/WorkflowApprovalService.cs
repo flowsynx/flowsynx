@@ -21,6 +21,34 @@ public class WorkflowApprovalService : IWorkflowApprovalService
         _logger = logger;
     }
 
+    public async Task<IReadOnlyCollection<WorkflowApprovalEntity>> GetPendingApprovalsAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            var result =  await context.WorkflowApprovals
+                .Where(x => 
+                    x.UserId == userId && 
+                    x.WorkflowId == workflowId && 
+                    x.ExecutionId == executionId && 
+                    x.Status == WorkflowApprovalStatus.Pending)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetTaskExecutionItem, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
     public async Task<WorkflowApprovalEntity?> GetByExecutionIdAsync(Guid executionId, CancellationToken cancellationToken)
     {
         try
