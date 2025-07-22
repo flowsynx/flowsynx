@@ -11,6 +11,7 @@ public class LocalResultStorageProvider : IResultStorageProvider, IConfigurableR
     private readonly IJsonSerializer _jsonSerializer;
     private readonly IJsonDeserializer _jsonDeserializer;
     private long _maxLimitSize;
+
     public LocalResultStorageProvider(
         ILogger<LocalResultStorageProvider> logger,
         IJsonSerializer jsonSerializer,
@@ -26,11 +27,7 @@ public class LocalResultStorageProvider : IResultStorageProvider, IConfigurableR
     public void Configure(Dictionary<string, string> configuration, long maxLimitSize)
     {
         _basePath = configuration.GetValueOrDefault("BasePath", "workflow-results");
-        if (configuration.TryGetValue("MaxSizeInMB", out var maxSizeValue) &&
-            long.TryParse(maxSizeValue, out var maxSizeMB))
-        {
-            _maxLimitSize = maxSizeMB;
-        }
+        _maxLimitSize = maxLimitSize;
     }
 
     public async Task<string> SaveResultAsync(
