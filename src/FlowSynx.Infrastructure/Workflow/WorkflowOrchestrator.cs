@@ -69,7 +69,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         _localization = localization ?? throw new ArgumentNullException(nameof(localization)); ;
     }
 
-    public async Task ExecuteWorkflowAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
+    public async Task<WorkflowExecutionStatus> ExecuteWorkflowAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
     {
         var workflowLogScopeContext = CreateWorkflowLogScope(workflowId);
         using (_logger.BeginScope(workflowLogScopeContext))
@@ -109,7 +109,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
                             // Pause the workflow and request approval
                             await PauseWorkflowForApprovalAsync(userId, executionEntity, task, cancellationToken);
-                            return; // Exit and wait for resume
+                            return WorkflowExecutionStatus.Paused;
                         }
 
                         // Otherwise execute normally
@@ -131,6 +131,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
                 await MarkWorkflowAsCompletedAsync(executionEntity, cancellationToken);
                 _workflowCancellationRegistry.Remove(userId, workflowId, executionEntity.Id);
+                return WorkflowExecutionStatus.Completed;
             }
         }
     }
@@ -320,7 +321,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             execution.WorkflowId, task.Name);
     }
 
-    public async Task ResumeWorkflowAsync(string userId, Guid executionId, Guid workflowId, CancellationToken cancellationToken)
+    public async Task<WorkflowExecutionStatus> ResumeWorkflowAsync(string userId, Guid executionId, Guid workflowId, CancellationToken cancellationToken)
     {
         var execution = await _workflowExecutionService.Get(userId, workflowId, executionId, cancellationToken);
         if (execution == null || execution.Status != WorkflowExecutionStatus.Paused)
@@ -331,7 +332,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         var definition = DeserializeAndValidate(workflow.Definition);
         var taskMap = definition.Tasks.ToDictionary(t => t.Name);
 
-        // Restore previous task outputs
         var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
         await RestoreTaskResultsAsync(executionContext, cancellationToken);
 
@@ -340,7 +340,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         _logger.LogInformation("Resuming workflow '{WorkflowId}' from task '{TaskName}'",
             execution.WorkflowId, execution.PausedAtTask);
 
-        await ExecuteWorkflowAsync(execution.UserId, execution.WorkflowId, cancellationToken);
+        return await ExecuteWorkflowAsync(execution.UserId, execution.WorkflowId, cancellationToken);
     }
 
     private async Task SaveTaskResultAsync(

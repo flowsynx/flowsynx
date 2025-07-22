@@ -1,7 +1,17 @@
-﻿namespace FlowSynx.Application.Workflow;
+﻿using FlowSynx.Domain.Workflow;
+
+namespace FlowSynx.Application.Workflow;
 
 public interface IWorkflowOrchestrator
 {
-    Task ExecuteWorkflowAsync(string userId, Guid workflowId, CancellationToken cancellationToken);
-    Task ResumeWorkflowAsync(string userId, Guid executionId, Guid workflowId, CancellationToken cancellationToken);
+    Task<WorkflowExecutionStatus> ExecuteWorkflowAsync(
+        string userId, 
+        Guid workflowId, 
+        CancellationToken cancellationToken);
+
+    Task<WorkflowExecutionStatus> ResumeWorkflowAsync(
+        string userId, 
+        Guid executionId, 
+        Guid workflowId, 
+        CancellationToken cancellationToken);
 }
