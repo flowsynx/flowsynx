@@ -49,13 +49,18 @@ public class WorkflowApprovalService : IWorkflowApprovalService
         }
     }
 
-    public async Task<WorkflowApprovalEntity?> GetByExecutionIdAsync(Guid executionId, CancellationToken cancellationToken)
+    public async Task<WorkflowApprovalEntity?> GetAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        Guid approvalId,
+        CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowApprovals
-                .FirstOrDefaultAsync(x => x.ExecutionId == executionId, cancellationToken)
+                .FirstOrDefaultAsync(x => x.WorkflowId == workflowId && x.ExecutionId == executionId && x.UserId == userId, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -82,6 +87,33 @@ public class WorkflowApprovalService : IWorkflowApprovalService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTaskExecutionAdd, ex.Message);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task<WorkflowApprovalEntity?> GetByTaskNameAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        string taskName,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.WorkflowApprovals
+                .FirstOrDefaultAsync(x => 
+                    x.WorkflowId == workflowId && 
+                    x.ExecutionId == executionId && 
+                    x.UserId == userId && 
+                    x.TaskName.ToLower() == taskName.ToLower(), 
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetTaskExecutionItem, ex.Message);
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }

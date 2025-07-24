@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Domain.Workflow;
 
-namespace FlowSynx.Infrastructure.Workflow.ManualApprovals;
+namespace FlowSynx.Application.Workflow;
 
 public interface IManualApprovalService
 {
@@ -11,16 +11,23 @@ public interface IManualApprovalService
         CancellationToken cancellationToken);
 
     Task ApproveAsync(
-        Guid executionId, 
-        string approver, 
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        Guid approvalId,
         CancellationToken cancellationToken);
 
     Task RejectAsync(
-        Guid executionId, 
-        string approver, 
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        Guid approvalId,
         CancellationToken cancellationToken);
 
     Task<WorkflowApprovalStatus> GetApprovalStatusAsync(
-        Guid executionId, 
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        string taskName,
         CancellationToken cancellationToken);
 }

@@ -43,6 +43,7 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
                 _currentUserService.UserId, 
                 workflowId, 
                 cancellationToken);
+
             if (result == Domain.Workflow.WorkflowExecutionStatus.Paused)
                 return await Result<Unit>.SuccessAsync(_localization.Get("Feature_WorkflowExecution_PausedForManualApproval", workflowId));
 

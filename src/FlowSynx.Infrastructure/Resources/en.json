@@ -65,5 +65,6 @@
   "WorkflowValidator_TaskHasNegativeFactor": "Task '{0}' has negative Factor: '{1}'.",
   "WorkflowValidator_TaskHasNegativeInitialDelay": "Task '{0}' has negative Initial Delay: '{1}'.",
   "WorkflowValidator_TaskHasNegativeMaxDelay": "Task '{0}' has negative Max Delay: '{1}'",
-  "WorkflowValidator_TaskHasNegativeMaxRetries": "Task '{0}' has negative MaxRetries: '{1}'."
+  "WorkflowValidator_TaskHasNegativeMaxRetries": "Task '{0}' has negative MaxRetries: '{1}'.",
+  "Workflow_Orchestrator_WorkflowNotPaused": "No workflow execution with Id '{0}' found for resumning."
 }

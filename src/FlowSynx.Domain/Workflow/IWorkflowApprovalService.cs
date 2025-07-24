@@ -12,8 +12,18 @@ public interface IWorkflowApprovalService
         Guid executionId, 
         CancellationToken cancellationToken);
 
-    Task<WorkflowApprovalEntity?> GetByExecutionIdAsync(
-        Guid executionId, 
+    Task<WorkflowApprovalEntity?> GetAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        Guid approvalId,
+        CancellationToken cancellationToken);
+
+    Task<WorkflowApprovalEntity?> GetByTaskNameAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        string taskName,
         CancellationToken cancellationToken);
 
     Task UpdateAsync(

@@ -7,7 +7,6 @@ using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
-using FlowSynx.Infrastructure.Workflow.ManualApprovals;
 using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 using FlowSynx.PluginCore.Exceptions;
@@ -52,112 +51,78 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         IResultStorageFactory resultStorageFactory,
         ILocalization localization)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _workflowService = workflowService ?? throw new ArgumentNullException(nameof(workflowService));
-        _workflowExecutionService = workflowExecutionService ?? throw new ArgumentNullException(nameof(workflowExecutionService));
-        _workflowTaskExecutionService = workflowTaskExecutionService ?? throw new ArgumentNullException(nameof(workflowTaskExecutionService));
-        _taskExecutor = taskExecutor ?? throw new ArgumentNullException(nameof(taskExecutor));
-        _parserFactory = parserFactory ?? throw new ArgumentNullException(nameof(parserFactory));
-        _semaphoreFactory = semaphoreFactory ?? throw new ArgumentNullException(nameof(semaphoreFactory));
-        _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
-        _jsonDeserializer = jsonDeserializer ?? throw new ArgumentNullException(nameof(jsonDeserializer));
-        _workflowValidator = workflowValidator ?? throw new ArgumentNullException(nameof(workflowValidator));
-        _errorHandlingResolver = errorHandlingResolver ?? throw new ArgumentNullException(nameof(errorHandlingResolver));
-        _workflowCancellationRegistry = workflowCancellationRegistry ?? throw new ArgumentNullException(nameof(workflowCancellationRegistry));
-        _manualApprovalService = manualApprovalService ?? throw new ArgumentNullException(nameof(manualApprovalService));
-        _resultStorageProvider = resultStorageFactory.GetDefaultProvider() ?? throw new ArgumentNullException(nameof(resultStorageFactory));
-        _localization = localization ?? throw new ArgumentNullException(nameof(localization)); ;
+        (_logger, _workflowService, _workflowExecutionService, _workflowTaskExecutionService,
+         _taskExecutor, _parserFactory, _semaphoreFactory, _systemClock, _jsonDeserializer,
+         _workflowValidator, _errorHandlingResolver, _workflowCancellationRegistry,
+         _manualApprovalService, _localization) = (
+            logger ?? throw new ArgumentNullException(nameof(logger)),
+            workflowService ?? throw new ArgumentNullException(nameof(workflowService)),
+            workflowExecutionService ?? throw new ArgumentNullException(nameof(workflowExecutionService)),
+            workflowTaskExecutionService ?? throw new ArgumentNullException(nameof(workflowTaskExecutionService)),
+            taskExecutor ?? throw new ArgumentNullException(nameof(taskExecutor)),
+            parserFactory ?? throw new ArgumentNullException(nameof(parserFactory)),
+            semaphoreFactory ?? throw new ArgumentNullException(nameof(semaphoreFactory)),
+            systemClock ?? throw new ArgumentNullException(nameof(systemClock)),
+            jsonDeserializer ?? throw new ArgumentNullException(nameof(jsonDeserializer)),
+            workflowValidator ?? throw new ArgumentNullException(nameof(workflowValidator)),
+            errorHandlingResolver ?? throw new ArgumentNullException(nameof(errorHandlingResolver)),
+            workflowCancellationRegistry ?? throw new ArgumentNullException(nameof(workflowCancellationRegistry)),
+            manualApprovalService ?? throw new ArgumentNullException(nameof(manualApprovalService)),
+            localization ?? throw new ArgumentNullException(nameof(localization))
+        );
+
+        _resultStorageProvider = resultStorageFactory?.GetDefaultProvider()
+            ?? throw new ArgumentNullException(nameof(resultStorageFactory));
     }
 
     public async Task<WorkflowExecutionStatus> ExecuteWorkflowAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
     {
-        var workflowLogScopeContext = CreateWorkflowLogScope(workflowId);
-        using (_logger.BeginScope(workflowLogScopeContext))
-        {
-            var workflow = await GetWorkflowAsync(userId, workflowId, cancellationToken);
-            var definition = DeserializeAndValidate(workflow.Definition);
-
-            var executionEntity = await StartWorkflowExecutionAsync(userId, workflowId, cancellationToken);
-            var registeredToken = _workflowCancellationRegistry.Register(userId, workflowId, executionEntity.Id);
-
-            await InitializeTaskExecutionsAsync(workflowId, executionEntity.Id, definition.Tasks, registeredToken);
-
-            var taskMap = definition.Tasks.ToDictionary(t => t.Name);
-            var pending = new HashSet<string>(taskMap.Keys);
-
-            var executionContext = new WorkflowExecutionContext(userId, workflowId, executionEntity.Id);
-            var workflowExecutionLogScopeContext = CreateWorkflowExecutionLogScope(executionEntity.Id);
-            using (_logger.BeginScope(workflowExecutionLogScopeContext))
-            {
-                while (pending.Any())
-                {
-                    var readyTasks = GetReadyTasks(taskMap, pending);
-
-                    if (!readyTasks.Any())
-                        throw new FlowSynxException((int)ErrorCode.WorkflowFailedDependenciesTask,
-                            _localization.Get("Workflow_Executor_FailedDependenciesTask"));
-
-                    var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary());
-                    var errors = new List<Exception>();
-
-                    foreach (var task in readyTasks.Select(t => taskMap[t]))
-                    {
-                        // Check for manual approval
-                        if (task.ManualApproval?.Enabled == true)
-                        {
-                            _logger.LogInformation("Manual approval required for task '{TaskName}'", task.Name);
-
-                            // Pause the workflow and request approval
-                            await PauseWorkflowForApprovalAsync(userId, executionEntity, task, cancellationToken);
-                            return WorkflowExecutionStatus.Paused;
-                        }
-
-                        // Otherwise execute normally
-                        var taskErrors = await ExecuteTaskBatchAsync(executionContext,
-                            new[] { task }, parser, definition.Configuration, cancellationToken, registeredToken);
-
-                        errors.AddRange(taskErrors);
-                    }
-
-                    if (errors.Any())
-                    {
-                        await MarkWorkflowAsFailedAsync(executionEntity, cancellationToken);
-                        ThrowAggregatedTaskExceptions(errors);
-                    }
-
-                    foreach (var taskId in readyTasks)
-                        pending.Remove(taskId);
-                }
-
-                await MarkWorkflowAsCompletedAsync(executionEntity, cancellationToken);
-                _workflowCancellationRegistry.Remove(userId, workflowId, executionEntity.Id);
-                return WorkflowExecutionStatus.Completed;
-            }
-        }
+        var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
+        var definition = ParseAndValidateDefinition(workflow.Definition);
+        var executionEntity = await CreateExecutionAndInitializeTasksAsync(userId, workflowId, definition, cancellationToken);
+        return await RunWorkflowExecutionAsync(userId, workflowId, definition, executionEntity, cancellationToken);
     }
 
-    private async Task<WorkflowEntity> GetWorkflowAsync(
-        string userId,
-        Guid workflowId,
-        CancellationToken cancellationToken)
+    public async Task<WorkflowExecutionStatus> ResumeWorkflowAsync(string userId, Guid workflowId, Guid executionId, CancellationToken cancellationToken)
+    {
+        var execution = await _workflowExecutionService.Get(userId, workflowId, executionId, cancellationToken);
+        if (execution == null || execution.Status != WorkflowExecutionStatus.Paused)
+            throw new FlowSynxException((int)ErrorCode.WorkflowNotPaused,
+                _localization.Get("Workflow_Orchestrator_WorkflowNotPaused", executionId));
+
+        var workflow = await FetchWorkflowOrThrowAsync(execution.UserId, execution.WorkflowId, cancellationToken);
+        var definition = ParseAndValidateDefinition(workflow.Definition);
+        var taskMap = definition.Tasks.ToDictionary(t => t.Name);
+
+        var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
+        await LoadPreviousTaskResultsAsync(executionContext, cancellationToken);
+
+        var pending = new HashSet<string>(taskMap.Keys.Where(t => !_taskOutputs.ContainsKey(t)));
+
+        _logger.LogInformation("Resuming workflow '{WorkflowId}' from task '{TaskName}'",
+            execution.WorkflowId, execution.PausedAtTask);
+
+        return await RunWorkflowExecutionAsync(userId, workflowId, definition, execution, cancellationToken);
+    }
+
+    private async Task<WorkflowEntity> FetchWorkflowOrThrowAsync(string userId, Guid workflowId, CancellationToken cancellationToken)
     {
         try
         {
-            var entity = await _workflowService.Get(userId, workflowId, cancellationToken);
-            return entity
-                ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound,
+            var workflow = await _workflowService.Get(userId, workflowId, cancellationToken);
+            return workflow ?? throw new FlowSynxException((int)ErrorCode.WorkflowNotFound,
                 _localization.Get("Workflow_Orchestrator_WorkflowNotFound", workflowId));
         }
         catch (Exception ex)
         {
-            var messageMessage = new ErrorMessage((int)ErrorCode.WorkflowGetItem,
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetItem,
                 _localization.Get("Workflow_Executor_GetWorkflowFailed", ex.Message));
-            _logger.LogError(messageMessage.ToString());
-            throw new FlowSynxException(messageMessage);
+            _logger.LogError(errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
         }
     }
 
-    private WorkflowDefinition DeserializeAndValidate(string definitionJson)
+    private WorkflowDefinition ParseAndValidateDefinition(string definitionJson)
     {
         var definition = _jsonDeserializer.Deserialize<WorkflowDefinition>(definitionJson);
         _errorHandlingResolver.Resolve(definition);
@@ -165,9 +130,75 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return definition;
     }
 
-    private async Task<WorkflowExecutionEntity> StartWorkflowExecutionAsync(
-        string userId,
-        Guid workflowId,
+    public async Task<WorkflowExecutionEntity> CreateExecutionAndInitializeTasksAsync(
+        string userId, Guid workflowId, WorkflowDefinition definition, CancellationToken cancellationToken)
+    {
+        var executionEntity = await CreateWorkflowExecutionAsync(userId, workflowId, cancellationToken);
+        await CreateTaskExecutionsAsync(workflowId, executionEntity.Id, definition.Tasks, cancellationToken);
+        return executionEntity;
+    }
+
+    public async Task<WorkflowExecutionStatus> RunWorkflowExecutionAsync(
+        string userId, Guid workflowId, WorkflowDefinition definition, WorkflowExecutionEntity executionEntity, CancellationToken cancellationToken)
+    {
+        using var _ = _logger.BeginScope(CreateWorkflowLogScope(workflowId));
+        using var __ = _logger.BeginScope(CreateWorkflowExecutionLogScope(executionEntity.Id));
+
+        var registeredToken = _workflowCancellationRegistry.Register(userId, workflowId, executionEntity.Id);
+        var taskMap = definition.Tasks.ToDictionary(t => t.Name);
+        var pending = new HashSet<string>(taskMap.Keys);
+        var executionContext = new WorkflowExecutionContext(userId, workflowId, executionEntity.Id);
+
+        while (pending.Any())
+        {
+            var readyTasks = FindExecutableTasks(taskMap, pending);
+            if (!readyTasks.Any())
+                throw new FlowSynxException((int)ErrorCode.WorkflowFailedDependenciesTask,
+                    _localization.Get("Workflow_Executor_FailedDependenciesTask"));
+
+            var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary());
+            var errors = new List<Exception>();
+
+            foreach (var task in readyTasks.Select(t => taskMap[t]))
+            {
+                var approvalStatus = await _manualApprovalService.GetApprovalStatusAsync(userId, workflowId, executionEntity.Id, task.Name, cancellationToken);
+
+                if (approvalStatus == WorkflowApprovalStatus.Rejected)
+                {
+                    await UpdateWorkflowAsFailedAsync(executionEntity, cancellationToken);
+                    return WorkflowExecutionStatus.Failed;
+                }
+
+                if (approvalStatus != WorkflowApprovalStatus.Approved)
+                {
+                    _logger.LogInformation("Manual approval required for task '{TaskName}'", task.Name);
+                    await PauseForManualApprovalAsync(userId, executionEntity, task, cancellationToken);
+                    return WorkflowExecutionStatus.Paused;
+                }
+
+                var taskErrors = await ExecuteTasksInParallelAsync(executionContext, new[] { task },
+                    parser, definition.Configuration, cancellationToken, registeredToken);
+                errors.AddRange(taskErrors);
+            }
+
+            if (errors.Any())
+            {
+                await UpdateWorkflowAsFailedAsync(executionEntity, cancellationToken);
+                ThrowIfAnyTaskFailed(errors);
+            }
+
+            foreach (var taskId in readyTasks)
+                pending.Remove(taskId);
+        }
+
+        await UpdateWorkflowAsCompletedAsync(executionEntity, cancellationToken);
+        _workflowCancellationRegistry.Remove(userId, workflowId, executionEntity.Id);
+        return WorkflowExecutionStatus.Completed;
+    }
+
+    private async Task<WorkflowExecutionEntity> CreateWorkflowExecutionAsync(
+        string userId, 
+        Guid workflowId, 
         CancellationToken cancellationToken)
     {
         var execution = new WorkflowExecutionEntity
@@ -195,52 +226,50 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         }
     }
 
-    private async Task InitializeTaskExecutionsAsync(
-        Guid workflowId,
-        Guid executionId,
-        IEnumerable<WorkflowTask> tasks,
+    private async Task CreateTaskExecutionsAsync(
+        Guid workflowId, 
+        Guid executionId, 
+        IEnumerable<WorkflowTask> tasks, 
         CancellationToken cancellationToken)
     {
-        foreach (var task in tasks)
+        var executions = tasks.Select(task => new WorkflowTaskExecutionEntity
         {
-            var entity = new WorkflowTaskExecutionEntity
-            {
-                Id = Guid.NewGuid(),
-                Name = task.Name,
-                WorkflowId = workflowId,
-                WorkflowExecutionId = executionId,
-                Status = WorkflowTaskExecutionStatus.Pending
-            };
+            Id = Guid.NewGuid(),
+            Name = task.Name,
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId,
+            Status = WorkflowTaskExecutionStatus.Pending
+        });
 
-            await _workflowTaskExecutionService.Add(entity, cancellationToken);
-        }
+        foreach (var execution in executions)
+            await _workflowTaskExecutionService.Add(execution, cancellationToken);
 
         _logger.LogInformation("Initialized task executions for workflow '{WorkflowId}'", workflowId);
     }
 
-    private async Task<List<Exception>> ExecuteTaskBatchAsync(
-        WorkflowExecutionContext executionContext,
+    private async Task<List<Exception>> ExecuteTasksInParallelAsync(
+        WorkflowExecutionContext context,
         IEnumerable<WorkflowTask> tasks,
         IExpressionParser parser,
         WorkflowConfiguration config,
-        CancellationToken globalCancellationToken,
-        CancellationToken cancellationToken)
+        CancellationToken globalToken,
+        CancellationToken localToken)
     {
         var errors = new ConcurrentBag<Exception>();
         var semaphore = _semaphoreFactory.Create(config.DegreeOfParallelism ?? 3);
-        using var globalCts = new CancellationTokenSource(config.Timeout.HasValue
+
+        using var timeoutCts = new CancellationTokenSource(config.Timeout.HasValue
             ? TimeSpan.FromMilliseconds(config.Timeout.Value)
             : Timeout.InfiniteTimeSpan);
 
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, globalCts.Token);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(localToken, timeoutCts.Token);
 
         var executions = tasks.Select(async task =>
         {
             await semaphore.WaitAsync(linkedCts.Token);
             try
             {
-                var result = await _taskExecutor.ExecuteAsync(executionContext, task,
-                    parser, globalCancellationToken, linkedCts.Token);
+                var result = await _taskExecutor.ExecuteAsync(context, task, parser, globalToken, linkedCts.Token);
                 _taskOutputs[task.Name] = result;
             }
             catch (Exception ex)
@@ -257,15 +286,54 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return errors.ToList();
     }
 
-    private static void ThrowAggregatedTaskExceptions(IEnumerable<Exception> errors)
+    private static void ThrowIfAnyTaskFailed(IEnumerable<Exception> errors)
     {
         throw new FlowSynxException(new ErrorMessage(
             (int)ErrorCode.WorkflowTaskExecutionsList,
             string.Join(Environment.NewLine, errors.Select(e => e.Message))));
     }
 
-    private async Task MarkWorkflowAsFailedAsync(
-        WorkflowExecutionEntity execution,
+    private async Task PauseForManualApprovalAsync(
+        string userId, 
+        WorkflowExecutionEntity execution, 
+        WorkflowTask task, 
+        CancellationToken cancellationToken)
+    {
+        var context = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
+        await PersistTaskResultsAsync(context, cancellationToken);
+
+        execution.Status = WorkflowExecutionStatus.Paused;
+        execution.PausedAtTask = task.Name;
+        execution.ExecutionEnd = _systemClock.UtcNow;
+
+        await _workflowExecutionService.Update(execution, cancellationToken);
+        await _manualApprovalService.RequestApprovalAsync(execution, task.ManualApproval, cancellationToken);
+
+        _logger.LogInformation("Workflow '{WorkflowId}' paused for manual approval at task '{TaskName}'",
+            execution.WorkflowId, task.Name);
+    }
+
+    private async Task PersistTaskResultsAsync(
+        WorkflowExecutionContext context, 
+        CancellationToken cancellationToken)
+    {
+        if (_taskOutputs == null) return;
+
+        await _resultStorageProvider.SaveResultAsync(context, _taskOutputs, cancellationToken);
+        _logger.LogInformation("Saved result for workflow '{WorkflowExecutionId}' to storage", context.WorkflowExecutionId);
+    }
+
+    private async Task LoadPreviousTaskResultsAsync(
+        WorkflowExecutionContext context, 
+        CancellationToken cancellationToken)
+    {
+        var result = await _resultStorageProvider.LoadResultAsync(context, cancellationToken);
+        _taskOutputs = result ?? new ConcurrentDictionary<string, object?>();
+        _logger.LogInformation("Result for workflow '{WorkflowExecutionId}' are restored", context.WorkflowExecutionId);
+    }
+
+    private async Task UpdateWorkflowAsFailedAsync(
+        WorkflowExecutionEntity execution, 
         CancellationToken cancellationToken)
     {
         execution.ExecutionEnd = _systemClock.UtcNow;
@@ -273,8 +341,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         await _workflowExecutionService.Update(execution, cancellationToken);
     }
 
-    private async Task MarkWorkflowAsCompletedAsync(
-        WorkflowExecutionEntity execution,
+    private async Task UpdateWorkflowAsCompletedAsync(
+        WorkflowExecutionEntity execution, 
         CancellationToken cancellationToken)
     {
         execution.ExecutionEnd = _systemClock.UtcNow;
@@ -282,96 +350,9 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         await _workflowExecutionService.Update(execution, cancellationToken);
     }
 
-    private List<string> GetReadyTasks(Dictionary<string, WorkflowTask> taskMap, HashSet<string> pending)
-    {
-        return pending
-            .Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d)))
-            .ToList();
-    }
+    private List<string> FindExecutableTasks(Dictionary<string, WorkflowTask> taskMap, HashSet<string> pending) =>
+        pending.Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d))).ToList();
 
-    private static LogScopeContext CreateWorkflowLogScope(Guid workflowId) => new()
-    {
-        { "WorkflowId", workflowId }
-    };
-
-    private static LogScopeContext CreateWorkflowExecutionLogScope(Guid workflowExecutionId) => new()
-    {
-        { "WorkflowExecutionId", workflowExecutionId }
-    };
-
-    private async Task PauseWorkflowForApprovalAsync(
-        string userId,
-        WorkflowExecutionEntity execution,
-        WorkflowTask task,
-        CancellationToken cancellationToken)
-    {
-        var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
-        await SaveTaskResultAsync(executionContext, cancellationToken);
-
-        execution.Status = WorkflowExecutionStatus.Paused;
-        execution.PausedAtTask = task.Name;
-        execution.ExecutionEnd = _systemClock.UtcNow;
-
-        await _workflowExecutionService.Update(execution, cancellationToken);
-
-        // Send approval request
-        await _manualApprovalService.RequestApprovalAsync(execution, task.ManualApproval, cancellationToken);
-
-        _logger.LogInformation("Workflow '{WorkflowId}' paused for manual approval at task '{TaskName}'",
-            execution.WorkflowId, task.Name);
-    }
-
-    public async Task<WorkflowExecutionStatus> ResumeWorkflowAsync(string userId, Guid executionId, Guid workflowId, CancellationToken cancellationToken)
-    {
-        var execution = await _workflowExecutionService.Get(userId, workflowId, executionId, cancellationToken);
-        if (execution == null || execution.Status != WorkflowExecutionStatus.Paused)
-            throw new FlowSynxException((int)ErrorCode.WorkflowNotPaused,
-                _localization.Get("Workflow_Orchestrator_WorkflowNotPaused", executionId));
-
-        var workflow = await GetWorkflowAsync(execution.UserId, execution.WorkflowId, cancellationToken);
-        var definition = DeserializeAndValidate(workflow.Definition);
-        var taskMap = definition.Tasks.ToDictionary(t => t.Name);
-
-        var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
-        await RestoreTaskResultsAsync(executionContext, cancellationToken);
-
-        var pending = new HashSet<string>(taskMap.Keys.Where(t => !_taskOutputs.ContainsKey(t)));
-
-        _logger.LogInformation("Resuming workflow '{WorkflowId}' from task '{TaskName}'",
-            execution.WorkflowId, execution.PausedAtTask);
-
-        return await ExecuteWorkflowAsync(execution.UserId, execution.WorkflowId, cancellationToken);
-    }
-
-    private async Task SaveTaskResultAsync(
-        WorkflowExecutionContext context,
-        CancellationToken cancellationToken)
-    {
-        if (_taskOutputs == null)
-            return;
-
-        await _resultStorageProvider.SaveResultAsync(
-            context,
-            _taskOutputs,
-            cancellationToken);
-
-        _logger.LogInformation(
-            "Saved result for workflow '{WorkflowExecutionId}' to storage",
-            context.WorkflowExecutionId);
-    }
-
-    private async Task RestoreTaskResultsAsync(
-        WorkflowExecutionContext context,
-        CancellationToken cancellationToken)
-    {
-        var result = await _resultStorageProvider.LoadResultAsync(context, cancellationToken);
-        var outputs = result ?? new ConcurrentDictionary<string, object?>();
-
-        _taskOutputs.Clear();
-        _taskOutputs = outputs;
-
-        _logger.LogInformation(
-            "Result for workflow '{WorkflowExecutionId}' are restored",
-            context.WorkflowExecutionId);
-    }
+    private static LogScopeContext CreateWorkflowLogScope(Guid workflowId) => new() { { "WorkflowId", workflowId } };
+    private static LogScopeContext CreateWorkflowExecutionLogScope(Guid workflowExecutionId) => new() { { "WorkflowExecutionId", workflowExecutionId } };
 }

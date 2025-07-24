@@ -10,8 +10,8 @@ public interface IWorkflowOrchestrator
         CancellationToken cancellationToken);
 
     Task<WorkflowExecutionStatus> ResumeWorkflowAsync(
-        string userId, 
+        string userId,
+        Guid workflowId,
         Guid executionId, 
-        Guid workflowId, 
         CancellationToken cancellationToken);
 }

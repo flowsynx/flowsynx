@@ -139,6 +139,7 @@ public enum ErrorCode
     WorkflowNotPaused                               = 2439,
     WorkflowApprovalNotFound                        = 2440,
     WorkflowAlreadyApprovedOrRejected               = 2441,
+    WorkflowExecutionRejected                       = 2442,
     #endregion
 
     #region ExpressionParser

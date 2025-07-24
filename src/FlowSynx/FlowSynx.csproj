@@ -1,45 +1,48 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-	<AssemblyName>flowsynx</AssemblyName>
-    <UserSecretsId>ee556b65-5e94-4153-88d3-9256fb61d188</UserSecretsId>
-	<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-	<Title>FlowSynx</Title>
-	<Company>FlowSynx</Company>
-	<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
-	<Authors>flowsynx</Authors>
-	<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
-	<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
-	<RepositoryType>git</RepositoryType>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<AssemblyName>flowsynx</AssemblyName>
+		<UserSecretsId>ee556b65-5e94-4153-88d3-9256fb61d188</UserSecretsId>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+		<Title>FlowSynx</Title>
+		<Company>FlowSynx</Company>
+		<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
+		<Authors>flowsynx</Authors>
+		<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
+		<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
+		<RepositoryType>git</RepositoryType>
+		<Version>1.1.2</Version>
+		<AssemblyVersion>1.1.2</AssemblyVersion>
+		<FileVersion>1.1.2</FileVersion>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-	<DebugSymbols>False</DebugSymbols>
-	<DebugType>None</DebugType>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugSymbols>False</DebugSymbols>
+		<DebugType>None</DebugType>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Content Remove="Resources\en.json" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Remove="Resources\en.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\en.json" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Resources\en.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.4" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.4" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
-    <ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
-    <ProjectReference Include="..\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
-    <ProjectReference Include="..\FlowSynx.Persistence.SQLite\FlowSynx.Persistence.SQLite.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
+		<ProjectReference Include="..\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
+		<ProjectReference Include="..\FlowSynx.Persistence.SQLite\FlowSynx.Persistence.SQLite.csproj" />
+	</ItemGroup>
 </Project>

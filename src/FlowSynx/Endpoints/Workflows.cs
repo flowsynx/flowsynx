@@ -68,20 +68,20 @@ public class Workflows : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
-        group.MapGet("/{workflowId}/executions/{executionId}/approvals", GetExecutionApprovals)
-            .WithName("GetExecutionApprovals")
+        group.MapGet("/{workflowId}/executions/{executionId}/approvals", GetWorkflowExecutionApprovals)
+            .WithName("GetWorkflowExecutionApprovals")
             .WithOpenApi()
-            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "approvals"));
 
-        //group.MapPost("/{workflowId}/executions/{executionId}/approvals/approve", CancelExecution)
-        //    .WithName("CancelExecution")
-        //    .WithOpenApi()
-        //    .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
+        group.MapPost("/{workflowId}/executions/{executionId}/approvals/{approvalId}/approve", ApproveWorkflowExecution)
+            .WithName("ApproveWorkflowExecution")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "approvals"));
 
-        //group.MapPost("/{workflowId}/executions/{executionId}/approvals/reject", CancelExecution)
-        //    .WithName("CancelExecution")
-        //    .WithOpenApi()
-        //    .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
+        group.MapPost("/{workflowId}/executions/{executionId}/approvals/{approvalId}/reject", RejectWorkflowExecution)
+            .WithName("RejectWorkflowExecution")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "approvals"));
         #endregion
 
         group.MapGet("/{workflowId}/executions/{executionId}/tasks/{taskId}", GetTaskExecutionById)
@@ -201,10 +201,24 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionApprovals(string workflowId, string executionId,
+    public async Task<IResult> GetWorkflowExecutionApprovals(string workflowId, string executionId,
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.GetWorkflowPendingApprovals(workflowId, executionId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> ApproveWorkflowExecution(string workflowId, string executionId, 
+        string approvalId, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.ApproveWorkflowExecution(workflowId, executionId, approvalId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> RejectWorkflowExecution(string workflowId, string executionId,
+        string approvalId, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.RejectWorkflowExecution(workflowId, executionId, approvalId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 

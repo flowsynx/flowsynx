@@ -32,6 +32,8 @@ using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.ApproveWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.RejectWorkflow;
 
 namespace FlowSynx.Application.Extensions;
 
@@ -244,6 +246,38 @@ public static class MediatorExtensions
         {
             WorkflowId = workflowId,
             WorkflowExecutionId = executionId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<Unit>> ApproveWorkflowExecution(
+        this IMediator mediator,
+        string workflowId,
+        string executionId,
+        string approvalId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new ApproveWorkflowRequest
+        {
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId,
+            WorkflowExecutionApprovalId = approvalId
+        },
+        cancellationToken);
+    }
+
+    public static Task<Result<Unit>> RejectWorkflowExecution(
+        this IMediator mediator,
+        string workflowId,
+        string executionId,
+        string approvalId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new RejectWorkflowRequest
+        {
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId,
+            WorkflowExecutionApprovalId = approvalId
         },
         cancellationToken);
     }

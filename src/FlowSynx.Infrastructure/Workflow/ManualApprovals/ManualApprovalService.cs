@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Models;
+using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -47,9 +48,14 @@ public class ManualApprovalService: IManualApprovalService
         //await _notificationService.SendApprovalRequestAsync(approvalEntity, approval, cancellationToken);
     }
 
-    public async Task ApproveAsync(Guid executionId, string approver, CancellationToken cancellationToken)
+    public async Task ApproveAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        Guid approvalId,
+        CancellationToken cancellationToken)
     {
-        var approval = await _workflowApprovalService.GetByExecutionIdAsync(executionId, cancellationToken);
+        var approval = await _workflowApprovalService.GetAsync(userId,  workflowId, executionId, approvalId, cancellationToken);
         if (approval == null)
             throw new FlowSynxException((int)ErrorCode.WorkflowApprovalNotFound, "Approval request not found.");
 
@@ -57,16 +63,21 @@ public class ManualApprovalService: IManualApprovalService
             throw new FlowSynxException((int)ErrorCode.WorkflowAlreadyApprovedOrRejected, "Already approved or rejected.");
 
         approval.Status = WorkflowApprovalStatus.Approved;
-        approval.Approver = approver;
+        approval.Approver = userId;
         approval.ApprovedAt = DateTime.UtcNow;
 
         await _workflowApprovalService.UpdateAsync(approval, cancellationToken);
-        _logger.LogInformation("Workflow execution {ExecutionId} approved by {Approver}", executionId, approver);
+        _logger.LogInformation("Workflow execution {ExecutionId} approved by '{Approver}'", executionId, userId);
     }
 
-    public async Task RejectAsync(Guid executionId, string approver, CancellationToken cancellationToken)
+    public async Task RejectAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        Guid approvalId,
+        CancellationToken cancellationToken)
     {
-        var approval = await _workflowApprovalService.GetByExecutionIdAsync(executionId, cancellationToken);
+        var approval = await _workflowApprovalService.GetAsync(userId, workflowId, executionId, approvalId, cancellationToken);
         if (approval == null)
             throw new FlowSynxException((int)ErrorCode.WorkflowApprovalNotFound, "Approval request not found.");
 
@@ -74,18 +85,24 @@ public class ManualApprovalService: IManualApprovalService
             throw new FlowSynxException((int)ErrorCode.WorkflowAlreadyApprovedOrRejected, "Already approved or rejected.");
 
         approval.Status = WorkflowApprovalStatus.Rejected;
-        approval.Approver = approver;
+        approval.Approver = userId;
         approval.ApprovedAt = DateTime.UtcNow;
 
         await _workflowApprovalService.UpdateAsync(approval, cancellationToken);
-        _logger.LogInformation("Workflow execution {ExecutionId} rejected by {Approver}", executionId, approver);
+        _logger.LogInformation("Workflow execution {ExecutionId} rejected by '{Approver}'", executionId, userId);
     }
 
-    public async Task<WorkflowApprovalStatus> GetApprovalStatusAsync(Guid executionId, CancellationToken cancellationToken)
+    public async Task<WorkflowApprovalStatus> GetApprovalStatusAsync(
+        string userId,
+        Guid workflowId,
+        Guid executionId,
+        string taskName,
+        CancellationToken cancellationToken)
     {
-        var approval = await _workflowApprovalService.GetByExecutionIdAsync(executionId, cancellationToken);
+        var approval = await _workflowApprovalService.GetByTaskNameAsync(userId, workflowId, executionId, taskName, cancellationToken);
         if (approval == null)
             throw new FlowSynxException((int)ErrorCode.WorkflowApprovalNotFound, "Approval request not found.");
+
         return approval.Status;
     }
 }
