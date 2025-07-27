@@ -100,7 +100,7 @@ See our [Getting Started](https://flowsynx.io/docs/category/getting-started) gui
 | [C# SDK](https://github.com/flowsynx/csharp-sdk) | C# SDK for integrating and executing
 | [Plugin Registry](https://github.com/flowsynx/plugin-registry) | The hub for discovering, publishing, and managing plugins that enhance your FlowSynx automation workflows.
 | [Plugin Template Project](https://github.com/flowsynx/plugin-template-project) | Ready-to-use Class Library template for .NET, designed to help you quickly set up a clean and consistent starting point for your plugin.
-| [Plgins](#) | Plugins (Azure, JSON, CSV, etc)
+| [Plugins](#) | Plugins (Azure, JSON, CSV, etc)
 
 ## Community & Contributing
 We welcome contributors of all experience levels! You can:
