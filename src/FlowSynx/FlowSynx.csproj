@@ -14,9 +14,6 @@
 		<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
 		<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
-		<Version>1.1.2</Version>
-		<AssemblyVersion>1.1.2</AssemblyVersion>
-		<FileVersion>1.1.2</FileVersion>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
