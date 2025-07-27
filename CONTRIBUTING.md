@@ -1,42 +1,48 @@
 # Contribution Guidelines
-Thank you for your interest in FlowSynx!
+Thank you for your interest in contributing to **FlowSynx**!
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
+We value your input and aim to make the contribution process as smooth and transparent as possible. Whether you’re here to:
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+- Report a bug
+- Discuss the current state of the project
+- Submit a fix
+- Propose a new feature
+- Become a maintainer
 
-## We Develop with Github
-We use github to host code, to track issues and feature requests, as well as accept pull requests.
+We welcome your participation!
 
-## We Use [Github Flow](https://guides.github.com/introduction/flow/index.html), So All Code Changes Happen Through Pull Requests
-Pull requests are the best way to propose changes to the codebase (we use [Github Flow](https://guides.github.com/introduction/flow/index.html)). We actively welcome your pull requests:
+## Development Workflow
 
-1. Fork the repo and create your branch from `master`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+We use **GitHub** to host our codebase, manage issues and feature requests, and review pull requests.
 
-## Any contributions you make will be under the MIT Software License
-In short, when you submit code changes, your submissions are understood to be under the same [MIT License](http://choosealicense.com/licenses/mit/) that covers the project. Feel free to contact the maintainers if that's a concern.
+All changes to the codebase should be made through pull requests, following the principles of [GitHub Flow](https://guides.github.com/introduction/flow/index.html).
 
-## Report bugs using Github's [issues](https://github.com/flowsynx/flowsynx/issues)
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](); it's that easy!
+### To Contribute Code:
+1. Fork the repository and create a new branch from `master`.
+2. Write tests for any new functionality you introduce.
+3. Update the documentation if your changes affect public APIs or usage.
+4. Ensure all tests pass.
+5. Follow our coding standards and ensure your code is linted.
+6. Submit a pull request with a clear description of your changes.
 
-**Great Bug Reports** tend to have:
+We actively review and welcome pull requests from the community.
 
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can. Includes sample code that *anyone* with a base C# setup can run to reproduce what I was seeing
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
+## Bug Reports
+We use [GitHub Issues](https://github.com/flowsynx/flowsynx/issues) to track bugs, feature requests, and general project discussion.
+
+To report a bug, [open a new issue](https://github.com/flowsynx/flowsynx/issues/new) and include the following details whenever possible:
+
+- A brief summary or background
+- Steps to reproduce the issue
+  - Be specific and, if possible, include a minimal reproducible example in C#
+- Expected vs. actual behavior
+- Additional notes, such as why you think the issue may be occurring or any attempted fixes
+
+Clear, concise, and reproducible reports help us address issues more effectively.
+
+---
 
 ## License
-By contributing, you agree that your contributions will be licensed under its MIT License.
+By contributing to this project, you agree that your contributions will be licensed under the terms of the [MIT License](http://choosealicense.com/licenses/mit/), which also governs the project as a whole.
+
+If you have any questions about licensing, feel free to reach out to the maintainers.
