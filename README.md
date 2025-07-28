@@ -84,6 +84,25 @@ Here are just a few of the many features that make FlowSynx powerful:
 - Plugin Registry (Marketplace)
 - REST-API Accessibility
 
+## Architecture overview
+<img src="/img/architecture-diagram.jpg">
+
+### Intraction tools
+- **CLI Interface**: Command-line tools for interacting with the FlowSynx system, enabling workflow management and execution from terminals.
+- **REST API Gateway**: Provides secure, HTTP/HTTPS RESTful APIs to integrate with external systems, allowing remote workflow control and status querying.
+- **SDK (Library)**: Developer-friendly libraries exposing FlowSynx functionalities programmatically, enabling custom applications to embed or automate workflow operations.
+
+### FlowSynx Core
+- **Workflow Orchestrator**: The core engine that loads and executes workflows defined as JSON DAGs.
+- **Plugin Manager**: Dynamically loads plugins and maintains a plugin marketplace/registry for easy discovery and management.
+- **Security & Auth**: Handles authentication and authorization for both REST API and CLI access, ensuring secure operations.
+- **Logging & Auditing**: Tracks workflow execution, plugin activity, and audit trails for compliance and debugging.
+- **Trigger Engine**: Listens for external events or schedules workflows to start based on timers, webhooks, or system signals.
+- **Error handling**: Built-in support for task retries, timeouts, and fallbacks ensures reliable execution even in unstable environments. Custom retry strategies can be defined per task.
+
+### Execution environments
+- **Deployment & Execution Environments**: Supports flexible deployment models from standalone desktop/server installs to cloud containerized orchestration, with cross-platform compatibility.
+
 ## Get Started using FlowSynx
 
 See our [Getting Started](https://flowsynx.io/docs/category/getting-started) guide over in our docs.
