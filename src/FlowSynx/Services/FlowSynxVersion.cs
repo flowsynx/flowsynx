@@ -15,10 +15,9 @@ public class FlowSynxVersion : IVersion
         _logger = logger;
     }
 
-    public Version Version => GetApplicationVersion();
+    public Version Version => GetApplicationVersion(_logger);
 
-    #region Private function
-    private Version GetApplicationVersion()
+    public static Version GetApplicationVersion(ILogger? logger = null)
     {
         try
         {
@@ -37,15 +36,14 @@ public class FlowSynxVersion : IVersion
             }
 
             // Fallback if parsing fails
-            _logger.LogWarning("Failed to parse application version. Using default 0.0.0.0.");
+            logger?.LogWarning("Failed to parse application version. Using default 0.0.0.0.");
             return new Version(0, 0, 0, 0);
         }
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationVersion, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            logger?.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
-    #endregion
 }

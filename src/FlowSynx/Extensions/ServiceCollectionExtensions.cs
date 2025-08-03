@@ -125,11 +125,14 @@ public static class ServiceCollectionExtensions
         if (!healthCheckConfiguration.Enabled)
             return services;
 
+        var serviceProvider = services.BuildServiceProvider();
+        var localization = serviceProvider.GetRequiredService<ILocalization>();
+
         services
             .AddHealthChecks()
-            .AddCheck<PluginConfigurationServiceHealthCheck>(name: Localization.Get("AddHealthCheckerConfigurationService"))
-            .AddCheck<PluginsServiceHealthCheck>(name: Localization.Get("AddHealthCheckerPluginService"))
-            .AddCheck<LogsServiceHealthCheck>(name: Localization.Get("AddHealthCheckerLoggerService"));
+            .AddCheck<PluginConfigurationServiceHealthCheck>(name: localization.Get("AddHealthCheckerConfigurationService"))
+            .AddCheck<PluginsServiceHealthCheck>(name: localization.Get("AddHealthCheckerPluginService"))
+            .AddCheck<LogsServiceHealthCheck>(name: localization.Get("AddHealthCheckerLoggerService"));
 
         return services;
     }
@@ -322,5 +325,18 @@ public static class ServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    public static bool HandleVersionFlag(this string[] args)
+    {
+        if (args.Any(arg => arg.Equals("--version", StringComparison.OrdinalIgnoreCase) ||
+                            arg.Equals("-v", StringComparison.OrdinalIgnoreCase)))
+        {
+            var version = FlowSynxVersion.GetApplicationVersion();
+            Console.WriteLine($"FlowSynx Version: {version}");
+            return true;
+        }
+
+        return false;
     }
 }

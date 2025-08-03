@@ -9,6 +9,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 try
 {
+    if (args.HandleVersionFlag())
+        return;
+
     builder.Configuration
         .SetBasePath(Directory.GetCurrentDirectory())
         .AddJsonFile("appsettings.json")
