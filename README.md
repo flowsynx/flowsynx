@@ -105,7 +105,7 @@ Here are just a few of the many features that make FlowSynx powerful:
 
 ## Get Started using FlowSynx
 
-See our [Getting Started](https://flowsynx.io/docs/category/getting-started) guide over in our docs.
+See our [Getting Started](https://flowsynx.io/docs/getting-started) guide over in our docs.
 
 ## Related Repositories
 
