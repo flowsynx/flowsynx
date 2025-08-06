@@ -45,7 +45,6 @@ public static class WebApplicationBuilderExtensions
                 if (httpsPort == httpPort)
                 {
                     var message = $"HTTP and HTTPS ports cannot be the same: {httpPort}";
-                    logger.LogCritical(message);
                     throw new InvalidOperationException(message);
                 }
             }
