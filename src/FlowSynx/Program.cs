@@ -60,9 +60,11 @@ try
            .AddHostedService<TriggerProcessingService>();
 
     builder.ConfigHttpServer();
+    builder.Services.AddConfiguredCors(config);
 
     var app = builder.Build();
 
+    app.UseConfiguredCors();
     app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())
@@ -82,6 +84,7 @@ try
        .EnsureApplicationDatabaseCreated()
        .UseApplicationDataSeeder()
        .UseHealthCheck();
+
 
     app.MapEndpoints("Fixed");
 

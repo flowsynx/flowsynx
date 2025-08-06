@@ -13,7 +13,6 @@ using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Security;
 using FlowSynx.Application.Localizations;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
 
 namespace FlowSynx.Extensions;
@@ -338,5 +337,54 @@ public static class ServiceCollectionExtensions
         }
 
         return false;
+    }
+
+    public static IServiceCollection AddConfiguredCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+        logger.LogInformation("Initializing Cors.");
+
+        var corsConfiguration = new CorsConfiguration();
+        configuration.GetSection("Cors").Bind(corsConfiguration);
+        services.AddSingleton(corsConfiguration);
+
+        var allowedOrigins = corsConfiguration.AllowedOrigins?.ToArray() ?? Array.Empty<string>();
+        var allowCredentials = corsConfiguration.AllowCredentials;
+        var policyName = corsConfiguration.PolicyName ?? "DefaultCorsPolicy";
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy(policyName, policyBuilder =>
+            {
+                if (allowedOrigins.Contains("*"))
+                {
+                    if (allowCredentials)
+                    {
+                        throw new InvalidOperationException("CORS configuration error: AllowCredentials cannot be used with wildcard origin '*'.");
+                    }
+
+                    policyBuilder.AllowAnyOrigin()
+                                 .AllowAnyHeader()
+                                 .AllowAnyMethod();
+                }
+                else
+                {
+                    policyBuilder.WithOrigins(allowedOrigins)
+                                 .AllowAnyHeader()
+                                 .AllowAnyMethod();
+
+                    if (allowCredentials)
+                    {
+                        policyBuilder.AllowCredentials();
+                    }
+                }
+            });
+        });
+
+        logger.LogInformation("Cors Initialized.");
+
+        return services;
     }
 }

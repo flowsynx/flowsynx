@@ -146,4 +146,17 @@ public static class ApplicationBuilderExtensions
             throw new FlowSynxException((int)ErrorCode.DatabaseDataSeeder, $"Error occurred while seeder data into the application database: {ex.Message}");
         }
     }
+
+    public static IApplicationBuilder UseConfiguredCors(this IApplicationBuilder app)
+    {
+        var serviceProvider = app.ApplicationServices;
+        var corsConfiguration = serviceProvider.GetService<CorsConfiguration>();
+        if (corsConfiguration == null)
+            throw new ArgumentException("Cors is not configured correctly.");
+
+        var policyName = corsConfiguration.PolicyName ?? "DefaultCorsPolicy";
+        app.UseCors(policyName);
+
+        return app;
+    }
 }
