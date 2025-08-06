@@ -59,32 +59,39 @@ try
            .AddOpenApi(config)
            .AddHostedService<TriggerProcessingService>();
 
-    builder.ConfigHttpServer();
+    builder.ConfigureHttpServer();
     builder.Services.AddConfiguredCors(config);
 
     var app = builder.Build();
-
-    app.UseConfiguredCors();
-    app.UseRateLimiter();
 
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
     }
+    else
+    {
+        app.UseExceptionHandler(exceptionHandlerApp =>
+            exceptionHandlerApp.Run(async context =>
+                await Results.Problem().ExecuteAsync(context)));
+    }
 
-    app.UseOpenApi()
-       .UseCustomHeaders()
-       .UseExceptionHandler(exceptionHandlerApp =>
-                            exceptionHandlerApp.Run(async context =>
-                                await Results.Problem().ExecuteAsync(context)))
-       .UseCustomException()
-       .UseRouting()
-       .UseAuthentication()
-       .UseAuthorization()
-       .EnsureApplicationDatabaseCreated()
-       .UseApplicationDataSeeder()
-       .UseHealthCheck();
+    app.UseHttps();
+    app.UseCustomHeaders();
+    app.UseConfiguredCors();
+    app.UseRateLimiter();
 
+    app.UseRouting();
+
+    app.UseAuthentication();
+    app.UseAuthorization();
+
+    app.UseOpenApi();
+    app.UseCustomException();
+
+    app.EnsureApplicationDatabaseCreated();
+    app.UseApplicationDataSeeder();
+
+    app.UseHealthCheck();
 
     app.MapEndpoints("Fixed");
 

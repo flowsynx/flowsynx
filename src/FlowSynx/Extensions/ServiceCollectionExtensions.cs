@@ -41,7 +41,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddEndpoint(this IServiceCollection services, IConfiguration configuration)
     {
         var endpointConfiguration = new EndpointConfiguration();
-        configuration.GetSection("Endpoint").Bind(endpointConfiguration);
+        configuration.GetSection("Endpoints").Bind(endpointConfiguration);
         services.AddSingleton(endpointConfiguration);
         return services;
     }
