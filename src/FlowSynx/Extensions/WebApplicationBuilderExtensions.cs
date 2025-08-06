@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
-using System.Text;
 
 namespace FlowSynx.Extensions;
 
@@ -43,10 +42,7 @@ public static class WebApplicationBuilderExtensions
                 httpsPort = config.Https.Port ?? 6263;
 
                 if (httpsPort == httpPort)
-                {
-                    var message = $"HTTP and HTTPS ports cannot be the same: {httpPort}";
-                    throw new InvalidOperationException(message);
-                }
+                    throw new InvalidOperationException($"HTTP and HTTPS endpoint ports cannot be the same: {httpPort}");
             }
 
             options.ListenAnyIP(httpPort);
