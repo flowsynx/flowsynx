@@ -8,5 +8,5 @@ public class JwtAuthenticationsConfiguration
     public string Issuer { get; set; } = string.Empty;
     public string Secret { get; set; } = string.Empty;
     public bool RequireHttps { get; set; } = false;
-    public string RolesClaim { get; set; } = "roles";
+    public List<string> RoleClaimNames { get; set; } = new() { "roles", "role", "groups" };
 }
