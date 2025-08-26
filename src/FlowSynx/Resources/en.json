@@ -19,5 +19,6 @@
   "PluginServiceHealthCheckPluginServiceAvailable": "Plugins service is available",
   "PluginServiceHealthCheckPluginServiceFailed": "Plugins Service is failed",
   "UseCustomHeadersVersionServiceCouldNotBeInitialized": "Version service could not be initialized.",
-  "UseHealthCheckSerializerServiceCouldNotBeInitialized": "Serializer service could not be initialized."
+  "UseHealthCheckSerializerServiceCouldNotBeInitialized": "Serializer service could not be initialized.",
+  "WorkflowQueueProvider_NotSupported": "The specified workflow queue provider '{0}' is not supported."
 }

@@ -14,6 +14,8 @@ using FlowSynx.Security;
 using FlowSynx.Application.Localizations;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
+using FlowSynx.Persistence.Postgres.Extensions;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FlowSynx.Extensions;
 
@@ -236,8 +238,6 @@ public static class ServiceCollectionExtensions
             using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
             var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            logger.LogInformation("Initializing security");
-
             var securityConfiguration = new SecurityConfiguration();
             configuration.GetSection("Security").Bind(securityConfiguration);
             services.AddSingleton(securityConfiguration);
@@ -344,8 +344,6 @@ public static class ServiceCollectionExtensions
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
         var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-        logger.LogInformation("Initializing Cors.");
-
         var corsConfiguration = new CorsConfiguration();
         configuration.GetSection("Cors").Bind(corsConfiguration);
         services.AddSingleton(corsConfiguration);
@@ -386,5 +384,42 @@ public static class ServiceCollectionExtensions
         logger.LogInformation("Cors Initialized.");
 
         return services;
+    }
+
+    public static IServiceCollection AddWorkflowQueueService(
+        this IServiceCollection services, 
+        IConfiguration configuration)
+    {
+        try
+        {
+            using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+            var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            var localization = serviceProviderScope.ServiceProvider.GetRequiredService<ILocalization>();
+
+            var workflowQueueConfiguration = new WorkflowQueueConfiguration();
+            configuration.GetSection("WorkflowQueue").Bind(workflowQueueConfiguration);
+            services.AddSingleton(workflowQueueConfiguration);
+
+            if (string.IsNullOrEmpty(workflowQueueConfiguration.Provider))
+                return services.AddInMemoryWorkflowQueueService();
+
+            switch (workflowQueueConfiguration.Provider.ToLowerInvariant())
+            {
+                case "durable":
+                    logger.LogInformation("Initializing Durable Workflow Queue");
+                    return services.AddDurableWorkflowQueueService();
+                case "inmemory":
+                    logger.LogInformation("Initializing InMemory Workflow Queue");
+                    return services.AddInMemoryWorkflowQueueService();
+                default:
+                    throw new FlowSynxException((int)ErrorCode.WorkflowQueueProviderNotSupported,
+                        localization.Get("WorkflowQueueProvider_NotSupported", workflowQueueConfiguration.Provider));
+            }
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
+            throw new FlowSynxException(errorMessage);
+        }
     }
 }

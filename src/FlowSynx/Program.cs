@@ -39,6 +39,7 @@ try
            .AddHttpClient()
            .AddHttpJsonOptions()
            .AddPostgresPersistenceLayer(config)
+           .AddWorkflowQueueService(config)
            .AddEndpoint(config)
            .AddPluginsPath()
            .AddVersion()
@@ -57,6 +58,7 @@ try
            .AddSecurity(config)
            .AddHealthChecker(config)
            .AddOpenApi(config)
+           .AddHostedService<WorkflowExecutionWorker>()
            .AddHostedService<TriggerProcessingService>();
 
     builder.ConfigureHttpServer();
