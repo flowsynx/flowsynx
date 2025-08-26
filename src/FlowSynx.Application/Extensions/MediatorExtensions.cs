@@ -88,7 +88,7 @@ public static class MediatorExtensions
         return mediator.Send(new WorkflowExecutionListRequest { WorkflowId = workflowId }, cancellationToken);
     }
 
-    public static Task<Result<Unit>> ExecuteWorkflow(
+    public static Task<Result<Guid>> ExecuteWorkflow(
         this IMediator mediator, 
         string workflowId,
         CancellationToken cancellationToken)

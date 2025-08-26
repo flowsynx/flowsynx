@@ -140,6 +140,9 @@ public enum ErrorCode
     WorkflowApprovalNotFound                        = 2440,
     WorkflowAlreadyApprovedOrRejected               = 2441,
     WorkflowExecutionRejected                       = 2442,
+    WorkflowQueueAdd                                = 2423,
+    WorkflowQueueProviderNotSupported               = 2424,
+    WorkflowQueueProviderInitializedError           = 2425,
     #endregion
 
     #region ExpressionParser

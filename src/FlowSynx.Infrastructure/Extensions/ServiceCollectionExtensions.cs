@@ -128,4 +128,10 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+
+    public static IServiceCollection AddInMemoryWorkflowQueueService(this IServiceCollection services)
+    {
+        services.AddSingleton<IWorkflowExecutionQueue, InMemoryWorkflowExecutionQueue>();
+        return services;
+    }
 }
