@@ -52,6 +52,7 @@ public class ApplicationContext : AuditableContext
     public DbSet<WorkflowTaskExecutionEntity> WorkflowTaskExecutions { get; set; }
     public DbSet<WorkflowApprovalEntity> WorkflowApprovals { get; set; }
     public DbSet<WorkflowTriggerEntity> WorkflowTriggeres { get; set; }
+    public DbSet<WorkflowQueueEntity> WorkflowQueue { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
     {
@@ -137,10 +138,11 @@ public class ApplicationContext : AuditableContext
             builder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
             builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer, _encryptionService));
             builder.ApplyConfiguration(new WorkflowEntityConfiguration(_encryptionService));
-            builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration());
+            builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration(_encryptionService));
             builder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowApprovalEntityConfiguration());
             builder.ApplyConfiguration(new WorkflowTriggerEntityConfiguration(_jsonSerializer, _jsonDeserializer));
+            builder.ApplyConfiguration(new WorkflowQueueEntityConfiguration());
             builder.HasDefaultSchema("FlowSynx");
         }
         catch (Exception ex)

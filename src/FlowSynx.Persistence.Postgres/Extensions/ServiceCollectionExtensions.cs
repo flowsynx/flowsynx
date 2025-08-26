@@ -1,10 +1,12 @@
 ﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Workflow;
 using FlowSynx.Domain;
 using FlowSynx.Domain.Audit;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
+using FlowSynx.Infrastructure.Workflow;
 using FlowSynx.Persistence.Postgres.Contexts;
 using FlowSynx.Persistence.Postgres.Seeder;
 using FlowSynx.Persistence.Postgres.Services;
@@ -42,6 +44,12 @@ public static class ServiceCollectionExtensions
             {
                 options.UseNpgsql(connectionString);
             });
+        return services;
+    }
+
+    public static IServiceCollection AddDurableWorkflowQueueService(this IServiceCollection services)
+    {
+        services.AddSingleton<IWorkflowExecutionQueue, WorkflowExecutionQueueServcie>();
         return services;
     }
 }
