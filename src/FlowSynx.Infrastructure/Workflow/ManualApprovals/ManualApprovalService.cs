@@ -100,9 +100,7 @@ public class ManualApprovalService: IManualApprovalService
         CancellationToken cancellationToken)
     {
         var approval = await _workflowApprovalService.GetByTaskNameAsync(userId, workflowId, executionId, taskName, cancellationToken);
-        if (approval == null)
-            throw new FlowSynxException((int)ErrorCode.WorkflowApprovalNotFound, "Approval request not found.");
 
-        return approval.Status;
+        return approval == null ? WorkflowApprovalStatus.Pending : approval.Status;
     }
 }
