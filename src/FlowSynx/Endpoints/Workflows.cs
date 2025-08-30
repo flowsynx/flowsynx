@@ -3,8 +3,12 @@ using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
+using FlowSynx.Hubs;
+using FlowSynx.Services;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 
 namespace FlowSynx.Endpoints;
 
@@ -83,6 +87,11 @@ public class Workflows : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "approvals"));
         #endregion
+
+        group.MapGet("/{workflowId}/executions/{executionId}/tasks", GetExecutionTasks)
+            .WithName("GetExecutionTasks")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "executions"));
 
         group.MapGet("/{workflowId}/executions/{executionId}/tasks/{taskId}", GetTaskExecutionById)
             .WithName("GetTaskExecutionById")
@@ -166,17 +175,43 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> StartWorkflowExecution(string workflowId, [FromServices] IMediator mediator,
+    public async Task<IResult> StartWorkflowExecution(
+        string workflowId, 
+        [FromServices] IMediator mediator,
+        [FromServices] IHubContext<WorkflowsHub> hubContext,
+        [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         var result = await mediator.ExecuteWorkflow(workflowId, cancellationToken);
-        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+        if (result.Succeeded)
+        {
+            var update = new
+            {
+                WorkflowId = Guid.Parse(workflowId),
+                ExecutionId = result.Data.ExecutionId,
+                ExecutionStart = result.Data.StartedAt,
+                Status = "Pending"
+            };
+
+            var userId = httpContextAccessor.HttpContext?.User?.Identity?.Name;
+            await hubContext.Clients.User(userId).SendAsync("WorkflowExecutionUpdated", update, cancellationToken);
+            return Results.Ok(result);
+        }
+
+        return Results.NotFound(result);
     }
 
     public async Task<IResult> GetExecutionById(string workflowId, string executionId,
         [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowExecutionDetails(workflowId, executionId, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> GetExecutionTasks(string workflowId, string executionId, 
+        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    {
+        var result = await mediator.WorkflowExecutionTasks(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -208,7 +243,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> ApproveWorkflowExecution(string workflowId, string executionId, 
+    public async Task<IResult> ApproveWorkflowExecution(string workflowId, string executionId,
         string approvalId, [FromServices] IMediator mediator, CancellationToken cancellationToken)
     {
         var result = await mediator.ApproveWorkflowExecution(workflowId, executionId, approvalId, cancellationToken);
@@ -255,7 +290,7 @@ public class Workflows : EndpointGroupBase
     }
 
     public async Task<IResult> UpdateTrigger(HttpContext context, string workflowId,
-        string triggerId, [FromServices] IMediator mediator, 
+        string triggerId, [FromServices] IMediator mediator,
         [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
