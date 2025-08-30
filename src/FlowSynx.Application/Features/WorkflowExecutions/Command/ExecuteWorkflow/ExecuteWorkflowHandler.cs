@@ -8,7 +8,8 @@ using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 
-internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, Result<Guid>>
+internal class ExecuteWorkflowHandler : 
+    IRequestHandler<ExecuteWorkflowRequest, Result<ExecuteWorkflowResponse>>
 {
     private readonly ILogger<ExecuteWorkflowHandler> _logger;
     private readonly IWorkflowOrchestrator _workflowOrchestrator;
@@ -35,7 +36,7 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
         _localization = localization;
     }
 
-    public async Task<Result<Guid>> Handle(ExecuteWorkflowRequest request, CancellationToken cancellationToken)
+    public async Task<Result<ExecuteWorkflowResponse>> Handle(ExecuteWorkflowRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -53,12 +54,20 @@ internal class ExecuteWorkflowHandler : IRequestHandler<ExecuteWorkflowRequest, 
                 result.Id,
                 cancellationToken), cancellationToken);
 
-            return await Result<Guid>.SuccessAsync(_localization.Get("Feature_WorkflowExecution_ExecutedSuccessfully", workflowId));
+            var response = new ExecuteWorkflowResponse 
+            {
+                WorkflowId = workflowId,
+                ExecutionId = result.Id,
+                StartedAt = result.ExecutionStart,
+            };
+
+            return await Result<ExecuteWorkflowResponse>.SuccessAsync(response, 
+                _localization.Get("Feature_WorkflowExecution_ExecutedSuccessfully", workflowId));
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<Guid>.FailAsync(ex.ToString());
+            return await Result<ExecuteWorkflowResponse>.FailAsync(ex.ToString());
         }
     }
 }
