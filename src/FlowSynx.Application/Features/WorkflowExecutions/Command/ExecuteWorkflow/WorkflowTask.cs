@@ -11,4 +11,5 @@ public class WorkflowTask(string name)
     public int? Timeout { get; set; }
     public List<string> Dependencies { get; set; } = new();
     public string? Output { get; set; } = string.Empty;
+    public WorkflowTaskPosition? Position { get; set; } = new(0, 0);
 }
