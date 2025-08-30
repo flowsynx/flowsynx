@@ -21,14 +21,18 @@ public class WorkflowTaskExecutionService : IWorkflowTaskExecutionService
         _logger = logger;
     }
 
-    public async Task<IReadOnlyCollection<WorkflowTaskExecutionEntity>> All(Guid workflowExecutionId, 
+    public async Task<IReadOnlyCollection<WorkflowTaskExecutionEntity>> All(
+        Guid workflowId, 
+        Guid workflowExecutionId, 
         CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTaskExecutions
-                .Where(c => c.WorkflowExecutionId == workflowExecutionId && c.IsDeleted == false)
+                .Where(c => c.WorkflowId == workflowId && 
+                c.WorkflowExecutionId == workflowExecutionId && 
+                c.IsDeleted == false)
                 .ToListAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 

@@ -3,7 +3,8 @@
 public interface IWorkflowTaskExecutionService
 {
     Task<IReadOnlyCollection<WorkflowTaskExecutionEntity>> All(
-        Guid workflowExecutionId, CancellationToken cancellationToken);
+        Guid workflowId, Guid workflowExecutionId, 
+        CancellationToken cancellationToken);
 
     Task<WorkflowTaskExecutionEntity?> Get(
         Guid workflowTaskExecutionId, CancellationToken cancellationToken);
