@@ -53,7 +53,9 @@ internal class WorkflowExecutionDetailsHandler : IRequestHandler<WorkflowExecuti
 
             var response = new WorkflowExecutionDetailsResponse
             {
-                Id = workflowExecution.Id,
+                WorkflowId = workflowId,
+                ExecutionId = workflowExecution.Id,
+                Workflow = workflowExecution.WorkflowDefinition,
                 Status = workflowExecution.Status,
                 ExecutionStart = workflowExecution.ExecutionStart,
                 ExecutionEnd = workflowExecution.ExecutionEnd,

@@ -4,7 +4,9 @@ namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecuti
 
 public class WorkflowExecutionDetailsResponse
 {
-    public Guid Id { get; set; }
+    public required Guid WorkflowId { get; set; }
+    public required Guid ExecutionId { get; set; }
+    public required string Workflow { get; set; }
     public WorkflowExecutionStatus Status { get; set; }
     public DateTime ExecutionStart { get; set; }
     public DateTime? ExecutionEnd { get; set; }
