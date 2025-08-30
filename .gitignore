@@ -400,3 +400,4 @@ logs.db*
 
 appsettings.*.json
 secrets.json
+**/flowsynxresults/
