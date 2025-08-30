@@ -4,6 +4,7 @@ using FlowSynx.Application.Extensions;
 using FlowSynx.Persistence.SQLite.Extensions;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Services;
+using FlowSynx.Hubs;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,8 @@ try
            .AddRateLimiting(config)
            .AddResultStorageService(config);
 
+    builder.Services.AddSignalR();
+
     if (!builder.Environment.IsDevelopment())
         builder.Services.ParseArguments(args);
 
@@ -95,6 +98,7 @@ try
 
     app.UseHealthCheck();
 
+    app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
     app.MapEndpoints("Fixed");
 
     await app.RunAsync();
