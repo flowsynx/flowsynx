@@ -3,12 +3,8 @@ using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
-using FlowSynx.Hubs;
-using FlowSynx.Services;
 using MediatR;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 
 namespace FlowSynx.Endpoints;
 
@@ -129,15 +125,18 @@ public class Workflows : EndpointGroupBase
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
     }
 
-    public async Task<IResult> GetAllWorkflows([FromServices] IMediator mediator,
+    public async Task<IResult> GetAllWorkflows(
+        [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
     {
         var result = await mediator.Workflows(cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> AddWorkflow(HttpContext context,
-        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+    public async Task<IResult> AddWorkflow(
+        HttpContext context,
+        [FromServices] IMediator mediator, 
+        [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
@@ -145,15 +144,20 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetWorkflowById(string workflowId, [FromServices] IMediator mediator,
-    CancellationToken cancellationToken)
+    public async Task<IResult> GetWorkflowById(
+        string workflowId, 
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowDetails(workflowId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UpdateWorkflow(string workflowId, HttpContext context,
-        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+    public async Task<IResult> UpdateWorkflow(
+        string workflowId, 
+        HttpContext context,
+        [FromServices] IMediator mediator, 
+        [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
@@ -161,15 +165,19 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeleteWorkflow(string workflowId, [FromServices] IMediator mediator,
+    public async Task<IResult> DeleteWorkflow(
+        string workflowId, 
+        [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
     {
         var result = await mediator.DeleteWorkflow(workflowId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetAllExecutions(string workflowId, [FromServices] IMediator mediator,
-    CancellationToken cancellationToken)
+    public async Task<IResult> GetAllExecutions(
+        string workflowId, 
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
     {
         var result = await mediator.GetWorkflowExecutionsList(workflowId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
@@ -178,108 +186,130 @@ public class Workflows : EndpointGroupBase
     public async Task<IResult> StartWorkflowExecution(
         string workflowId, 
         [FromServices] IMediator mediator,
-        [FromServices] IHubContext<WorkflowsHub> hubContext,
-        [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         var result = await mediator.ExecuteWorkflow(workflowId, cancellationToken);
-        if (result.Succeeded)
-        {
-            var update = new
-            {
-                WorkflowId = Guid.Parse(workflowId),
-                ExecutionId = result.Data.ExecutionId,
-                ExecutionStart = result.Data.StartedAt,
-                Status = "Pending"
-            };
-
-            var userId = httpContextAccessor.HttpContext?.User?.Identity?.Name;
-            await hubContext.Clients.User(userId).SendAsync("WorkflowExecutionUpdated", update, cancellationToken);
-            return Results.Ok(result);
-        }
-
-        return Results.NotFound(result);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionById(string workflowId, string executionId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetExecutionById(
+        string workflowId, 
+        string executionId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowExecutionDetails(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionTasks(string workflowId, string executionId, 
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetExecutionTasks(
+        string workflowId, 
+        string executionId, 
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowExecutionTasks(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetTaskExecutionById(string workflowId, string executionId, string taskId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetTaskExecutionById(
+        string workflowId, 
+        string executionId, 
+        string taskId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowTaskExecutionDetails(workflowId, executionId, taskId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> CancelExecution(string workflowId, string executionId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> CancelExecution(
+        string workflowId, 
+        string executionId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.CancelWorkflowExecution(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionLogs(string workflowId, string executionId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetExecutionLogs(
+        string workflowId, 
+        string executionId,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowExecutionLogs(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetWorkflowExecutionApprovals(string workflowId, string executionId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetWorkflowExecutionApprovals(
+        string workflowId, 
+        string executionId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.GetWorkflowPendingApprovals(workflowId, executionId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> ApproveWorkflowExecution(string workflowId, string executionId,
-        string approvalId, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> ApproveWorkflowExecution(
+        string workflowId, 
+        string executionId,
+        string approvalId, 
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.ApproveWorkflowExecution(workflowId, executionId, approvalId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> RejectWorkflowExecution(string workflowId, string executionId,
-        string approvalId, [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> RejectWorkflowExecution(
+        string workflowId, 
+        string executionId,
+        string approvalId, 
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.RejectWorkflowExecution(workflowId, executionId, approvalId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetTaskExecutionLogs(string workflowId, string executionId, string taskId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetTaskExecutionLogs(
+        string workflowId, 
+        string executionId, 
+        string taskId,
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowTaskExecutionLogs(workflowId, executionId, taskId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetAllTriggers(string workflowId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetAllTriggers(
+        string workflowId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowTriggersList(workflowId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetTriggerById(string workflowId, string triggerId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> GetTriggerById(
+        string workflowId, 
+        string triggerId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.WorkflowTriggerDetails(workflowId, triggerId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> AddTrigger(HttpContext context, string workflowId,
-        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
+    public async Task<IResult> AddTrigger(
+        HttpContext context, 
+        string workflowId,
+        [FromServices] IMediator mediator, 
+        [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
@@ -289,8 +319,11 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UpdateTrigger(HttpContext context, string workflowId,
-        string triggerId, [FromServices] IMediator mediator,
+    public async Task<IResult> UpdateTrigger(
+        HttpContext context, 
+        string workflowId,
+        string triggerId, 
+        [FromServices] IMediator mediator,
         [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
@@ -301,8 +334,11 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeleteTrigger(string workflowId, string triggerId,
-        [FromServices] IMediator mediator, CancellationToken cancellationToken)
+    public async Task<IResult> DeleteTrigger(
+        string workflowId, 
+        string triggerId,
+        [FromServices] IMediator mediator, 
+        CancellationToken cancellationToken)
     {
         var result = await mediator.DeleteWorkflowTrigger(workflowId, triggerId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
