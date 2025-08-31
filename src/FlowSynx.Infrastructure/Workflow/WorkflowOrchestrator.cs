@@ -32,6 +32,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private readonly IManualApprovalService _manualApprovalService;
     private readonly IResultStorageProvider _resultStorageProvider;
     private readonly ILocalization _localization;
+    private readonly IEventPublisher _eventPublisher;
     private ConcurrentDictionary<string, object?> _taskOutputs = new();
 
     public WorkflowOrchestrator(
@@ -49,12 +50,13 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         IWorkflowCancellationRegistry workflowCancellationRegistry,
         IManualApprovalService manualApprovalService,
         IResultStorageFactory resultStorageFactory,
-        ILocalization localization)
+        ILocalization localization,
+        IEventPublisher eventPublisher)
     {
         (_logger, _workflowService, _workflowExecutionService, _workflowTaskExecutionService,
          _taskExecutor, _parserFactory, _semaphoreFactory, _systemClock, _jsonDeserializer,
          _workflowValidator, _errorHandlingResolver, _workflowCancellationRegistry,
-         _manualApprovalService, _localization) = (
+         _manualApprovalService, _localization, _eventPublisher) = (
             logger ?? throw new ArgumentNullException(nameof(logger)),
             workflowService ?? throw new ArgumentNullException(nameof(workflowService)),
             workflowExecutionService ?? throw new ArgumentNullException(nameof(workflowExecutionService)),
@@ -68,7 +70,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             errorHandlingResolver ?? throw new ArgumentNullException(nameof(errorHandlingResolver)),
             workflowCancellationRegistry ?? throw new ArgumentNullException(nameof(workflowCancellationRegistry)),
             manualApprovalService ?? throw new ArgumentNullException(nameof(manualApprovalService)),
-            localization ?? throw new ArgumentNullException(nameof(localization))
+            localization ?? throw new ArgumentNullException(nameof(localization)),
+            eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher))
         );
 
         _resultStorageProvider = resultStorageFactory?.GetDefaultProvider()
@@ -97,6 +100,15 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             };
             await _workflowExecutionService.Add(execution, cancellationToken);
             await CreateTaskExecutionsAsync(workflowId, execution.Id, definition.Tasks, cancellationToken);
+
+            var update = new
+            {
+                WorkflowId = workflowId,
+                ExecutionId = execution.Id,
+                ExecutionStart = execution.ExecutionStart,
+                Status = execution.Status.ToString()
+            };
+            await _eventPublisher.PublishToUserAsync(userId, "WorkflowExecutionUpdated", update, cancellationToken);
 
             _logger.LogInformation("Workflow execution {ExecutionId} created for workflow {WorkflowId}", execution.Id, workflowId);
             return execution;
@@ -328,6 +340,16 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         await _workflowExecutionService.Update(execution, cancellationToken);
         await _manualApprovalService.RequestApprovalAsync(execution, task.ManualApproval, cancellationToken);
 
+        var update = new
+        {
+            WorkflowId = execution.WorkflowId,
+            ExecutionId = execution.Id,
+            ExecutionStart = execution.ExecutionStart,
+            ExecutionEnd = execution.ExecutionEnd,
+            Status = execution.Status.ToString()
+        };
+        await _eventPublisher.PublishToUserAsync(execution.UserId, "WorkflowExecutionUpdated", update, cancellationToken);
+
         _logger.LogInformation("Workflow '{WorkflowId}' paused for manual approval at task '{TaskName}'",
             execution.WorkflowId, task.Name);
     }
@@ -357,6 +379,15 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     {
         execution.Status = WorkflowExecutionStatus.Running;
         await _workflowExecutionService.Update(execution, cancellationToken);
+
+        var update = new
+        {
+            WorkflowId = execution.WorkflowId,
+            ExecutionId = execution.Id,
+            ExecutionStart = execution.ExecutionStart,
+            Status = execution.Status.ToString()
+        };
+        await _eventPublisher.PublishToUserAsync(execution.UserId, "WorkflowExecutionUpdated", update, cancellationToken);
     }
 
     private async Task UpdateWorkflowAsFailedAsync(
@@ -366,6 +397,16 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         execution.ExecutionEnd = _systemClock.UtcNow;
         execution.Status = WorkflowExecutionStatus.Failed;
         await _workflowExecutionService.Update(execution, cancellationToken);
+
+        var update = new
+        {
+            WorkflowId = execution.WorkflowId,
+            ExecutionId = execution.Id,
+            ExecutionStart = execution.ExecutionStart,
+            ExecutionEnd = execution.ExecutionEnd,
+            Status = execution.Status.ToString()
+        };
+        await _eventPublisher.PublishToUserAsync(execution.UserId, "WorkflowExecutionUpdated", update, cancellationToken);
     }
 
     private async Task UpdateWorkflowAsCompletedAsync(
@@ -375,6 +416,15 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         execution.ExecutionEnd = _systemClock.UtcNow;
         execution.Status = WorkflowExecutionStatus.Completed;
         await _workflowExecutionService.Update(execution, cancellationToken);
+        var update = new
+        {
+            WorkflowId = execution.WorkflowId,
+            ExecutionId = execution.Id,
+            ExecutionStart = execution.ExecutionStart,
+            ExecutionEnd = execution.ExecutionEnd,
+            Status = execution.Status.ToString()
+        };
+        await _eventPublisher.PublishToUserAsync(execution.UserId, "WorkflowExecutionUpdated", update, cancellationToken);
     }
 
     private List<string> FindExecutableTasks(Dictionary<string, WorkflowTask> taskMap, HashSet<string> pending) =>
