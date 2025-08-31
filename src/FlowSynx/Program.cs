@@ -50,9 +50,8 @@ try
            .AddInfrastructurePluginManager(config)
            .AddUserService()
            .AddRateLimiting(config)
-           .AddResultStorageService(config);
-
-    builder.Services.AddSignalR();
+           .AddResultStorageService(config)
+           .AddEventPublisher();
 
     if (!builder.Environment.IsDevelopment())
         builder.Services.ParseArguments(args);

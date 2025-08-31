@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using FlowSynx.Persistence.Postgres.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using FlowSynx.Hubs;
 
 namespace FlowSynx.Extensions;
 
@@ -37,6 +38,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddVersion(this IServiceCollection services)
     {
         services.AddSingleton<IVersion, FlowSynxVersion>();
+        return services;
+    }
+
+    public static IServiceCollection AddEventPublisher(this IServiceCollection services)
+    {
+        services.AddSignalR();
+        services.AddScoped<IEventPublisher, SignalREventPublisher<WorkflowsHub>>();
         return services;
     }
 
