@@ -215,6 +215,7 @@ public static class MediatorExtensions
         return mediator.Send(new AddWorkflowTriggerRequest 
         { 
             WorkflowId = workflowId,
+            Status = request.Status,
             Type = request.Type,
             Properties = request.Properties,
         }, cancellationToken);
