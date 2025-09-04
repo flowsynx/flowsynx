@@ -8,4 +8,5 @@ public class WorkflowTriggerDetailsResponse
     public WorkflowTriggerType Type { get; set; } = WorkflowTriggerType.Manual;
     public WorkflowTriggerStatus Status { get; set; } = WorkflowTriggerStatus.Active;
     public Dictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();
+    public DateTime? LastModified { get; set; }
 }

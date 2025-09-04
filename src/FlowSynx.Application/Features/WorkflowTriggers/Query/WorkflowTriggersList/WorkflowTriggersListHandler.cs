@@ -52,6 +52,7 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
                 Type = trigger.Type,
                 Status = trigger.Status,
                 Properties = trigger.Properties,
+                LastModified = trigger.LastModifiedOn ?? trigger.CreatedOn
 
             });
             _logger.LogInformation(_localization.Get("Feature_WorkflowTriggers_List_RetrievedSuccessfully", workflowId));

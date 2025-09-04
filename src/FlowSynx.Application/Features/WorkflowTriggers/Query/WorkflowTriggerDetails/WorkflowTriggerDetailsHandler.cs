@@ -52,7 +52,8 @@ internal class WorkflowTriggerDetailsHandler : IRequestHandler<WorkflowTriggerDe
                 Id = trigger.Id,
                 Type = trigger.Type,
                 Status = trigger.Status,
-                Properties = trigger.Properties
+                Properties = trigger.Properties,
+                LastModified = trigger.LastModifiedOn ?? trigger.CreatedOn
             };
             _logger.LogInformation(_localization.Get("Feature_WorkflowTriggers_Details_DataRetrievedSuccessfully"));
             return await Result<WorkflowTriggerDetailsResponse>.SuccessAsync(response);
