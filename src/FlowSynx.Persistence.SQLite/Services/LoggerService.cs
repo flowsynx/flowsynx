@@ -25,9 +25,22 @@ public class LoggerService : ILoggerService
             var logs = context.Logs;
 
             if (predicate == null)
-                return await logs.OrderBy(x=>x.TimeStamp).Take(250).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            {
+                return await logs
+                    .OrderByDescending(x => x.TimeStamp)
+                    .Take(250)
+                    .ToListAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            }
             else
-                return await logs.Where(predicate).OrderBy(x => x.TimeStamp).Take(250).ToListAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
+            {
+                return await logs
+                    .Where(predicate)
+                    .OrderByDescending(x => x.TimeStamp)
+                    .Take(250)
+                    .ToListAsync(cancellationToken: cancellationToken)
+                    .ConfigureAwait(false);
+            }
         }
         catch (Exception ex)
         {
