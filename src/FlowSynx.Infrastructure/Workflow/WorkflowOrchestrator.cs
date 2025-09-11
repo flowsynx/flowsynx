@@ -101,6 +101,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             await _workflowExecutionService.Add(execution, cancellationToken);
             await CreateTaskExecutionsAsync(workflowId, execution.Id, definition.Tasks, cancellationToken);
 
+            var eventId = $"WorkflowExecutionUpdated-{workflowId}";
             var update = new
             {
                 WorkflowId = workflowId,
@@ -108,7 +109,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 ExecutionStart = execution.ExecutionStart,
                 Status = execution.Status.ToString()
             };
-            await _eventPublisher.PublishToUserAsync(userId, "WorkflowExecutionUpdated", update, cancellationToken);
+            await _eventPublisher.PublishToUserAsync(userId, eventId, update, cancellationToken);
 
             _logger.LogInformation("Workflow execution {ExecutionId} created for workflow {WorkflowId}", execution.Id, workflowId);
             return execution;

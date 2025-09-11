@@ -23,6 +23,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     private readonly IWorkflowTaskExecutionService _workflowTaskExecutionService;
     private readonly ISystemClock _systemClock;
     private readonly ILocalization _localization;
+    private readonly IEventPublisher _eventPublisher;
 
     public WorkflowTaskExecutor(
         ILogger<WorkflowTaskExecutor> logger,
@@ -31,7 +32,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         IErrorHandlingStrategyFactory errorHandlingStrategyFactory,
         IWorkflowTaskExecutionService workflowTaskExecutionService,
         ISystemClock systemClock,
-        ILocalization localization)
+        ILocalization localization,
+        IEventPublisher eventPublisher)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _pluginTypeService = pluginTypeService ?? throw new ArgumentNullException(nameof(pluginTypeService));
@@ -40,6 +42,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _workflowTaskExecutionService = workflowTaskExecutionService ?? throw new ArgumentNullException(nameof(workflowTaskExecutionService));
         _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
         _localization = localization ?? throw new ArgumentNullException(nameof(localization));
+        _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
     }
 
     public async Task<object?> ExecuteAsync(
@@ -66,9 +69,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         using (_logger.BeginScope(logScopeContext))
         {
             taskExecution.StartTime = _systemClock.UtcNow;
-            await UpdateTaskStatusAsync(taskExecution, WorkflowTaskExecutionStatus.Running, globalCancellationToken);
+            await UpdateTaskStatusAsync(executionContext.UserId, taskExecution, WorkflowTaskExecutionStatus.Running, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' started.", task.Name);
-
             var context = new ErrorHandlingContext { TaskName = task.Name, RetryCount = 0 };
             return await ExecuteTaskAsync(executionContext.UserId, task, taskExecution, parser, context, 
                 globalCancellationToken, taskCancellationToken);
@@ -101,20 +103,20 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             else
                 output = result;
             
-            await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
+            await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' completed.", task.Name);
             return output;
         }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
-            await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
+            await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
             _logger.LogError($"Workflow task '{task.Name}' canceled.");
             throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
                 _localization.Get("RetryService_TaskCanceled", task.Name, 0));
         }
         catch (OperationCanceledException) when (globalCancellationToken.IsCancellationRequested)
         {
-            await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
+            await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
             _logger.LogError($"Workflow task '{task.Name}' canceled.");
             throw new FlowSynxException((int)ErrorCode.WorkflowExecutionCanceled,
                 _localization.Get("RetryService_WorkflowCanceled", task.Name, 0));
@@ -123,7 +125,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         {
             if (token.IsCancellationRequested)
             {
-                await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
+                await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
                 _logger.LogError($"Workflow task '{task.Name}' canceled.");
                 throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
                     _localization.Get("RetryService_TaskCanceled", task.Name, 0));
@@ -132,51 +134,65 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             var result = await retryStrategy.HandleAsync(errorContext, token);
             if (result?.ShouldRetry == true)
             {
-                await UpdateTaskStatusAsync(taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
+                await UpdateTaskStatusAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
                 _logger.LogWarning("Workflow task '{TaskName}' retrying.", task.Name);
                 return await ExecuteTaskAsync(userId, task, taskExecution, parser, errorContext, globalCancellationToken, token);
             }
 
             if (result?.ShouldSkip == true)
             {
-                await CompleteTaskAsync(taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
+                await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
                 _logger.LogWarning("Workflow task '{TaskName}' skipped.", task.Name);
                 return null;
             }
 
-            await FailTaskAsync(taskExecution, ex, globalCancellationToken, task.Name);
+            await FailTaskAsync(userId, taskExecution, ex, globalCancellationToken, task.Name);
         }
 
         return null; // unreachable, all branches throw
     }
 
     private async Task FailTaskAsync(
+        string userId,
         WorkflowTaskExecutionEntity entity,
         Exception ex,
         CancellationToken cancellationToken,
         string taskName)
     {
-        await CompleteTaskAsync(entity, WorkflowTaskExecutionStatus.Failed, cancellationToken);
+        await CompleteTaskAsync(userId, entity, WorkflowTaskExecutionStatus.Failed, cancellationToken);
         _logger.LogError(ex, "Workflow task '{TaskName}' failed: {Message}", taskName, ex.Message);
         throw new Exception(ex.Message, ex);
     }
 
     private async Task UpdateTaskStatusAsync(
+        string userId,
         WorkflowTaskExecutionEntity entity,
         WorkflowTaskExecutionStatus status,
         CancellationToken cancellationToken)
     {
         entity.Status = status;
         await _workflowTaskExecutionService.Update(entity, cancellationToken);
+
+        var eventId = $"WorkflowTaskExecutionUpdated-{entity.WorkflowId}-{entity.WorkflowExecutionId}";
+        var updateTask = new
+        {
+            WorkflowId = entity.WorkflowId,
+            ExecutionId = entity.WorkflowExecutionId,
+            TaskId = entity.Id,
+            TaskName = entity.Name,
+            Status = status.ToString()
+        };
+        await _eventPublisher.PublishToUserAsync(userId, eventId, updateTask, cancellationToken);
     }
 
     private async Task CompleteTaskAsync(
+        string userId,
         WorkflowTaskExecutionEntity entity,
         WorkflowTaskExecutionStatus status,
         CancellationToken cancellationToken)
     {
         entity.EndTime = _systemClock.UtcNow;
-        await UpdateTaskStatusAsync(entity, status, cancellationToken);
+        await UpdateTaskStatusAsync(userId, entity, status, cancellationToken);
     }
 
     private static LogScopeContext CreateLogScope(Guid taskId, string taskName) => new()
