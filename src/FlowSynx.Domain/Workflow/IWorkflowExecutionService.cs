@@ -21,4 +21,10 @@ public interface IWorkflowExecutionService
         CancellationToken cancellationToken);
 
     Task<bool> CheckHealthAsync(CancellationToken cancellationToken);
+
+    Task<int> GetRunningWorkflowCountAsync(string userId, CancellationToken cancellationToken);
+
+    Task<int> GetCompletedWorkflowsCountAsync(string userId, CancellationToken cancellationToken);
+
+    Task<int> GetFailedWorkflowsCountAsync(string userId, CancellationToken cancellationToken);
 }

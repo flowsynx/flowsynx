@@ -10,4 +10,5 @@ public interface IWorkflowService
     Task Update(WorkflowEntity workflowEntity, CancellationToken cancellationToken);
     Task<bool> Delete(WorkflowEntity workflowEntity, CancellationToken cancellationToken);
     Task<bool> CheckHealthAsync(CancellationToken cancellationToken);
+    Task<int> GetActiveWorkflowsCountAsync(string userId, CancellationToken cancellationToken);
 }

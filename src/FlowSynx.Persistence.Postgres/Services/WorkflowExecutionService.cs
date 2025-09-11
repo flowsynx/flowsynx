@@ -22,8 +22,8 @@ public class WorkflowExecutionService : IWorkflowExecutionService
     }
 
     public async Task<IReadOnlyCollection<WorkflowExecutionEntity>> All(
-        string userId, 
-        Guid workflowId, 
+        string userId,
+        Guid workflowId,
         CancellationToken cancellationToken)
     {
         try
@@ -45,16 +45,16 @@ public class WorkflowExecutionService : IWorkflowExecutionService
     }
 
     public async Task<WorkflowExecutionEntity?> Get(
-        string userId, 
+        string userId,
         Guid workflowId,
-        Guid workflowExecutionId, 
+        Guid workflowExecutionId,
         CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowExecutions
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.WorkflowId == workflowId 
+                .FirstOrDefaultAsync(x => x.UserId == userId && x.WorkflowId == workflowId
                     && x.Id == workflowExecutionId && x.IsDeleted == false, cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -158,6 +158,66 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch
         {
             return false;
+        }
+    }
+
+    public async Task<int> GetRunningWorkflowCountAsync(string userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.WorkflowExecutions
+                .Where(x => x.UserId == userId && 
+                            x.Status == WorkflowExecutionStatus.Running && 
+                            x.IsDeleted == false)
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message.ToString());
+            return 0;
+        }
+    }
+
+    public async Task<int> GetCompletedWorkflowsCountAsync(string userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            var today = DateTime.UtcNow.Date;
+            return await context.WorkflowExecutions
+                .Where(x => x.UserId == userId && 
+                            x.Status == WorkflowExecutionStatus.Completed && 
+                            x.ExecutionEnd.HasValue && 
+                            x.ExecutionEnd.Value.Date == today && 
+                            x.IsDeleted == false)
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message.ToString());
+            return 0;
+        }
+    }
+
+    public async Task<int> GetFailedWorkflowsCountAsync(string userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.WorkflowExecutions
+                .Where(x => x.UserId == userId && 
+                            x.Status == WorkflowExecutionStatus.Failed && 
+                            x.IsDeleted == false)
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message.ToString());
+            return 0;
         }
     }
 }

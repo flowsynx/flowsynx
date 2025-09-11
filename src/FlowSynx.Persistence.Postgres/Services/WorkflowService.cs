@@ -173,4 +173,21 @@ public class WorkflowService : IWorkflowService
             return false;
         }
     }
+
+    public async Task<int> GetActiveWorkflowsCountAsync(string userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.Workflows
+                .Where(x => x.UserId == userId && x.IsDeleted == false)
+                .CountAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message.ToString());
+            return 0;
+        }
+    }
 }
