@@ -3,7 +3,6 @@
 public class WorkflowConfiguration
 {
     public int? DegreeOfParallelism { get; set; } = 3;
-    public ErrorHandling? ErrorHandling { get; set; }
+    public ErrorHandling? ErrorHandling { get; set; } = new ErrorHandling();
     public int? Timeout { get; set; }
-    //public List<WorkflowTrigger> Triggers { get; set; } = new();
 }

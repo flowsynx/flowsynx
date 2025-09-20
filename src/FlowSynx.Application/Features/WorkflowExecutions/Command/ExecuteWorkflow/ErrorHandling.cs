@@ -2,6 +2,6 @@
 
 public class ErrorHandling
 {
-    public ErrorStrategy? Strategy { get; set; }
-    public RetryPolicy? RetryPolicy { get; set; }
+    public ErrorStrategy? Strategy { get; set; } = ErrorStrategy.Abort;
+    public RetryPolicy? RetryPolicy { get; set; } = new RetryPolicy();
 }

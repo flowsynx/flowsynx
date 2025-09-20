@@ -18,8 +18,11 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         var defaultHandling = config.ErrorHandling;
         var taskHandling = task.ErrorHandling;
 
-        if (defaultHandling is null)
+        if (defaultHandling is null && taskHandling is null)
             return null;
+
+        if (defaultHandling is null)
+            return taskHandling;
 
         if (taskHandling is null)
             return defaultHandling;
