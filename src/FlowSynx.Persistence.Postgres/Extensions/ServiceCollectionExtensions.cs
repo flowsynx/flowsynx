@@ -18,16 +18,14 @@ namespace FlowSynx.Persistence.Postgres.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddPostgresPersistenceLayer(this IServiceCollection services, 
-        IConfiguration configuration)
+    public static IServiceCollection AddPostgresPersistenceLayer(
+        this IServiceCollection services, IConfiguration configuration)
     {
         var databaseConfiguration = new DatabaseConfiguration();
         configuration.GetSection("Db").Bind(databaseConfiguration);
         services.AddSingleton(databaseConfiguration);
 
-        var connectionString = $"Host={databaseConfiguration.Host};Port={databaseConfiguration.Port};" +
-                               $"Database={databaseConfiguration.Name};Username={databaseConfiguration.UserName};" +
-                               $"Password={databaseConfiguration.Password};";
+        var connectionString = GetConnectionString(databaseConfiguration);
 
         services
             .AddScoped<IAuditService, AuditService>()
@@ -44,6 +42,7 @@ public static class ServiceCollectionExtensions
             {
                 options.UseNpgsql(connectionString);
             });
+
         return services;
     }
 
@@ -51,5 +50,30 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<IWorkflowExecutionQueue, WorkflowExecutionQueueServcie>();
         return services;
+    }
+
+    private static string GetConnectionString(DatabaseConfiguration config)
+    {
+        if (!string.IsNullOrWhiteSpace(config.ConnectionString))
+            return config.ConnectionString;
+
+        var builder = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = config.Host,
+            Port = config.Port ?? 5432,
+            Database = config.Name,
+            Username = config.UserName,
+            Password = config.Password
+        };
+
+        if (config.AdditionalOptions != null)
+        {
+            foreach (var kv in config.AdditionalOptions)
+            {
+                builder[kv.Key] = kv.Value;
+            }
+        }
+
+        return builder.ToString();
     }
 }
