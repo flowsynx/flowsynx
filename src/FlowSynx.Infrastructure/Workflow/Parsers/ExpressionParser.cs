@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -55,6 +56,18 @@ public class ExpressionParser(Dictionary<string, object?> outputs) : IExpression
 
         foreach (Match match in matches)
         {
+            if (obj == null) return null;
+
+            // If obj is a string that looks like JSON, parse it now
+            if (obj is string str)
+            {
+                var token = TryParseJson(str);
+                if (token != null)
+                {
+                    obj = token;
+                }
+            }
+
             if (match.Groups[1].Success)
             {
                 obj = GetPropertyValue(obj, match.Groups[1].Value);
@@ -63,12 +76,9 @@ public class ExpressionParser(Dictionary<string, object?> outputs) : IExpression
             {
                 obj = GetArrayItem(obj, int.Parse(match.Groups[2].Value));
             }
-
-            if (obj == null)
-                return null;
         }
 
-        return obj;
+        return UnwrapJToken(obj);
     }
 
     private static object? GetArrayItem(object obj, int index)
@@ -77,14 +87,55 @@ public class ExpressionParser(Dictionary<string, object?> outputs) : IExpression
         {
             return list[index];
         }
+        else if (obj is JArray jArr && index >= 0 && index < jArr.Count)
+        {
+            return jArr[index];
+        }
         return null;
     }
 
     private static object? GetPropertyValue(object? obj, string propertyKey)
     {
-        var propertyInfo = obj?.GetType()
-            .GetProperty(propertyKey, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
+        if (obj is JObject jObj)
+        {
+            return jObj.TryGetValue(propertyKey, StringComparison.OrdinalIgnoreCase, out var token)
+                ? token
+                : null;
+        }
+        else if (obj is JToken jToken)
+        {
+            return jToken[propertyKey];
+        }
+        else
+        {
+            var propertyInfo = obj?.GetType()
+                .GetProperty(propertyKey, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public);
 
-        return propertyInfo?.GetValue(obj);
+            if (propertyInfo != null)
+                return propertyInfo.GetValue(obj);
+        }
+
+        return null;
+    }
+
+    private static JToken? TryParseJson(string str)
+    {
+        try
+        {
+            return JToken.Parse(str);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static object? UnwrapJToken(object? value)
+    {
+        return value switch
+        {
+            JValue jValue => jValue.Value, // unwrap primitive values
+            _ => value
+        };
     }
 }
