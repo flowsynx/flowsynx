@@ -6,19 +6,19 @@ using FlowSynx.Domain.Trigger;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 
-namespace FlowSynx.Infrastructure.Workflow;
+namespace FlowSynx.Infrastructure.Workflow.Triggers.TimeBased;
 
-public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
+public class WorkflowTimeTriggerProcessor : IWorkflowTriggerProcessor
 {
-    private readonly ILogger<WorkflowTimeBasedTriggerProcessor> _logger;
+    private readonly ILogger<WorkflowTimeTriggerProcessor> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly IWorkflowOrchestrator _workflowOrchestrator;
     private readonly IWorkflowExecutionQueue _workflowExecutionQueue;
     private readonly ISystemClock _systemClock;
     private readonly ILocalization _localization;
 
-    public WorkflowTimeBasedTriggerProcessor(
-        ILogger<WorkflowTimeBasedTriggerProcessor> logger,
+    public WorkflowTimeTriggerProcessor(
+        ILogger<WorkflowTimeTriggerProcessor> logger,
         IWorkflowTriggerService workflowTriggerService,
         IWorkflowOrchestrator workflowOrchestrator,
         IWorkflowExecutionQueue workflowExecutionQueue,
@@ -39,10 +39,13 @@ public class WorkflowTimeBasedTriggerProcessor : IWorkflowTriggerProcessor
         _localization = localization;
     }
 
+    public string Name { get; } = "Time-Based Trigger Processor";
+    public TimeSpan Interval { get; } = TimeSpan.FromMinutes(1);
+
     public async Task ProcessTriggersAsync(CancellationToken cancellationToken)
     {
         var triggers = await _workflowTriggerService.GetActiveTriggersByTypeAsync(
-            WorkflowTriggerType.TimeBased, cancellationToken);
+            WorkflowTriggerType.Time, cancellationToken);
 
         foreach (var trigger in triggers)
         {
