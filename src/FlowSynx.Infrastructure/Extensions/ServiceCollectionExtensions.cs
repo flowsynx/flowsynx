@@ -1,24 +1,26 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Localizations;
+using FlowSynx.Application.PluginHost;
+using FlowSynx.Application.PluginHost.Manager;
+using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
+using FlowSynx.Application.Workflow;
+using FlowSynx.Infrastructure.Localizations;
+using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Infrastructure.PluginHost.Cache;
+using FlowSynx.Infrastructure.PluginHost.Manager;
+using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.Infrastructure.Services;
 using FlowSynx.Infrastructure.Workflow;
-using FlowSynx.Application.PluginHost;
-using FlowSynx.Application.Serialization;
-using FlowSynx.Application.Workflow;
-using FlowSynx.Infrastructure.Serialization;
-using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
-using FlowSynx.Infrastructure.Workflow.Parsers;
-using FlowSynx.Infrastructure.PluginHost.Manager;
-using FlowSynx.Infrastructure.PluginHost.Cache;
-using FlowSynx.Application.PluginHost.Manager;
-using FlowSynx.Application.Localizations;
-using Microsoft.Extensions.Logging;
-using FlowSynx.Infrastructure.Localizations;
-using Microsoft.Extensions.Configuration;
-using FlowSynx.Application.Configuration;
-using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 using FlowSynx.Infrastructure.Workflow.ManualApprovals;
+using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
+using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
+using FlowSynx.Infrastructure.Workflow.Triggers.TimeBased;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -51,7 +53,9 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IErrorHandlingStrategyFactory, ErrorHandlingStrategyFactory>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
             .AddScoped<IManualApprovalService, ManualApprovalService>()
-            .AddScoped<WorkflowTimeBasedTriggerProcessor>();
+            .AddSingleton<IWorkflowHttpListener, InMemoryWorkflowHttpListener>()
+            .AddScoped<IWorkflowTriggerProcessor, WorkflowTimeTriggerProcessor>()
+            .AddScoped<IWorkflowTriggerProcessor, WorkflowHttpTriggerProcessor>();
 
         return services;
     }

@@ -66,5 +66,10 @@
   "WorkflowValidator_TaskHasNegativeInitialDelay": "Task '{0}' has negative Initial Delay: '{1}'.",
   "WorkflowValidator_TaskHasNegativeMaxDelay": "Task '{0}' has negative Max Delay: '{1}'",
   "WorkflowValidator_TaskHasNegativeMaxRetries": "Task '{0}' has negative MaxRetries: '{1}'.",
-  "Workflow_Orchestrator_WorkflowNotPaused": "No workflow execution with Id '{0}' found for resumning."
+  "Workflow_Orchestrator_WorkflowNotPaused": "No workflow execution with Id '{0}' found for resumning.",
+  "Workflow_Http_TriggerProcessor_InvalidRoute": "Logged when route configuration is invalid for workflow '{0}'.",
+  "Workflow_Http_TriggerProcessor_FailedRegistration": "Http route is failed to register for workflow '{0}' and user '{1}'.",
+  "Workflow_Http_TriggerProcessor_RegisteredRoute": "Http route '{0}' with '{1}' method is successfully registered for workflow '{2}'.",
+  "Workflow_Http_TriggerProcessor_Triggered": "Http Trigger is triggered for workflow '{0}' and user '{1}'.",
+  "Workflow_Http_TriggerProcessor_FailedExecution": "Failed to execute workflow with ID '{0}' for user '{1}'."
 }

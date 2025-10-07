@@ -1,10 +1,11 @@
-using FlowSynx.Extensions;
-using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Application.Extensions;
-using FlowSynx.Persistence.SQLite.Extensions;
-using FlowSynx.Persistence.Postgres.Extensions;
-using FlowSynx.Services;
+using FlowSynx.Extensions;
 using FlowSynx.Hubs;
+using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
+using FlowSynx.Persistence.Postgres.Extensions;
+using FlowSynx.Persistence.SQLite.Extensions;
+using FlowSynx.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +100,9 @@ try
 
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
     app.MapEndpoints("Fixed");
+
+    var listener = app.Services.GetRequiredService<IWorkflowHttpListener>();
+    app.MapHttpTriggersWorkflowRoutes(listener);
 
     await app.RunAsync();
 }
