@@ -103,6 +103,21 @@ Here are just a few of the many features that make FlowSynx powerful:
 ### Execution environments
 - **Deployment & Execution Environments**: Supports flexible deployment models from standalone desktop/server installs to cloud containerized orchestration, with cross-platform compatibility.
 
+### User Interfaces
+
+#### Flowctl (CLI Interface)
+Flowctl provides a simple yet powerful command-line interface for managing and running workflows directly from your terminal.
+
+| Windows | Linux |
+|---------|-------|
+| ![Flowctl Windows CLI](/img/flowctl_windows.jpg) | ![Flowctl Linux CLI](/img/flowctl_linux.jpg) |
+
+#### Web UI Console
+The FlowSynx Web Console gives users a visual dashboard to manage workflows, monitor executions, view logs, and interact with running tasks in real time.
+
+![FlowSynx Web Console Screenshot](/img/console.png)
+
+
 ## Get Started using FlowSynx
 
 See our [Getting Started](https://flowsynx.io/docs/getting-started) guide over in our docs.
