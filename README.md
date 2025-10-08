@@ -108,9 +108,7 @@ Here are just a few of the many features that make FlowSynx powerful:
 #### Flowctl (CLI Interface)
 Flowctl provides a simple yet powerful command-line interface for managing and running workflows directly from your terminal.
 
-| Windows | Linux |
-|---------|-------|
-| ![Flowctl Windows CLI](/img/flowctl_windows.jpg) | ![Flowctl Linux CLI](/img/flowctl_linux.jpg) |
+![Flowctl CLI Screenshot](/img/flowctl.jpg)
 
 #### Web UI Console
 The FlowSynx Web Console gives users a visual dashboard to manage workflows, monitor executions, view logs, and interact with running tasks in real time.
