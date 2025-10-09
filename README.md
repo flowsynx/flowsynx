@@ -83,6 +83,7 @@ Here are just a few of the many features that make FlowSynx powerful:
 - Flexible Error Handling and Retry Policies per task and workflow level
 - Plugin Registry (Marketplace)
 - REST-API Accessibility
+- Console (Web-UI)
 
 ## Architecture overview
 <img src="/img/architecture-diagram.jpg">
