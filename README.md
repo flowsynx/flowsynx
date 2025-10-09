@@ -127,6 +127,7 @@ See our [Getting Started](https://flowsynx.io/docs/getting-started) guide over i
 | [FlowSynx](https://github.com/flowsynx/flowsynx) | The main repository that you are currently in. Contains the FlowSynx runtime code and overview documentation.
 | [FlowCtl](https://github.com/flowsynx/flowctl) | The FlowCtl allows you to setup FlowSynx on your local dev machine, launches and manages FlowSynx instance.
 | [Docs](https://flowsynx.io/docs/overview) | The documentation for FlowSynx.
+| [FlowSynx Samples](https://github.com/flowsynx/samples) | The Samples and Quickstart Repository, it contains configuration files and workflows for various application features.
 | [Plugin Core](https://github.com/flowsynx/plugin-core) | Plugin interface for create new plugin for FlowSynx engine.
 | [FlowPack ](https://github.com/flowsynx/flowpack) | A lightweight CLI tool designed to build, publish, and package FlowSynx-compatible plugins into a deployable .fspack file.
 | [C# SDK](https://github.com/flowsynx/csharp-sdk) | C# SDK for integrating and executing
