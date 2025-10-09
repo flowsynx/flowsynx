@@ -83,6 +83,7 @@ Here are just a few of the many features that make FlowSynx powerful:
 - Flexible Error Handling and Retry Policies per task and workflow level
 - Plugin Registry (Marketplace)
 - REST-API Accessibility
+- Console (Web-UI)
 
 ## Architecture overview
 <img src="/img/architecture-diagram.jpg">
@@ -134,6 +135,7 @@ See our [Getting Started](https://flowsynx.io/docs/getting-started) guide over i
 | [Plugin Registry](https://github.com/flowsynx/plugin-registry) | The hub for discovering, publishing, and managing plugins that enhance your FlowSynx automation workflows.
 | [Plugin Template Project](https://github.com/flowsynx/plugin-template-project) | Ready-to-use Class Library template for .NET, designed to help you quickly set up a clean and consistent starting point for your plugin.
 | [Plugins](#) | Plugins (Azure, JSON, CSV, etc)
+| [Console](https://github.com/flowsynx/console) | Web-based management console for orchestrating, executing, and monitoring workflows via the FlowSynx Workflow Automation API.
 
 ## Community & Contributing
 We welcome contributors of all experience levels! You can:
