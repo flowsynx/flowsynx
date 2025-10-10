@@ -64,7 +64,7 @@ public class ManualApprovalService: IManualApprovalService
 
         approval.Status = WorkflowApprovalStatus.Approved;
         approval.Approver = userId;
-        approval.ApprovedAt = DateTime.UtcNow;
+        approval.DecidedAt = DateTime.UtcNow;
 
         await _workflowApprovalService.UpdateAsync(approval, cancellationToken);
         _logger.LogInformation("Workflow execution {ExecutionId} approved by '{Approver}'", executionId, userId);
@@ -86,7 +86,7 @@ public class ManualApprovalService: IManualApprovalService
 
         approval.Status = WorkflowApprovalStatus.Rejected;
         approval.Approver = userId;
-        approval.ApprovedAt = DateTime.UtcNow;
+        approval.DecidedAt = DateTime.UtcNow;
 
         await _workflowApprovalService.UpdateAsync(approval, cancellationToken);
         _logger.LogInformation("Workflow execution {ExecutionId} rejected by '{Approver}'", executionId, userId);

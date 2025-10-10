@@ -9,7 +9,7 @@ public class WorkflowApprovalEntity: AuditableEntity<Guid>
     public string RequestedBy { get; set; } = default!;
     public DateTime RequestedAt { get; set; }
     public string? Approver { get; set; }
-    public DateTime? ApprovedAt { get; set; }
+    public DateTime? DecidedAt { get; set; }
     public WorkflowApprovalStatus Status { get; set; } = WorkflowApprovalStatus.Pending;
     public string? Comments { get; set; }
 }
