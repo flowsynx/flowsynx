@@ -1,8 +1,173 @@
-<div style="text-align: center"><img src="/img/flowsynx_logo.png" height="120px">
-<h2>FlowSynx</h2>
+<div align="center">
+  <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
+  <h2>FlowSynx — Orchestrate Anything. Anywhere.</h2>
+  <p><i>Lightweight, extensible, and powerful workflow orchestration for modern automation.</i></p>
+
+  [![License: MIT][mit-badge]][mit-url]
+  [![Build Status][actions-badge]][actions-url]
+  [![FOSSA Status][fossa-badge]][fossa-url]
 </div>
 
-[![License: MIT][mit-badge]][mit-url] [![Build Status][actions-badge]][actions-url] [![FOSSA Status][fossa-badge]][fossa-url]
+FlowSynx is a **next-generation workflow orchestration platform** that unifies **automation, scalability, and extensibility** in a single, developer-friendly ecosystem.  
+It bridges the gap between **low-code simplicity** and **full-code power**, allowing both developers and operations teams to automate complex tasks seamlessly across **on-prem**, **cloud**, and **hybrid** environments.
+
+Whether you’re streamlining **DevOps**, managing **data pipelines**, or building **enterprise-grade automations**, FlowSynx gives you the control, flexibility, and insight to make it happen.
+
+## What is FlowSynx?
+
+In today’s fast-moving software landscape, organizations demand **repeatable**, **modular**, and **secure** automation — without the lock-in of rigid platforms.
+
+**FlowSynx** redefines orchestration with:
+- A **.NET-based micro-kernel engine** built for speed and reliability  
+- A **plugin-driven architecture** that evolves with your needs  
+- A **JSON-based DAG (Directed Acyclic Graph)** workflow model that’s both human-readable and machine-friendly  
+
+FlowSynx turns your processes — from data management to API and ML/AI automation — into **clear, maintainable, and reusable workflows**.
+
+## How It Works
+
+At its core, FlowSynx executes **DAG-based workflows** where each task represents an atomic operation — reading data, transforming it, sending HTTP requests, or interacting with external systems.
+
+### Core Concepts
+
+- **Workflow JSON** — Define tasks, dependencies, and parameters in simple JSON  
+- **Plugins** — Modular building blocks for any functionality (file I/O, APIs, cloud storage, data transformation, ML/AI, etc.)  
+- **Execution Engine** — Smart orchestration with:
+  - Task dependency resolution (topological sorting)
+  - Shared execution context and secure state handling
+  - Async execution, retries, and timeouts
+  - Built-in logging, metrics, and auditing
+
+## Task Lifecycle
+
+Every task flows through a predictable, reliable lifecycle:
+
+1. **Initialization** – Validates plugin and parameters  
+2. **Dependency Wait** – Ensures prerequisite tasks are done  
+3. **Execution** – Runs the plugin logic (e.g., `ReadAsync`, `WriteAsync`)  
+4. **Error Handling** – Retries, fallbacks, or workflow failover  
+5. **Post-Processing** – Logs, stores outputs, and passes results downstream  
+
+## Execution Modes
+
+Choose how you run FlowSynx — on your terms:
+
+| Mode | Description |
+|------|--------------|
+| **Standalone** | Lightweight binary for local or embedded use |
+| **Dockerized** | Ready for CI/CD pipelines and Kubernetes clusters |
+| **API Mode** | Trigger workflows via REST APIs |
+| **CLI (`flowctl`)** | Command-line power for developers |
+
+## Runtime Context
+
+- Shared Variables  
+- Secure Secrets Management  
+- Plugin Buffers & Metadata  
+- Real-Time State Tracking  
+
+## Why FlowSynx?
+
+Modern automation is complex — but it doesn’t have to be **complicated**.
+
+FlowSynx is designed to:
+- **Empower developers** with modularity and openness  
+- **Simplify operations** through declarative configuration  
+- **Bridge teams** across development, data, and business processes  
+- **Scale effortlessly** across environments  
+
+Built on clean architecture principles, FlowSynx offers **clarity**, **control**, and **confidence** — even in the most demanding automation scenarios.
+
+## Key Features
+
+✅ **Plugin-Based Extensibility** — Add, upgrade, or remove capabilities dynamically and version-controlled  
+✅ **Cross-Platform Execution** — Runs everywhere (Windows, Linux, macOS, Docker, Cloud)  
+✅ **JSON-Defined Workflows** — Declarative, portable, and version-controlled  
+✅ **CLI & SDK Support** — Total control for developers and DevOps teams  
+✅ **Secure Authentication** — JWT, Basic Auth  
+✅ **Triggers & Events** — Webhooks, schedules, and file-change detection  
+✅ **Human-in-the-Loop Tasks** — Combine automation with human approval  
+✅ **Advanced Logging & Auditing** — Full transparency into every execution  
+✅ **Error Handling** - Flexible Error Handling and Retry Policies per task and workflow level
+✅ **Marketplace & Registry** — Discover and manage plugins easily  
+✅ **Web Console UI** — Intuitive dashboard for workflow monitoring and control  
+
+## Get Started using FlowSynx
+
+Ready to try FlowSynx? Start automating in minutes.
+
+📘 **Documentation:** [Getting Started Guide](https://flowsynx.io/docs/getting-started)  
+🧩 **Samples:** [Example Workflows & Configs](https://github.com/flowsynx/samples)  
+
+## Architecture Overview
+
+<img src="/img/architecture-diagram.jpg" alt="FlowSynx Architecture Diagram"/>
+
+### Interaction Layers
+- **CLI (FlowCtl)** — Lightweight command-line orchestration  
+- **REST API Gateway** — Secure, API-first automation  
+- **SDKs & Libraries** — Integrate FlowSynx into your own apps  
+
+### Core Components
+- **Workflow Orchestrator** — Executes and manages JSON-defined DAGs  
+- **Plugin Manager** — Loads and maintains plugins dynamically  
+- **Security & Auth Layer** — Ensures safe access and execution  
+- **Logging & Auditing Engine** — Observability built in  
+- **Trigger Engine** — React to events, schedules, and external signals  
+
+### Environments
+Deploy FlowSynx in **local**, **server**, **container**, or **cloud-native** setups — with complete portability.
+
+## User Interfaces
+
+### FlowCtl (CLI)
+Powerful, scriptable, and developer-friendly.
+
+![Flowctl CLI Screenshot](/img/flowctl.jpg)
+
+### Web Console
+A clean, interactive dashboard for:
+- Workflow management  
+- Real-time monitoring  
+- Execution logs and metrics  
+- Human task approvals  
+
+![FlowSynx Web Console Screenshot](/img/console.png)
+
+## Related Repositories
+
+| Repository | Description |
+|-------------|-------------|
+| [**FlowSynx**](https://github.com/flowsynx/flowsynx) | Core engine & runtime |
+| [**FlowCtl**](https://github.com/flowsynx/flowctl) | CLI for managing FlowSynx |
+| [**Docs**](https://flowsynx.io/docs/overview) | Official documentation |
+| [**Samples**](https://github.com/flowsynx/samples) | Example workflows & configurations |
+| [**Plugin Core**](https://github.com/flowsynx/plugin-core) | Plugin interface & SDK |
+| [**FlowPack**](https://github.com/flowsynx/flowpack) | CLI to build/publish FlowSynx plugins |
+| [**C# SDK**](https://github.com/flowsynx/csharp-sdk) | Integrate FlowSynx programmatically |
+| [**Plugin Registry**](https://github.com/flowsynx/plugin-registry) | Discover, publish & manage plugins |
+| [**Plugin Template**](https://github.com/flowsynx/plugin-template-project) | .NET template for building plugins |
+| [**Console**](https://github.com/flowsynx/console) | Web UI management dashboard |
+
+## Community & Contributing
+
+Join a growing community of developers and automation experts.  
+You can:
+- 💡 Submit ideas and feature requests  
+- 🔌 Build and publish plugins  
+- 🧱 Contribute to the core or documentation  
+- 🌍 Collaborate in discussions  
+
+👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
+
+---
+
+## License
+
+FlowSynx is open-source and licensed under the **MIT License**.  
+See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for details.
+
+---
 
 [mit-badge]: https://img.shields.io/github/license/flowsynx/flowsynx?style=flat&label=License&logo=github
 [mit-url]: https://github.com/flowsynx/flowsynx/blob/master/LICENSE
@@ -10,142 +175,3 @@
 [actions-url]: https://github.com/flowsynx/flowsynx/actions?workflow=flowsynx
 [fossa-badge]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx.svg?type=shield&issueType=license
 [fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx?ref=badge_shield&issueType=license
-
-FlowSynx is a lightweight, flexible, plugin-driven, cross-platform workflow orchestration system designed to automate, 
-scale, and manage complex file and data workflows across cloud and on-prem environments. It bridges the 
-gap between low-code accessibility and full-code extensibility, empowering both developers and operations 
-teams to build powerful, declarative workflows in a simple, consistent way.
-
-## What Is FlowSynx?
-In today’s rapidly evolving software and data ecosystems, modular orchestration, repeatability, 
-and automation are critical for operational success. However, many existing workflow platforms 
-suffer from rigidity, overcomplexity, or tight platform coupling.
-
-**FlowSynx** solves these limitations with a developer-centric ecosystem for defining and executing 
-**JSON-based DAG workflows**. At its core lies a lightweight **micro-kernel engine** built in .NET, which 
-dynamically loads plugins to extend its capabilities without changing the core. This architecture 
-allows for scalable, testable, and maintainable systems that can evolve rapidly while staying reliable.
-
-FlowSynx supports a wide range of domains—from DevOps, CI/CD, and data pipelines to industry-specific 
-workflows in healthcare, finance, and enterprise automation.
-
-## How It Works
-FlowSynx orchestrates workflows as Directed Acyclic Graphs (DAGs), where each node (task) represents 
-an atomic operation like reading a file, transforming data, uploading to cloud storage, or triggering 
-an HTTP call. These tasks are executed in a controlled, dependency-respecting order, determined by their 
-connections in the DAG.
-
-### Core Concepts
-- **Workflow JSON**: Workflows are defined using JSON files that describe tasks, dependencies, and parameters. Each task references a plugin and defines its action and input/output.
-- **Plugins**: All functionality (e.g., file I/O, API calls, data processing) is handled via dynamically loaded plugins. This enables modularity, versioning, and dynamic extension of the system.
-- **Execution Engine**: A core micro-kernel processes the DAG:	
-	- Resolves task dependencies via topological sorting
-	- Manages shared execution context and state
-	- Executes plugins asynchronously with retry and timeout support
-	- Captures logs, audit entries, and metrics per task
-
-### Task Lifecycle
-Each task follows a lifecycle:
-- **Initialization**: Validates plugin/action and parameters.
-- **Dependency Wait**: Ensures all dependsOn tasks are completed.
-- **Execution**: Calls the appropriate plugin method (ReadAsync, WriteAsync, etc.).
-- **Error Handling**: Applies retry logic, fallbacks, or fails the workflow.
-- **Post-processing**: Logs result, stores state/output, propagates values to downstream tasks.
-
-### Execution Modes
-- **Standalone Binary**: Lightweight self-hosted engine
-- **Docker Container**: For cloud-native or CI/CD deployments
-- **API Triggered**: REST API for remote or event-based workflow starts
-- **CLI Tool (flowctl)**: Used to run, validate, and manage workflows
-- **Human-in-the-Loop**: Supports tasks that pause execution until manual approval
-
-### Runtime Context
-- Supports shared variables, secure secrets, plugin buffers, metadata
-
-## Why FlowSynx?
-Building scalable, maintainable, and cross-platform workflow automation is a complex challenge—especially 
-when dealing with diverse environments, evolving requirements, and a growing set of integrations. 
-FlowSynx is purpose-built to solve these challenges with a modular, extensible approach rooted in simplicity, 
-flexibility, and developer empowerment.
-
-## Features
-Here are just a few of the many features that make FlowSynx powerful:
-
-- Plugin-Based Extensibility
-- Cross-Platform Execution (Windows, Linux, macOS, Docker, Cloud)
-- JSON-Based Workflow Definition
-- Command-Line Interface (CLI)
-- .NET SDK for Programmatic Control
-- Built-in Authentication and Security (JWT, Basic)
-- Trigger-Based Execution (schedules, webhooks, file changes, etc.)
-- Human-in-the-Loop (HITL) Steps
-- Logging, Monitoring, and Auditing Hooks
-- Flexible Error Handling and Retry Policies per task and workflow level
-- Plugin Registry (Marketplace)
-- REST-API Accessibility
-- Console (Web-UI)
-
-## Architecture overview
-<img src="/img/architecture-diagram.jpg">
-
-### Intraction tools
-- **CLI Interface**: Command-line tools for interacting with the FlowSynx system, enabling workflow management and execution from terminals.
-- **REST API Gateway**: Provides secure, HTTP/HTTPS RESTful APIs to integrate with external systems, allowing remote workflow control and status querying.
-- **SDK (Library)**: Developer-friendly libraries exposing FlowSynx functionalities programmatically, enabling custom applications to embed or automate workflow operations.
-
-### FlowSynx Core
-- **Workflow Orchestrator**: The core engine that loads and executes workflows defined as JSON DAGs.
-- **Plugin Manager**: Dynamically loads plugins and maintains a plugin marketplace/registry for easy discovery and management.
-- **Security & Auth**: Handles authentication and authorization for both REST API and CLI access, ensuring secure operations.
-- **Logging & Auditing**: Tracks workflow execution, plugin activity, and audit trails for compliance and debugging.
-- **Trigger Engine**: Listens for external events or schedules workflows to start based on timers, webhooks, or system signals.
-- **Error handling**: Built-in support for task retries, timeouts, and fallbacks ensures reliable execution even in unstable environments. Custom retry strategies can be defined per task.
-
-### Execution environments
-- **Deployment & Execution Environments**: Supports flexible deployment models from standalone desktop/server installs to cloud containerized orchestration, with cross-platform compatibility.
-
-### User Interfaces
-
-#### Flowctl (CLI Interface)
-Flowctl provides a simple yet powerful command-line interface for managing and running workflows directly from your terminal.
-
-![Flowctl CLI Screenshot](/img/flowctl.jpg)
-
-#### Web UI Console
-The FlowSynx Web Console gives users a visual dashboard to manage workflows, monitor executions, view logs, and interact with running tasks in real time.
-
-![FlowSynx Web Console Screenshot](/img/console.png)
-
-
-## Get Started using FlowSynx
-
-See our [Getting Started](https://flowsynx.io/docs/getting-started) guide over in our docs.
-
-## Related Repositories
-
-| Repo | Description |
-|:-----|:------------|
-| [FlowSynx](https://github.com/flowsynx/flowsynx) | The main repository that you are currently in. Contains the FlowSynx runtime code and overview documentation.
-| [FlowCtl](https://github.com/flowsynx/flowctl) | The FlowCtl allows you to setup FlowSynx on your local dev machine, launches and manages FlowSynx instance.
-| [Docs](https://flowsynx.io/docs/overview) | The documentation for FlowSynx.
-| [FlowSynx Samples](https://github.com/flowsynx/samples) | The Samples and Quickstart Repository, it contains configuration files and workflows for various application features.
-| [Plugin Core](https://github.com/flowsynx/plugin-core) | Plugin interface for create new plugin for FlowSynx engine.
-| [FlowPack ](https://github.com/flowsynx/flowpack) | A lightweight CLI tool designed to build, publish, and package FlowSynx-compatible plugins into a deployable .fspack file.
-| [C# SDK](https://github.com/flowsynx/csharp-sdk) | C# SDK for integrating and executing
-| [Plugin Registry](https://github.com/flowsynx/plugin-registry) | The hub for discovering, publishing, and managing plugins that enhance your FlowSynx automation workflows.
-| [Plugin Template Project](https://github.com/flowsynx/plugin-template-project) | Ready-to-use Class Library template for .NET, designed to help you quickly set up a clean and consistent starting point for your plugin.
-| [Plugins](#) | Plugins (Azure, JSON, CSV, etc)
-| [Console](https://github.com/flowsynx/console) | Web-based management console for orchestrating, executing, and monitoring workflows via the FlowSynx Workflow Automation API.
-
-## Community & Contributing
-We welcome contributors of all experience levels! You can:
-- Submit issues and feature requests
-- Build and publish your own plugin
-- Participate in our community discussions
-- Help expand the system and documentation
-
-👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
-
-## License
-
-This is free software under the terms of the MIT license (check the [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) file included in this package).
