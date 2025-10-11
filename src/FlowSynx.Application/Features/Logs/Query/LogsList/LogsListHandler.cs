@@ -65,11 +65,11 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
 
     private static LogsLevel ToLogsLevel(string logsLevel)
     {
-        if (!Enum.TryParse<LogsLevel>(logsLevel, ignoreCase: true, out var result))
+        if (!Enum.TryParse<LogsLevel>(logsLevel, ignoreCase: true, out var level))
         {
             return LogsLevel.Info;
         }
 
-        return result;
+        return level;
     }
 }
