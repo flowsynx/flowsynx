@@ -160,14 +160,10 @@ You can:
 
 👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
 
----
-
 ## License
 
 FlowSynx is open-source and licensed under the **MIT License**.  
 See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for details.
-
----
 
 [mit-badge]: https://img.shields.io/github/license/flowsynx/flowsynx?style=flat&label=License&logo=github
 [mit-url]: https://github.com/flowsynx/flowsynx/blob/master/LICENSE
