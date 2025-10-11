@@ -138,16 +138,16 @@ A clean, interactive dashboard for:
 
 | Repository | Description |
 |-------------|-------------|
-| [**FlowSynx**](https://github.com/flowsynx/flowsynx) | The core FlowSynx engine and runtime responsible for executing JSON-based DAG workflows, managing plugins, handling triggers, and orchestrating task execution across environments. |
-| [**FlowCtl**](https://github.com/flowsynx/flowctl) | A lightweight command-line interface (CLI) for initializing, running, validating, and managing FlowSynx workflows directly from the terminal or within CI/CD pipelines. |
-| [**Console**](https://github.com/flowsynx/console) | A modern web-based management dashboard for monitoring workflows, visualizing DAG executions, inspecting logs, and performing manual task interventions. |
-| [**Docs**](https://flowsynx.io/docs/overview) | The official FlowSynx documentation portal featuring installation guides, workflow configuration examples, plugin development tutorials, and API references. |
-| [**Samples**](https://github.com/flowsynx/samples) | A collection of ready-to-run workflow examples and configuration templates showcasing common automation patterns, integrations, and best practices. |
-| [**Plugin Core**](https://github.com/flowsynx/plugin-core) | The foundational SDK and interface layer for building custom FlowSynx plugins that extend the engine’s capabilities without modifying its core. |
-| [**FlowPack**](https://github.com/flowsynx/flowpack) | A packaging and publishing tool that compiles and distributes FlowSynx plugins into `.fspack` bundles, simplifying deployment and version management. |
-| [**C# SDK**](https://github.com/flowsynx/csharp-sdk) | A developer-friendly .NET SDK that enables programmatic control of workflows, execution tracking, and integration with FlowSynx services and APIs. |
-| [**Plugin Registry**](https://github.com/flowsynx/plugin-registry) | A central repository and discovery hub where developers can browse, publish, and manage FlowSynx-compatible plugins for different domains and use cases. |
-| [**Plugin Template**](https://github.com/flowsynx/plugin-template-project) | A preconfigured .NET Class Library template designed to help developers quickly scaffold and build new FlowSynx plugins following best practices. |
+| [**FlowSynx**](https://github.com/flowsynx/flowsynx) | Core engine and runtime for executing JSON-based DAG workflows with plugin-based orchestration. |
+| [**FlowCtl**](https://github.com/flowsynx/flowctl) | Command-line tool for initializing, running, and managing FlowSynx workflows. |
+| [**Console**](https://github.com/flowsynx/console) | Web-based dashboard for managing, monitoring, and visualizing workflows. |
+| [**Docs**](https://flowsynx.io/docs/overview) | Official documentation with setup guides, examples, and API references. |
+| [**Samples**](https://github.com/flowsynx/samples) | Ready-to-run example workflows and configuration templates. |
+| [**Plugin Core**](https://github.com/flowsynx/plugin-core) | SDK and interfaces for building custom FlowSynx plugins. |
+| [**FlowPack**](https://github.com/flowsynx/flowpack) | CLI tool to package and publish FlowSynx plugins as `.fspack` bundles. |
+| [**C# SDK**](https://github.com/flowsynx/csharp-sdk) | .NET SDK for integrating and controlling FlowSynx programmatically. |
+| [**Plugin Marketplace**](https://github.com/flowsynx/plugin-registry) | Central hub to discover, publish, and manage FlowSynx plugins. |
+| [**Plugin Template**](https://github.com/flowsynx/plugin-template-project) | .NET project template for creating new FlowSynx plugins quickly. |
 
 ## Community & Contributing
 
