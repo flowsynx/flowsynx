@@ -1,11 +1,10 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
-using FlowSynx.Application.Wrapper;
+﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Services;
-using FlowSynx.Application.Extensions;
-using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Log;
-using FlowSynx.Application.Models;
+using FlowSynx.PluginCore.Exceptions;
+using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.Logs.Query.LogsList;
 
@@ -64,18 +63,12 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
         }
     }
 
-    private LogsLevel ToLogsLevel(string logsLevel)
+    private static LogsLevel ToLogsLevel(string logsLevel)
     {
-        var level = logsLevel.ToLower() switch
+        if (!Enum.TryParse<LogsLevel>(logsLevel, ignoreCase: true, out var level))
         {
-            "none" => LogsLevel.None,
-            "dbug" => LogsLevel.Dbug,
-            "info" => LogsLevel.Info,
-            "warn" => LogsLevel.Warn,
-            "fail" => LogsLevel.Fail,
-            "crit" => LogsLevel.Crit,
-            _ => LogsLevel.Info,
-        };
+            return LogsLevel.Info;
+        }
 
         return level;
     }
