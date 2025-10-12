@@ -1,4 +1,4 @@
-# 🌟 Contribution Guidelines
+# Contribution Guidelines
 
 Thank you for your interest in contributing to **FlowSynx**!  
 We’re thrilled to collaborate with developers like you to make this project more powerful, stable, and innovative.
@@ -13,12 +13,12 @@ Whether you’re here to:
 
 We welcome and appreciate your contribution!
 
-## 🚀 Development Workflow
+## Development Workflow
 
 We use **GitHub** to manage our source code, issues, feature requests, and pull requests.  
 All changes to the codebase are made through **Pull Requests (PRs)** — following the principles of [GitHub Flow](https://guides.github.com/introduction/flow/index.html).
 
-### 🧩 How to Contribute Code
+### How to Contribute Code
 
 1. **Fork** the repository and create a new branch from `master`.  
    Use a descriptive branch name, e.g.:
@@ -36,7 +36,7 @@ All changes to the codebase are made through **Pull Requests (PRs)** — followi
 
 💡 *We actively review all pull requests and provide constructive feedback. Your ideas and improvements help shape FlowSynx for everyone.*
 
-## 🧠 Reporting Bugs & Issues
+## Reporting Bugs & Issues
 
 We use [GitHub Issues](https://github.com/flowsynx/flowsynx/issues) to track bugs, enhancements, and discussions.
 
@@ -50,18 +50,18 @@ To report a bug, [open a new issue](https://github.com/flowsynx/flowsynx/issues/
 
 🔍 *Clear, reproducible reports help us resolve issues faster and maintain higher project quality.*
 
-## 🧾 Code of Conduct
+## Code of Conduct
 
 By participating in this project, you agree to help foster a welcoming and inclusive environment for everyone.  
 Be respectful, constructive, and considerate in all interactions — collaboration is key to success.
 
-## 📜 License
+## License
 
 By contributing to **FlowSynx**, you agree that your contributions will be licensed under the terms of the [MIT License](http://choosealicense.com/licenses/mit/), which governs this project.
 
 If you have any questions about licensing or contributions, please reach out to the maintainers.
 
-### ❤️ Thank You
+## ❤️ Thank You
 
 Your time and expertise make **FlowSynx** better every day.  
 Together, we can build a flexible, open, and powerful automation platform for everyone.
