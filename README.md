@@ -3,6 +3,7 @@
   <h2>FlowSynx — Orchestrate Anything. Anywhere.</h2>
   <p><i>Lightweight, extensible, and powerful workflow orchestration for modern automation.</i></p>
 
+  [![Codacy Badge][codacy-badge]][codacy-url]
   [![License: MIT][mit-badge]][mit-url]
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
@@ -171,3 +172,5 @@ See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for deta
 [actions-url]: https://github.com/flowsynx/flowsynx/actions?workflow=flowsynx
 [fossa-badge]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx.svg?type=shield&issueType=license
 [fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx?ref=badge_shield&issueType=license
+[codacy-badge]: https://app.codacy.com/project/badge/Grade/cc8cc16dbade4f5b93b82fd29ed7c879
+[codacy-url]: https://app.codacy.com/gh/flowsynx/flowsynx/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
