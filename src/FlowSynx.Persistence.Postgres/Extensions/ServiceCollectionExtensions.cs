@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain;
 using FlowSynx.Domain.Audit;
@@ -8,7 +9,6 @@ using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Workflow;
 using FlowSynx.Persistence.Postgres.Contexts;
-using FlowSynx.Persistence.Postgres.Seeder;
 using FlowSynx.Persistence.Postgres.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +29,7 @@ public static class ServiceCollectionExtensions
 
         services
             .AddScoped<IAuditService, AuditService>()
-            .AddScoped<IApplicationDataSeeder, ApplicationDataSeeder>()
+            .AddScoped<IDatabaseInitializer, PosgreSqlDatabaseInitializer>()
             .AddScoped<IPluginConfigurationService, PluginConfigurationService>()
             .AddScoped<IPluginService, PluginService>()
             .AddScoped<IWorkflowService, WorkflowService>()
