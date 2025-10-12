@@ -31,8 +31,10 @@ public class PluginEntityConfiguration : IEntityTypeConfiguration<PluginEntity>
                .IsRequired();
 
         builder.Property(t => t.Type)
+               .HasColumnType("citext")
                .HasMaxLength(1024)
                .IsRequired();
+
         builder.Property(t => t.Description)
                .HasMaxLength(4096);
 

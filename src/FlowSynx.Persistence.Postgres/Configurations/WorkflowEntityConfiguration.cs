@@ -26,6 +26,7 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
                .IsRequired();
 
         builder.Property(t => t.Name)
+               .HasColumnType("citext")
                .IsRequired()
                .HasMaxLength(128);
 
