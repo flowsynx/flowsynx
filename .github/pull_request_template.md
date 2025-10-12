@@ -12,6 +12,12 @@
 Please explain the changes you've made.
 -->
 
+### Breaking changes
+
+<!--
+If your PR introduces breaking changes, please describe them here.
+-->
+
 ## Issue reference
 
 <!--
