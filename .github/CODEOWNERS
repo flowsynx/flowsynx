@@ -1,0 +1,31 @@
+# CODEOWNERS for FlowSynx
+# Automatically requests reviews for key components.
+
+# ─────────────────────────────
+# Documentation & Governance
+README.md                @flowsynx/owners @flowsynx/docs-team
+SECURITY.md              @flowsynx/owners
+CONTRIBUTING.md          @flowsynx/owners
+LICENSE                  @flowsynx/owners
+
+# ─────────────────────────────
+# CI/CD and Infrastructure
+.github/                 @flowsynx/devops-team
+/docker/**               @flowsynx/devops-team
+
+# ─────────────────────────────
+# Core Logic & Architecture
+/src/**                  @flowsynx/owners @flowsynx/core-team
+/plugins/**              @flowsynx/owners @flowsynx/core-team
+
+# ─────────────────────────────
+# Tests
+/tests/**                @flowsynx/owners @flowsynx/maintainers
+
+# ─────────────────────────────
+# Licensing
+/LICENSE                 @flowsynx/owners
+
+# ─────────────────────────────
+# Catch-all (Default)
+*                        @flowsynx/owners
