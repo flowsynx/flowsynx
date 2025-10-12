@@ -94,7 +94,6 @@ try
     app.UseCustomException();
 
     app.EnsureApplicationDatabaseCreated();
-    app.UseApplicationDataSeeder();
 
     app.UseHealthCheck();
 
