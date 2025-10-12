@@ -21,3 +21,9 @@ A clear and concise description of what the bug is.
 
 ## Steps to reproduce
 <!-- How can a maintainer reproduce this issue (be detailed) -->
+
+## Logs/Output
+<!-- If applicable, add any relevant logs or output to help explain your problem. -->
+
+## Additional Context
+<!-- Add any other context about the problem here. -->
