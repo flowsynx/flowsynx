@@ -19,4 +19,15 @@ Do **not** open a public issue or pull request, as this could expose the vulnera
 3. **Resolution Timeline**: We aim to resolve and release a patch for confirmed vulnerabilities within **30 days** of the report.
 4. **Disclosure**: Once a fix is available, we will coordinate public disclosure with you (the reporter) and include a detailed changelog in the relevant release notes.
 
+## Supported Versions
+
+This table outlines the supported FlowSynx versions and their security update status.
+
+| Version | Supported | Support Window |
+|---------|-----------|----------------|
+| v1.2.0  | ✅ Yes   | Until next minor release (v1.3.x) |
+| v1.1.4  | ⚠️ Yes   | 1 month after next minor release |
+| v1.1.3  | ❌ No    | End-of-life |
+
+
 We appreciate responsible disclosure and your efforts to keep FlowSynx safe for everyone.
