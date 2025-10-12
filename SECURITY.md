@@ -1,27 +1,36 @@
-# Security Policy
+# FlowSynx Security Policy
+
+At **FlowSynx**, security is a top priority. We are committed to safeguarding our users, 
+their data, and the systems that rely on our software. Rigorous security practices are 
+integrated throughout our software development and release lifecycle to ensure the highest level of protection.
 
 ## Reporting a Vulnerability
 
-The FlowSynx team takes security seriously and prioritizes protecting our users, their data, and the systems they rely on. 
-We apply rigorous security practices throughout our software development and release lifecycle.
+If you identify a potential security issue or vulnerability in FlowSynx, please **report it privately** to our security team:
 
-If you discover a potential security issue or vulnerability in FlowSynx, **please report it privately** to our security 
-team by emailing:
+📧 **[support@flowsynx.io](mailto:support@flowsynx.io)**
 
-📧 [**support@flowsynx.io**](mailto:support@flowsynx.io)
-
-Do **not** open a public issue or pull request, as this could expose the vulnerability before it is resolved.
+> **Important:** Please **do not** create a public issue or pull request, as this may expose the vulnerability before it is resolved.
 
 ## Response Process
 
-1. **Acknowledgment**: We will acknowledge receipt of your report within **3 business days**.
-2. **Investigation**: The FlowSynx team will investigate the issue and work on a fix or mitigation.
-3. **Resolution Timeline**: We aim to resolve and release a patch for confirmed vulnerabilities within **30 days** of the report.
-4. **Disclosure**: Once a fix is available, we will coordinate public disclosure with you (the reporter) and include a detailed changelog in the relevant release notes.
+We handle every report with urgency and transparency:
+
+1. **Acknowledgment**  
+   We will confirm receipt of your report within **3 business days**.
+
+2. **Investigation**  
+   Our security team will thoroughly investigate the issue and develop a fix or mitigation.
+
+3. **Resolution Timeline**  
+   Confirmed vulnerabilities are typically resolved and released in a patch within **30 days** of reporting.
+
+4. **Coordinated Disclosure**  
+   Once a fix is ready, we will coordinate public disclosure with the reporter and include a detailed changelog in the relevant release notes.
 
 ## Supported Versions
 
-This table outlines the supported FlowSynx versions and their security update status.
+The table below outlines supported FlowSynx versions and their security update status:
 
 | Version | Supported | Support Window |
 |---------|-----------|----------------|
@@ -29,5 +38,4 @@ This table outlines the supported FlowSynx versions and their security update st
 | v1.1.4  | ⚠️ Yes   | 1 month after next minor release |
 | v1.1.3  | ❌ No    | End-of-life |
 
-
-We appreciate responsible disclosure and your efforts to keep FlowSynx safe for everyone.
+We sincerely appreciate your responsible disclosure and your efforts in helping **keep FlowSynx safe for everyone**.
