@@ -33,7 +33,7 @@ public class PluginSpecificationsService : IPluginSpecificationsService
         {
             if (specification.IsRequired && !inputSpecifications.ContainsKey(specification.Name))
             {
-                var value = inputSpecifications[specification.Name.ToLower()];
+                var value = inputSpecifications[specification.Name.ToLowerInvariant()];
                 var valid = true;
 
                 switch (value)
