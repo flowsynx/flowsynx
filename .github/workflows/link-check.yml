@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run lychee link checker
-        uses: lycheeverse/lychee-action@v1
+        uses: lycheeverse/lychee-action@2b973e86fc7b1f6b36a93795fe2c9c6ae1118621 # v1
         with:
           fail: true
           args: --verbose --no-progress README.md **/*.md
