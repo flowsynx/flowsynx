@@ -63,6 +63,10 @@ public abstract class AuditableContext(DbContextOptions options) : DbContext(opt
                             auditEntry.NewValues[propertyName] = property.CurrentValue!;
                         }
                         break;
+
+                    default:
+                        // No action required for other states
+                        break;
                 }
             }
         }
