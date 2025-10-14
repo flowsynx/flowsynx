@@ -11,17 +11,13 @@ public class ManualApprovalService: IManualApprovalService
 {
     private readonly IWorkflowApprovalService _workflowApprovalService;
     private readonly ILogger<ManualApprovalService> _logger;
-    //private readonly INotificationService _notificationService; // Optional: Send emails/UI notifications
 
     public ManualApprovalService(
         IWorkflowApprovalService workflowApprovalService,
-        ILogger<ManualApprovalService> logger
-        //INotificationService notificationService
-        )
+        ILogger<ManualApprovalService> logger)
     {
         _workflowApprovalService = workflowApprovalService ?? throw new ArgumentNullException(nameof(workflowApprovalService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        //_notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
     }
 
     public async Task RequestApprovalAsync(
@@ -43,9 +39,6 @@ public class ManualApprovalService: IManualApprovalService
 
         await _workflowApprovalService.AddAsync(approvalEntity, cancellationToken);
         _logger.LogInformation("Approval requested for workflow execution {ExecutionId}", execution.Id);
-
-        //// Notify approvers (optional)
-        //await _notificationService.SendApprovalRequestAsync(approvalEntity, approval, cancellationToken);
     }
 
     public async Task ApproveAsync(
