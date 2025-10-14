@@ -21,7 +21,6 @@ A clear and concise description of what the bug is.
 ## Steps to reproduce
 <!-- How can a maintainer reproduce this issue (be detailed) -->
 
----
-
-**Optional:**  
+## Optional
 If you’re not sure how to categorize this, please add the label **“triage needed.”**
+
