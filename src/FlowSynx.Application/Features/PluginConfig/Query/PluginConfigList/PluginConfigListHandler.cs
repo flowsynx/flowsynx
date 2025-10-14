@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Localizations;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.PluginConfig;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 
-internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest, Result<IEnumerable<PluginConfigListResponse>>>
+internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest, PaginatedResult<PluginConfigListResponse>>
 {
     private readonly ILogger<PluginConfigListHandler> _logger;
     private readonly IPluginConfigurationService _pluginConfigurationService;
@@ -31,7 +32,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
         _localization = localization;
     }
 
-    public async Task<Result<IEnumerable<PluginConfigListResponse>>> Handle(PluginConfigListRequest request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<PluginConfigListResponse>> Handle(PluginConfigListRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -46,13 +47,23 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
                 Version = config.Version,
                 ModifiedTime = config.LastModifiedOn
             });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation(_localization.Get("Feature_PluginConfig_ListRetrievedSuccessfully"));
-            return await Result<IEnumerable<PluginConfigListResponse>>.SuccessAsync(response);
+            return await PaginatedResult<PluginConfigListResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<PluginConfigListResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<PluginConfigListResponse>.FailureAsync(ex.ToString());
         }
     }
 }
