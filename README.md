@@ -122,6 +122,30 @@ Ready to try FlowSynx? Start automating in minutes.
 📘 **Documentation:** [Getting Started Guide](https://flowsynx.io/docs/getting-started)  
 🧩 **Samples:** [Example Workflows & Configs](https://github.com/flowsynx/samples)  
 
+## Build from Source
+
+Want to contribute or run FlowSynx locally? Use this quickstart to build from source in minutes.
+
+### Prerequisites
+
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) — confirm with `dotnet --version` (should report 9.x)
+- Git
+
+### Quickstart
+
+```bash
+git clone https://github.com/flowsynx/flowsynx
+cd flowsynx
+dotnet restore
+dotnet build --configuration Release
+dotnet test
+```
+
+- Commands are cross-platform (Windows, Linux, macOS).
+- Build artifacts land in each project's `bin/Release` directory.
+
+For advanced workflows (Docker, local environment setup, contributing guidelines), see [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md).
+
 ## Architecture Overview
 
 <img src="/img/architecture-diagram.jpg" alt="FlowSynx Architecture Diagram"/>
