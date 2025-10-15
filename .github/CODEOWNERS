@@ -3,28 +3,24 @@
 
 # ─────────────────────────────
 # Documentation & Governance
-README.md                @flowsynx/owners @flowsynx/docs-team
+README.md                @flowsynx/docs-team @flowsynx/owners
 SECURITY.md              @flowsynx/owners
 CONTRIBUTING.md          @flowsynx/owners
 LICENSE                  @flowsynx/owners
 
 # ─────────────────────────────
 # CI/CD and Infrastructure
-.github/                 @flowsynx/devops-team
-/docker/**               @flowsynx/devops-team
+.github/                 @flowsynx/devops-team @flowsynx/core-team @flowsynx/owners
+/docker/**               @flowsynx/devops-team @flowsynx/core-team @flowsynx/owners
 
 # ─────────────────────────────
 # Core Logic & Architecture
-/src/**                  @flowsynx/owners @flowsynx/core-team
-/plugins/**              @flowsynx/owners @flowsynx/core-team
+/src/**                  @flowsynx/core-team @flowsynx/owners
+/plugins/**              @flowsynx/core-team @flowsynx/owners
 
 # ─────────────────────────────
 # Tests
-/tests/**                @flowsynx/owners @flowsynx/maintainers
-
-# ─────────────────────────────
-# Licensing
-/LICENSE                 @flowsynx/owners
+/tests/**                @flowsynx/core-team @flowsynx/maintainers @flowsynx/owners
 
 # ─────────────────────────────
 # Catch-all (Default)
