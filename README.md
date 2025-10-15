@@ -14,6 +14,28 @@ It bridges the gap between **low-code simplicity** and **full-code power**, allo
 
 Whether you’re streamlining **DevOps**, managing **data pipelines**, or building **enterprise-grade automations**, FlowSynx gives you the control, flexibility, and insight to make it happen.
 
+## Table of Contents
+
+- [What is FlowSynx?](#what-is-flowsynx)
+- [How It Works](#how-it-works)
+  - [Core Concepts](#core-concepts)
+- [Task Lifecycle](#task-lifecycle)
+- [Execution Modes](#execution-modes)
+- [Runtime Context](#runtime-context)
+- [Why FlowSynx?](#why-flowsynx)
+- [Key Features](#key-features)
+- [Get Started using FlowSynx](#get-started-using-flowsynx)
+- [Architecture Overview](#architecture-overview)
+  - [Interaction Layers](#interaction-layers)
+  - [Core Components](#core-components)
+  - [Environments](#environments)
+- [User Interfaces](#user-interfaces)
+  - [FlowCtl (CLI)](#flowctl-cli)
+  - [Web Console](#web-console)
+- [Related Repositories](#related-repositories)
+- [Community & Contributing](#community--contributing)
+- [License](#license)
+
 ## What is FlowSynx?
 
 In today’s fast-moving software landscape, organizations demand **repeatable**, **modular**, and **secure** automation — without the lock-in of rigid platforms.
