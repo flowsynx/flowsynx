@@ -161,6 +161,12 @@ You can:
 
 👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
 
+## Security
+
+We take the security of FlowSynx seriously.  
+If you discover a vulnerability, please review our [Security Policy](./SECURITY.md) for responsible disclosure guidelines.  
+Thank you for helping us keep the community safe!
+
 ## License
 
 FlowSynx is open-source and licensed under the **MIT License**.  
