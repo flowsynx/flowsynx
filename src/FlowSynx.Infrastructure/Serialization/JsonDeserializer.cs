@@ -5,7 +5,6 @@ using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Localizations;
-using System.Text.RegularExpressions;
 
 namespace FlowSynx.Infrastructure.Serialization;
 
@@ -52,7 +51,8 @@ public class JsonDeserializer : IJsonDeserializer
             if (configuration.Converters is not null)
                 settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
 
-            return JsonConvert.DeserializeObject<T>(CleanJson(input), settings)!;
+            var sanitized = JsonSanitizer.Sanitize(input);
+            return JsonConvert.DeserializeObject<T>(sanitized, settings)!;
         }
         catch (Exception ex)
         {
@@ -60,23 +60,5 @@ public class JsonDeserializer : IJsonDeserializer
             _logger.LogError(errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
-    }
-
-    private string CleanJson(string json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-            return json;
-
-        // Remove trailing commas before ] or }
-        // Handles cases like:
-        //   [1,2,3,]
-        //   {"a":1,"b":2,}
-        var withoutTrailingCommas = Regex.Replace(
-            json,
-            @",\s*(\]|\})",
-            "$1"
-        );
-
-        return withoutTrailingCommas;
     }
 }

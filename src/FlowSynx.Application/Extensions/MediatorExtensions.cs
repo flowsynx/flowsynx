@@ -59,19 +59,18 @@ public static class MediatorExtensions
 
     public static Task<Result<AddWorkflowResponse>> AddWorkflow(
         this IMediator mediator,
-        string request, 
+        AddWorkflowRequest request,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new AddWorkflowRequest { Definition = request }, cancellationToken);
+        return mediator.Send(request, cancellationToken);
     }
 
     public static Task<Result<Unit>> UpdateWorkflow(
-        this IMediator mediator, 
-        string workflowId, 
-        string definition,
+        this IMediator mediator,
+        UpdateWorkflowRequest request,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new UpdateWorkflowRequest { WorkflowId = workflowId, Definition = definition }, cancellationToken);
+        return mediator.Send(request, cancellationToken);
     }
 
     public static Task<Result<Unit>> DeleteWorkflow(

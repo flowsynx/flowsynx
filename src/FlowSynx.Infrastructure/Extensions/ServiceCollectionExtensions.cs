@@ -42,6 +42,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services
+            .AddMemoryCache()
             .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IWorkflowCancellationRegistry, WorkflowCancellationRegistry>()
             .AddScoped<IExpressionParserFactory, ExpressionParserFactory>()
@@ -52,6 +53,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowTaskExecutor, WorkflowTaskExecutor>()
             .AddSingleton<IErrorHandlingStrategyFactory, ErrorHandlingStrategyFactory>()
             .AddScoped<IWorkflowValidator, WorkflowValidator>()
+            .AddSingleton<IWorkflowSchemaValidator, WorkflowSchemaValidator>()
             .AddScoped<IManualApprovalService, ManualApprovalService>()
             .AddSingleton<IWorkflowHttpListener, InMemoryWorkflowHttpListener>()
             .AddScoped<IWorkflowTriggerProcessor, WorkflowTimeTriggerProcessor>()

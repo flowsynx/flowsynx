@@ -4,4 +4,5 @@ public class AddWorkflowResponse
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
+    public string? SchemaUrl { get; set; }
 }

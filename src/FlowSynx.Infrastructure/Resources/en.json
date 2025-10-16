@@ -71,5 +71,10 @@
   "Workflow_Http_TriggerProcessor_FailedRegistration": "Http route is failed to register for workflow '{0}' and user '{1}'.",
   "Workflow_Http_TriggerProcessor_RegisteredRoute": "Http route '{0}' with '{1}' method is successfully registered for workflow '{2}'.",
   "Workflow_Http_TriggerProcessor_Triggered": "Http Trigger is triggered for workflow '{0}' and user '{1}'.",
-  "Workflow_Http_TriggerProcessor_FailedExecution": "Failed to execute workflow with ID '{0}' for user '{1}'."
+  "Workflow_Http_TriggerProcessor_FailedExecution": "Failed to execute workflow with ID '{0}' for user '{1}'.",
+  "Workflow_Schema_InvalidUrl": "The provided schema URL '{0}' is not a valid absolute URI.",
+  "Workflow_Schema_FetchFailed": "Failed to fetch workflow schema. Status code '{0}' from '{1}'.",
+  "Workflow_Schema_InvalidSchemaPayload": "Schema content is invalid: {0}",
+  "Workflow_Schema_ValidationFailed": "Workflow definition failed schema validation: {0}",
+  "Workflow_Schema_InvalidJsonPayload": "Workflow definition contains invalid JSON: {0}"
 }
