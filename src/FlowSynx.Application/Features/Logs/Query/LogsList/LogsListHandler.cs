@@ -42,8 +42,10 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
             if (request.ToDate != null)
                 predicate = predicate.And(p => p.TimeStamp <= request.ToDate);
 
-            if (!string.IsNullOrEmpty(request.Message))
-                predicate = predicate.And(p => p.Message.ToLower().Contains(request.Message.ToLower()));
+            if (!string.IsNullOrWhiteSpace(request.Message))
+                predicate = predicate.And(p =>
+                    p.Message != null &&
+                    p.Message.Contains(request.Message, StringComparison.OrdinalIgnoreCase));
 
             var logs = await _loggerService.All(predicate, cancellationToken);
             var response = logs.Select(l => new LogsListResponse
