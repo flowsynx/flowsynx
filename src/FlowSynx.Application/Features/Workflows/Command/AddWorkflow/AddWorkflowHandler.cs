@@ -22,6 +22,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     private readonly ICurrentUserService _currentUserService;
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly IWorkflowValidator _workflowValidator;
+    private readonly IWorkflowSchemaValidator _workflowSchemaValidator;
     private readonly ILocalization _localization;
 
     public AddWorkflowHandler(
@@ -31,6 +32,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ICurrentUserService currentUserService, 
         IJsonDeserializer jsonDeserializer, 
         IWorkflowValidator workflowValidator,
+        IWorkflowSchemaValidator workflowSchemaValidator,
         ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -38,6 +40,8 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ArgumentNullException.ThrowIfNull(workflowService);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(workflowValidator);
+        ArgumentNullException.ThrowIfNull(workflowSchemaValidator);
         ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _transactionService = transactionService;
@@ -45,6 +49,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         _currentUserService = currentUserService;
         _jsonDeserializer = jsonDeserializer;
         _workflowValidator = workflowValidator;
+        _workflowSchemaValidator = workflowSchemaValidator ?? throw new ArgumentNullException(nameof(workflowSchemaValidator));
         _localization = localization;
     }
 
@@ -53,6 +58,8 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         try
         {
             _currentUserService.ValidateAuthentication();
+
+            await _workflowSchemaValidator.ValidateAsync(request.SchemaUrl, request.Definition, cancellationToken);
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
@@ -81,6 +88,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 UserId = _currentUserService.UserId,
                 Name = workflowDefinition.Name,
                 Definition = request.Definition,
+                SchemaUrl = request.SchemaUrl
             };
             await _workflowService.Add(workflowEntity, cancellationToken);
 
@@ -88,6 +96,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             {
                 Id = workflowEntity.Id,
                 Name = workflowDefinition.Name,
+                SchemaUrl = workflowEntity.SchemaUrl
             };
             return await Result<AddWorkflowResponse>.SuccessAsync(response,
                 _localization.Get("Feature_Workflow_Add_AddedSuccessfully"));

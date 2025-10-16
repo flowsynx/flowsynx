@@ -143,6 +143,10 @@ public enum ErrorCode
     WorkflowQueueAdd                                = 2423,
     WorkflowQueueProviderNotSupported               = 2424,
     WorkflowQueueProviderInitializedError           = 2425,
+    WorkflowSchemaValidationFailed                  = 2443,
+    WorkflowSchemaFetchFailed                       = 2444,
+    WorkflowSchemaInvalidUrl                        = 2445,
+    WorkflowSchemaInvalidSchemaPayload              = 2446,
     #endregion
 
     #region ExpressionParser

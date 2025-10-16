@@ -45,5 +45,8 @@ public class WorkflowEntityConfiguration : IEntityTypeConfiguration<WorkflowEnti
                .IsRequired()
                .HasColumnType("text")
                .HasConversion(stringConverter, stringComparer);
+
+        builder.Property(t => t.SchemaUrl)
+               .HasColumnType("text");
     }
 }

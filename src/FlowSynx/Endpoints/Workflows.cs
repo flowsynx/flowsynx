@@ -1,4 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
+using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Serialization;
@@ -140,7 +142,14 @@ public class Workflows : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var result = await mediator.AddWorkflow(jsonString, cancellationToken);
+        var payload = jsonDeserializer.Deserialize<WorkflowUpsertPayload>(jsonString);
+        var request = new AddWorkflowRequest
+        {
+            Definition = payload.Definition ?? string.Empty,
+            SchemaUrl = payload.SchemaUrl
+        };
+
+        var result = await mediator.AddWorkflow(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -161,7 +170,15 @@ public class Workflows : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var result = await mediator.UpdateWorkflow(workflowId, jsonString, cancellationToken);
+        var payload = jsonDeserializer.Deserialize<WorkflowUpsertPayload>(jsonString);
+        var request = new UpdateWorkflowRequest
+        {
+            WorkflowId = workflowId,
+            Definition = payload.Definition ?? string.Empty,
+            SchemaUrl = payload.SchemaUrl
+        };
+
+        var result = await mediator.UpdateWorkflow(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -342,5 +359,11 @@ public class Workflows : EndpointGroupBase
     {
         var result = await mediator.DeleteWorkflowTrigger(workflowId, triggerId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    private sealed class WorkflowUpsertPayload
+    {
+        public string? Definition { get; init; }
+        public string? SchemaUrl { get; init; }
     }
 }

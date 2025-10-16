@@ -47,7 +47,8 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
             {
                 Id = workflow.Id,
                 Name = workflow.Name,
-                ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow
+                ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow,
+                SchemaUrl = workflow.SchemaUrl
 
             });
             _logger.LogInformation(_localization.Get("Feature_Workflow_ListRetrievedSuccessfully"));
