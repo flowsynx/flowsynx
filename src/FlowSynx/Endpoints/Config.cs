@@ -43,9 +43,9 @@ public class Config : EndpointGroupBase
 
     public async Task<IResult> PluginsConfiguration(
         [FromServices] IMediator mediator,
+        CancellationToken cancellationToken,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
-        CancellationToken cancellationToken)
+        [FromQuery] int pageSize = 25)
     {
         var result = await mediator.PluginsConfiguration(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);

@@ -25,10 +25,10 @@ public class Audits : EndpointGroupBase
     }
 
     public async Task<IResult> AuditsList(
-        [FromServices] IMediator mediator, 
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken,
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 25,
-        CancellationToken cancellationToken)
+        [FromQuery] int pageSize = 25)
     {
         var result = await mediator.Audits(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);

@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
 namespace FlowSynx.Application.Wrapper;
 
 public class PaginatedResult<T> : Result<List<T>>
