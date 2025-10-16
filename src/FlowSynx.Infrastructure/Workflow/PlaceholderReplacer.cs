@@ -102,6 +102,9 @@ public class PlaceholderReplacer : IPlaceholderReplacer
             case JArray jArray:
                 ReplacePlaceholderInJArray(jArray, parser);
                 break;
+            default:
+                // No action needed for other types
+                break;
         }
     }
 

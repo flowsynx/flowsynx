@@ -2,9 +2,8 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug, enhancement
+labels: bug
 assignees: ''
-
 ---
 
 ## What version of FlowSynx?
@@ -28,3 +27,6 @@ A clear and concise description of what the bug is.
 - Architecture (x64, ARM64, etc.):
 - .NET SDK version (`dotnet --version`):
 - Runtime version if different (`dotnet --list-runtimes`):
+
+## Optional
+If you’re not sure how to categorize this, please add the label **“triage needed.”**

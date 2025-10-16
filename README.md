@@ -14,6 +14,28 @@ It bridges the gap between **low-code simplicity** and **full-code power**, allo
 
 Whether you’re streamlining **DevOps**, managing **data pipelines**, or building **enterprise-grade automations**, FlowSynx gives you the control, flexibility, and insight to make it happen.
 
+## Table of Contents
+
+- [What is FlowSynx?](#what-is-flowsynx)
+- [How It Works](#how-it-works)
+  - [Core Concepts](#core-concepts)
+- [Task Lifecycle](#task-lifecycle)
+- [Execution Modes](#execution-modes)
+- [Runtime Context](#runtime-context)
+- [Why FlowSynx?](#why-flowsynx)
+- [Key Features](#key-features)
+- [Get Started using FlowSynx](#get-started-using-flowsynx)
+- [Architecture Overview](#architecture-overview)
+  - [Interaction Layers](#interaction-layers)
+  - [Core Components](#core-components)
+  - [Environments](#environments)
+- [User Interfaces](#user-interfaces)
+  - [FlowCtl (CLI)](#flowctl-cli)
+  - [Web Console](#web-console)
+- [Related Repositories](#related-repositories)
+- [Community & Contributing](#community--contributing)
+- [License](#license)
+
 ## What is FlowSynx?
 
 In today’s fast-moving software landscape, organizations demand **repeatable**, **modular**, and **secure** automation — without the lock-in of rigid platforms.
@@ -100,6 +122,30 @@ Ready to try FlowSynx? Start automating in minutes.
 📘 **Documentation:** [Getting Started Guide](https://flowsynx.io/docs/getting-started)  
 🧩 **Samples:** [Example Workflows & Configs](https://github.com/flowsynx/samples)  
 
+## Build from Source
+
+Want to contribute or run FlowSynx locally? Use this quickstart to build from source in minutes.
+
+### Prerequisites
+
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) — confirm with `dotnet --version` (should report 9.x)
+- Git
+
+### Quickstart
+
+```bash
+git clone https://github.com/flowsynx/flowsynx
+cd flowsynx
+dotnet restore
+dotnet build --configuration Release
+dotnet test
+```
+
+- Commands are cross-platform (Windows, Linux, macOS).
+- Build artifacts land in each project's `bin/Release` directory.
+
+For advanced workflows (Docker, local environment setup, contributing guidelines), see [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md).
+
 ## Architecture Overview
 
 <img src="/img/architecture-diagram.jpg" alt="FlowSynx Architecture Diagram"/>
@@ -160,6 +206,12 @@ You can:
 - 🌍 Collaborate in discussions  
 
 👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
+
+## Security
+
+We take the security of FlowSynx seriously.  
+If you discover a vulnerability, please review our [Security Policy](./SECURITY.md) for responsible disclosure guidelines.  
+Thank you for helping us keep the community safe!
 
 ## License
 

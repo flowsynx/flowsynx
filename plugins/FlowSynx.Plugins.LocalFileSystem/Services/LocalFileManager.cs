@@ -24,13 +24,13 @@ internal class LocalFileManager : ILocalFileManager
              .ConfigureAwait(false);
     }
 
-    public async Task Delete(
+    public Task Delete(
         PluginParameters parameters, 
         CancellationToken cancellationToken)
     {
         var deleteParameter = parameters.ToObject<DeleteParameters>();
-        await DeleteEntity(deleteParameter, cancellationToken)
-             .ConfigureAwait(false);
+        DeleteEntity(deleteParameter, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public async Task<bool> Exist(
@@ -108,7 +108,7 @@ internal class LocalFileManager : ILocalFileManager
         return Task.CompletedTask;
     }
 
-    private Task DeleteEntity(
+    private void DeleteEntity(
         DeleteParameters deleteParameters, 
         CancellationToken cancellationToken)
     {
@@ -126,8 +126,6 @@ internal class LocalFileManager : ILocalFileManager
 
         File.Delete(path);
         _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
-
-        return Task.CompletedTask;
     }
 
     private static Task<bool> ExistEntity(
