@@ -50,6 +50,9 @@ public class WorkflowExecutionEntityConfiguration : IEntityTypeConfiguration<Wor
                .HasColumnType("text")
                .HasConversion(stringConverter, stringComparer);
 
+        builder.Property(t => t.WorkflowSchemaUrl)
+               .HasColumnType("text");
+
         builder.HasOne(we => we.Workflow)
                .WithMany(w => w.Executions)
                .HasForeignKey(we => we.WorkflowId)

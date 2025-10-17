@@ -101,6 +101,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 WorkflowId = workflowId,
                 UserId = userId,
                 WorkflowDefinition = workflow.Definition,
+                WorkflowSchemaUrl = workflow.SchemaUrl,
                 ExecutionStart = _systemClock.UtcNow,
                 Status = WorkflowExecutionStatus.Pending,
                 TaskExecutions = new List<WorkflowTaskExecutionEntity>()
@@ -143,8 +144,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
         var definition = await ParseAndValidateDefinitionAsync(
-            workflow.Definition,
-            workflow.SchemaUrl,
+            execution.WorkflowDefinition,
+            execution.WorkflowSchemaUrl ?? workflow.SchemaUrl,
             cancellationToken);
 
         await UpdateWorkflowAsRunningAsync(execution, cancellationToken);
@@ -164,8 +165,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
         var definition = await ParseAndValidateDefinitionAsync(
-            workflow.Definition,
-            workflow.SchemaUrl,
+            execution.WorkflowDefinition,
+            execution.WorkflowSchemaUrl ?? workflow.SchemaUrl,
             cancellationToken);
 
         var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
