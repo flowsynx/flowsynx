@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FlowSynx.Application.Extensions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
@@ -8,7 +9,7 @@ using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.Features.Audit.Query.AuditsList;
 
-internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEnumerable<AuditsListResponse>>>
+internal class AuditsListHandler : IRequestHandler<AuditsListRequest, PaginatedResult<AuditsListResponse>>
 {
     private readonly ILogger<AuditsListHandler> _logger;
     private readonly IAuditService _auditService;
@@ -25,7 +26,7 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEn
         _currentUserService = currentUserService;
     }
 
-    public async Task<Result<IEnumerable<AuditsListResponse>>> Handle(AuditsListRequest request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<AuditsListResponse>> Handle(AuditsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -43,14 +44,24 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, Result<IEn
                 OldValues = audit.OldValues,
                 NewValues = audit.NewValues,
                 DateTime = audit.DateTime
-            }).ToList();
+            });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation("The audit list has been retrieved successfully.");
-            return await Result<IEnumerable<AuditsListResponse>>.SuccessAsync(response);
+            return await PaginatedResult<AuditsListResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<AuditsListResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<AuditsListResponse>.FailureAsync(ex.ToString());
         }
     }
 }

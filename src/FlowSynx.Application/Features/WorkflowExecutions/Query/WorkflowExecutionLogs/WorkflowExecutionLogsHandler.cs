@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FlowSynx.Application.Extensions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
@@ -9,7 +10,7 @@ using FlowSynx.Application.Localizations;
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionLogs;
 
 internal class WorkflowExecutionLogsHandler : IRequestHandler<WorkflowExecutionLogsRequest, 
-    Result<IEnumerable<WorkflowExecutionLogsResponse>>>
+    PaginatedResult<WorkflowExecutionLogsResponse>>
 {
     private readonly ILogger<WorkflowExecutionLogsHandler> _logger;
     private readonly ILoggerService _loggerService;
@@ -32,7 +33,7 @@ internal class WorkflowExecutionLogsHandler : IRequestHandler<WorkflowExecutionL
         _localization = localization;
     }
 
-    public async Task<Result<IEnumerable<WorkflowExecutionLogsResponse>>> Handle(
+    public async Task<PaginatedResult<WorkflowExecutionLogsResponse>> Handle(
         WorkflowExecutionLogsRequest request, 
         CancellationToken cancellationToken)
     {
@@ -53,13 +54,23 @@ internal class WorkflowExecutionLogsHandler : IRequestHandler<WorkflowExecutionL
                 Message = l.Message,
                 Exception = l.Exception
             });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation(_localization.Get("Feature_WorkflowExecution_Logs_DataRetrievedSuccessfully"));
-            return await Result<IEnumerable<WorkflowExecutionLogsResponse>>.SuccessAsync(response);
+            return await PaginatedResult<WorkflowExecutionLogsResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<WorkflowExecutionLogsResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<WorkflowExecutionLogsResponse>.FailureAsync(ex.ToString());
         }
     }
 }

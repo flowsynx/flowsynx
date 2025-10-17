@@ -24,10 +24,13 @@ public class Audits : EndpointGroupBase
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "audits"));
     }
 
-    public async Task<IResult> AuditsList([FromServices] IMediator mediator, 
-        CancellationToken cancellationToken)
+    public async Task<IResult> AuditsList(
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.Audits(cancellationToken);
+        var result = await mediator.Audits(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 

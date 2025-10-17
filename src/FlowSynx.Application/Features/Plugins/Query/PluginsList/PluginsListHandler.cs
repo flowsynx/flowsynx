@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FlowSynx.Application.Extensions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
@@ -8,7 +9,7 @@ using FlowSynx.Domain.Plugin;
 
 namespace FlowSynx.Application.Features.Plugins.Query.PluginsList;
 
-internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<IEnumerable<PluginsListResponse>>>
+internal class PluginsListHandler : IRequestHandler<PluginsListRequest, PaginatedResult<PluginsListResponse>>
 {
     private readonly ILogger<PluginsListHandler> _logger;
     private readonly IPluginService _pluginService;
@@ -27,7 +28,7 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
         _currentUserService = currentUserService;
     }
 
-    public async Task<Result<IEnumerable<PluginsListResponse>>> Handle(PluginsListRequest request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<PluginsListResponse>> Handle(PluginsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -41,12 +42,22 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Result<I
                 Version = p.Version,
                 Description = p.Description,
             });
-            return await Result<IEnumerable<PluginsListResponse>>.SuccessAsync(response);
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
+            return await PaginatedResult<PluginsListResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<PluginsListResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<PluginsListResponse>.FailureAsync(ex.ToString());
         }
     }
 }

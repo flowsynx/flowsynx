@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FlowSynx.Application.Extensions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
@@ -9,7 +10,7 @@ using FlowSynx.Application.Localizations;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionTasks;
 
-internal class WorkflowExecutionTasksHandler : IRequestHandler<WorkflowExecutionTasksRequest, Result<IEnumerable<WorkflowExecutionTasksResponse>>>
+internal class WorkflowExecutionTasksHandler : IRequestHandler<WorkflowExecutionTasksRequest, PaginatedResult<WorkflowExecutionTasksResponse>>
 {
     private readonly ILogger<WorkflowExecutionTasksHandler> _logger;
     private readonly IWorkflowTaskExecutionService _workflowTaskExecutionService;
@@ -32,7 +33,7 @@ internal class WorkflowExecutionTasksHandler : IRequestHandler<WorkflowExecution
         _localization = localization;
     }
 
-    public async Task<Result<IEnumerable<WorkflowExecutionTasksResponse>>> Handle(
+    public async Task<PaginatedResult<WorkflowExecutionTasksResponse>> Handle(
         WorkflowExecutionTasksRequest request, 
         CancellationToken cancellationToken)
     {
@@ -62,13 +63,23 @@ internal class WorkflowExecutionTasksHandler : IRequestHandler<WorkflowExecution
                 StartTime = t.StartTime,
                 EndTime = t.EndTime
             });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation(_localization.Get("Feature_WorkflowExecution_Details_DataRetrievedSuccessfully"));
-            return await Result<IEnumerable<WorkflowExecutionTasksResponse>>.SuccessAsync(response);
+            return await PaginatedResult<WorkflowExecutionTasksResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<WorkflowExecutionTasksResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<WorkflowExecutionTasksResponse>.FailureAsync(ex.ToString());
         }
     }
 }

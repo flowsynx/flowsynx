@@ -127,9 +127,11 @@ public class Workflows : EndpointGroupBase
 
     public async Task<IResult> GetAllWorkflows(
         [FromServices] IMediator mediator,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.Workflows(cancellationToken);
+        var result = await mediator.Workflows(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -177,9 +179,11 @@ public class Workflows : EndpointGroupBase
     public async Task<IResult> GetAllExecutions(
         string workflowId, 
         [FromServices] IMediator mediator,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.GetWorkflowExecutionsList(workflowId, cancellationToken);
+        var result = await mediator.GetWorkflowExecutionsList(workflowId, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -206,9 +210,11 @@ public class Workflows : EndpointGroupBase
         string workflowId, 
         string executionId, 
         [FromServices] IMediator mediator, 
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.WorkflowExecutionTasks(workflowId, executionId, cancellationToken);
+        var result = await mediator.WorkflowExecutionTasks(workflowId, executionId, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -237,9 +243,11 @@ public class Workflows : EndpointGroupBase
         string workflowId, 
         string executionId,
         [FromServices] IMediator mediator,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.WorkflowExecutionLogs(workflowId, executionId, cancellationToken);
+        var result = await mediator.WorkflowExecutionLogs(workflowId, executionId, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -247,9 +255,11 @@ public class Workflows : EndpointGroupBase
         string workflowId, 
         string executionId,
         [FromServices] IMediator mediator, 
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.GetWorkflowPendingApprovals(workflowId, executionId, cancellationToken);
+        var result = await mediator.GetWorkflowPendingApprovals(workflowId, executionId, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -280,18 +290,22 @@ public class Workflows : EndpointGroupBase
         string executionId, 
         string taskId,
         [FromServices] IMediator mediator,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.WorkflowTaskExecutionLogs(workflowId, executionId, taskId, cancellationToken);
+        var result = await mediator.WorkflowTaskExecutionLogs(workflowId, executionId, taskId, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
     public async Task<IResult> GetAllTriggers(
         string workflowId,
         [FromServices] IMediator mediator, 
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.WorkflowTriggersList(workflowId, cancellationToken);
+        var result = await mediator.WorkflowTriggersList(workflowId, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
