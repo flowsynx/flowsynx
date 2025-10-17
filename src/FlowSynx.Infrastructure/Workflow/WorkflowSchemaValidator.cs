@@ -5,8 +5,8 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Schema;
+using NJsonSchema;
+using System.Linq;
 using System.Net.Http.Headers;
 
 namespace FlowSynx.Infrastructure.Workflow;
@@ -49,12 +49,13 @@ public class WorkflowSchemaValidator : IWorkflowSchemaValidator
 
         try
         {
-            using var reader = new JsonTextReader(new StringReader(sanitized));
-            var token = await JToken.LoadAsync(reader, cancellationToken);
-
-            if (!token.IsValid(schema, out IList<string> errors))
+            var errors = schema.Validate(sanitized);
+            if (errors.Count > 0)
             {
-                var joinedErrors = string.Join("; ", errors);
+                var joinedErrors = string.Join("; ", errors.Select(error =>
+                    string.IsNullOrWhiteSpace(error.Path)
+                        ? error.Kind.ToString()
+                        : $"{error.Path}: {error.Kind}"));
                 _logger.LogWarning("Workflow schema validation failed for {SchemaUrl}: {Errors}", schemaUrl, joinedErrors);
                 throw new FlowSynxException(
                     (int)ErrorCode.WorkflowSchemaValidationFailed,
@@ -69,7 +70,7 @@ public class WorkflowSchemaValidator : IWorkflowSchemaValidator
         }
     }
 
-    private async Task<JSchema> GetSchemaAsync(Uri schemaUri, CancellationToken cancellationToken)
+    private async Task<JsonSchema> GetSchemaAsync(Uri schemaUri, CancellationToken cancellationToken)
     {
         return await _memoryCache.GetOrCreateAsync(schemaUri, async entry =>
         {
@@ -91,9 +92,9 @@ public class WorkflowSchemaValidator : IWorkflowSchemaValidator
             var payload = await response.Content.ReadAsStringAsync(cancellationToken);
             try
             {
-                return JSchema.Parse(payload);
+                return await JsonSchema.FromJsonAsync(payload);
             }
-            catch (JSchemaException ex)
+            catch (Exception ex)
             {
                 throw new FlowSynxException(
                     (int)ErrorCode.WorkflowSchemaInvalidSchemaPayload,
