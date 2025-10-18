@@ -7,6 +7,7 @@
   [![License: MIT][mit-badge]][mit-url]
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
+  [![Good First Issues][github-good-first-issue-badge]][github-good-first-issue-url]
 </div>
 
 FlowSynx is a **next-generation workflow orchestration platform** that unifies **automation, scalability, and extensibility** in a single, developer-friendly ecosystem.  
@@ -226,3 +227,5 @@ See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for deta
 [fossa-url]: https://app.fossa.com/projects/git%2Bgithub.com%2Fflowsynx%2Fflowsynx?ref=badge_shield&issueType=license
 [codacy-badge]: https://app.codacy.com/project/badge/Grade/cc8cc16dbade4f5b93b82fd29ed7c879
 [codacy-url]: https://app.codacy.com/gh/flowsynx/flowsynx/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
+[github-good-first-issue-badge]: https://img.shields.io/github/issues/flowsynx/flowsynx/good%20first%20issue?style=flat-square&logo=github&label=good%20first%20issues
+[github-good-first-issue-url]: https://github.com/flowsynx/flowsynx/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
