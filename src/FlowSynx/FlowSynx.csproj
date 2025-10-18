@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
@@ -11,7 +10,7 @@
 		<Company>FlowSynx</Company>
 		<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
 		<Authors>flowsynx</Authors>
-		<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
+		<RepositoryUrl>https://github.com/flowsynx/flowsynx</RepositoryUrl>
 		<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
 	</PropertyGroup>
@@ -21,6 +20,22 @@
 		<DebugType>None</DebugType>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<Content Remove="appsettings.Development.json" />
+		<Content Remove="appsettings.Development.template.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="appsettings.Development.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+		<None Update="appsettings.Development.template.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+	</ItemGroup>
+	
 	<ItemGroup>
 		<Content Remove="Resources\en.json" />
 	</ItemGroup>
@@ -42,4 +57,26 @@
 		<ProjectReference Include="..\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
 		<ProjectReference Include="..\FlowSynx.Persistence.SQLite\FlowSynx.Persistence.SQLite.csproj" />
 	</ItemGroup>
+
+	<!-- Replace template on build -->
+	<Target Name="ReplaceAppSettingsOnBuild" AfterTargets="Build">
+		<Message Text="Checking for appsettings.Development.template.json..." Importance="Low" />
+		<Message Text="Copying appsettings.Development.template.json → appsettings.Development.json" 
+				 Importance="High" 
+				 Condition="Exists('$(MSBuildProjectDirectory)\appsettings.Development.template.json')" />
+		<Copy SourceFiles="$(MSBuildProjectDirectory)\appsettings.Development.template.json" 
+			  DestinationFiles="$(OutputPath)appsettings.Development.json" 
+			  Condition="Exists('$(MSBuildProjectDirectory)\appsettings.Development.template.json')" 
+			  SkipUnchangedFiles="false" 
+			  OverwriteReadOnlyFiles="true" />
+	</Target>
+
+	<!-- Exclude from publish explicitly -->
+	<Target Name="RemoveDevAppSettingsFromPublish" AfterTargets="ComputeFilesToPublish">
+		<ItemGroup>
+			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+								   Condition=" '%(ResolvedFileToPublish.RelativePath)' == 'appsettings.Development.json' Or '%(ResolvedFileToPublish.RelativePath)' == 'appsettings.Development.template.json' " />
+		</ItemGroup>
+		<Message Text="Excluded appsettings.Development*.json from publish output." Importance="Low" />
+	</Target>
 </Project>
