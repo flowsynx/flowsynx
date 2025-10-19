@@ -398,6 +398,6 @@ FodyWeavers.xsd
 # SQLite Database
 logs.db*
 
-appsettings.*.json
+appsettings.Development.json
 secrets.json
 **/flowsynxresults/

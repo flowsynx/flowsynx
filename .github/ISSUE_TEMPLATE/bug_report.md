@@ -2,9 +2,8 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: bug, enhancement
+labels: bug
 assignees: ''
-
 ---
 
 ## What version of FlowSynx?
@@ -21,3 +20,13 @@ A clear and concise description of what the bug is.
 
 ## Steps to reproduce
 <!-- How can a maintainer reproduce this issue (be detailed) -->
+
+## Environment
+<!-- Share the system details where the issue occurs -->
+- OS / Distribution / Version:
+- Architecture (x64, ARM64, etc.):
+- .NET SDK version (`dotnet --version`):
+- Runtime version if different (`dotnet --list-runtimes`):
+
+## Optional
+If you’re not sure how to categorize this, please add the label **“triage needed.”**

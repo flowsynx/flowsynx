@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
+<Project Sdk="Microsoft.NET.Sdk.Web">
 	<PropertyGroup>
 		<TargetFramework>net9.0</TargetFramework>
 		<Nullable>enable</Nullable>
@@ -11,7 +10,7 @@
 		<Company>FlowSynx</Company>
 		<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
 		<Authors>flowsynx</Authors>
-		<RepositoryUrl>https://github.com/FlowSynx/FlowSynx</RepositoryUrl>
+		<RepositoryUrl>https://github.com/flowsynx/flowsynx</RepositoryUrl>
 		<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
 	</PropertyGroup>
@@ -21,6 +20,13 @@
 		<DebugType>None</DebugType>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<None Include="appsettings.Development.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
+		</None>
+	</ItemGroup>
+	
 	<ItemGroup>
 		<Content Remove="Resources\en.json" />
 	</ItemGroup>
@@ -42,4 +48,12 @@
 		<ProjectReference Include="..\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
 		<ProjectReference Include="..\FlowSynx.Persistence.SQLite\FlowSynx.Persistence.SQLite.csproj" />
 	</ItemGroup>
+
+	<Target Name="RemoveDevAppSettingsFromPublish" AfterTargets="ComputeFilesToPublish">
+		<ItemGroup>
+			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+			  Condition=" '%(ResolvedFileToPublish.RelativePath)' == 'appsettings.Development.json' " />
+		</ItemGroup>
+		<Message Text="Excluded appsettings.Development.json from publish output." Importance="Low" />
+	</Target>
 </Project>

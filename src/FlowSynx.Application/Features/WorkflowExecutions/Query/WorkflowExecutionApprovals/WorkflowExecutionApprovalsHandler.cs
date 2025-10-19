@@ -1,4 +1,5 @@
-﻿using MediatR;
+﻿using FlowSynx.Application.Extensions;
+using MediatR;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Services;
@@ -9,7 +10,7 @@ using FlowSynx.Domain.Workflow;
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
 
 internal class WorkflowExecutionApprovalsHandler : IRequestHandler<WorkflowExecutionApprovalsRequest, 
-    Result<IEnumerable<WorkflowExecutionApprovalsResponse>>>
+    PaginatedResult<WorkflowExecutionApprovalsResponse>>
 {
     private readonly ILogger<WorkflowExecutionApprovalsHandler> _logger;
     private readonly IWorkflowApprovalService _workflowApprovalService;
@@ -32,7 +33,7 @@ internal class WorkflowExecutionApprovalsHandler : IRequestHandler<WorkflowExecu
         _localization = localization;
     }
 
-    public async Task<Result<IEnumerable<WorkflowExecutionApprovalsResponse>>> Handle(
+    public async Task<PaginatedResult<WorkflowExecutionApprovalsResponse>> Handle(
         WorkflowExecutionApprovalsRequest request, 
         CancellationToken cancellationToken)
     {
@@ -56,13 +57,23 @@ internal class WorkflowExecutionApprovalsHandler : IRequestHandler<WorkflowExecu
                 Comments = l.Comments,
                 Status = l.Status.ToString()
             });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation(_localization.Get("Feature_WorkflowExecution_Logs_DataRetrievedSuccessfully"));
-            return await Result<IEnumerable<WorkflowExecutionApprovalsResponse>>.SuccessAsync(response);
+            return await PaginatedResult<WorkflowExecutionApprovalsResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<WorkflowExecutionApprovalsResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<WorkflowExecutionApprovalsResponse>.FailureAsync(ex.ToString());
         }
     }
 }

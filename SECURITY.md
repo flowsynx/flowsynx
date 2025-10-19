@@ -34,7 +34,7 @@ The table below outlines supported FlowSynx versions and their security update s
 
 | Version | Supported | Support Window |
 |---------|-----------|----------------|
-| v1.2.0  | ✅ Yes   | Until next minor release (v1.3.x) |
+| v1.2.x  | ✅ Yes   | Until next minor release (v1.3.x) |
 | v1.1.4  | ⚠️ Yes   | 1 month after next minor release |
 | v1.1.3  | ❌ No    | End-of-life |
 

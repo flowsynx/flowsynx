@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggersList;
 
-internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersListRequest, Result<IEnumerable<WorkflowTriggersListResponse>>>
+internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersListRequest, PaginatedResult<WorkflowTriggersListResponse>>
 {
     private readonly ILogger<PluginConfigListHandler> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
@@ -36,7 +37,7 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
         _localization = localization;
     }
 
-    public async Task<Result<IEnumerable<WorkflowTriggersListResponse>>> Handle(
+    public async Task<PaginatedResult<WorkflowTriggersListResponse>> Handle(
         WorkflowTriggersListRequest request, 
         CancellationToken cancellationToken)
     {
@@ -55,13 +56,23 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
                 LastModified = trigger.LastModifiedOn ?? trigger.CreatedOn
 
             });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation(_localization.Get("Feature_WorkflowTriggers_List_RetrievedSuccessfully", workflowId));
-            return await Result<IEnumerable<WorkflowTriggersListResponse>>.SuccessAsync(response);
+            return await PaginatedResult<WorkflowTriggersListResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<WorkflowTriggersListResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<WorkflowTriggersListResponse>.FailureAsync(ex.ToString());
         }
     }
 }

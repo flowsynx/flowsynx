@@ -1,4 +1,4 @@
-﻿using MediatR;
+using MediatR;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Features.Audit.Query.AuditDetails;
 using FlowSynx.Application.Features.Audit.Query.AuditsList;
@@ -42,16 +42,22 @@ namespace FlowSynx.Application.Extensions;
 public static class MediatorExtensions
 {
     #region Workflow
-    public static Task<Result<IEnumerable<WorkflowListResponse>>> Workflows(
-        this IMediator mediator, 
+    public static Task<PaginatedResult<WorkflowListResponse>> Workflows(
+        this IMediator mediator,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new WorkflowListRequest(), cancellationToken);
+        return mediator.Send(new WorkflowListRequest
+        {
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
 
     public static Task<Result<WorkflowDetailsResponse>> WorkflowDetails(
         this IMediator mediator,
-        string workflowId, 
+        string workflowId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowDetailsRequest { WorkflowId = workflowId }, cancellationToken);
@@ -74,23 +80,30 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<Unit>> DeleteWorkflow(
-        this IMediator mediator, 
+        this IMediator mediator,
         string workflowId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new DeleteWorkflowRequest { WorkflowId = workflowId }, cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<WorkflowExecutionListResponse>>> GetWorkflowExecutionsList(
+    public static Task<PaginatedResult<WorkflowExecutionListResponse>> GetWorkflowExecutionsList(
         this IMediator mediator,
         string workflowId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new WorkflowExecutionListRequest { WorkflowId = workflowId }, cancellationToken);
+        return mediator.Send(new WorkflowExecutionListRequest
+        {
+            WorkflowId = workflowId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
 
     public static Task<Result<ExecuteWorkflowResponse>> ExecuteWorkflow(
-        this IMediator mediator, 
+        this IMediator mediator,
         string workflowId,
         CancellationToken cancellationToken)
     {
@@ -99,38 +112,42 @@ public static class MediatorExtensions
 
     public static Task<Result<WorkflowExecutionDetailsResponse>> WorkflowExecutionDetails(
         this IMediator mediator,
-        string id, 
-        string executionId, 
+        string id,
+        string executionId,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new WorkflowExecutionDetailsRequest { WorkflowId = id, WorkflowExecutionId = executionId }, 
+        return mediator.Send(new WorkflowExecutionDetailsRequest { WorkflowId = id, WorkflowExecutionId = executionId },
             cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<WorkflowExecutionTasksResponse>>> WorkflowExecutionTasks(
+    public static Task<PaginatedResult<WorkflowExecutionTasksResponse>> WorkflowExecutionTasks(
         this IMediator mediator,
         string workflowId,
         string executionId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowExecutionTasksRequest
         {
             WorkflowId = workflowId,
-            WorkflowExecutionId = executionId
+            WorkflowExecutionId = executionId,
+            Page = page,
+            PageSize = pageSize
         },
         cancellationToken);
     }
 
     public static Task<Result<WorkflowTaskExecutionDetailsResponse>> WorkflowTaskExecutionDetails(
         this IMediator mediator,
-        string workflowId, 
-        string executionId, 
-        string taskId, 
+        string workflowId,
+        string executionId,
+        string taskId,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new WorkflowTaskExecutionDetailsRequest { 
-            WorkflowId = workflowId, 
-            WorkflowExecutionId = executionId, 
+        return mediator.Send(new WorkflowTaskExecutionDetailsRequest {
+            WorkflowId = workflowId,
+            WorkflowExecutionId = executionId,
             WorkflowTaskExecutionId = taskId
         },
         cancellationToken);
@@ -138,8 +155,8 @@ public static class MediatorExtensions
 
     public static Task<Result<Unit>> CancelWorkflowExecution(
         this IMediator mediator,
-        string workflowId, 
-        string executionId, 
+        string workflowId,
+        string executionId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new CancelWorkflowRequest
@@ -150,44 +167,56 @@ public static class MediatorExtensions
         cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<WorkflowExecutionLogsResponse>>> WorkflowExecutionLogs(
+    public static Task<PaginatedResult<WorkflowExecutionLogsResponse>> WorkflowExecutionLogs(
         this IMediator mediator,
-        string workflowId, 
-        string executionId, 
+        string workflowId,
+        string executionId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowExecutionLogsRequest
         {
             WorkflowId = workflowId,
-            WorkflowExecutionId = executionId
+            WorkflowExecutionId = executionId,
+            Page = page,
+            PageSize = pageSize
         },
         cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<WorkflowTaskExecutionLogsResponse>>> WorkflowTaskExecutionLogs(
+    public static Task<PaginatedResult<WorkflowTaskExecutionLogsResponse>> WorkflowTaskExecutionLogs(
         this IMediator mediator,
-        string workflowId, 
-        string executionId, 
-        string taskId, 
+        string workflowId,
+        string executionId,
+        string taskId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowTaskExecutionLogsRequest
         {
             WorkflowId = workflowId,
             WorkflowExecutionId = executionId,
-            WorkflowTaskExecutionId = taskId
+            WorkflowTaskExecutionId = taskId,
+            Page = page,
+            PageSize = pageSize
         },
         cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<WorkflowTriggersListResponse>>> WorkflowTriggersList(
+    public static Task<PaginatedResult<WorkflowTriggersListResponse>> WorkflowTriggersList(
         this IMediator mediator,
         string workflowId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowTriggersListRequest
         {
-            WorkflowId = workflowId
+            WorkflowId = workflowId,
+            Page = page,
+            PageSize = pageSize
         },
         cancellationToken);
     }
@@ -212,8 +241,8 @@ public static class MediatorExtensions
         AddWorkflowTriggerDefinition request,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new AddWorkflowTriggerRequest 
-        { 
+        return mediator.Send(new AddWorkflowTriggerRequest
+        {
             WorkflowId = workflowId,
             Status = request.Status,
             Type = request.Type,
@@ -252,16 +281,20 @@ public static class MediatorExtensions
         cancellationToken);
     }
 
-    public static Task<Result<IEnumerable<WorkflowExecutionApprovalsResponse>>> GetWorkflowPendingApprovals(
+    public static Task<PaginatedResult<WorkflowExecutionApprovalsResponse>> GetWorkflowPendingApprovals(
         this IMediator mediator,
         string workflowId,
         string executionId,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new WorkflowExecutionApprovalsRequest
         {
             WorkflowId = workflowId,
-            WorkflowExecutionId = executionId
+            WorkflowExecutionId = executionId,
+            Page = page,
+            PageSize = pageSize
         },
         cancellationToken);
     }
@@ -308,8 +341,8 @@ public static class MediatorExtensions
 
     #region Version
     public static Task<Result<VersionResponse>> Version(
-        this IMediator mediator, 
-        VersionRequest request, 
+        this IMediator mediator,
+        VersionRequest request,
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -317,16 +350,22 @@ public static class MediatorExtensions
     #endregion
 
     #region Plugins
-    public static Task<Result<IEnumerable<PluginsListResponse>>> PluginsList(
-        this IMediator mediator, 
+    public static Task<PaginatedResult<PluginsListResponse>> PluginsList(
+        this IMediator mediator,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new PluginsListRequest(), cancellationToken);
+        return mediator.Send(new PluginsListRequest
+        {
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
 
     public static Task<Result<PluginDetailsResponse>> PluginDetails(
-        this IMediator mediator, 
-        string pluginId, 
+        this IMediator mediator,
+        string pluginId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginDetailsRequest { PluginId = pluginId }, cancellationToken);
@@ -334,7 +373,7 @@ public static class MediatorExtensions
 
     public static Task<Result<Unit>> InstallPlugin(
         this IMediator mediator,
-        InstallPluginRequest request, 
+        InstallPluginRequest request,
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -342,7 +381,7 @@ public static class MediatorExtensions
 
     public static Task<Result<Unit>> UpdatePlugin(
         this IMediator mediator,
-        UpdatePluginRequest request, 
+        UpdatePluginRequest request,
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -358,23 +397,29 @@ public static class MediatorExtensions
     #endregion
 
     #region PluginConfig
-    public static Task<Result<IEnumerable<PluginConfigListResponse>>> PluginsConfiguration(
+    public static Task<PaginatedResult<PluginConfigListResponse>> PluginsConfiguration(
         this IMediator mediator,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new PluginConfigListRequest(), cancellationToken);
+        return mediator.Send(new PluginConfigListRequest
+        {
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
 
     public static Task<Result<PluginConfigDetailsResponse>> PluginConfigurationDetails(
-        this IMediator mediator, 
-         string configId, 
+        this IMediator mediator,
+         string configId,
          CancellationToken cancellationToken)
     {
         return mediator.Send(new PluginConfigDetailsRequest { ConfigId = configId}, cancellationToken);
     }
 
     public static Task<Result<AddPluginConfigResponse>> AddPluginConfiguration(
-        this IMediator mediator, 
+        this IMediator mediator,
         AddPluginConfigRequest request,
         CancellationToken cancellationToken)
     {
@@ -382,15 +427,15 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<Unit>> UpdatePluginConfiguration(
-        this IMediator mediator, 
-        UpdatePluginConfigRequest request, 
+        this IMediator mediator,
+        UpdatePluginConfigRequest request,
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
     }
     public static Task<Result<Unit>> DeletePluginConfiguration(
-        this IMediator mediator, 
-        string configId, 
+        this IMediator mediator,
+        string configId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new DeletePluginConfigRequest { ConfigId = configId }, cancellationToken);
@@ -398,9 +443,9 @@ public static class MediatorExtensions
     #endregion
 
     #region Logs
-    public static Task<Result<IEnumerable<LogsListResponse>>> Logs(
-        this IMediator mediator, 
-        LogsListRequest request, 
+    public static Task<PaginatedResult<LogsListResponse>> Logs(
+        this IMediator mediator,
+        LogsListRequest request,
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
@@ -408,16 +453,22 @@ public static class MediatorExtensions
     #endregion
 
     #region Audits
-    public static Task<Result<IEnumerable<AuditsListResponse>>> Audits(
-        this IMediator mediator, 
+    public static Task<PaginatedResult<AuditsListResponse>> Audits(
+        this IMediator mediator,
+        int page,
+        int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new AuditsListRequest(), cancellationToken);
+        return mediator.Send(new AuditsListRequest
+        {
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
 
     public static Task<Result<AuditDetailsResponse>> AuditDetails(
         this IMediator mediator,
-        string auditId, 
+        string auditId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new AuditDetailsRequest { AuditId = auditId }, cancellationToken);

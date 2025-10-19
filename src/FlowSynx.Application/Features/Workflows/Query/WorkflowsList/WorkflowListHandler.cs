@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.Workflows.Query.WorkflowsList;
 
-internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result<IEnumerable<WorkflowListResponse>>>
+internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, PaginatedResult<WorkflowListResponse>>
 {
     private readonly ILogger<PluginConfigListHandler> _logger;
     private readonly IWorkflowService _workflowService;
@@ -36,7 +37,7 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
         _localization = localization;
     }
 
-    public async Task<Result<IEnumerable<WorkflowListResponse>>> Handle(WorkflowListRequest request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<WorkflowListResponse>> Handle(WorkflowListRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -51,13 +52,23 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Result
                 SchemaUrl = workflow.SchemaUrl
 
             });
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
             _logger.LogInformation(_localization.Get("Feature_Workflow_ListRetrievedSuccessfully"));
-            return await Result<IEnumerable<WorkflowListResponse>>.SuccessAsync(response);
+            return await PaginatedResult<WorkflowListResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<WorkflowListResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<WorkflowListResponse>.FailureAsync(ex.ToString());
         }
     }
 }

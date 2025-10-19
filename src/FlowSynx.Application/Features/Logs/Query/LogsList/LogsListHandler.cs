@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.Logs.Query.LogsList;
 
-internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumerable<LogsListResponse>>>
+internal class LogsListHandler : IRequestHandler<LogsListRequest, PaginatedResult<LogsListResponse>>
 {
     private readonly ILogger<LogsListHandler> _logger;
     private readonly ILoggerService _loggerService;
@@ -25,7 +25,7 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
         _currentUserService = currentUserService;
     }
 
-    public async Task<Result<IEnumerable<LogsListResponse>>> Handle(LogsListRequest request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<LogsListResponse>> Handle(LogsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -42,8 +42,10 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
             if (request.ToDate != null)
                 predicate = predicate.And(p => p.TimeStamp <= request.ToDate);
 
-            if (!string.IsNullOrEmpty(request.Message))
-                predicate = predicate.And(p => p.Message.ToLower().Contains(request.Message.ToLower()));
+            if (!string.IsNullOrWhiteSpace(request.Message))
+                predicate = predicate.And(p =>
+                    p.Message != null &&
+                    p.Message.Contains(request.Message, StringComparison.OrdinalIgnoreCase));
 
             var logs = await _loggerService.All(predicate, cancellationToken);
             var response = logs.Select(l => new LogsListResponse
@@ -54,12 +56,22 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, Result<IEnumer
                 Message = l.Message,
                 Exception = l.Exception
             });
-            return await Result<IEnumerable<LogsListResponse>>.SuccessAsync(response);
+            var pagedItems = response.ToPaginatedList(
+                request.Page,
+                request.PageSize,
+                out var totalCount,
+                out var page,
+                out var pageSize);
+            return await PaginatedResult<LogsListResponse>.SuccessAsync(
+                pagedItems,
+                totalCount,
+                page,
+                pageSize);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex.ToString());
-            return await Result<IEnumerable<LogsListResponse>>.FailAsync(ex.ToString());
+            return await PaginatedResult<LogsListResponse>.FailureAsync(ex.ToString());
         }
     }
 

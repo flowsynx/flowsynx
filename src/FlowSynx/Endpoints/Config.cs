@@ -41,10 +41,13 @@ public class Config : EndpointGroupBase
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "config"));
     }
 
-    public async Task<IResult> PluginsConfiguration([FromServices] IMediator mediator,
-        CancellationToken cancellationToken)
+    public async Task<IResult> PluginsConfiguration(
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.PluginsConfiguration(cancellationToken);
+        var result = await mediator.PluginsConfiguration(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
