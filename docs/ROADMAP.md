@@ -52,6 +52,7 @@ leveraging plugins, triggers, and integrations, while providing robust observabi
 ## Long-Term Vision (24+ Months)
 
 - Creating a wide range of plugins for widely used services and platforms, including databases, cloud solutions, and messaging systems, AI/ML algorithms.  
+- Enhanced licensing and commercial support options for enterprise plugins.  
 - Intelligent workflow recommendations and optimization.  
 - Marketplace for community-contributed workflow templates and reusable components.  
 - Integration with leading enterprise SaaS platforms (e.g., Azure, AWS, Salesforce).  
