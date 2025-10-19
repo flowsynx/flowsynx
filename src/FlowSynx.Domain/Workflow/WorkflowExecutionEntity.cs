@@ -5,6 +5,7 @@ public class WorkflowExecutionEntity : AuditableEntity<Guid>, ISoftDeletable
     public required Guid WorkflowId { get; set; }
     public required string UserId { get; set; }
     public required string WorkflowDefinition { get; set; }
+    public string? WorkflowSchemaUrl { get; set; }
     public WorkflowExecutionStatus Status { get; set; } = WorkflowExecutionStatus.Pending;
     public DateTime ExecutionStart { get; set; }
     public DateTime? ExecutionEnd { get; set; }

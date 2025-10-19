@@ -27,6 +27,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private readonly ISystemClock _systemClock;
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly IWorkflowValidator _workflowValidator;
+    private readonly IWorkflowSchemaValidator _workflowSchemaValidator;
     private readonly IErrorHandlingResolver _errorHandlingResolver;
     private readonly IWorkflowCancellationRegistry _workflowCancellationRegistry;
     private readonly IManualApprovalService _manualApprovalService;
@@ -46,6 +47,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         ISystemClock systemClock,
         IJsonDeserializer jsonDeserializer,
         IWorkflowValidator workflowValidator,
+        IWorkflowSchemaValidator workflowSchemaValidator,
         IErrorHandlingResolver errorHandlingResolver,
         IWorkflowCancellationRegistry workflowCancellationRegistry,
         IManualApprovalService manualApprovalService,
@@ -74,6 +76,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher))
         );
 
+        _workflowSchemaValidator = workflowSchemaValidator ?? throw new ArgumentNullException(nameof(workflowSchemaValidator));
+
         _resultStorageProvider = resultStorageFactory?.GetDefaultProvider()
             ?? throw new ArgumentNullException(nameof(resultStorageFactory));
     }
@@ -86,7 +90,10 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         try
         {
             var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
-            var definition = ParseAndValidateDefinition(workflow.Definition);
+            var definition = await ParseAndValidateDefinitionAsync(
+                workflow.Definition,
+                workflow.SchemaUrl,
+                cancellationToken);
 
             var execution = new WorkflowExecutionEntity
             {
@@ -94,6 +101,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 WorkflowId = workflowId,
                 UserId = userId,
                 WorkflowDefinition = workflow.Definition,
+                WorkflowSchemaUrl = workflow.SchemaUrl,
                 ExecutionStart = _systemClock.UtcNow,
                 Status = WorkflowExecutionStatus.Pending,
                 TaskExecutions = new List<WorkflowTaskExecutionEntity>()
@@ -135,7 +143,10 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 _localization.Get("Workflow_Orchestrator_ExecutionNotFound", executionId));
 
         var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
-        var definition = ParseAndValidateDefinition(workflow.Definition);
+        var definition = await ParseAndValidateDefinitionAsync(
+            execution.WorkflowDefinition,
+            execution.WorkflowSchemaUrl ?? workflow.SchemaUrl,
+            cancellationToken);
 
         await UpdateWorkflowAsRunningAsync(execution, cancellationToken);
         return await RunWorkflowExecutionAsync(userId, workflowId, definition, execution, cancellationToken);
@@ -153,7 +164,10 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 _localization.Get("Workflow_Orchestrator_WorkflowNotPaused", executionId));
 
         var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
-        var definition = ParseAndValidateDefinition(workflow.Definition);
+        var definition = await ParseAndValidateDefinitionAsync(
+            execution.WorkflowDefinition,
+            execution.WorkflowSchemaUrl ?? workflow.SchemaUrl,
+            cancellationToken);
 
         var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
         await LoadPreviousTaskResultsAsync(executionContext, cancellationToken);
@@ -184,8 +198,12 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         }
     }
 
-    private WorkflowDefinition ParseAndValidateDefinition(string definitionJson)
+    private async Task<WorkflowDefinition> ParseAndValidateDefinitionAsync(
+        string definitionJson,
+        string? schemaUrl,
+        CancellationToken cancellationToken)
     {
+        await _workflowSchemaValidator.ValidateAsync(schemaUrl, definitionJson, cancellationToken);
         var definition = _jsonDeserializer.Deserialize<WorkflowDefinition>(definitionJson);
         _errorHandlingResolver.Resolve(definition);
         _workflowValidator.Validate(definition);

@@ -1,4 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
+using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Serialization;
@@ -142,7 +144,14 @@ public class Workflows : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var result = await mediator.AddWorkflow(jsonString, cancellationToken);
+        var (definition, schemaUrl) = ParseWorkflowPayload(jsonString, jsonDeserializer);
+        var request = new AddWorkflowRequest
+        {
+            Definition = definition,
+            SchemaUrl = schemaUrl
+        };
+
+        var result = await mediator.AddWorkflow(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -163,7 +172,15 @@ public class Workflows : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var result = await mediator.UpdateWorkflow(workflowId, jsonString, cancellationToken);
+        var (definition, schemaUrl) = ParseWorkflowPayload(jsonString, jsonDeserializer);
+        var request = new UpdateWorkflowRequest
+        {
+            WorkflowId = workflowId,
+            Definition = definition,
+            SchemaUrl = schemaUrl
+        };
+
+        var result = await mediator.UpdateWorkflow(request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -174,6 +191,41 @@ public class Workflows : EndpointGroupBase
     {
         var result = await mediator.DeleteWorkflow(workflowId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    private static (string Definition, string? SchemaUrl) ParseWorkflowPayload(
+        string jsonBody,
+        IJsonDeserializer jsonDeserializer)
+    {
+        if (string.IsNullOrWhiteSpace(jsonBody))
+            return (string.Empty, null);
+
+        try
+        {
+            var payload = jsonDeserializer.Deserialize<WorkflowUpsertPayload>(jsonBody);
+
+            if (!payload.HasEnvelopeFields)
+                return (jsonBody, null);
+
+            var schemaUrl = payload.SchemaUrl ?? payload.Schema;
+            var definitionCandidate = payload.Workflow ?? payload.Definition;
+            var definition = definitionCandidate switch
+            {
+                string definitionString => definitionString,
+                null => string.Empty,
+                _ => definitionCandidate.ToString() ?? string.Empty
+            };
+
+            return (definition, schemaUrl);
+        }
+        catch (FlowSynx.PluginCore.Exceptions.FlowSynxException)
+        {
+            throw;
+        }
+        catch
+        {
+            return (jsonBody, null);
+        }
     }
 
     public async Task<IResult> GetAllExecutions(
@@ -356,5 +408,18 @@ public class Workflows : EndpointGroupBase
     {
         var result = await mediator.DeleteWorkflowTrigger(workflowId, triggerId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    private sealed class WorkflowUpsertPayload
+    {
+        public object? Workflow { get; init; }
+        public object? Definition { get; init; }
+        public string? Schema { get; init; }
+        public string? SchemaUrl { get; init; }
+        public bool HasEnvelopeFields =>
+            Workflow is not null ||
+            Definition is not null ||
+            !string.IsNullOrWhiteSpace(Schema) ||
+            !string.IsNullOrWhiteSpace(SchemaUrl);
     }
 }

@@ -15,6 +15,10 @@ public class UpdateWorkflowValidator : AbstractValidator<UpdateWorkflowRequest>
         RuleFor(x => x.WorkflowId)
             .Must(BeAValidGuid)
             .WithMessage(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
+
+        RuleFor(x => x.SchemaUrl)
+            .Must(value => value is null || string.IsNullOrWhiteSpace(value) || Uri.TryCreate(value, UriKind.Absolute, out _))
+            .WithMessage(localization.Get("Features_Workflow_Validation_SchemaUrl_Invalid"));
     }
 
     private bool BeAValidGuid(string id)

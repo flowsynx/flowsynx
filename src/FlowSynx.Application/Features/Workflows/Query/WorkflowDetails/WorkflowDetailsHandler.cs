@@ -50,7 +50,8 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
             {
                 Id = workflow.Id,
                 Name = workflow.Name,
-                Workflow = workflow.Definition
+                Workflow = workflow.Definition,
+                SchemaUrl = workflow.SchemaUrl
             };
             _logger.LogInformation(_localization.Get("Feature_Workflow_Details_DataRetrievedSuccessfully"));
             return await Result<WorkflowDetailsResponse>.SuccessAsync(response);

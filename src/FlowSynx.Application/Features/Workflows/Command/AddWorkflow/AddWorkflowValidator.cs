@@ -11,5 +11,9 @@ public class AddWorkflowValidator : AbstractValidator<AddWorkflowRequest>
             .NotNull()
             .NotEmpty()
             .WithMessage(localization.Get("Features_Workflow_Validation_Definition_MustHaveValue"));
+
+        RuleFor(request => request.SchemaUrl)
+            .Must(value => string.IsNullOrWhiteSpace(value) || Uri.TryCreate(value, UriKind.Absolute, out _))
+            .WithMessage(localization.Get("Features_Workflow_Validation_SchemaUrl_Invalid"));
     }
 }

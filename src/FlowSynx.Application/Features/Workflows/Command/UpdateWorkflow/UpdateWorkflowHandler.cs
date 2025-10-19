@@ -3,6 +3,7 @@ using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
+using FlowSynx.Application.Workflow;
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.PluginCore.Exceptions;
@@ -18,22 +19,27 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
     private readonly IJsonDeserializer _jsonDeserializer;
     private readonly ILocalization _localization;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IWorkflowSchemaValidator _workflowSchemaValidator;
 
     public UpdateWorkflowHandler(
         ILogger<UpdateWorkflowHandler> logger, 
         ICurrentUserService currentUserService,
         IWorkflowService workflowService, 
         IJsonDeserializer jsonDeserializer,
+        IWorkflowSchemaValidator workflowSchemaValidator,
         ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(workflowService);
+        ArgumentNullException.ThrowIfNull(jsonDeserializer);
+        ArgumentNullException.ThrowIfNull(workflowSchemaValidator);
         ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
         _currentUserService = currentUserService;
         _workflowService = workflowService;
         _jsonDeserializer = jsonDeserializer;
+        _workflowSchemaValidator = workflowSchemaValidator;
         _localization = localization;
     }
 
@@ -50,6 +56,12 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
                 var message = _localization.Get("Feature_Workflow_Update_WorkflowNotFound", request.WorkflowId);
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
+
+            var normalizedSchemaUrl = request.SchemaUrl is null
+                ? workflow.SchemaUrl
+                : (string.IsNullOrWhiteSpace(request.SchemaUrl) ? null : request.SchemaUrl);
+
+            await _workflowSchemaValidator.ValidateAsync(normalizedSchemaUrl, request.Definition, cancellationToken);
 
             var workflowDefinition = _jsonDeserializer.Deserialize<WorkflowDefinition>(request.Definition);
 
@@ -74,6 +86,7 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
 
             workflow.Name = workflowDefinition.Name;
             workflow.Definition = request.Definition;
+            workflow.SchemaUrl = normalizedSchemaUrl;
 
             await _workflowService.Update(workflow, cancellationToken);
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_Workflow_Update_AddedSuccessfully"));

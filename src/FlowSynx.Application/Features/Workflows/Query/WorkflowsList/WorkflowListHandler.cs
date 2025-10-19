@@ -48,7 +48,8 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Pagina
             {
                 Id = workflow.Id,
                 Name = workflow.Name,
-                ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow
+                ModifiedDate = workflow.LastModifiedOn ?? _systemClock.UtcNow,
+                SchemaUrl = workflow.SchemaUrl
 
             });
             var pagedItems = response.ToPaginatedList(
