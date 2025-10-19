@@ -219,8 +219,8 @@ As a community member, feel free to jump in and help others, too!
 
 | Platform | Link |
 |-----------|------|
-| **Discord (preferred)** | [Discord](https://discord.flowsynx.io) |
-| **X (Twitter)** | [@flowsynxio](https://twitter.com/flowsynxio) |
+| **Discord (preferred)** | [Discord](http://discord.flowsynx.io) |
+| **X (Twitter)** | [@flowsynxio](https://x.com/flowsynxio) |
 
 ## Security
 
