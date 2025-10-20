@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Localizations;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Localizations;
 using FluentValidation;
 
 namespace FlowSynx.Application.Features.PluginConfig.Command.UpdatePluginConfig;
@@ -13,8 +14,7 @@ public class UpdatePluginConfigValidator : AbstractValidator<UpdatePluginConfigR
             .WithMessage(localization.Get("Features_Validation_PluginConfigId_MustHaveValue"));
 
         RuleFor(x => x.ConfigId)
-            .Must(BeAValidGuid)
-            .WithMessage(localization.Get("Features_Validation_PluginConfigId_InvalidGuidFormat"));
+            .MustBeValidGuid(localization.Get("Features_Validation_PluginConfigId_InvalidGuidFormat"));
 
         RuleFor(request => request.Name)
             .NotNull()
@@ -34,10 +34,5 @@ public class UpdatePluginConfigValidator : AbstractValidator<UpdatePluginConfigR
             .NotNull()
             .NotEmpty()
             .WithMessage(localization.Get("Features_Validation_PluginConfig_Version_MustHaveValue"));
-    }
-
-    private bool BeAValidGuid(string id)
-    {
-        return Guid.TryParse(id, out _);
     }
 }

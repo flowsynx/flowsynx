@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Localizations;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Localizations;
 using FluentValidation;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
@@ -13,12 +14,6 @@ public class WorkflowExecutionListValidator : AbstractValidator<WorkflowExecutio
             .WithMessage(localization.Get("Features_Validation_WorkflowId_MustHaveValue"));
 
         RuleFor(x => x.WorkflowId)
-            .Must(BeAValidGuid)
-            .WithMessage(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
-    }
-
-    private bool BeAValidGuid(string id)
-    {
-        return Guid.TryParse(id, out _);
+            .MustBeValidGuid(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
     }
 }
