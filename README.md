@@ -205,6 +205,7 @@ You can:
 - 🔌 Build and publish plugins  
 - 🧱 Contribute to the core or documentation  
 - 🌍 Collaborate in discussions  
+- 🤝 Review the [Code of Conduct](./CODE_OF_CONDUCT.md) to help keep the community welcoming  
 
 👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
 
