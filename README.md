@@ -4,6 +4,7 @@
   <p><i>Lightweight, extensible, and powerful workflow orchestration for modern automation.</i></p>
 
   [![Codacy Badge][codacy-badge]][codacy-url]
+  [![Quality Gate Status][sonarcloud-quality-gate-badge]][sonarcloud-quality-gate-url]
   [![License: MIT][mit-badge]][mit-url]
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
@@ -244,3 +245,5 @@ See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for deta
 [codacy-url]: https://app.codacy.com/gh/flowsynx/flowsynx/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade
 [github-good-first-issue-badge]: https://img.shields.io/github/issues/flowsynx/flowsynx/good%20first%20issue?style=flat-square&logo=github&label=good%20first%20issues
 [github-good-first-issue-url]: https://github.com/flowsynx/flowsynx/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
+[sonarcloud-quality-gate-badge]: https://sonarcloud.io/api/project_badges/measure?project=flowsynx_flowsynx&metric=alert_status
+[sonarcloud-quality-gate-url]: https://sonarcloud.io/summary/new_code?id=flowsynx_flowsynx
