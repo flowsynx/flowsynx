@@ -147,8 +147,8 @@ public class Workflows : EndpointGroupBase
         var (definition, schemaUrl) = ParseWorkflowPayload(jsonString, jsonDeserializer);
         var request = new AddWorkflowRequest
         {
-            Definition = definition,
-            SchemaUrl = schemaUrl
+            SchemaUrl = schemaUrl,
+            Definition = definition
         };
 
         var result = await mediator.AddWorkflow(request, cancellationToken);
@@ -207,16 +207,14 @@ public class Workflows : EndpointGroupBase
             if (!payload.HasEnvelopeFields)
                 return (jsonBody, null);
 
-            var schemaUrl = payload.SchemaUrl ?? payload.Schema;
-            var definitionCandidate = payload.Workflow ?? payload.Definition;
-            var definition = definitionCandidate switch
+            var definition = payload.Workflow switch
             {
                 string definitionString => definitionString,
                 null => string.Empty,
-                _ => definitionCandidate.ToString() ?? string.Empty
+                _ => payload.Workflow.ToString() ?? string.Empty
             };
 
-            return (definition, schemaUrl);
+            return (definition, payload.Schema);
         }
         catch (FlowSynx.PluginCore.Exceptions.FlowSynxException)
         {
@@ -412,14 +410,8 @@ public class Workflows : EndpointGroupBase
 
     private sealed class WorkflowUpsertPayload
     {
-        public object? Workflow { get; init; }
-        public object? Definition { get; init; }
         public string? Schema { get; init; }
-        public string? SchemaUrl { get; init; }
-        public bool HasEnvelopeFields =>
-            Workflow is not null ||
-            Definition is not null ||
-            !string.IsNullOrWhiteSpace(Schema) ||
-            !string.IsNullOrWhiteSpace(SchemaUrl);
+        public object? Workflow { get; init; }
+        public bool HasEnvelopeFields => Workflow is not null || !string.IsNullOrWhiteSpace(Schema);
     }
 }
