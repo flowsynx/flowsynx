@@ -1,7 +1,7 @@
 ﻿using MediatR;
 using FlowSynx.Application.Wrapper;
 
-namespace FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigger;
 
 public class DeleteWorkflowTriggerRequest : IRequest<Result<Unit>>
 {

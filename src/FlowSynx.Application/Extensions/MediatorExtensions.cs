@@ -25,12 +25,12 @@ using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionLo
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionLogs;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
-using FlowSynx.Application.Features.Workflows.Query.WorkflowTriggersList;
-using FlowSynx.Application.Features.Workflows.Query.WorkflowTriggerDetails;
-using FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersList;
+using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
+using FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigger;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
-using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
-using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowTriggers.Command.AddWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ApproveWorkflow;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.RejectWorkflow;

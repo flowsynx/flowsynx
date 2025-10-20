@@ -9,7 +9,7 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggersList;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersList;
 
 internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersListRequest, PaginatedResult<WorkflowTriggersListResponse>>
 {

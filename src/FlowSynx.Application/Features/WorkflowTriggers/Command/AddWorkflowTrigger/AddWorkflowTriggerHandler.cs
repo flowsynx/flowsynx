@@ -8,7 +8,7 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.AddWorkflowTrigger;
 
 internal class AddWorkflowTriggerHandler : IRequestHandler<AddWorkflowTriggerRequest, Result<AddWorkflowTriggerResponse>>
 {

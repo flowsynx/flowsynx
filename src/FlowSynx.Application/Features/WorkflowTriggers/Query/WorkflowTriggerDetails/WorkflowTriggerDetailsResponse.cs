@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Domain.Trigger;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggerDetails;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
 
 public class WorkflowTriggerDetailsResponse
 {

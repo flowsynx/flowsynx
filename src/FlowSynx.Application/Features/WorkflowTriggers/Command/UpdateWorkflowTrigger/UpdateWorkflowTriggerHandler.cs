@@ -8,7 +8,7 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
 
 internal class UpdateWorkflowTriggerHandler : IRequestHandler<UpdateWorkflowTriggerRequest, Result<Unit>>
 {

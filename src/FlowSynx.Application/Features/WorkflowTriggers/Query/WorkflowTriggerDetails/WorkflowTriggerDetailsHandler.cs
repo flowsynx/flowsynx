@@ -7,7 +7,7 @@ using FlowSynx.Application.Models;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Application.Localizations;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggerDetails;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
 
 internal class WorkflowTriggerDetailsHandler : IRequestHandler<WorkflowTriggerDetailsRequest, Result<WorkflowTriggerDetailsResponse>>
 {

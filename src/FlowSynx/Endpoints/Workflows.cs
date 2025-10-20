@@ -1,8 +1,8 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflow;
-using FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
-using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowTriggers.Command.AddWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;

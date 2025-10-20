@@ -2,7 +2,7 @@
 using FlowSynx.Application.Localizations;
 using FluentValidation;
 
-namespace FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
 
 public class UpdateWorkflowTriggerValidator : AbstractValidator<UpdateWorkflowTriggerRequest>
 {

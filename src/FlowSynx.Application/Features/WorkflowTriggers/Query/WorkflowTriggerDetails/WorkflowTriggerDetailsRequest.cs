@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Wrapper;
 using MediatR;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggerDetails;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
 
 public class WorkflowTriggerDetailsRequest : IRequest<Result<WorkflowTriggerDetailsResponse>>
 {

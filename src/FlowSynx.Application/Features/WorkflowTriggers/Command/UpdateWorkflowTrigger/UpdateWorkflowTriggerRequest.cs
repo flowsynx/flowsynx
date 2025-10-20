@@ -2,7 +2,7 @@
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Trigger;
 
-namespace FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
 
 public class UpdateWorkflowTriggerRequest : UpdateWorkflowTriggerDefinition, IRequest<Result<Unit>>
 {

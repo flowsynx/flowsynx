@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
+﻿namespace FlowSynx.Application.Features.WorkflowTriggers.Command.AddWorkflowTrigger;
 
 public class AddWorkflowTriggerResponse
 {

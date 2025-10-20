@@ -2,7 +2,7 @@
 using FlowSynx.Application.Localizations;
 using FluentValidation;
 
-namespace FlowSynx.Application.Features.Workflows.Query.WorkflowTriggersList;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersList;
 
 public class WorkflowTriggersListValidator : AbstractValidator<WorkflowTriggersListRequest>
 {

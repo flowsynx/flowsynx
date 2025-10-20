@@ -2,7 +2,7 @@
 using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Trigger;
 
-namespace FlowSynx.Application.Features.Workflows.Command.AddWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.AddWorkflowTrigger;
 
 public class AddWorkflowTriggerRequest : AddWorkflowTriggerDefinition, IRequest<Result<AddWorkflowTriggerResponse>>
 {

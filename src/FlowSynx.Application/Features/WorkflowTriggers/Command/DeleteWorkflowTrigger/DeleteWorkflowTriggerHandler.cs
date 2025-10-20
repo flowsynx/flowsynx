@@ -7,7 +7,7 @@ using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigger;
 
 internal class DeleteWorkflowTriggerHandler : IRequestHandler<DeleteWorkflowTriggerRequest, Result<Unit>>
 {

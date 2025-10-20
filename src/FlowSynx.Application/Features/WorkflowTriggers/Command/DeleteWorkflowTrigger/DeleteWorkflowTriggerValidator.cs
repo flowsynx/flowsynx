@@ -2,7 +2,7 @@
 using FlowSynx.Application.Localizations;
 using FluentValidation;
 
-namespace FlowSynx.Application.Features.Workflows.Command.DeleteWorkflowTrigger;
+namespace FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigger;
 
 public class DeleteWorkflowTriggerValidator : AbstractValidator<DeleteWorkflowTriggerRequest>
 {
