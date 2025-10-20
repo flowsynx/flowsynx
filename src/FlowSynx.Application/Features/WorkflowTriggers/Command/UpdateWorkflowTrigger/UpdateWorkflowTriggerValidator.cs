@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Localizations;
+﻿using FlowSynx.Application.Extensions;
+using FlowSynx.Application.Localizations;
 using FluentValidation;
 
 namespace FlowSynx.Application.Features.Workflows.Command.UpdateWorkflowTrigger;
@@ -13,8 +14,7 @@ public class UpdateWorkflowTriggerValidator : AbstractValidator<UpdateWorkflowTr
             .WithMessage(localization.Get("Features_Validation_WorkflowId_MustHaveValue"));
 
         RuleFor(x => x.WorkflowId)
-            .Must(BeAValidGuid)
-            .WithMessage(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
+            .MustBeValidGuid(localization.Get("Features_Validation_WorkflowId_InvalidGuidFormat"));
 
         RuleFor(x => x.TriggerId)
             .NotNull()
@@ -22,12 +22,6 @@ public class UpdateWorkflowTriggerValidator : AbstractValidator<UpdateWorkflowTr
             .WithMessage(localization.Get("Features_Validation_TriggerId_MustHaveValue"));
 
         RuleFor(x => x.TriggerId)
-            .Must(BeAValidGuid)
-            .WithMessage(localization.Get("Features_Validation_TriggerId_InvalidGuidFormat"));
-    }
-
-    private bool BeAValidGuid(string id)
-    {
-        return Guid.TryParse(id, out _);
+            .MustBeValidGuid(localization.Get("Features_Validation_TriggerId_InvalidGuidFormat"));
     }
 }
