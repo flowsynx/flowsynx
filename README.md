@@ -208,6 +208,20 @@ You can:
 
 👉 See [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md)
 
+## Communication and Discord
+
+We would greatly appreciate your contributions and suggestions!  
+One of the easiest ways to contribute is to participate in Discord discussions.
+
+### Questions and Issues
+Reach out with any questions you may have — we’ll make sure to answer them as soon as possible.  
+As a community member, feel free to jump in and help others, too!
+
+| Platform | Link |
+|-----------|------|
+| **Discord (preferred)** | [Discord](http://discord.flowsynx.io) |
+| **X (Twitter)** | [@flowsynxio](https://x.com/flowsynxio) |
+
 ## Security
 
 We take the security of FlowSynx seriously.  
