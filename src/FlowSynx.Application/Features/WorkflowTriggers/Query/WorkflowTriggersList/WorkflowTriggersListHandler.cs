@@ -1,10 +1,9 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain.Trigger;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Wrapper;
-using FlowSynx.Domain.Trigger;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -16,14 +15,12 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
     private readonly ILogger<PluginConfigListHandler> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
-    private readonly ISystemClock _systemClock;
     private readonly ILocalization _localization;
 
     public WorkflowTriggersListHandler(
         ILogger<PluginConfigListHandler> logger,
         IWorkflowTriggerService workflowTriggerService, 
         ICurrentUserService currentUserService,
-        ISystemClock systemClock,
         ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -33,7 +30,6 @@ internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersLis
         _logger = logger;
         _workflowTriggerService = workflowTriggerService;
         _currentUserService = currentUserService;
-        _systemClock = systemClock;
         _localization = localization;
     }
 
