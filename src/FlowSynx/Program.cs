@@ -112,7 +112,7 @@ catch (Exception ex)
     if (logger != null)
         logger.LogError(ex.Message);
     else
-        Console.Error.WriteLine(ex.Message);
+        await Console.Error.WriteLineAsync(ex.Message);
 
     // If the console closes immediately, the output may not be visible.
     // So, added await Task.Delay(500) here;
