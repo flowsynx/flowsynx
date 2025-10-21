@@ -78,12 +78,12 @@ public static class PredicateBuilder
             return new ParameterReBinder(map).Visit(exp);
         }
 
-        protected override Expression VisitParameter(ParameterExpression p)
+        protected override Expression VisitParameter(ParameterExpression node)
         {
-            if (_map.TryGetValue(p, out var replacement))
-                p = replacement;
+            if (_map.TryGetValue(node, out var replacement))
+                node = replacement;
             
-            return base.VisitParameter(p);
+            return base.VisitParameter(node);
         }
     }
 }
