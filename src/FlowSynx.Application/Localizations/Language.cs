@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Application.Localizations;
+﻿using System.Collections.Immutable;
+
+namespace FlowSynx.Application.Localizations;
 
 public class Language
 {
@@ -13,10 +15,8 @@ public class Language
 
     public static readonly Language English = new("en", "English");
 
-    public static readonly List<Language> All = new()
-    {
-        English
-    };
+    public static readonly ImmutableArray<Language> All =
+        ImmutableArray.Create(English);
 
     public static bool IsValid(string code) =>
         All.Any(lang => string.Equals(lang.Code, code, StringComparison.OrdinalIgnoreCase));
