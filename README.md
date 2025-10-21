@@ -25,6 +25,7 @@ Whether you’re streamlining **DevOps**, managing **data pipelines**, or buildi
 - [Runtime Context](#runtime-context)
 - [Why FlowSynx?](#why-flowsynx)
 - [Key Features](#key-features)
+- [Roadmap](#roadmap)
 - [Get Started using FlowSynx](#get-started-using-flowsynx)
 - [Architecture Overview](#architecture-overview)
   - [Interaction Layers](#interaction-layers)
@@ -115,6 +116,10 @@ Built on clean architecture principles, FlowSynx offers **clarity**, **control**
 ✅ **Error Handling** - Flexible Error Handling and Retry Policies per task and workflow level  
 ✅ **Marketplace & Registry** — Discover and manage plugins easily  
 ✅ **Web Console UI** — Intuitive dashboard for workflow monitoring and control  
+
+## Roadmap
+
+Curious about what’s next? Review the planned milestones in our [Roadmap](./docs/ROADMAP.md).
 
 ## Get Started using FlowSynx
 
