@@ -2,6 +2,10 @@
 # Automatically requests reviews for key components.
 
 # ─────────────────────────────
+# Catch-all (Default)
+*                        @flowsynx/owners
+
+# ─────────────────────────────
 # Documentation & Governance
 README.md                @flowsynx/docs-team @flowsynx/owners
 SECURITY.md              @flowsynx/owners
@@ -21,7 +25,3 @@ LICENSE                  @flowsynx/owners
 # ─────────────────────────────
 # Tests
 /tests/**                @flowsynx/core-team @flowsynx/maintainers @flowsynx/owners
-
-# ─────────────────────────────
-# Catch-all (Default)
-*                        @flowsynx/owners
