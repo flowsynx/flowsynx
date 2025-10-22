@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowService, WorkflowService>()
             .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()
             .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()
-            .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()            
+            .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()
             .AddScoped<IWorkflowApprovalService, WorkflowApprovalService>()
             .AddDbContextFactory<ApplicationContext>(options =>
             {
