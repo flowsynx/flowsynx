@@ -5,7 +5,6 @@ using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Application.Wrapper;
-using FlowSynx.Domain;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
@@ -17,7 +16,6 @@ namespace FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
 internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<AddWorkflowResponse>>
 {
     private readonly ILogger<AddWorkflowHandler> _logger;
-    private readonly ITransactionService _transactionService;
     private readonly IWorkflowService _workflowService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IJsonDeserializer _jsonDeserializer;
@@ -26,8 +24,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
     private readonly ILocalization _localization;
 
     public AddWorkflowHandler(
-        ILogger<AddWorkflowHandler> logger, 
-        ITransactionService transactionService,
+        ILogger<AddWorkflowHandler> logger,         
         IWorkflowService workflowService, 
         ICurrentUserService currentUserService, 
         IJsonDeserializer jsonDeserializer, 
@@ -36,7 +33,6 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(transactionService);
         ArgumentNullException.ThrowIfNull(workflowService);
         ArgumentNullException.ThrowIfNull(currentUserService);
         ArgumentNullException.ThrowIfNull(jsonDeserializer);
@@ -44,7 +40,6 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ArgumentNullException.ThrowIfNull(workflowSchemaValidator);
         ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
-        _transactionService = transactionService;
         _workflowService = workflowService;
         _currentUserService = currentUserService;
         _jsonDeserializer = jsonDeserializer;

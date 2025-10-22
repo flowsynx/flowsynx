@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
-using FlowSynx.Domain;
 using FlowSynx.Domain.Audit;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Domain.PluginConfig;
@@ -35,8 +34,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IWorkflowService, WorkflowService>()
             .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()
             .AddScoped<IWorkflowTaskExecutionService, WorkflowTaskExecutionService>()
-            .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()
-            .AddScoped<ITransactionService, TransactionService>()
+            .AddScoped<IWorkflowTriggerService, WorkflowTriggerService>()            
             .AddScoped<IWorkflowApprovalService, WorkflowApprovalService>()
             .AddDbContextFactory<ApplicationContext>(options =>
             {
