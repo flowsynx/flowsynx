@@ -128,7 +128,7 @@ public class PluginDownloader : IPluginDownloader
         }
         catch (Exception ex)
         {
-            _logger.LogError(_localization.Get("Plugin_Download_Extraction_ErrorDuringDelete", ex.Message));
+            _logger.LogError(ex,_localization.Get("Plugin_Download_Extraction_ErrorDuringDelete", ex.Message));
         }
     }
 
