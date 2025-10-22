@@ -132,7 +132,7 @@ public class PluginDownloader : IPluginDownloader
         }
     }
 
-    private async Task ExtractZipFromBytesAsync(
+    private static async Task ExtractZipFromBytesAsync(
         string outputDirectory, 
         byte[] zipData, 
         CancellationToken cancellationToken)
