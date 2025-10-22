@@ -27,11 +27,6 @@ internal class RejectWorkflowHandler : IRequestHandler<RejectWorkflowRequest, Re
         ISystemClock systemClock,
         ILocalization localization)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(manualApprovalService);
-        ArgumentNullException.ThrowIfNull(workflowExecutionService);
-        ArgumentNullException.ThrowIfNull(currentUserService);
-        ArgumentNullException.ThrowIfNull(localization);
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _manualApprovalService = manualApprovalService ?? throw new ArgumentNullException(nameof(manualApprovalService));
         _workflowExecutionService = workflowExecutionService ?? throw new ArgumentNullException(nameof(workflowExecutionService));
