@@ -102,7 +102,7 @@ public class PluginDownloader : IPluginDownloader
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
     }
 
-    private string ComputeChecksum(byte[] data)
+    private static string ComputeChecksum(byte[] data)
     {
         using SHA256 sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(data);
