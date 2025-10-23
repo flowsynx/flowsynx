@@ -6,6 +6,11 @@ namespace FlowSynx.Infrastructure.Workflow;
 
 public class PlaceholderReplacer : IPlaceholderReplacer
 {
+    public string ReplacePlaceholders(string content, IExpressionParser parser)
+    {
+        return ProcessString(content, parser) as string ?? content;
+    }
+
     public void ReplacePlaceholdersInParameters(Dictionary<string, object?> parameters, IExpressionParser parser)
     {
         foreach (var key in parameters.Keys.ToList())

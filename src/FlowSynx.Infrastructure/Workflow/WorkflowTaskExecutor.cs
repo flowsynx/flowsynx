@@ -11,6 +11,7 @@ using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
@@ -209,10 +210,110 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         return linkedCts;
     }
 
-    private PluginParameters PreparePluginParameters(Dictionary<string, object?>? parameters, IExpressionParser parser)
+    private PluginParameters PreparePluginParameters(
+        Dictionary<string, object?>? parameters,
+        IExpressionParser parser)
     {
         var resolved = parameters ?? new Dictionary<string, object?>();
+
+        foreach (var key in resolved.Keys.ToList())
+        {
+            var value = resolved[key];
+
+            switch (value)
+            {
+                case JObject jObject:
+                    {
+                        var pluginContext = TryDeserializePluginContext(jObject);
+                        if (pluginContext != null)
+                        {
+                            ApplyPlaceholdersToPluginContext(pluginContext, parser);
+                            resolved[key] = pluginContext;
+                        }
+                        break;
+                    }
+
+                case JArray jArray:
+                    {
+                        var pluginList = TryDeserializePluginContextList(jArray);
+                        if (pluginList != null)
+                        {
+                            foreach (var ctx in pluginList)
+                                ApplyPlaceholdersToPluginContext(ctx, parser);
+
+                            resolved[key] = pluginList;
+                        }
+                        break;
+                    }
+            }
+        }
+
+        // Apply placeholders to remaining parameters (non-PluginContext entries)
         _placeholderReplacer.ReplacePlaceholdersInParameters(resolved, parser);
+
         return resolved.ToPluginParameters();
+    }
+
+    private static PluginContext? TryDeserializePluginContext(JObject jObject)
+    {
+        try
+        {
+            return jObject.ToObject<PluginContext>();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static List<PluginContext>? TryDeserializePluginContextList(JArray jArray)
+    {
+        try
+        {
+            return jArray.ToObject<List<PluginContext>>();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Applies placeholder replacements to all string-like properties and internal dictionaries of PluginContext.
+    /// </summary>
+    private void ApplyPlaceholdersToPluginContext(PluginContext context, IExpressionParser parser)
+    {
+        if (context == null)
+            return;
+
+        // Replace placeholders in all string-based properties
+        context.Id = ReplaceIfNotNull(context.Id, parser);
+        context.SourceType = ReplaceIfNotNull(context.SourceType, parser);
+        context.Format = ReplaceIfNotNull(context.Format, parser);
+        context.Content = ReplaceIfNotNull(context.Content, parser);
+
+        // Replace placeholders inside Metadata dictionary
+        if (context.Metadata.Count > 0)
+        {
+            _placeholderReplacer.ReplacePlaceholdersInParameters(context.Metadata, parser);
+        }
+
+        // Replace placeholders inside StructuredData (list of dictionaries)
+        if (context.StructuredData is { Count: > 0 })
+        {
+            foreach (var dict in context.StructuredData)
+            {
+                _placeholderReplacer.ReplacePlaceholdersInParameters(dict, parser);
+            }
+        }
+
+        // RawData (byte[]) ignored — no placeholders applied
+    }
+
+    private string? ReplaceIfNotNull(string? value, IExpressionParser parser)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? value
+            : _placeholderReplacer.ReplacePlaceholders(value, parser);
     }
 }
