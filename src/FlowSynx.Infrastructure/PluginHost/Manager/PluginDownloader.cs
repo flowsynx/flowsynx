@@ -102,7 +102,7 @@ public class PluginDownloader : IPluginDownloader
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
     }
 
-    private string ComputeChecksum(byte[] data)
+    private static string ComputeChecksum(byte[] data)
     {
         using SHA256 sha256 = SHA256.Create();
         var hashBytes = sha256.ComputeHash(data);
@@ -128,11 +128,11 @@ public class PluginDownloader : IPluginDownloader
         }
         catch (Exception ex)
         {
-            _logger.LogError(_localization.Get("Plugin_Download_Extraction_ErrorDuringDelete", ex.Message));
+            _logger.LogError(ex,_localization.Get("Plugin_Download_Extraction_ErrorDuringDelete", ex.Message));
         }
     }
 
-    private async Task ExtractZipFromBytesAsync(
+    private static async Task ExtractZipFromBytesAsync(
         string outputDirectory, 
         byte[] zipData, 
         CancellationToken cancellationToken)
