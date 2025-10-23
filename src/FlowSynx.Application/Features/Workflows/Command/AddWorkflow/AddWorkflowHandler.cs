@@ -35,22 +35,14 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         IWorkflowSchemaValidator workflowSchemaValidator,
         ILocalization localization)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(transactionService);
-        ArgumentNullException.ThrowIfNull(workflowService);
-        ArgumentNullException.ThrowIfNull(currentUserService);
-        ArgumentNullException.ThrowIfNull(jsonDeserializer);
-        ArgumentNullException.ThrowIfNull(workflowValidator);
-        ArgumentNullException.ThrowIfNull(workflowSchemaValidator);
-        ArgumentNullException.ThrowIfNull(localization);
-        _logger = logger;
-        _transactionService = transactionService;
-        _workflowService = workflowService;
-        _currentUserService = currentUserService;
-        _jsonDeserializer = jsonDeserializer;
-        _workflowValidator = workflowValidator;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
+        _workflowService = workflowService ?? throw new ArgumentNullException(nameof(workflowService));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _jsonDeserializer = jsonDeserializer ?? throw new ArgumentNullException(nameof(jsonDeserializer));
+        _workflowValidator = workflowValidator ?? throw new ArgumentNullException(nameof(workflowValidator));
         _workflowSchemaValidator = workflowSchemaValidator ?? throw new ArgumentNullException(nameof(workflowSchemaValidator));
-        _localization = localization;
+        _localization = localization ?? throw new ArgumentNullException(nameof(localization));
     }
 
     public async Task<Result<AddWorkflowResponse>> Handle(AddWorkflowRequest request, CancellationToken cancellationToken)
