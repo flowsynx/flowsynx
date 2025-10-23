@@ -33,7 +33,6 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         ILocalization localization)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _transactionService = transactionService ?? throw new ArgumentNullException(nameof(transactionService));
         _workflowService = workflowService ?? throw new ArgumentNullException(nameof(workflowService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         _jsonDeserializer = jsonDeserializer ?? throw new ArgumentNullException(nameof(jsonDeserializer));
