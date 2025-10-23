@@ -31,6 +31,7 @@ public class WorkflowExecutionWorker : BackgroundService
                     request.UserId,
                     request.WorkflowId,
                     request.ExecutionId,
+                    request.Trigger,
                     request.CancellationToken);
 
                 await workflowExecutionQueue.MarkAsCompletedAsync(request.ExecutionId, stoppingToken);

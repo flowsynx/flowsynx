@@ -6,4 +6,5 @@ public class WorkflowQueueEntity: AuditableEntity<Guid>
     public required Guid WorkflowId { get; set; }
     public required Guid ExecutionId { get; set; }
     public WorkflowQueueStatus Status { get; set; }
+    public string? TriggerPayload { get; set; }
 }

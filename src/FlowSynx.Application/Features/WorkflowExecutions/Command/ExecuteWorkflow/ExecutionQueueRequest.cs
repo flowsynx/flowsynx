@@ -6,16 +6,19 @@ public class ExecutionQueueRequest
     public Guid WorkflowId { get; }
     public Guid ExecutionId { get; }
     public CancellationToken CancellationToken { get; }
+    public WorkflowTrigger? Trigger { get; }
 
     public ExecutionQueueRequest(
         string userId, 
         Guid workflowId, 
         Guid executionId, 
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        WorkflowTrigger? trigger = null)
     {
         UserId = userId;
         WorkflowId = workflowId;
         ExecutionId = executionId;
         CancellationToken = cancellationToken;
+        Trigger = trigger;
     }
 }

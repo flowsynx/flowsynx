@@ -16,6 +16,7 @@ using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 using FlowSynx.Infrastructure.Workflow.ManualApprovals;
 using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
+using FlowSynx.Infrastructure.Workflow.Triggers.DataBased;
 using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
 using FlowSynx.Infrastructure.Workflow.Triggers.TimeBased;
 using Microsoft.Extensions.Configuration;
@@ -56,8 +57,11 @@ public static class ServiceCollectionExtensions
             .AddSingleton<IWorkflowSchemaValidator, WorkflowSchemaValidator>()
             .AddScoped<IManualApprovalService, ManualApprovalService>()
             .AddSingleton<IWorkflowHttpListener, InMemoryWorkflowHttpListener>()
+            .AddSingleton<IDataChangeProvider, JsonDataChangeProvider>()
+            .AddSingleton<IDataChangeProviderFactory, DataChangeProviderFactory>()
             .AddScoped<IWorkflowTriggerProcessor, WorkflowTimeTriggerProcessor>()
-            .AddScoped<IWorkflowTriggerProcessor, WorkflowHttpTriggerProcessor>();
+            .AddScoped<IWorkflowTriggerProcessor, WorkflowHttpTriggerProcessor>()
+            .AddScoped<IWorkflowTriggerProcessor, WorkflowDataTriggerProcessor>();
 
         return services;
     }

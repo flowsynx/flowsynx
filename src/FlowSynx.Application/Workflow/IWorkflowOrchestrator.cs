@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Workflow;
+﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Domain.Workflow;
 
 namespace FlowSynx.Application.Workflow;
 
@@ -13,6 +14,7 @@ public interface IWorkflowOrchestrator
         string userId,
         Guid workflowId,
         Guid executionId,
+        WorkflowTrigger? trigger,
         CancellationToken cancellationToken);
 
     Task<WorkflowExecutionStatus> ResumeWorkflowAsync(

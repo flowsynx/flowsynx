@@ -147,7 +147,10 @@ public enum ErrorCode
     WorkflowSchemaFetchFailed                       = 2444,
     WorkflowSchemaInvalidUrl                        = 2445,
     WorkflowSchemaInvalidSchemaPayload              = 2446,
-    #endregion
+    WorkflowDataTriggerConfigurationInvalid         = 2447,
+    WorkflowDataTriggerProviderMissing              = 2448,
+    WorkflowDataTriggerDispatchFailed               = 2449,
+#endregion
 
     #region ExpressionParser
     ExpressionParserOutputNotFound = 2601,

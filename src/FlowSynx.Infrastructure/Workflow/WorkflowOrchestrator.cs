@@ -135,12 +135,15 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         string userId, 
         Guid workflowId,
         Guid executionId,
+        WorkflowTrigger? trigger,
         CancellationToken cancellationToken)
     {
         var execution = await _workflowExecutionService.Get(userId, workflowId, executionId, cancellationToken);
         if (execution == null)
             throw new FlowSynxException((int)ErrorCode.WorkflowExecutionInitilizeFailed,
                 _localization.Get("Workflow_Orchestrator_ExecutionNotFound", executionId));
+
+        InitializeExecutionOutputs(trigger);
 
         var workflow = await FetchWorkflowOrThrowAsync(userId, workflowId, cancellationToken);
         var definition = await ParseAndValidateDefinitionAsync(
@@ -208,6 +211,34 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         _errorHandlingResolver.Resolve(definition);
         _workflowValidator.Validate(definition);
         return definition;
+    }
+
+    private void InitializeExecutionOutputs(WorkflowTrigger? trigger)
+    {
+        _taskOutputs = new ConcurrentDictionary<string, object?>();
+
+        if (trigger == null)
+            return;
+
+        var metadata = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["type"] = trigger.Type.ToString(),
+            ["properties"] = CloneProperties(trigger.Properties)
+        };
+
+        _taskOutputs.TryAdd("Trigger", metadata);
+
+        if (trigger.Properties.TryGetValue("event", out var eventPayload))
+        {
+            _taskOutputs.TryAdd("TriggerEvent", eventPayload);
+        }
+    }
+
+    private static Dictionary<string, object?> CloneProperties(IDictionary<string, object> source)
+    {
+        return source.ToDictionary(
+            pair => pair.Key,
+            pair => pair.Value);
     }
 
     public async Task<WorkflowExecutionStatus> RunWorkflowExecutionAsync(

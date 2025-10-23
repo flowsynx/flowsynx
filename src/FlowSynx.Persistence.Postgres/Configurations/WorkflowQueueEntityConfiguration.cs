@@ -14,6 +14,9 @@ public class WorkflowQueueEntityConfiguration : IEntityTypeConfiguration<Workflo
         builder.Property(t => t.UserId).IsRequired();
         builder.Property(t => t.WorkflowId).IsRequired();
         builder.Property(t => t.ExecutionId).IsRequired();
+        builder.Property(t => t.TriggerPayload)
+            .HasColumnType("jsonb")
+            .IsRequired(false);
 
         var levelConverter = new ValueConverter<WorkflowQueueStatus, string>(
             v => v.ToString(),
