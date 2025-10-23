@@ -13,6 +13,7 @@
 		<RepositoryUrl>https://github.com/flowsynx/flowsynx</RepositoryUrl>
 		<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
+		<Description>Seamless Workflow Automation - Declarative, Extensible, and Fully Controllable</Description>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)'=='Release'">
@@ -51,8 +52,7 @@
 
 	<Target Name="RemoveDevAppSettingsFromPublish" AfterTargets="ComputeFilesToPublish">
 		<ItemGroup>
-			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
-			  Condition=" '%(ResolvedFileToPublish.RelativePath)' == 'appsettings.Development.json' " />
+			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition=" '%(ResolvedFileToPublish.RelativePath)' == 'appsettings.Development.json' " />
 		</ItemGroup>
 		<Message Text="Excluded appsettings.Development.json from publish output." Importance="Low" />
 	</Target>
