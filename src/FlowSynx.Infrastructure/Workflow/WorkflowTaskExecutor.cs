@@ -245,6 +245,11 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                         }
                         break;
                     }
+
+                default:
+                    {
+                        break;
+                    }
             }
         }
 
