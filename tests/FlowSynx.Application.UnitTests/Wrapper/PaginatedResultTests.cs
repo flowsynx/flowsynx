@@ -16,12 +16,12 @@ public class PaginatedResultTests
         // Assert
         Assert.True(result.Succeeded);
         Assert.Equal(items, result.Data);
-        Assert.Equal(10, result.TotalCount);
-        Assert.Equal(2, result.CurrentPage);
-        Assert.Equal(3, result.PageSize);
-        Assert.Equal(4, result.TotalPages);
-        Assert.True(result.HasPreviousPage);
-        Assert.True(result.HasNextPage);
+        Assert.Equal(10, result.Pagination.TotalCount);
+        Assert.Equal(2, result.Pagination.CurrentPage);
+        Assert.Equal(3, result.Pagination.PageSize);
+        Assert.Equal(4, result.Pagination.TotalPages);
+        Assert.True(result.Pagination.HasPreviousPage);
+        Assert.True(result.Pagination.HasNextPage);
     }
 
     [Fact]
@@ -33,9 +33,9 @@ public class PaginatedResultTests
         // Assert
         Assert.False(result.Succeeded);
         Assert.Contains("oops", result.Messages);
-        Assert.Equal(0, result.TotalCount);
-        Assert.Equal(1, result.CurrentPage);
-        Assert.Equal(1, result.PageSize);
+        Assert.Equal(0, result.Pagination.TotalCount);
+        Assert.Equal(1, result.Pagination.CurrentPage);
+        Assert.Equal(1, result.Pagination.PageSize);
         Assert.Empty(result.Data);
     }
 }
