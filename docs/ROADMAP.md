@@ -37,8 +37,11 @@ leveraging plugins, triggers, and integrations, while providing robust observabi
 | **Retry Policies & Error Handling** | Enhance task retry strategies, failure notifications, and human-in-the-loop support. | Done |
 | **GUI Enhancements** | Interactive workflow editor with Mermaid.js visualization and improved usability. | In Progress |
 | **Cross-Platform Deployment** | Ensure Windows, Linux, and Docker container compatibility. | In Progress |
-| **Support Pagination** | Standardize pagination handling across API responses. | In Progress |
-| **Support Schema in Workflow** | Implement JSON Schema validation for workflow definitions. | In Progress |
+| **Support Pagination** | Standardize pagination handling across API responses. | Done |
+| **Support Schema in Workflow** | Implement JSON Schema validation for workflow definitions. | Done |
+| **Support Database trigger** | Implement DataBased Workflow Trigger that enables workflows to automatically start in response to data changes within connected database. | In Progress |
+| **Configuration Management** | Implement integration of Infisical for Configuration Management. | Planned |
+| **Workflow Queue management Endpoint** | Implement endpoint api for workflow queue management. | Planned |
 | **`flowpack` Github Actions** | Streamline CI/CD workflows using GitHub Actions to automate plugin packaging and publishing to the FlowSynx Plugin Marketplace. | Planned |
 
 ## Mid-Term Objectives (12–24 Months)
@@ -57,6 +60,7 @@ leveraging plugins, triggers, and integrations, while providing robust observabi
 - Marketplace for community-contributed workflow templates and reusable components.  
 - Integration with leading enterprise SaaS platforms (e.g., Azure, AWS, Salesforce).  
 - Real-time collaborative workflow editing for teams.  
+- Support multi-language in flowsynx engine.
 
 ## Contribution Opportunities
 
