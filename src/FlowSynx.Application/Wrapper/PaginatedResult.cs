@@ -2,10 +2,6 @@ namespace FlowSynx.Application.Wrapper;
 
 public class PaginatedResult<T> : Result<List<T>>
 {
-    private PaginatedResult()
-    {
-    }
-
     private PaginatedResult(
         bool succeeded,
         List<T>? data,
@@ -20,22 +16,25 @@ public class PaginatedResult<T> : Result<List<T>>
         TotalCount = Math.Max(totalCount, 0);
         PageSize = NormalizePageSize(pageSize, TotalCount);
         CurrentPage = NormalizePage(page);
-        TotalPages = PageSize == 0
-            ? 0
-            : (int)Math.Ceiling(TotalCount / (double)PageSize);
+        TotalPages = PageSize == 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
     }
 
-    public int CurrentPage { get; private set; }
+    public PaginationInfo Pagination => new PaginationInfo
+    {
+        CurrentPage = CurrentPage,
+        TotalPages = TotalPages,
+        TotalCount = TotalCount,
+        PageSize = PageSize,
+        HasPreviousPage = HasPreviousPage,
+        HasNextPage = HasNextPage
+    };
 
-    public int TotalPages { get; private set; }
-
-    public int TotalCount { get; private set; }
-
-    public int PageSize { get; private set; }
-
-    public bool HasPreviousPage => CurrentPage > 1;
-
-    public bool HasNextPage => CurrentPage < TotalPages;
+    private int CurrentPage { get; }
+    private int TotalPages { get; }
+    private int TotalCount { get; }
+    private int PageSize { get; }
+    private bool HasPreviousPage => CurrentPage > 1;
+    private bool HasNextPage => CurrentPage < TotalPages;
 
     public static PaginatedResult<T> Success(
         List<T> data,
@@ -110,4 +109,14 @@ public class PaginatedResult<T> : Result<List<T>>
 
         return pageSize;
     }
+}
+
+public class PaginationInfo
+{
+    public int CurrentPage { get; set; }
+    public int TotalPages { get; set; }
+    public int TotalCount { get; set; }
+    public int PageSize { get; set; }
+    public bool HasPreviousPage { get; set; }
+    public bool HasNextPage { get; set; }
 }
