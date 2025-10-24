@@ -8,7 +8,7 @@
 		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 		<Title>FlowSynx</Title>
 		<Company>FlowSynx</Company>
-		<Copyright>© 2024 FlowSynx. All rights reserved.</Copyright>
+		<Copyright>© FlowSynx. All rights reserved.</Copyright>
 		<Authors>flowsynx</Authors>
 		<RepositoryUrl>https://github.com/flowsynx/flowsynx</RepositoryUrl>
 		<PackageProjectUrl>https://flowsynx.io</PackageProjectUrl>
