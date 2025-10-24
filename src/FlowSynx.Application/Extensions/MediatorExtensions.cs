@@ -445,10 +445,20 @@ public static class MediatorExtensions
     #region Logs
     public static Task<PaginatedResult<LogsListResponse>> Logs(
         this IMediator mediator,
-        LogsListRequest request,
+        int page,
+        int pageSize,
+        LogsListRequestTDO request,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(request, cancellationToken);
+        return mediator.Send(new LogsListRequest
+        {
+            Level = request.Level,
+            FromDate = request.FromDate,
+            ToDate = request.ToDate,
+            Message = request.Message,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
     #endregion
 

@@ -21,13 +21,16 @@ public class Logs : EndpointGroupBase
     }
 
     public async Task<IResult> LogsList(HttpContext context,
-        [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer, 
-        CancellationToken cancellationToken)
+        [FromServices] IMediator mediator, 
+        [FromServices] IJsonDeserializer jsonDeserializer, 
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var request = jsonDeserializer.Deserialize<LogsListRequest>(jsonString);
+        var request = jsonDeserializer.Deserialize<LogsListRequestTDO>(jsonString);
 
-        var result = await mediator.Logs(request, cancellationToken);
+        var result = await mediator.Logs(page, pageSize, request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }
