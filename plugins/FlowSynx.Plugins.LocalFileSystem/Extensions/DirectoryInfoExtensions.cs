@@ -20,7 +20,7 @@ internal static class DirectoryInfoExtensions
 
         foreach (var file in files)
         {
-            if(!ShouldIncludeFile(file,regex,listParameters))
+            if(!ShouldIncludeFile(file,regex))
                 continue;
             try 
             {            
@@ -59,7 +59,7 @@ internal static class DirectoryInfoExtensions
 
         return new Regex(listParameters.Filter, regexOptions);
     }
-    private static bool ShouldIncludeFile(FileInfo file, Regex? regex, ListParameters listParameters)
+    private static bool ShouldIncludeFile(FileInfo file, Regex? regex)
     {
         if(regex ==null)
             return true;
