@@ -42,6 +42,9 @@ public class PluginSpecificationsService : IPluginSpecificationsService
                     case string when string.IsNullOrEmpty(value.ToString()):
                         valid = false;
                         break;
+                    default:
+                        valid = true;
+                        break;
                 }
 
                 if (valid) continue;
