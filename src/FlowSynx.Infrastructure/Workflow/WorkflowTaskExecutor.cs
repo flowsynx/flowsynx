@@ -90,8 +90,9 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         using var timeoutCts = CreateTimeoutToken(task.Timeout, taskCancellationToken);
         var token = timeoutCts.Token;
 
+        ParseWorkflowTaskPlaceholders(task, parser);
         var plugin = await _pluginTypeService.Get(userId, task.Type, token);
-        var pluginParameters = PreparePluginParameters(task.Parameters, parser);
+        var pluginParameters = task.Parameters.ToPluginParameters();
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
 
         try
@@ -210,53 +211,87 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         return linkedCts;
     }
 
-    private PluginParameters PreparePluginParameters(
-        Dictionary<string, object?>? parameters,
-        IExpressionParser parser)
+    public void ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser parser)
     {
-        var resolved = parameters ?? new Dictionary<string, object?>();
+        if (task == null) return;
 
-        foreach (var key in resolved.Keys.ToList())
+        // Top-level string properties
+        task.Name = ReplaceIfNotNull(task.Name, parser);
+        task.Description = ReplaceIfNotNull(task.Description, parser);
+        task.Output = ReplaceIfNotNull(task.Output, parser);
+
+        // Parameters dictionary
+        if (task.Parameters is { Count: > 0 })
         {
-            var value = resolved[key];
-
-            switch (value)
+            foreach (var key in task.Parameters.Keys.ToList())
             {
-                case JObject jObject:
-                    {
-                        var pluginContext = TryDeserializePluginContext(jObject);
-                        if (pluginContext != null)
+                var value = task.Parameters[key];
+
+                switch (value)
+                {
+                    //case string s:
+                    //    task.Parameters[key] = _placeholderReplacer.ReplacePlaceholders(s, parser);
+                    //    break;
+
+                    case JObject jObject:
                         {
-                            ApplyPlaceholdersToPluginContext(pluginContext, parser);
-                            resolved[key] = pluginContext;
+                            var pluginContext = TryDeserializePluginContext(jObject);
+                            if (pluginContext != null)
+                            {
+                                ApplyPlaceholdersToPluginContext(pluginContext, parser);
+                                task.Parameters[key] = pluginContext;
+                            }
+                            break;
                         }
-                        break;
-                    }
 
-                case JArray jArray:
-                    {
-                        var pluginList = TryDeserializePluginContextList(jArray);
-                        if (pluginList != null)
+                    case JArray jArray:
                         {
-                            foreach (var ctx in pluginList)
-                                ApplyPlaceholdersToPluginContext(ctx, parser);
-
-                            resolved[key] = pluginList;
+                            var pluginList = TryDeserializePluginContextList(jArray);
+                            if (pluginList != null)
+                            {
+                                foreach (var ctx in pluginList)
+                                    ApplyPlaceholdersToPluginContext(ctx, parser);
+                                task.Parameters[key] = pluginList;
+                            }
+                            break;
                         }
-                        break;
-                    }
+                }
+            }
 
-                default:
-                    {
-                        break;
-                    }
+            _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, parser);
+        }
+
+        // ManualApproval
+        if (task.ManualApproval != null)
+        {
+            task.ManualApproval.Instructions = ReplaceIfNotNull(task.ManualApproval.Instructions, parser);
+            task.ManualApproval.DefaultAction = ReplaceIfNotNull(task.ManualApproval.DefaultAction, parser);
+
+            if (task.ManualApproval.Approvers is { Count: > 0 })
+            {
+                for (int i = 0; i < task.ManualApproval.Approvers.Count; i++)
+                {
+                    task.ManualApproval.Approvers[i] = ReplaceIfNotNull(task.ManualApproval.Approvers[i], parser);
+                }
             }
         }
 
-        // Apply placeholders to remaining parameters (non-PluginContext entries)
-        _placeholderReplacer.ReplacePlaceholdersInParameters(resolved, parser);
+        // Dependencies
+        if (task.Dependencies is { Count: > 0 })
+        {
+            for (int i = 0; i < task.Dependencies.Count; i++)
+            {
+                task.Dependencies[i] = ReplaceIfNotNull(task.Dependencies[i], parser);
+            }
+        }
 
-        return resolved.ToPluginParameters();
+        // ErrorHandling strings (if any in future extension)
+        if (task.ErrorHandling?.RetryPolicy != null)
+        {
+            // Currently numeric fields only; placeholders not needed
+        }
+
+        // Position is numeric; placeholders not needed
     }
 
     private static PluginContext? TryDeserializePluginContext(JObject jObject)

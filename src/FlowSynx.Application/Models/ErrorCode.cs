@@ -150,7 +150,7 @@ public enum ErrorCode
     #endregion
 
     #region ExpressionParser
-    ExpressionParserOutputNotFound = 2601,
+    ExpressionParserKeyNotFound = 2601,
     #endregion
 
     #region Unknown error codes

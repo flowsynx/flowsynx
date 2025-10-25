@@ -2,6 +2,7 @@
 
 public class ExpressionParserFactory : IExpressionParserFactory
 {
-    public IExpressionParser CreateParser(Dictionary<string, object?> taskOutputs)
-        => new ExpressionParser(taskOutputs);
+    public IExpressionParser CreateParser(
+        Dictionary<string, object?> taskOutputs, 
+        Dictionary<string, object?>? variables) => new ExpressionParser(taskOutputs, variables);
 }

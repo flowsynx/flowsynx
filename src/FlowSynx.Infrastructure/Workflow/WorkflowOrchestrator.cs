@@ -232,7 +232,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 throw new FlowSynxException((int)ErrorCode.WorkflowFailedDependenciesTask,
                     _localization.Get("Workflow_Executor_FailedDependenciesTask"));
 
-            var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary());
+            var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary(), definition.Variables);
             var errors = new List<Exception>();
 
             foreach (var task in readyTasks.Select(t => taskMap[t]))

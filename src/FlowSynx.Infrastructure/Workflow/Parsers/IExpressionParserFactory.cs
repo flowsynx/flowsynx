@@ -2,5 +2,5 @@
 
 public interface IExpressionParserFactory
 {
-    IExpressionParser CreateParser(Dictionary<string, object?> taskOutputs);
+    IExpressionParser CreateParser(Dictionary<string, object?> taskOutputs, Dictionary<string, object?>? variables);
 }

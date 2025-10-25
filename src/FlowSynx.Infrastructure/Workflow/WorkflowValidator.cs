@@ -2,6 +2,7 @@
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Workflow;
+using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Infrastructure.Workflow;
@@ -9,15 +10,28 @@ namespace FlowSynx.Infrastructure.Workflow;
 public class WorkflowValidator : IWorkflowValidator
 {
     private readonly ILocalization _localization;
+    private readonly IExpressionParserFactory _parserFactory;
+    private readonly IPlaceholderReplacer _placeholderReplacer;
 
-    public WorkflowValidator(ILocalization localization)
+    public WorkflowValidator(
+        ILocalization localization, 
+        IExpressionParserFactory parserFactory, 
+        IPlaceholderReplacer placeholderReplacer)
     {
         _localization = localization;
+        _parserFactory = parserFactory;
+        _placeholderReplacer = placeholderReplacer;
     }
 
     public void Validate(WorkflowDefinition definition)
     {
         var tasks = definition.Tasks;
+
+        var parser = _parserFactory.CreateParser(new Dictionary<string, object?>(), definition.Variables);
+
+        foreach (var task in tasks)
+            ParseWorkflowTaskPlaceholders(task, parser);
+        
         EnsureNoDuplicateTaskNames(tasks);
         EnsureAllDependenciesExist(tasks);
         EnsureNoCyclicDependencies(tasks);
@@ -170,6 +184,32 @@ public class WorkflowValidator : IWorkflowValidator
         }
 
         return graph;
+    }
+
+    public void ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser parser)
+    {
+        if (task == null) return;
+
+        // Top-level string properties
+        task.Name = ReplaceIfNotNull(task.Name, parser);
+        task.Description = ReplaceIfNotNull(task.Description, parser);
+        task.Output = ReplaceIfNotNull(task.Output, parser);
+
+        // Dependencies
+        if (task.Dependencies is { Count: > 0 })
+        {
+            for (int i = 0; i < task.Dependencies.Count; i++)
+            {
+                task.Dependencies[i] = ReplaceIfNotNull(task.Dependencies[i], parser);
+            }
+        }
+    }
+
+    private string? ReplaceIfNotNull(string? value, IExpressionParser parser)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? value
+            : _placeholderReplacer.ReplacePlaceholders(value, parser);
     }
     #endregion
 }
