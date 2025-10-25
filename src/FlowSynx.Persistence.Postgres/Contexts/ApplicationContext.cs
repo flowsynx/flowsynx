@@ -130,20 +130,20 @@ public class ApplicationContext : AuditableContext
 
     private string GetUserId() => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelbuilder)
     {
         try
         {
-            base.OnModelCreating(builder);
-            builder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
-            builder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer, _encryptionService));
-            builder.ApplyConfiguration(new WorkflowEntityConfiguration(_encryptionService));
-            builder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration(_encryptionService));
-            builder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
-            builder.ApplyConfiguration(new WorkflowApprovalEntityConfiguration());
-            builder.ApplyConfiguration(new WorkflowTriggerEntityConfiguration(_jsonSerializer, _jsonDeserializer));
-            builder.ApplyConfiguration(new WorkflowQueueEntityConfiguration());
-            builder.HasDefaultSchema("FlowSynx");
+            base.OnModelCreating(modelbuilder);
+            modelbuilder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
+            modelbuilder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer, _encryptionService));
+            modelbuilder.ApplyConfiguration(new WorkflowEntityConfiguration(_encryptionService));
+            modelbuilder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration(_encryptionService));
+            modelbuilder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());
+            modelbuilder.ApplyConfiguration(new WorkflowApprovalEntityConfiguration());
+            modelbuilder.ApplyConfiguration(new WorkflowTriggerEntityConfiguration(_jsonSerializer, _jsonDeserializer));
+            modelbuilder.ApplyConfiguration(new WorkflowQueueEntityConfiguration());
+            modelbuilder.HasDefaultSchema("FlowSynx");
         }
         catch (Exception ex)
         {
