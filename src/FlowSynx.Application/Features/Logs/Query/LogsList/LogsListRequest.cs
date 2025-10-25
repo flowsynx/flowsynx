@@ -3,7 +3,7 @@ using MediatR;
 
 namespace FlowSynx.Application.Features.Logs.Query.LogsList;
 
-public class LogsListRequestTDO
+public class LogsListRequestTdo
 {
     public string? Level { get; set; }
     public DateTime? FromDate { get; set; }

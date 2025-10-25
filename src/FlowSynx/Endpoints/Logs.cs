@@ -28,7 +28,7 @@ public class Logs : EndpointGroupBase
         [FromQuery] int pageSize = 25)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var request = jsonDeserializer.Deserialize<LogsListRequestTDO>(jsonString);
+        var request = jsonDeserializer.Deserialize<LogsListRequestTdo>(jsonString);
 
         var result = await mediator.Logs(page, pageSize, request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);

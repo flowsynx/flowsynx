@@ -447,7 +447,7 @@ public static class MediatorExtensions
         this IMediator mediator,
         int page,
         int pageSize,
-        LogsListRequestTDO request,
+        LogsListRequestTdo request,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new LogsListRequest
