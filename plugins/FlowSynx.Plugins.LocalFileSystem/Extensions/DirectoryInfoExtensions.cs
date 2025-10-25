@@ -57,7 +57,9 @@ internal static class DirectoryInfoExtensions
             RegexOptions.None : 
             RegexOptions.IgnoreCase;
 
-        return new Regex(listParameters.Filter, regexOptions);
+        var timeout = TimeSpan.FromSeconds(5);
+
+        return new Regex(listParameters.Filter, regexOptions, timeout);
     }
     private static bool ShouldIncludeFile(FileInfo file, Regex? regex)
     {
