@@ -229,10 +229,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
                 switch (value)
                 {
-                    //case string s:
-                    //    task.Parameters[key] = _placeholderReplacer.ReplacePlaceholders(s, parser);
-                    //    break;
-
                     case JObject jObject:
                         {
                             var pluginContext = TryDeserializePluginContext(jObject);
@@ -252,6 +248,14 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                                 foreach (var ctx in pluginList)
                                     ApplyPlaceholdersToPluginContext(ctx, parser);
                                 task.Parameters[key] = pluginList;
+                            }
+                            break;
+                        }
+                    default:
+                        {
+                            if (value is string s)
+                            {
+                                task.Parameters[key] = ReplaceIfNotNull(s, parser);
                             }
                             break;
                         }
