@@ -28,7 +28,7 @@ public class LoggerService : ILoggerService
             {
                 return await logs
                     .OrderByDescending(x => x.TimeStamp)
-                    .Take(250)
+                    .Take(512)
                     .ToListAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
@@ -37,7 +37,7 @@ public class LoggerService : ILoggerService
                 return await logs
                     .Where(predicate)
                     .OrderByDescending(x => x.TimeStamp)
-                    .Take(250)
+                    .Take(512)
                     .ToListAsync(cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
             }
