@@ -15,7 +15,7 @@ public class InMemoryWorkflowExecutionQueue : IWorkflowExecutionQueue
         _queue = Channel.CreateBounded<ExecutionQueueRequest>(capacity);
     }
 
-    public async ValueTask QueueExecutionAsync(
+    public async ValueTask EnqueueAsync(
         ExecutionQueueRequest request, 
         CancellationToken cancellationToken)
     {
@@ -35,13 +35,13 @@ public class InMemoryWorkflowExecutionQueue : IWorkflowExecutionQueue
         }
     }
 
-    public Task MarkAsCompletedAsync(Guid executionId, CancellationToken cancellationToken)
+    public Task CompleteAsync(Guid executionId, CancellationToken cancellationToken)
     {
         _statuses.AddOrUpdate(executionId, ExecutionStatus.Completed, (_, _) => ExecutionStatus.Completed);
         return Task.CompletedTask;
     }
 
-    public Task MarkAsFailedAsync(Guid executionId, CancellationToken cancellationToken)
+    public Task FailAsync(Guid executionId, CancellationToken cancellationToken)
     {
         _statuses.AddOrUpdate(executionId, ExecutionStatus.Failed, (_, _) => ExecutionStatus.Failed);
         return Task.CompletedTask;

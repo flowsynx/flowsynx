@@ -48,7 +48,7 @@ internal class ExecuteWorkflowHandler :
                 workflowId, 
                 cancellationToken);
 
-            await _workflowExecutionQueue.QueueExecutionAsync(new ExecutionQueueRequest(
+            await _workflowExecutionQueue.EnqueueAsync(new ExecutionQueueRequest(
                 _currentUserService.UserId,
                 workflowId,
                 result.Id,

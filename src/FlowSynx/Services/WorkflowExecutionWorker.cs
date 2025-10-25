@@ -33,13 +33,13 @@ public class WorkflowExecutionWorker : BackgroundService
                     request.ExecutionId,
                     request.CancellationToken);
 
-                await workflowExecutionQueue.MarkAsCompletedAsync(request.ExecutionId, stoppingToken);
+                await workflowExecutionQueue.CompleteAsync(request.ExecutionId, stoppingToken);
                 _logger.LogInformation("Workflow {WorkflowId} execution {ExecutionId} finished with status {Status}",
                     request.WorkflowId, request.ExecutionId, workflow);
             }
             catch (Exception ex)
             {
-                await workflowExecutionQueue.MarkAsFailedAsync(request.ExecutionId, stoppingToken);
+                await workflowExecutionQueue.FailAsync(request.ExecutionId, stoppingToken);
                 _logger.LogError(ex, "Error while executing workflow {WorkflowId} execution {ExecutionId}",
                     request.WorkflowId, request.ExecutionId);
             }

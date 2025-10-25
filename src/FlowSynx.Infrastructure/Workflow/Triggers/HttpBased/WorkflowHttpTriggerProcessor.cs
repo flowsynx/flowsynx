@@ -112,7 +112,7 @@ public class WorkflowHttpTriggerProcessor : IWorkflowTriggerProcessor
                 trigger.WorkflowId,
                 cancellationToken);
 
-            await _workflowExecutionQueue.QueueExecutionAsync(new ExecutionQueueRequest(
+            await _workflowExecutionQueue.EnqueueAsync(new ExecutionQueueRequest(
                 trigger.UserId,
                 trigger.WorkflowId,
                 executionEntity.Id,
