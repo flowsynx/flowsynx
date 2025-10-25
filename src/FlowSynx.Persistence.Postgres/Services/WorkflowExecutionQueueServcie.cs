@@ -24,7 +24,7 @@ public class WorkflowExecutionQueueServcie : IWorkflowExecutionQueue
         _logger = logger;
     }
 
-    public async ValueTask QueueExecutionAsync(
+    public async ValueTask EnqueueAsync(
         ExecutionQueueRequest request, 
         CancellationToken cancellationToken)
     {
@@ -87,7 +87,7 @@ public class WorkflowExecutionQueueServcie : IWorkflowExecutionQueue
         }
     }
 
-    public async Task MarkAsCompletedAsync(Guid executionId, CancellationToken cancellationToken)
+    public async Task CompleteAsync(Guid executionId, CancellationToken cancellationToken)
     {
         try
         {
@@ -110,7 +110,7 @@ public class WorkflowExecutionQueueServcie : IWorkflowExecutionQueue
         }
     }
 
-    public async Task MarkAsFailedAsync(Guid executionId, CancellationToken cancellationToken)
+    public async Task FailAsync(Guid executionId, CancellationToken cancellationToken)
     {
         try
         {

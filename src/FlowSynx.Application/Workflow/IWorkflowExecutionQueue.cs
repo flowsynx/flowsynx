@@ -4,8 +4,8 @@ namespace FlowSynx.Application.Workflow;
 
 public interface IWorkflowExecutionQueue
 {
-    ValueTask QueueExecutionAsync(ExecutionQueueRequest request, CancellationToken cancellationToken);
+    ValueTask EnqueueAsync(ExecutionQueueRequest request, CancellationToken cancellationToken);
     IAsyncEnumerable<ExecutionQueueRequest> DequeueAllAsync(CancellationToken cancellationToken);
-    Task MarkAsCompletedAsync(Guid executionId, CancellationToken cancellationToken);
-    Task MarkAsFailedAsync(Guid executionId, CancellationToken cancellationToken);
+    Task CompleteAsync(Guid executionId, CancellationToken cancellationToken);
+    Task FailAsync(Guid executionId, CancellationToken cancellationToken);
 }
