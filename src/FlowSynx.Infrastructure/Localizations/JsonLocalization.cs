@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Localizations;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -69,43 +70,93 @@ public class JsonLocalization : ILocalization
 
     private Dictionary<string, Dictionary<string, string>> LoadEmbeddedLocalizations()
     {
-        var result = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+        var localizations = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var assembly in assemblies)
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
-            foreach (var resourceName in assembly.GetManifestResourceNames()
-                         .Where(r => r.EndsWith(".json", StringComparison.OrdinalIgnoreCase)))
-            {
-                var culture = Path.GetFileNameWithoutExtension(resourceName).Split('.').Last().ToLowerInvariant();
-
-                using var stream = assembly.GetManifestResourceStream(resourceName);
-                if (stream == null) continue;
-
-                using var reader = new StreamReader(stream);
-                var json = reader.ReadToEnd();
-
-                var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                if (parsed == null) continue;
-
-                if (!result.TryGetValue(culture, out var dict))
-                    dict = result[culture] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var kv in parsed)
-                {
-                    if (!dict.ContainsKey(kv.Key))
-                    {
-                        dict[kv.Key] = kv.Value;
-                    }
-                    else
-                    {
-                        // Optionally log key conflict or override
-                        // _logger.LogWarning("Duplicate localization key '{Key}' in {Resource}", kv.Key, resourceName);
-                    }
-                }
-            }
+            LoadAssemblyLocalizations(assembly, localizations);
         }
 
-        return result;
+        return localizations;
+    }
+
+    /// <summary>
+    /// Iterates through an assembly's embedded JSON resources and merges any localization entries found.
+    /// </summary>
+    private void LoadAssemblyLocalizations(Assembly assembly, Dictionary<string, Dictionary<string, string>> store)
+    {
+        foreach (var resourceName in GetLocalizationResourceNames(assembly))
+        {
+            var culture = GetCultureFromResourceName(resourceName);
+            if (culture == null)
+                continue;
+
+            var resourceEntries = ReadLocalizationResource(assembly, resourceName);
+            if (resourceEntries == null)
+                continue;
+
+            MergeLocalizationEntries(store, culture, resourceEntries);
+        }
+    }
+
+    /// <summary>
+    /// Filters manifest resource names to include only potential localization JSON payloads.
+    /// </summary>
+    private static IEnumerable<string> GetLocalizationResourceNames(Assembly assembly)
+    {
+        return assembly
+            .GetManifestResourceNames()
+            .Where(name => name.EndsWith(".json", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Attempts to extract a culture token from an embedded resource name.
+    /// </summary>
+    private static string? GetCultureFromResourceName(string resourceName)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(resourceName);
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        return fileName.Split('.').LastOrDefault()?.ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Reads the embedded JSON resource and deserializes it into localization key-value pairs.
+    /// </summary>
+    private static Dictionary<string, string>? ReadLocalizationResource(Assembly assembly, string resourceName)
+    {
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream == null)
+            return null;
+
+        using var reader = new StreamReader(stream);
+        var json = reader.ReadToEnd();
+
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+    }
+
+    /// <summary>
+    /// Merges parsed localization entries into the accumulated store while preserving existing keys.
+    /// </summary>
+    private void MergeLocalizationEntries(
+        Dictionary<string, Dictionary<string, string>> store,
+        string culture,
+        Dictionary<string, string> entries)
+    {
+        if (!store.TryGetValue(culture, out var cultureEntries))
+        {
+            cultureEntries = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            store[culture] = cultureEntries;
+        }
+
+        foreach (var kvp in entries)
+        {
+            if (cultureEntries.ContainsKey(kvp.Key))
+                continue;
+
+            cultureEntries[kvp.Key] = kvp.Value;
+            // Optional: use _logger to highlight duplicate keys if the project chooses to enforce uniqueness.
+        }
     }
 }
