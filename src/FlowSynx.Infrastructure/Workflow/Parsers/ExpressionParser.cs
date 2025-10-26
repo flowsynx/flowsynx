@@ -26,7 +26,6 @@ public class ExpressionParser : IExpressionParser
     private object? ResolveExpression(string expr)
     {
         int i = 0;
-        object? result = expr;
 
         while (i < expr.Length)
         {
