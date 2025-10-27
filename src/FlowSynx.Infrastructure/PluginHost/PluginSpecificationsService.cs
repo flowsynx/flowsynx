@@ -22,18 +22,19 @@ public class PluginSpecificationsService : IPluginSpecificationsService
         _localization = localization;
     }
 
-    public PluginSpecificationsResult Validate(Dictionary<string, object?>? inputSpecifications,
-        List<PluginSpecification>? pluginSpecifications)
+    public PluginSpecificationsResult Validate(
+    Dictionary<string, object?>? providedSpecifications,
+    List<PluginSpecification>? expectedSpecifications)
     {
-        inputSpecifications ??= new Dictionary<string, object?>();
-        pluginSpecifications ??= new List<PluginSpecification>();
+        providedSpecifications ??= new Dictionary<string, object?>();
+        expectedSpecifications ??= new List<PluginSpecification>();
         var errors = new List<string>();
 
-        foreach (var specification in pluginSpecifications)
+        foreach (var specification in expectedSpecifications)
         {
-            if (specification.IsRequired && !inputSpecifications.ContainsKey(specification.Name))
+            if (specification.IsRequired && !providedSpecifications.ContainsKey(specification.Name))
             {
-                var value = inputSpecifications[specification.Name.ToLowerInvariant()];
+                var value = providedSpecifications[specification.Name.ToLowerInvariant()];
                 var valid = true;
 
                 switch (value)
