@@ -213,89 +213,105 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
     public void ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser parser)
     {
-        if (task == null) return;
+        if (task == null)
+            return;
 
-        // Top-level string properties
+        ReplaceTopLevelStrings(task, parser);
+        ProcessTaskParameters(task, parser);
+        ProcessManualApproval(task.ManualApproval, parser);
+        ReplaceStringListItems(task.Dependencies, parser);
+    }
+
+    /// <summary>
+    /// Replaces placeholders in the top-level string fields of a workflow task.
+    /// </summary>
+    private void ReplaceTopLevelStrings(WorkflowTask task, IExpressionParser parser)
+    {
         task.Name = ReplaceIfNotNull(task.Name, parser);
         task.Description = ReplaceIfNotNull(task.Description, parser);
         task.Output = ReplaceIfNotNull(task.Output, parser);
+    }
 
-        // Parameters dictionary
-        if (task.Parameters is { Count: > 0 })
+    /// <summary>
+    /// Normalizes task parameter values by applying placeholder replacements and converting JSON payloads.
+    /// </summary>
+    private void ProcessTaskParameters(WorkflowTask task, IExpressionParser parser)
+    {
+        if (task.Parameters is not { Count: > 0 })
+            return;
+
+        foreach (var key in task.Parameters.Keys.ToList())
         {
-            foreach (var key in task.Parameters.Keys.ToList())
-            {
-                var value = task.Parameters[key];
-
-                switch (value)
-                {
-                    case JObject jObject:
-                        {
-                            var pluginContext = TryDeserializePluginContext(jObject);
-                            if (pluginContext != null)
-                            {
-                                ApplyPlaceholdersToPluginContext(pluginContext, parser);
-                                task.Parameters[key] = pluginContext;
-                            }
-                            break;
-                        }
-
-                    case JArray jArray:
-                        {
-                            var pluginList = TryDeserializePluginContextList(jArray);
-                            if (pluginList != null)
-                            {
-                                foreach (var ctx in pluginList)
-                                    ApplyPlaceholdersToPluginContext(ctx, parser);
-                                task.Parameters[key] = pluginList;
-                            }
-                            break;
-                        }
-                    default:
-                        {
-                            if (value is string s)
-                            {
-                                task.Parameters[key] = ReplaceIfNotNull(s, parser);
-                            }
-                            break;
-                        }
-                }
-            }
-
-            _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, parser);
+            task.Parameters[key] = NormalizeParameterValue(task.Parameters[key], parser);
         }
 
-        // ManualApproval
-        if (task.ManualApproval != null)
-        {
-            task.ManualApproval.Instructions = ReplaceIfNotNull(task.ManualApproval.Instructions, parser);
-            task.ManualApproval.DefaultAction = ReplaceIfNotNull(task.ManualApproval.DefaultAction, parser);
+        _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, parser);
+    }
 
-            if (task.ManualApproval.Approvers is { Count: > 0 })
-            {
-                for (int i = 0; i < task.ManualApproval.Approvers.Count; i++)
-                {
-                    task.ManualApproval.Approvers[i] = ReplaceIfNotNull(task.ManualApproval.Approvers[i], parser);
-                }
-            }
+    private object? NormalizeParameterValue(object? value, IExpressionParser parser)
+    {
+        if (value is null)
+            return null;
+
+        return value switch
+        {
+            JObject jObject => ProcessPluginContextObject(jObject, parser),
+            JArray jArray => ProcessPluginContextArray(jArray, parser),
+            string s => ReplaceIfNotNull(s, parser),
+            _ => value
+        };
+    }
+
+    private object ProcessPluginContextObject(JObject jObject, IExpressionParser parser)
+    {
+        var pluginContext = TryDeserializePluginContext(jObject);
+        if (pluginContext == null)
+            return jObject;
+
+        ApplyPlaceholdersToPluginContext(pluginContext, parser);
+        return pluginContext;
+    }
+
+    private object ProcessPluginContextArray(JArray jArray, IExpressionParser parser)
+    {
+        var pluginContexts = TryDeserializePluginContextList(jArray);
+        if (pluginContexts == null)
+            return jArray;
+
+        foreach (var context in pluginContexts)
+        {
+            ApplyPlaceholdersToPluginContext(context, parser);
         }
 
-        // Dependencies
-        if (task.Dependencies is { Count: > 0 })
-        {
-            for (int i = 0; i < task.Dependencies.Count; i++)
-            {
-                task.Dependencies[i] = ReplaceIfNotNull(task.Dependencies[i], parser);
-            }
-        }
+        return pluginContexts;
+    }
 
-        // ErrorHandling strings (if any in future extension)
-        if (task.ErrorHandling?.RetryPolicy != null)
-        {
-            // Currently numeric fields only; placeholders not needed
-        }
+    /// <summary>
+    /// Applies placeholder replacements to manual approval metadata.
+    /// </summary>
+    private void ProcessManualApproval(ManualApproval? manualApproval, IExpressionParser parser)
+    {
+        if (manualApproval == null)
+            return;
 
-        // Position is numeric; placeholders not needed
+        manualApproval.Instructions = ReplaceIfNotNull(manualApproval.Instructions, parser);
+        manualApproval.DefaultAction = ReplaceIfNotNull(manualApproval.DefaultAction, parser);
+
+        ReplaceStringListItems(manualApproval.Approvers, parser);
+    }
+
+    /// <summary>
+    /// Applies placeholder replacements over a list of strings when items are present.
+    /// </summary>
+    private void ReplaceStringListItems(List<string>? values, IExpressionParser parser)
+    {
+        if (values is not { Count: > 0 })
+            return;
+
+        for (var index = 0; index < values.Count; index++)
+        {
+            values[index] = ReplaceIfNotNull(values[index], parser);
+        }
     }
 
     private static PluginContext? TryDeserializePluginContext(JObject jObject)
