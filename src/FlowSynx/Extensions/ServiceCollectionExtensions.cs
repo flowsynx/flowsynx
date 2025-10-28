@@ -255,7 +255,7 @@ public static class ServiceCollectionExtensions
             var providers = new List<IAuthenticationProvider>();
 
             if (securityConfiguration.EnableBasic && securityConfiguration.BasicUsers != null)
-                providers.Add(new BasicAuthenticationProvider(securityConfiguration.BasicUsers));
+                providers.Add(new BasicAuthenticationProvider());
 
             foreach (var jwt in securityConfiguration.JwtProviders)
                 providers.Add(new JwtAuthenticationProvider(jwt));
