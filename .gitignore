@@ -401,9 +401,3 @@ logs.db*
 appsettings.Development.json
 secrets.json
 **/flowsynxresults/
-
-# Personal settings file for FlowSynx
-NuGet.Config
-coveragereport
-.gitignore
-tests/FlowSynx.UnitTests/
