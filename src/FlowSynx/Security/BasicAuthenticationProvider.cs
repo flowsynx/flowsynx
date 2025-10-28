@@ -10,14 +10,8 @@ namespace FlowSynx.Security;
 
 public class BasicAuthenticationProvider : IAuthenticationProvider
 {
-    private readonly List<BasicAuthenticationConfiguration> _users;
     public string SchemeName => "Basic";
-
-    public BasicAuthenticationProvider(List<BasicAuthenticationConfiguration> users)
-    {
-        _users = users;
-    }
-
+    
     public void Configure(AuthenticationBuilder builder)
     {
         builder.AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(SchemeName, null);
