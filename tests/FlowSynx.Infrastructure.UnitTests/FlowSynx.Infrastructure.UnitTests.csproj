@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\FlowSynx\FlowSynx.csproj" />
   </ItemGroup>
 
   <ItemGroup>
