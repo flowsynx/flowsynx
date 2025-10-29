@@ -15,7 +15,11 @@ public class TriggerProcessingService : BackgroundService
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Coordinates trigger processors and runs until the host signals shutdown.
+    /// </summary>
+    /// <param name="stoppingToken">Token triggered when the host is stopping the service.</param>
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("TriggerProcessingService started.");
 
@@ -23,7 +27,7 @@ public class TriggerProcessingService : BackgroundService
         var processors = initialScope.ServiceProvider.GetServices<IWorkflowTriggerProcessor>().ToList();
 
         // Launch each processor in its own background task
-        var processorTasks = processors.Select(p => RunProcessorAsync(p, cancellationToken)).ToList();
+        var processorTasks = processors.Select(p => RunProcessorAsync(p, stoppingToken)).ToList();
 
         await Task.WhenAll(processorTasks);
     }
