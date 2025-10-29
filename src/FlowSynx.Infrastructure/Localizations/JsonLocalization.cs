@@ -68,7 +68,10 @@ public class JsonLocalization : ILocalization
             .ToList();
     }
 
-    private Dictionary<string, Dictionary<string, string>> LoadEmbeddedLocalizations()
+    /// <summary>
+    /// Builds the localization dictionary by scanning loaded assemblies for embedded JSON payloads.
+    /// </summary>
+    private static Dictionary<string, Dictionary<string, string>> LoadEmbeddedLocalizations()
     {
         var localizations = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -83,7 +86,9 @@ public class JsonLocalization : ILocalization
     /// <summary>
     /// Iterates through an assembly's embedded JSON resources and merges any localization entries found.
     /// </summary>
-    private void LoadAssemblyLocalizations(Assembly assembly, Dictionary<string, Dictionary<string, string>> store)
+    /// <param name="assembly">Assembly to scan for embedded localization resources.</param>
+    /// <param name="store">Aggregate localization dictionary keyed by culture code.</param>
+    private static void LoadAssemblyLocalizations(Assembly assembly, Dictionary<string, Dictionary<string, string>> store)
     {
         foreach (var resourceName in GetLocalizationResourceNames(assembly))
         {
@@ -139,7 +144,10 @@ public class JsonLocalization : ILocalization
     /// <summary>
     /// Merges parsed localization entries into the accumulated store while preserving existing keys.
     /// </summary>
-    private void MergeLocalizationEntries(
+    /// <param name="store">Centralized dictionary keyed by culture to append new entries into.</param>
+    /// <param name="culture">Culture identifier extracted from the resource name.</param>
+    /// <param name="entries">Localization key-value pairs parsed from the embedded resource.</param>
+    private static void MergeLocalizationEntries(
         Dictionary<string, Dictionary<string, string>> store,
         string culture,
         Dictionary<string, string> entries)
@@ -156,7 +164,7 @@ public class JsonLocalization : ILocalization
                 continue;
 
             cultureEntries[kvp.Key] = kvp.Value;
-            // Optional: use _logger to highlight duplicate keys if the project chooses to enforce uniqueness.
+            // Optional: callers can log duplicate keys to highlight conflicting entries if needed.
         }
     }
 }
