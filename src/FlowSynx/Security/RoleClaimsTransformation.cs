@@ -1,5 +1,6 @@
-﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Configuration;
 using Microsoft.AspNetCore.Authentication;
+using System;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -52,50 +53,91 @@ public class RoleClaimsTransformation : IClaimsTransformation
         return Task.FromResult(principal);
     }
 
+    /// <summary>
+    /// Extract roles from claims that may be expressed as JSON arrays, comma-delimited strings, or single values.
+    /// </summary>
+    /// <param name="identity">Identity that holds the raw claim set.</param>
+    /// <param name="claimType">The claim type being evaluated for roles.</param>
+    /// <param name="roles">Role accumulator that guards against duplicates.</param>
     private void AddRolesFromClaim(ClaimsIdentity identity, string claimType, HashSet<string> roles)
     {
-        var claims = identity.FindAll(claimType);
-        foreach (var claim in claims)
+        foreach (var claim in identity.FindAll(claimType))
         {
             if (string.IsNullOrWhiteSpace(claim.Value))
+            {
                 continue;
-
-            // Try parse as JSON array (some providers encode roles as JSON string arrays)
-            if (claim.Value.StartsWith("[") && claim.Value.EndsWith("]"))
-            {
-                try
-                {
-                    using var doc = JsonDocument.Parse(claim.Value);
-                    if (doc.RootElement.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var element in doc.RootElement.EnumerateArray())
-                        {
-                            var role = element.GetString();
-                            if (!string.IsNullOrEmpty(role))
-                                roles.Add(role);
-                        }
-                        continue;
-                    }
-                }
-                catch
-                {
-                    // Not JSON array - ignore parsing error
-                }
             }
 
-            // Otherwise, treat as single role string (comma-separated list?)
-            if (claim.Value.Contains(","))
+            if (TryAddJsonArrayRoles(claim.Value, roles))
             {
-                foreach (var role in claim.Value.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    roles.Add(role.Trim());
-                }
+                continue;
             }
-            else
-            {
-                roles.Add(claim.Value);
-            }
+
+            AddDelimitedOrSingleRole(claim.Value, roles);
         }
+    }
+
+    /// <summary>
+    /// Parse a JSON array payload and append each non-empty entry as a role.
+    /// </summary>
+    /// <param name="claimValue">The raw claim value.</param>
+    /// <param name="roles">Role accumulator.</param>
+    /// <returns>True if roles were added from a JSON array payload; otherwise false.</returns>
+    private bool TryAddJsonArrayRoles(string claimValue, HashSet<string> roles)
+    {
+        if (!IsJsonArray(claimValue))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(claimValue);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return false;
+            }
+
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                var role = element.GetString();
+                if (!string.IsNullOrEmpty(role))
+                {
+                    roles.Add(role);
+                }
+            }
+
+            return true;
+        }
+        catch
+        {
+            // Invalid JSON payloads fall back to normal parsing so behavior remains unchanged.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Quick check to avoid attempting JSON parsing when payload is a plain string.
+    /// </summary>
+    private static bool IsJsonArray(string value) =>
+        value.StartsWith("[", StringComparison.Ordinal) && value.EndsWith("]", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Support comma-delimited list of roles or single role payloads.
+    /// </summary>
+    private static void AddDelimitedOrSingleRole(string claimValue, HashSet<string> roles)
+    {
+        if (claimValue.Contains(','))
+        {
+            foreach (var role in claimValue.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                roles.Add(role.Trim());
+            }
+
+            return;
+        }
+
+        roles.Add(claimValue);
     }
 
     private void AddRolesFromNestedClaim(ClaimsIdentity identity, string parentClaimType, string childClaimType, HashSet<string> roles)
