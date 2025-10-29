@@ -1,10 +1,8 @@
 using FlowSynx.Application.Configuration;
 using FlowSynx.Security;
-using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
-namespace FlowSynx.Infrastructure.UnitTests.Security;
+namespace FlowSynx.UnitTests.Security;
 
 /// <summary>
 /// Verifies that <see cref="RoleClaimsTransformation"/> normalizes role claims across supported formats.
