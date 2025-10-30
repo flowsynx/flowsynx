@@ -59,7 +59,7 @@ public class RoleClaimsTransformation : IClaimsTransformation
     /// <param name="identity">Identity that holds the raw claim set.</param>
     /// <param name="claimType">The claim type being evaluated for roles.</param>
     /// <param name="roles">Role accumulator that guards against duplicates.</param>
-    private void AddRolesFromClaim(ClaimsIdentity identity, string claimType, HashSet<string> roles)
+    private static void AddRolesFromClaim(ClaimsIdentity identity, string claimType, HashSet<string> roles)
     {
         foreach (var claim in identity.FindAll(claimType))
         {
@@ -83,7 +83,7 @@ public class RoleClaimsTransformation : IClaimsTransformation
     /// <param name="claimValue">The raw claim value.</param>
     /// <param name="roles">Role accumulator.</param>
     /// <returns>True if roles were added from a JSON array payload; otherwise false.</returns>
-    private bool TryAddJsonArrayRoles(string claimValue, HashSet<string> roles)
+    private static bool TryAddJsonArrayRoles(string claimValue, HashSet<string> roles)
     {
         if (!IsJsonArray(claimValue))
         {
