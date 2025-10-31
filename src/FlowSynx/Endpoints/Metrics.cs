@@ -7,10 +7,15 @@ namespace FlowSynx.Endpoints;
 
 public class Metrics : EndpointGroupBase
 {
-    public override void Map(WebApplication app, string rateLimitPolicy)
+    /// <summary>
+    /// Register the metrics endpoints and apply the configured rate-limiting policy.
+    /// </summary>
+    /// <param name="app">Application builder used to define endpoints.</param>
+    /// <param name="rateLimitPolicyName">Named rate-limiting policy applied to this group.</param>
+    public override void Map(WebApplication app, string rateLimitPolicyName)
     {
         var group = app.MapGroup(this)
-                       .RequireRateLimiting(rateLimitPolicy);
+                       .RequireRateLimiting(rateLimitPolicyName);
 
         group.MapGet("", GetWorkflowSummary)
             .WithName("GetWorkflowSummary")
