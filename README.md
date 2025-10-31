@@ -153,6 +153,33 @@ dotnet test
 
 For advanced workflows (Docker, local environment setup, contributing guidelines), see [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md).
 
+## Configuration Sources
+
+FlowSynx now supports selecting its configuration provider at startup. By default it reads from the bundled `appsettings*.json` files, but you can switch to [Infisical](https://infisical.com/) without recompiling the application.
+
+- **Environment variable:** set `FLOWSYNX_CONFIG_SOURCE=Infisical`.
+- **Command-line argument:** pass `--config-source=Infisical` (or `--config-source Infisical`).
+- **Fallback:** if Infisical is unreachable and fallback is enabled, FlowSynx logs a warning and reverts to the JSON files so the service can still boot.
+
+Configure the Infisical connection via the `Infisical` section (or matching environment variables):
+
+```json
+"Infisical": {
+  "Enabled": true,
+  "HostUri": "https://app.infisical.com",
+  "ProjectId": "<project-id>",
+  "EnvironmentSlug": "<environment-slug>",
+  "SecretPath": "/",
+  "FallbackToAppSettings": true,
+  "MachineIdentity": {
+    "ClientId": "<machine-identity-client-id>",
+    "ClientSecret": "<machine-identity-client-secret>"
+  }
+}
+```
+
+Refer to [docs/infisical-configuration.md](./docs/infisical-configuration.md) for end-to-end setup guidance, including secret naming conventions and recommended access policies.
+
 ## Architecture Overview
 
 <img src="/img/architecture-diagram.jpg" alt="FlowSynx Architecture Diagram"/>

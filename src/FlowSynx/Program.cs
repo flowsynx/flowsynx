@@ -1,11 +1,14 @@
+using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Extensions;
 using FlowSynx.Extensions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.Configuration;
 using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Persistence.SQLite.Extensions;
 using FlowSynx.Services;
+using Microsoft.Extensions.Logging;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +30,38 @@ try
         builder.Configuration.Sources.Clear(); // Optional: clear defaults
         builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
     }
+
+    var requestedConfigurationSource = ConfigurationSourceSelector.Resolve(args, builder.Configuration);
+    var activeConfigurationSource = requestedConfigurationSource;
+    var infisicalFallbackUsed = false;
+
+    if (requestedConfigurationSource == ConfigurationSourceOption.Infisical)
+    {
+        var infisicalConfiguration = new InfisicalConfiguration();
+        builder.Configuration.GetSection("Infisical").Bind(infisicalConfiguration);
+
+        if (!infisicalConfiguration.Enabled)
+        {
+            activeConfigurationSource = ConfigurationSourceOption.AppSettings;
+        }
+        else
+        {
+            try
+            {
+                builder.Configuration.AddInfisical(infisicalConfiguration);
+            }
+            catch (Exception ex) when (infisicalConfiguration.FallbackToAppSettings)
+            {
+                activeConfigurationSource = ConfigurationSourceOption.AppSettings;
+                infisicalFallbackUsed = true;
+                Console.Error.WriteLine("Warning: Failed to load configuration from Infisical. Falling back to appsettings.json.");
+                Console.Error.WriteLine($"Reason: {ex.GetType().Name}");
+            }
+        }
+    }
+
+    builder.Configuration[ConfigurationSourceSelector.ActiveSourceConfigurationKey] = activeConfigurationSource.ToString();
+    builder.Configuration[ConfigurationSourceSelector.InfisicalFallbackKey] = infisicalFallbackUsed.ToString();
 
     IConfiguration config = builder.Configuration;
 
@@ -68,6 +103,16 @@ try
     builder.Services.AddConfiguredCors(config);
 
     var app = builder.Build();
+
+    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+    var activeSource = app.Configuration[ConfigurationSourceSelector.ActiveSourceConfigurationKey]
+                       ?? ConfigurationSourceOption.AppSettings.ToString();
+    startupLogger.LogInformation("Configuration source in use: {Source}", activeSource);
+
+    if (bool.TryParse(app.Configuration[ConfigurationSourceSelector.InfisicalFallbackKey], out var fallback) && fallback)
+    {
+        startupLogger.LogWarning("Infisical configuration was requested but appsettings.json was used as a fallback.");
+    }
 
     if (app.Environment.IsDevelopment())
     {
