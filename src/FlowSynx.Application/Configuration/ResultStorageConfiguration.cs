@@ -7,8 +7,15 @@ namespace FlowSynx.Application.Configuration;
 
 public class ResultStorageConfiguration
 {
-    public string DefaultProvider { get; set; } = string.Empty;
-    public List<ResultStorageProviderConfiguration> Providers { get; set; } = new();
+    public string DefaultProvider { get; set; } = "Local";
+    public List<ResultStorageProviderConfiguration> Providers { get; set; } = new()
+    {
+        new ResultStorageProviderConfiguration
+        {
+            Name = "Local",
+            Configuration = new Dictionary<string, string>()
+        }
+    };
 
     public void ValidateResultStorage(ILogger logger)
     {
