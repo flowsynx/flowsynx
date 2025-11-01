@@ -1,127 +1,121 @@
-using FlowSynx.Application.Configuration;
 using FlowSynx.Application.Extensions;
 using FlowSynx.Extensions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Infrastructure.Configuration;
+using FlowSynx.Infrastructure.Secrets;
 using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Persistence.SQLite.Extensions;
 using FlowSynx.Services;
-using Microsoft.Extensions.Logging;
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 try
 {
+    // Handle version flag early exit
     if (args.HandleVersionFlag())
         return;
 
+    FilterLogging(builder);
+    ConfigureConfiguration(builder);
+    ConfigureServices(builder, args);
+
+    var app = builder.Build();
+    ConfigureMiddleware(app);
+    ConfigureApplication(app);
+
+    await app.RunAsync();
+}
+catch (Exception ex)
+{
+    await HandleStartupExceptionAsync(builder, ex);
+}
+
+#region helpers
+static void FilterLogging(WebApplicationBuilder builder)
+{
+    builder.Logging.AddLoggingFilter();
+}
+
+static void ConfigureConfiguration(WebApplicationBuilder builder)
+{
+    var env = builder.Environment;
+
     builder.Configuration
         .SetBasePath(Directory.GetCurrentDirectory())
-        .AddJsonFile("appsettings.json")
-        .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
         .AddUserSecrets<Program>(optional: true)
         .AddEnvironmentVariables();
 
+    // Load custom config if specified
     var customConfigPath = builder.Configuration["config"];
-    if (!string.IsNullOrEmpty(customConfigPath))
+    if (!string.IsNullOrWhiteSpace(customConfigPath))
     {
-        builder.Configuration.Sources.Clear(); // Optional: clear defaults
         builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
     }
 
-    var requestedConfigurationSource = ConfigurationSourceSelector.Resolve(args, builder.Configuration);
-    var activeConfigurationSource = requestedConfigurationSource;
-    var infisicalFallbackUsed = false;
+    builder.Services.AddSecretService(builder.Configuration);
 
-    if (requestedConfigurationSource == ConfigurationSourceOption.Infisical)
-    {
-        var infisicalConfiguration = new InfisicalConfiguration();
-        builder.Configuration.GetSection("Infisical").Bind(infisicalConfiguration);
+    using var scope = builder.Services.BuildServiceProvider().CreateScope();
+    var secretFactory = scope.ServiceProvider.GetRequiredService<ISecretFactory>();
+    var secretProvider = secretFactory.GetDefaultProvider();
 
-        if (!infisicalConfiguration.Enabled)
-        {
-            activeConfigurationSource = ConfigurationSourceOption.AppSettings;
-        }
-        else
-        {
-            try
-            {
-                builder.Configuration.AddInfisical(infisicalConfiguration);
-            }
-            catch (Exception ex) when (infisicalConfiguration.FallbackToAppSettings)
-            {
-                activeConfigurationSource = ConfigurationSourceOption.AppSettings;
-                infisicalFallbackUsed = true;
-                Console.Error.WriteLine("Warning: Failed to load configuration from Infisical. Falling back to appsettings.json.");
-                Console.Error.WriteLine($"Reason: {ex.GetType().Name}");
-            }
-        }
-    }
+    builder.Configuration.AddSecrets(secretProvider);
+}
 
-    builder.Configuration[ConfigurationSourceSelector.ActiveSourceConfigurationKey] = activeConfigurationSource.ToString();
-    builder.Configuration[ConfigurationSourceSelector.InfisicalFallbackKey] = infisicalFallbackUsed.ToString();
+static void ConfigureServices(WebApplicationBuilder builder, string[] args)
+{
+    var services = builder.Services;
+    var config = builder.Configuration;
+    var env = builder.Environment;
 
-    IConfiguration config = builder.Configuration;
+    services
+        .AddCancellationTokenSource()
+        .AddHttpContextAccessor()
+        .AddJsonSerialization()
+        .AddSqLiteLoggerLayer()
+        .AddLoggingService(config)
+        .AddJsonLocalization(config)
+        .AddEndpointsApiExplorer()
+        .AddHttpClient()
+        .AddHttpJsonOptions()
+        .AddPostgresPersistenceLayer(config)
+        .AddWorkflowQueueService(config)
+        .AddEndpoint(config)
+        .AddPluginsPath()
+        .AddVersion()
+        .AddApplication()
+        .AddEncryptionService(config)
+        .AddInfrastructure()
+        .AddInfrastructurePluginManager(config)
+        .AddUserService()
+        .AddRateLimiting(config)
+        .AddResultStorageService(config)
+        .AddEventPublisher()
+        .AddSecurity(config)
+        .AddHealthChecker(config)
+        .AddOpenApi(config)
+        .AddHostedService<WorkflowExecutionWorker>()
+        .AddHostedService<TriggerProcessingService>()
+        .AddConfiguredCors(config);
 
-    builder.Services
-           .AddCancellationTokenSource()
-           .AddHttpContextAccessor()
-           .AddJsonSerialization()
-           .AddSqLiteLoggerLayer()
-           .AddLoggingService(config)
-           .AddJsonLocalization(config)
-           .AddEndpointsApiExplorer()
-           .AddHttpClient()
-           .AddHttpJsonOptions()
-           .AddPostgresPersistenceLayer(config)
-           .AddWorkflowQueueService(config)
-           .AddEndpoint(config)
-           .AddPluginsPath()
-           .AddVersion()
-           .AddApplication()
-           .AddEncryptionService(config)
-           .AddInfrastructure()
-           .AddInfrastructurePluginManager(config)
-           .AddUserService()
-           .AddRateLimiting(config)
-           .AddResultStorageService(config)
-           .AddEventPublisher();
-
-    if (!builder.Environment.IsDevelopment())
+    if (!env.IsDevelopment())
         builder.Services.ParseArguments(args);
 
-    builder.Services
-           .AddSecurity(config)
-           .AddHealthChecker(config)
-           .AddOpenApi(config)
-           .AddHostedService<WorkflowExecutionWorker>()
-           .AddHostedService<TriggerProcessingService>();
-
     builder.ConfigureHttpServer();
-    builder.Services.AddConfiguredCors(config);
+}
 
-    var app = builder.Build();
-
-    var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-    var activeSource = app.Configuration[ConfigurationSourceSelector.ActiveSourceConfigurationKey]
-                       ?? ConfigurationSourceOption.AppSettings.ToString();
-    startupLogger.LogInformation("Configuration source in use: {Source}", activeSource);
-
-    if (bool.TryParse(app.Configuration[ConfigurationSourceSelector.InfisicalFallbackKey], out var fallback) && fallback)
-    {
-        startupLogger.LogWarning("Infisical configuration was requested but appsettings.json was used as a fallback.");
-    }
-
+static void ConfigureMiddleware(WebApplication app)
+{
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
     }
     else
     {
-        app.UseExceptionHandler(exceptionHandlerApp =>
-            exceptionHandlerApp.Run(async context =>
+        app.UseExceptionHandler(handlerApp =>
+            handlerApp.Run(async context =>
                 await Results.Problem().ExecuteAsync(context)));
     }
 
@@ -129,7 +123,6 @@ try
     app.UseCustomHeaders();
     app.UseConfiguredCors();
     app.UseRateLimiter();
-
     app.UseRouting();
 
     app.UseAuthentication();
@@ -137,29 +130,34 @@ try
 
     app.UseOpenApi();
     app.UseCustomException();
-
-    app.EnsureApplicationDatabaseCreated();
-
     app.UseHealthCheck();
+}
+
+static void ConfigureApplication(WebApplication app)
+{
+    app.EnsureApplicationDatabaseCreated();
 
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
     app.MapEndpoints("Fixed");
 
     var listener = app.Services.GetRequiredService<IWorkflowHttpListener>();
     app.MapHttpTriggersWorkflowRoutes(listener);
-
-    await app.RunAsync();
 }
-catch (Exception ex)
-{
-    using var scope = builder.Services.BuildServiceProvider().CreateScope();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    if (logger != null)
-        logger.LogError(ex.Message);
-    else
-        await Console.Error.WriteLineAsync(ex.Message);
 
-    // If the console closes immediately, the output may not be visible.
-    // So, added await Task.Delay(500) here;
+static async Task HandleStartupExceptionAsync(WebApplicationBuilder builder, Exception ex)
+{
+    try
+    {
+        using var scope = builder.Services.BuildServiceProvider().CreateScope();
+        var logger = scope.ServiceProvider.GetService<ILogger<Program>>();
+        logger?.LogError(ex, "Unhandled exception during startup");
+    }
+    catch
+    {
+        await Console.Error.WriteLineAsync($"Startup error: {ex.Message}");
+    }
+
+    // Prevent console from closing immediately
     await Task.Delay(500);
 }
+#endregion
