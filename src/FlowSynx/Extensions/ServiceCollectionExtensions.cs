@@ -15,7 +15,6 @@ using FlowSynx.Application.Localizations;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Threading.RateLimiting;
 using FlowSynx.Persistence.Postgres.Extensions;
-using Microsoft.Extensions.DependencyInjection;
 using FlowSynx.Hubs;
 
 namespace FlowSynx.Extensions;
@@ -62,7 +61,14 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddLoggingService(this IServiceCollection services, IConfiguration configuration)
+    public static void AddLoggingFilter(this ILoggingBuilder builder)
+    {
+        builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
+    }
+
+    public static IServiceCollection AddLoggingService(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
         var loggerConfiguration = new LoggerConfiguration();
         configuration.GetSection("Logger").Bind(loggerConfiguration);
@@ -76,20 +82,29 @@ public static class ServiceCollectionExtensions
         var cancellationToken = cancellationTokenSource.Token;
         var logLevel = loggerConfiguration.Level.ToLogLevel();
 
-        services.AddLogging(c => c.ClearProviders());
-        services.AddLogging(builder => builder.AddConsoleLogger(options =>
+        services.AddLogging(builder =>
         {
-            options.OutputTemplate = "{timestamp} [{level}] Message=\"{message}\"";
-            options.MinLevel = logLevel;
-            options.CancellationToken = cancellationToken;
-        }));
+            builder.ClearProviders();
 
+            builder.SetMinimumLevel(logLevel);
+            builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
+
+            builder.AddConsoleLogger(options =>
+            {
+                options.OutputTemplate = "{timestamp} [{level}] Message=\"{message}\"";
+                options.MinLevel = logLevel;
+                options.CancellationToken = cancellationToken;
+            });
+
+            builder.AddDatabaseLogger(options =>
+            {
+                options.MinLevel = LogLevel.Debug;
+                options.CancellationToken = cancellationToken;
+            }, httpContextAccessor, logService);
+        });
+
+        // Ensure log database exists
         services.EnsureLogDatabaseCreated();
-        services.AddLogging(builder => builder.AddDatabaseLogger(options =>
-        {
-            options.MinLevel = LogLevel.Debug;
-            options.CancellationToken = cancellationToken;
-        }, httpContextAccessor, logService));
 
         return services;
     }
