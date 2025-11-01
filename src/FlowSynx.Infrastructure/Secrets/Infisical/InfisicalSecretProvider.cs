@@ -9,7 +9,7 @@ namespace FlowSynx.Infrastructure.Secrets.Infisical;
 public class InfisicalSecretProvider : ISecretProvider, IConfigurableSecret
 {
     private readonly ILogger<InfisicalSecretProvider>? _logger;
-    private InfisicalConfiguration _options = new InfisicalConfiguration();
+    private readonly InfisicalConfiguration _options = new InfisicalConfiguration();
 
     public InfisicalSecretProvider(
         ILogger<InfisicalSecretProvider>? logger = null)
