@@ -16,16 +16,18 @@ FlowSynx can load its configuration from [Infisical](https://infisical.com/) in 
 Populate the `Infisical` section (either via `appsettings.json`, user secrets, or environment variables) with your connection metadata:
 
 ```json
-"Infisical": {
+"Secrets": {
   "Enabled": true,
-  "ProjectId": "<project-id>",
-  "EnvironmentSlug": "<environment-slug>",
-  "SecretPath": "/",
-  "HostUri": "https://app.infisical.com",
-  "FallbackToAppSettings": true,
-  "MachineIdentity": {
-    "ClientId": "<machine-identity-client-id>",
-    "ClientSecret": "<machine-identity-client-secret>"
+  "DefaultProvider": "Infisical",
+  "Providers": {
+    "Infisical": {
+      "HostUri": "https://app.infisical.com",
+      "ProjectId": "<project-id>",
+      "EnvironmentSlug": "<environment-slug>",
+      "SecretPath": "/",
+      "ClientId": "<machine-identity-client-id>",
+      "ClientSecret": "<machine-identity-client-secret>"
+    }
   }
 }
 ```
@@ -33,35 +35,11 @@ Populate the `Infisical` section (either via `appsettings.json`, user secrets, o
 Environment variables map using double underscores. For example:
 
 ```bash
-export Infisical__MachineIdentity__ClientId="..."
-export Infisical__MachineIdentity__ClientSecret="..."
+export Infisical__ClientId="..."
+export Infisical__ClientSecret="..."
 ```
-
-> ℹ️ Set `FallbackToAppSettings` to `false` to fail startup instead of silently reverting to JSON when Infisical is unavailable.
-
-## Choose the Configuration Source
-
-FlowSynx selects the configuration source at runtime without recompilation:
-
-- **Command line:** `dotnet run -- --start --config-source=Infisical`
-- **Environment variable:** `export FLOWSYNX_CONFIG_SOURCE=Infisical`
-- **appsettings:** set `Configuration:Source` to `Infisical` as a default (can still be overridden).
-
-If Infisical is requested but disabled (`Enabled: false`), FlowSynx remains on the JSON files.
 
 ## Observability & Logging
-
-During startup FlowSynx logs the active configuration source:
-
-```
-info: Configuration source in use: Infisical
-```
-
-When fallback is enabled and Infisical cannot be reached, the application logs a warning and continues:
-
-```
-warn: Infisical configuration was requested but appsettings.json was used as a fallback.
-```
 
 No secret values are logged—only the provider state—helping you confirm behaviour without exposing sensitive information.
 
