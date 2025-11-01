@@ -153,7 +153,11 @@ public enum ErrorCode
     ExpressionParserKeyNotFound = 2601,
     #endregion
 
+    #region Secret error codes
+    SecretConfigurationInvalidProviderName = 2701,
+    #endregion
+
     #region Unknown error codes
-    UnknownError                                    = 9999
+    UnknownError = 9999
     #endregion
 }

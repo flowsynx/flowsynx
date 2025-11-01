@@ -2,6 +2,7 @@
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.PluginHost.Manager;
+using FlowSynx.Application.Secrets;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
@@ -9,6 +10,8 @@ using FlowSynx.Infrastructure.Localizations;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Infrastructure.PluginHost.Manager;
+using FlowSynx.Infrastructure.Secrets;
+using FlowSynx.Infrastructure.Secrets.Infisical;
 using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.Infrastructure.Services;
 using FlowSynx.Infrastructure.Workflow;
@@ -26,7 +29,8 @@ namespace FlowSynx.Infrastructure.Extensions;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddPluginManager(this IServiceCollection services)
+    public static IServiceCollection AddPluginManager(
+        this IServiceCollection services)
     {
         services
             .AddSingleton<IPluginCacheService, PluginCacheService>()
@@ -39,7 +43,8 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services)
     {
         services
             .AddMemoryCache()
@@ -71,7 +76,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddJsonLocalization(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddJsonLocalization(
+        this IServiceCollection services, 
+        IConfiguration configuration)
     {
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
         var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<JsonLocalization>>();
@@ -99,7 +106,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddEncryptionService(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddEncryptionService(
+        this IServiceCollection services, 
+        IConfiguration configuration)
     {
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
 
@@ -116,15 +125,27 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddResultStorageService(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddResultStorageService(
+        this IServiceCollection services, 
+        IConfiguration configuration)
     {
         using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<StorageConfiguration>>();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<ResultStorageFactory>>();
 
         logger.LogInformation("Initializing storage provider");
 
         var storageConfiguration = new StorageConfiguration();
         configuration.GetSection("Storage").Bind(storageConfiguration);
+
+        if (!storageConfiguration.ResultStorage.Providers.Any())
+        {
+            storageConfiguration.ResultStorage.Providers.Add(new ResultStorageProviderConfiguration
+            {
+                Name = "Local",
+                Configuration = new Dictionary<string, string>()
+            });
+        }
+
         services.AddSingleton(storageConfiguration);
 
         storageConfiguration.ResultStorage.ValidateResultStorage(logger);
@@ -135,9 +156,31 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddInMemoryWorkflowQueueService(this IServiceCollection services)
+    public static IServiceCollection AddInMemoryWorkflowQueueService(
+        this IServiceCollection services)
     {
         services.AddSingleton<IWorkflowExecutionQueue, InMemoryWorkflowExecutionQueue>();
+        return services;
+    }
+
+    public static IServiceCollection AddSecretService(
+        this IServiceCollection services, 
+        IConfiguration configuration)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<SecretFactory>>();
+
+        logger.LogInformation("Initializing secret provider");
+
+        var secretConfiguration = new SecretConfiguration();
+        configuration.GetSection("Secrets").Bind(secretConfiguration);
+        services.AddSingleton(secretConfiguration);
+
+        secretConfiguration.ValidateSecretProviders(logger);
+
+        services.AddSingleton<ISecretProvider, InfisicalSecretProvider>();
+        services.AddSingleton<ISecretFactory, SecretFactory>();
+
         return services;
     }
 }

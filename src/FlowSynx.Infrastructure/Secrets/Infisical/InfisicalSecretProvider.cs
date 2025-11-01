@@ -1,36 +1,36 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using FlowSynx.Application.Configuration;
+﻿using FlowSynx.Application.Secrets;
 using Infisical.Sdk;
 using Infisical.Sdk.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Infrastructure.Configuration;
+namespace FlowSynx.Infrastructure.Secrets.Infisical;
 
-/// <summary>
-/// Fetches configuration secrets from Infisical using the official SDK.
-/// </summary>
-public sealed class InfisicalSecretClient : IInfisicalSecretClient
+public class InfisicalSecretProvider : ISecretProvider, IConfigurableSecret
 {
-    private readonly InfisicalConfiguration _options;
-    private readonly ILogger<InfisicalSecretClient>? _logger;
+    private readonly ILogger<InfisicalSecretProvider>? _logger;
+    private InfisicalConfiguration _options = new InfisicalConfiguration();
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="InfisicalSecretClient"/> class.
-    /// </summary>
-    /// <param name="options">The Infisical configuration options.</param>
-    /// <param name="logger">Optional logger used for diagnostic messages.</param>
-    public InfisicalSecretClient(InfisicalConfiguration options, ILogger<InfisicalSecretClient>? logger = null)
+    public InfisicalSecretProvider(
+        ILogger<InfisicalSecretProvider>? logger = null)
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
         _logger = logger;
     }
 
-    /// <inheritdoc />
-    public async Task<IReadOnlyCollection<KeyValuePair<string, string>>> GetSecretsAsync(CancellationToken cancellationToken = default)
+    public string Name => "Infisical";
+
+    public void Configure(Dictionary<string, string> configuration)
+    {
+        _options.HostUri = configuration.GetValueOrDefault("HostUri", string.Empty);
+        _options.EnvironmentSlug = configuration.GetValueOrDefault("EnvironmentSlug", string.Empty);
+        _options.ProjectId = configuration.GetValueOrDefault("ProjectId", string.Empty);
+        _options.SecretPath = configuration.GetValueOrDefault("SecretPath", string.Empty);
+        _options.ClientId = configuration.GetValueOrDefault("ClientId", string.Empty);
+        _options.ClientSecret = configuration.GetValueOrDefault("ClientSecret", string.Empty);
+    }
+
+    public async Task<IReadOnlyCollection<KeyValuePair<string, string>>> GetSecretsAsync(
+        CancellationToken cancellationToken = default)
     {
         ValidateRequiredOptions();
         cancellationToken.ThrowIfCancellationRequested();
@@ -53,7 +53,7 @@ public sealed class InfisicalSecretClient : IInfisicalSecretClient
             await infisicalClient
                 .Auth()
                 .UniversalAuth()
-                .LoginAsync(_options.MachineIdentity.ClientId, _options.MachineIdentity.ClientSecret)
+                .LoginAsync(_options.ClientId, _options.ClientSecret)
                 .ConfigureAwait(false);
 
             var secrets = await infisicalClient
@@ -97,11 +97,11 @@ public sealed class InfisicalSecretClient : IInfisicalSecretClient
         if (string.IsNullOrWhiteSpace(_options.EnvironmentSlug))
             throw new InvalidOperationException("Infisical EnvironmentSlug is required when using Infisical as a configuration source.");
 
-        if (string.IsNullOrWhiteSpace(_options.MachineIdentity.ClientId))
-            throw new InvalidOperationException("Infisical MachineIdentity.ClientId is required when using Infisical as a configuration source.");
+        if (string.IsNullOrWhiteSpace(_options.ClientId))
+            throw new InvalidOperationException("Infisical ClientId is required when using Infisical as a configuration source.");
 
-        if (string.IsNullOrWhiteSpace(_options.MachineIdentity.ClientSecret))
-            throw new InvalidOperationException("Infisical MachineIdentity.ClientSecret is required when using Infisical as a configuration source.");
+        if (string.IsNullOrWhiteSpace(_options.ClientSecret))
+            throw new InvalidOperationException("Infisical ClientSecret is required when using Infisical as a configuration source.");
     }
 
     private ListSecretsOptions BuildListSecretOptions()
