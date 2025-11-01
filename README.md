@@ -28,6 +28,8 @@ Whether you’re streamlining **DevOps**, managing **data pipelines**, or buildi
 - [Key Features](#key-features)
 - [Roadmap](#roadmap)
 - [Get Started using FlowSynx](#get-started-using-flowsynx)
+- [Build from Source](#build-from-source)
+- [Configuration Sources](#configuration-sources)
 - [Architecture Overview](#architecture-overview)
   - [Interaction Layers](#interaction-layers)
   - [Core Components](#core-components)
@@ -37,6 +39,7 @@ Whether you’re streamlining **DevOps**, managing **data pipelines**, or buildi
   - [Web Console](#web-console)
 - [Related Repositories](#related-repositories)
 - [Community & Contributing](#community--contributing)
+- [Security](#security)
 - [License](#license)
 
 ## What is FlowSynx?
@@ -155,25 +158,44 @@ For advanced workflows (Docker, local environment setup, contributing guidelines
 
 ## Configuration Sources
 
-FlowSynx now supports selecting its configuration provider at startup. By default it reads from the bundled `appsettings*.json` files, but you can switch to [Infisical](https://infisical.com/) without recompiling the application.
+FlowSynx can augment its `appsettings*.json` and environment variables with secrets from a provider. By default only JSON/env configuration is used. To enable Infisical as a configuration source, configure the `Secrets` section:
 
-- **Environment variable:** set `FLOWSYNX_CONFIG_SOURCE=Infisical`.
-- **Command-line argument:** pass `--config-source=Infisical` (or `--config-source Infisical`).
-- **Fallback:** if Infisical is unreachable and fallback is enabled, FlowSynx logs a warning and reverts to the JSON files so the service can still boot.
+- Set `Secrets:Enabled` to `true`.
+- Set `Secrets:DefaultProvider` to `Infisical`.
+- Provide the `Secrets:Providers:Infisical` options.
 
-Configure the Infisical connection via the `Infisical` section (or matching environment variables):
+Environment variable mappings (examples):
+
+- `Secrets__Enabled=true`
+- `Secrets__DefaultProvider=Infisical`
+- `Secrets__Providers__Infisical__HostUri=https://app.infisical.com`
+- `Secrets__Providers__Infisical__ProjectId=<project-id>`
+- `Secrets__Providers__Infisical__EnvironmentSlug=<environment-slug>`
+- `Secrets__Providers__Infisical__SecretPath=/`
+- `Secrets__Providers__Infisical__ClientId=<machine-identity-client-id>`
+- `Secrets__Providers__Infisical__ClientSecret=<machine-identity-client-secret>`
+
+Notes:
+- Provider names under `Secrets:Providers` are case-sensitive and must match `Secrets:DefaultProvider` exactly.
+- Provider option keys (inside a provider block like `Infisical`) are case-insensitive.
+- If `Secrets:Enabled` is `false`, the secret provider is not used.
+- If required provider options are missing or the provider is unreachable, startup fails; there is no automatic fallback to JSON.
+
+Example configuration:
 
 ```json
-"Infisical": {
+"Secrets": {
   "Enabled": true,
-  "HostUri": "https://app.infisical.com",
-  "ProjectId": "<project-id>",
-  "EnvironmentSlug": "<environment-slug>",
-  "SecretPath": "/",
-  "FallbackToAppSettings": true,
-  "MachineIdentity": {
-    "ClientId": "<machine-identity-client-id>",
-    "ClientSecret": "<machine-identity-client-secret>"
+  "DefaultProvider": "Infisical",
+  "Providers": {
+    "Infisical": {
+      "HostUri": "https://app.infisical.com",
+      "ProjectId": "<project-id>",
+      "EnvironmentSlug": "<environment-slug>",
+      "SecretPath": "/",
+      "ClientId": "<machine-identity-client-id>",
+      "ClientSecret": "<machine-identity-client-secret>"
+    }
   }
 }
 ```
