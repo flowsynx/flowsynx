@@ -9,19 +9,19 @@
 # Documentation & Governance
 README.md                @flowsynx/docs-team @flowsynx/owners
 SECURITY.md              @flowsynx/owners
-CONTRIBUTING.md          @flowsynx/owners
+CONTRIBUTING.md          @flowsynx/docs-team @flowsynx/owners
 LICENSE                  @flowsynx/owners
 
 # ─────────────────────────────
 # CI/CD and Infrastructure
-.github/                 @flowsynx/devops-team @flowsynx/core-team @flowsynx/owners
-/docker/**               @flowsynx/devops-team @flowsynx/core-team @flowsynx/owners
+.github/                 @flowsynx/dev-team @flowsynx/owners
+/docker/**               @flowsynx/dev-team @flowsynx/owners
 
 # ─────────────────────────────
 # Core Logic & Architecture
-/src/**                  @flowsynx/core-team @flowsynx/owners
-/plugins/**              @flowsynx/core-team @flowsynx/owners
+/src/**                  @flowsynx/dev-team @flowsynx/owners
+/plugins/**              @flowsynx/dev-team @flowsynx/owners
 
 # ─────────────────────────────
 # Tests
-/tests/**                @flowsynx/core-team @flowsynx/maintainers @flowsynx/owners
+/tests/**                @flowsynx/dev-team @flowsynx/owners
