@@ -1,6 +1,7 @@
 using FlowSynx.Application.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -61,19 +62,16 @@ public class RoleClaimsTransformation : IClaimsTransformation
     /// <param name="roles">Role accumulator that guards against duplicates.</param>
     private static void AddRolesFromClaim(ClaimsIdentity identity, string claimType, HashSet<string> roles)
     {
-        foreach (var claim in identity.FindAll(claimType))
+        foreach (var value in identity.FindAll(claimType)
+                                      .Select(claim => claim.Value)
+                                      .Where(claimValue => !string.IsNullOrWhiteSpace(claimValue)))
         {
-            if (string.IsNullOrWhiteSpace(claim.Value))
+            if (TryAddJsonArrayRoles(value, roles))
             {
                 continue;
             }
 
-            if (TryAddJsonArrayRoles(claim.Value, roles))
-            {
-                continue;
-            }
-
-            AddDelimitedOrSingleRole(claim.Value, roles);
+            AddDelimitedOrSingleRole(value, roles);
         }
     }
 
