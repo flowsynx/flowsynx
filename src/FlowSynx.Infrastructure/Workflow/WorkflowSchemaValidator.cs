@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Models;
+using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.PluginCore.Exceptions;
@@ -18,17 +19,20 @@ public class WorkflowSchemaValidator : IWorkflowSchemaValidator
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMemoryCache _memoryCache;
     private readonly ILogger<WorkflowSchemaValidator> _logger;
+    private readonly IJsonSanitizer _jsonSanitizer;
     private readonly Application.Localizations.ILocalization _localization;
 
     public WorkflowSchemaValidator(
         IHttpClientFactory httpClientFactory,
         IMemoryCache memoryCache,
         ILogger<WorkflowSchemaValidator> logger,
+        IJsonSanitizer jsonSanitizer,
         Application.Localizations.ILocalization localization)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _jsonSanitizer = jsonSanitizer ?? throw new ArgumentNullException(nameof(jsonSanitizer));
         _localization = localization ?? throw new ArgumentNullException(nameof(localization));
     }
 
@@ -45,7 +49,7 @@ public class WorkflowSchemaValidator : IWorkflowSchemaValidator
         }
 
         var schema = await GetSchemaAsync(schemaUri, cancellationToken);
-        var sanitized = JsonSanitizer.Sanitize(definitionJson);
+        var sanitized = _jsonSanitizer.Sanitize(definitionJson);
 
         try
         {

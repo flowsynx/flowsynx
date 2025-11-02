@@ -73,6 +73,8 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddJsonSerialization(this IServiceCollection services)
     {
         services
+            .AddSingleton<IJsonSanitizer, JsonSanitizer>()
+            .AddSingleton<IJsonParser, JsonParser>()
             .AddSingleton<IJsonSerializer, JsonSerializer>()
             .AddSingleton<IJsonDeserializer, JsonDeserializer>();
 

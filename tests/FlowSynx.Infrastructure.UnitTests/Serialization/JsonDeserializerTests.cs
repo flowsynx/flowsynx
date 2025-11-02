@@ -13,6 +13,7 @@ public class JsonDeserializerTests
 {
     private readonly FakeLogger<JsonDeserializer> _logger;
     private readonly Mock<ILocalization> localizationMock;
+    private readonly JsonSanitizer _jsonSanitizer;
     private readonly JsonDeserializer _jsonDeserializer;
 
     public JsonDeserializerTests()
@@ -20,14 +21,16 @@ public class JsonDeserializerTests
         _logger = new FakeLogger<JsonDeserializer>();
         localizationMock = new Mock<ILocalization>();
         localizationMock.Setup(l => l.Get("JsonDeserializer_InputValueCanNotBeEmpty")).Returns("Input value can't be empty or null.");
-        _jsonDeserializer = new JsonDeserializer(_logger, localizationMock.Object);
+        _jsonSanitizer = new JsonSanitizer();
+        _jsonDeserializer = new JsonDeserializer(_logger, _jsonSanitizer, localizationMock.Object);
     }
 
     [Fact]
     public void Constructor_ShouldThrowArgumentNullException_WhenLoggerIsNull()
     {
         // Arrange & Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new JsonDeserializer(null!, localizationMock.Object));
+        Assert.Throws<ArgumentNullException>(() => 
+            new JsonDeserializer(null!, _jsonSanitizer, localizationMock.Object));
     }
 
     [Fact]

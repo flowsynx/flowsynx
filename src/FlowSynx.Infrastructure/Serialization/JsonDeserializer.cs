@@ -11,15 +11,19 @@ namespace FlowSynx.Infrastructure.Serialization;
 public class JsonDeserializer : IJsonDeserializer
 {
     private readonly ILogger<JsonDeserializer> _logger;
+    private readonly IJsonSanitizer _jsonSanitizer;
     private readonly ILocalization _localization;
 
     public JsonDeserializer(
         ILogger<JsonDeserializer> logger,
+        IJsonSanitizer jsonSanitizer,
         ILocalization localization)
     {
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(jsonSanitizer);
         ArgumentNullException.ThrowIfNull(localization);
         _logger = logger;
+        _jsonSanitizer = jsonSanitizer;
         _localization = localization;
     }
 
@@ -51,7 +55,7 @@ public class JsonDeserializer : IJsonDeserializer
             if (configuration.Converters is not null)
                 settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
 
-            var sanitized = JsonSanitizer.Sanitize(input);
+            var sanitized = _jsonSanitizer.Sanitize(input);
             return JsonConvert.DeserializeObject<T>(sanitized, settings)!;
         }
         catch (Exception ex)

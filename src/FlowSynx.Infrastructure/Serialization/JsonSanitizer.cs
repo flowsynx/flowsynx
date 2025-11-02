@@ -1,10 +1,11 @@
-﻿using System.Text.RegularExpressions;
+﻿using FlowSynx.Application.Serialization;
+using System.Text.RegularExpressions;
 
 namespace FlowSynx.Infrastructure.Serialization;
 
-internal static partial class JsonSanitizer
+public class JsonSanitizer : IJsonSanitizer
 {
-    public static string Sanitize(string json)
+    public string Sanitize(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
             return json;
@@ -12,6 +13,5 @@ internal static partial class JsonSanitizer
         return TrailingCommaRegex().Replace(json, "$1");
     }
 
-    [GeneratedRegex(@",\s*(\]|\})", RegexOptions.Compiled)]
-    private static partial Regex TrailingCommaRegex();
+    private static Regex TrailingCommaRegex() => new Regex(@",\s*(\]|\})", RegexOptions.Compiled);
 }
