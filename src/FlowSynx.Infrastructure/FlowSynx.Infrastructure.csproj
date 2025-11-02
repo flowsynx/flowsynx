@@ -12,12 +12,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AWSSDK.SecretsManager" Version="4.0.2" />
+		<PackageReference Include="Azure.Identity" Version="1.17.0" />
+		<PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
 		<PackageReference Include="Cronos" Version="0.9.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.4" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
 		<PackageReference Include="Infisical.Sdk" Version="3.0.3" />
 		<PackageReference Include="NJsonSchema" Version="10.9.0" />
+		<PackageReference Include="VaultSharp" Version="1.17.5.1" />
 	</ItemGroup>
 
 	<ItemGroup>

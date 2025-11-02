@@ -11,6 +11,7 @@ using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Infrastructure.PluginHost.Manager;
 using FlowSynx.Infrastructure.Secrets;
+using FlowSynx.Infrastructure.Secrets.AzureKeyVault;
 using FlowSynx.Infrastructure.Secrets.Infisical;
 using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.Infrastructure.Services;
@@ -179,6 +180,7 @@ public static class ServiceCollectionExtensions
         secretConfiguration.ValidateSecretProviders(logger);
 
         services.AddSingleton<ISecretProvider, InfisicalSecretProvider>();
+        services.AddSingleton<ISecretProvider, AzureKeyVaultSecretProvider>();
         services.AddSingleton<ISecretFactory, SecretFactory>();
 
         return services;
