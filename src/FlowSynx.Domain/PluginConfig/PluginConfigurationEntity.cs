@@ -1,6 +1,7 @@
 ﻿namespace FlowSynx.Domain.PluginConfig;
 
-public class PluginConfigurationEntity : AuditableEntity<Guid>, IEquatable<PluginConfigurationEntity>, ISoftDeletable
+public class PluginConfigurationEntity 
+    : AuditableEntity<Guid>, IEquatable<PluginConfigurationEntity>, ISoftDeletable
 {
     public required string UserId { get; set; }
     public required string Name { get; set; }
@@ -24,5 +25,15 @@ public class PluginConfigurationEntity : AuditableEntity<Guid>, IEquatable<Plugi
 
         if (Name != other.Name) return false;
         return UserId == other.UserId;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return Equals(obj as PluginConfigurationEntity);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(UserId, Name);
     }
 }
