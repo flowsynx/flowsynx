@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Localizations;
+﻿using System.Linq;
+using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -10,15 +11,19 @@ public class ResultStorageConfiguration
     public string DefaultProvider { get; set; } = string.Empty;
     public List<ResultStorageProviderConfiguration> Providers { get; set; } = new();
 
+    /// <summary>
+    /// Validates available storage providers and confirms the configured default is registered.
+    /// </summary>
+    /// <param name="logger">Application logger used to record configuration details.</param>
     public void ValidateResultStorage(ILogger logger)
     {
-        var validStorage = new List<string>();
-
-        foreach (var provider in Providers)
-        {
-            validStorage.Add(provider.Name);
-            logger.LogInformation("Storage provider '{ProviderName}' configured", provider.Name);
-        }
+        var validStorage = Providers
+            .Select(provider =>
+            {
+                logger.LogInformation("Storage provider '{ProviderName}' configured", provider.Name);
+                return provider.Name;
+            })
+            .ToList();
 
         if (!string.IsNullOrEmpty(DefaultProvider))
         {
