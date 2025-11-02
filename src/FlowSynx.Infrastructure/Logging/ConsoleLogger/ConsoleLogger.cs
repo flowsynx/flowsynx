@@ -4,12 +4,14 @@ namespace FlowSynx.Infrastructure.Logging.ConsoleLogger;
 
 internal class ConsoleLogger : ILogger, IDisposable
 {
+    private bool _disposed;
     private readonly LogQueue _logQueue;
     private readonly string _category;
     private readonly ConsoleLoggerOptions _options;
     private readonly Task _workerTask;
     private readonly Lock _consoleLock = new Lock();
     private static readonly AsyncLocal<Scope?> _currentScope = new();
+    private readonly CancellationTokenSource _internalCts;
 
     private Dictionary<LogLevel, ConsoleColor> ColorMap { get; set; } = new()
     {
@@ -26,6 +28,7 @@ internal class ConsoleLogger : ILogger, IDisposable
         _logQueue = new LogQueue();
         _category = category;
         _options = options;
+        _internalCts = CancellationTokenSource.CreateLinkedTokenSource(options.CancellationToken);
         _workerTask = Task.Run(() => ProcessQueue(_options.CancellationToken));
     }
 
@@ -71,7 +74,7 @@ internal class ConsoleLogger : ILogger, IDisposable
         _logQueue.Enqueue(logMessage);
     }
 
-    private string GetScopeInfo()
+    private static string GetScopeInfo()
     {
         var scopes = new List<string>();
         var current = _currentScope.Value;
@@ -139,29 +142,62 @@ internal class ConsoleLogger : ILogger, IDisposable
         }
     }
 
-    public void Dispose()
+    protected virtual void Dispose(bool disposing)
     {
-        if (!_options.CancellationToken.IsCancellationRequested)
-            _workerTask.Wait();
+        if (_disposed) return;
+
+        if (disposing)
+        {
+            try
+            {
+                _internalCts.Cancel();
+                _workerTask.Wait(1000); // optional timeout
+                _internalCts.Dispose();
+                (_logQueue as IDisposable)?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error while disposing ConsoleLogger: {ex.Message}");
+            }
+        }
+
+        _disposed = true;
     }
 
-    private class Scope : IDisposable
+    public void Dispose()
     {
-        public object? State { get; }
-        public Scope? Parent { get; }
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
-        public Scope(object? state, Scope? parent)
-        {
-            State = state;
-            Parent = parent;
-        }
+    private sealed class Scope(object? state, ConsoleLogger.Scope? parent) : IDisposable
+    {
+        private bool _disposed;
+
+        public object? State { get; } = state;
+        public Scope? Parent { get; } = parent;
 
         public void Dispose()
         {
-            if (_currentScope.Value == this)
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
             {
-                _currentScope.Value = Parent;
+                // Only clear the current scope if this instance is the active one
+                if (_currentScope.Value == this)
+                {
+                    _currentScope.Value = Parent;
+                }
             }
+
+            _disposed = true;
         }
     }
 }
