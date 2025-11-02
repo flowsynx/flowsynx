@@ -112,8 +112,10 @@ Built on clean architecture principles, FlowSynx offers **clarity**, **control**
 ✅ **Plugin-Based Extensibility** — Add, upgrade, or remove capabilities dynamically and version-controlled  
 ✅ **Cross-Platform Execution** — Runs everywhere (Windows, Linux, macOS, Docker, Cloud)  
 ✅ **JSON-Defined Workflows** — Declarative, portable, and version-controlled  
+✅ **Schema Validation** — Catch errors early with JSON schema checks  
 ✅ **CLI & SDK Support** — Total control for developers and DevOps teams  
 ✅ **Secure Authentication** — JWT, Basic Auth  
+✅ **Secret Management Integration** — Infisical, Azure Key Vault, HashiCorp Vault, AWS Secrets Manager  
 ✅ **Triggers & Events** — Webhooks, schedules, and file-change detection  
 ✅ **Human-in-the-Loop Tasks** — Combine automation with human approval  
 ✅ **Advanced Logging & Auditing** — Full transparency into every execution  
