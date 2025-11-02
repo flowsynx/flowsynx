@@ -16,13 +16,11 @@ public class SecretConfiguration
         if (!Enabled)
             return;
 
-        var validProviders = new List<string>();
-
-        foreach (var provider in Providers)
+        var validProviders = Providers.Select(p =>
         {
-            validProviders.Add(provider.Key);
-            logger.LogInformation("Secret provider '{ProviderName}' configured", provider.Key);
-        }
+            logger.LogInformation("Secret provider '{ProviderName}' configured", p.Key);
+            return p.Key;
+        }).ToList();
 
         if (!string.IsNullOrEmpty(DefaultProvider))
         {

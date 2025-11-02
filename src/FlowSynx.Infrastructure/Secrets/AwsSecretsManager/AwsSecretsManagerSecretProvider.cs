@@ -11,7 +11,7 @@ namespace FlowSynx.Infrastructure.Secrets.AwsSecretsManager;
 public class AwsSecretsManagerSecretProvider : ISecretProvider, IConfigurableSecret
 {
     private readonly ILogger<AwsSecretsManagerSecretProvider>? _logger;
-    private AwsSecretsManagerConfiguration _options = new();
+    private readonly AwsSecretsManagerConfiguration _options = new();
 
     public AwsSecretsManagerSecretProvider(ILogger<AwsSecretsManagerSecretProvider>? logger = null)
     {
@@ -71,9 +71,9 @@ public class AwsSecretsManagerSecretProvider : ISecretProvider, IConfigurableSec
                             ParseSecretContent(result, secret.Name, getSecretResponse.SecretString);
                         }
                     }
-                    catch (ResourceNotFoundException)
+                    catch (ResourceNotFoundException ex)
                     {
-                        _logger?.LogWarning("Secret '{SecretName}' not found in AWS Secrets Manager.", secret.Name);
+                        _logger?.LogWarning(ex, "Secret '{SecretName}' not found in AWS Secrets Manager.", secret.Name);
                     }
                     catch (Exception ex)
                     {
@@ -89,8 +89,9 @@ public class AwsSecretsManagerSecretProvider : ISecretProvider, IConfigurableSec
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Unexpected error while retrieving configuration secrets from AWS Secrets Manager.");
-            throw;
+            var message = "Unexpected error while retrieving configuration secrets from AWS Secrets Manager.";
+            _logger?.LogError(ex, message);
+            throw new InvalidOperationException(message, ex);
         }
     }
 

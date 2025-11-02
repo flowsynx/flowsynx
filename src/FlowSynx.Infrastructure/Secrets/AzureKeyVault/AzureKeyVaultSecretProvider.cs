@@ -9,7 +9,7 @@ namespace FlowSynx.Infrastructure.Secrets.AzureKeyVault;
 public class AzureKeyVaultSecretProvider : ISecretProvider, IConfigurableSecret
 {
     private readonly ILogger<AzureKeyVaultSecretProvider>? _logger;
-    private AzureKeyVaultConfiguration _options = new();
+    private readonly AzureKeyVaultConfiguration _options = new();
 
     public AzureKeyVaultSecretProvider(ILogger<AzureKeyVaultSecretProvider>? logger = null)
     {
@@ -64,8 +64,9 @@ public class AzureKeyVaultSecretProvider : ISecretProvider, IConfigurableSecret
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Unexpected error while retrieving configuration secrets from Azure Key Vault.");
-            throw;
+            var message = "Unexpected error while retrieving configuration secrets from Azure Key Vault.";
+            _logger?.LogError(ex, message);
+            throw new InvalidOperationException(message, ex);
         }
     }
 

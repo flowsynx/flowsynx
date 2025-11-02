@@ -11,7 +11,7 @@ namespace FlowSynx.Infrastructure.Secrets.HashiCorpVault;
 public class HashiCorpVaultSecretProvider : ISecretProvider, IConfigurableSecret
 {
     private readonly ILogger<HashiCorpVaultSecretProvider>? _logger;
-    private HashiCorpVaultConfiguration _options = new();
+    private readonly HashiCorpVaultConfiguration _options = new();
 
     public HashiCorpVaultSecretProvider(ILogger<HashiCorpVaultSecretProvider>? logger = null)
     {
@@ -70,8 +70,9 @@ public class HashiCorpVaultSecretProvider : ISecretProvider, IConfigurableSecret
         }
         catch (Exception ex)
         {
-            _logger?.LogWarning(ex, "Unexpected error while retrieving configuration secrets from HashiCorp Vault.");
-            throw;
+            var message = "Unexpected error while retrieving configuration secrets from HashiCorp Vault.";
+            _logger?.LogError(ex, message);
+            throw new InvalidOperationException(message, ex);
         }
     }
 
