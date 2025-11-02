@@ -11,6 +11,7 @@ using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Infrastructure.PluginHost.Manager;
 using FlowSynx.Infrastructure.Secrets;
+using FlowSynx.Infrastructure.Secrets.AwsSecretsManager;
 using FlowSynx.Infrastructure.Secrets.AzureKeyVault;
 using FlowSynx.Infrastructure.Secrets.HashiCorpVault;
 using FlowSynx.Infrastructure.Secrets.Infisical;
@@ -183,6 +184,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISecretProvider, InfisicalSecretProvider>();
         services.AddSingleton<ISecretProvider, AzureKeyVaultSecretProvider>();
         services.AddSingleton<ISecretProvider, HashiCorpVaultSecretProvider>();
+        services.AddSingleton<ISecretProvider, AwsSecretsManagerSecretProvider>();
         services.AddSingleton<ISecretFactory, SecretFactory>();
 
         return services;
