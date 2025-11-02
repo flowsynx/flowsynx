@@ -4,5 +4,5 @@ public interface IErrorHandlingStrategy
 {
     Task<ErrorHandlingResult> HandleAsync(
         ErrorHandlingContext context,
-        CancellationToken cancellation);
+        CancellationToken cancellationToken);
 }
