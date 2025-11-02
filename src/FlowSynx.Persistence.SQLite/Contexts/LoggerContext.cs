@@ -8,9 +8,9 @@ public class LoggerContext(DbContextOptions<LoggerContext> contextOptions) : DbC
 {
     public DbSet<LogEntity> Logs { get; set; }
 
-    protected override void OnModelCreating(ModelBuilder builder)
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        base.OnModelCreating(builder);
-        builder.ApplyConfiguration(new LoggerConfiguration());
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.ApplyConfiguration(new LoggerConfiguration());
     }
 }
