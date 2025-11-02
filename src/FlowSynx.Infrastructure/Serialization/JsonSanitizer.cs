@@ -13,5 +13,5 @@ public class JsonSanitizer : IJsonSanitizer
         return TrailingCommaRegex().Replace(json, "$1");
     }
 
-    private static Regex TrailingCommaRegex() => new Regex(@",\s*(\]|\})", RegexOptions.Compiled);
+    private static Regex TrailingCommaRegex() => new Regex(@",\s*(\]|\})", RegexOptions.Compiled, System.TimeSpan.FromSeconds(10));
 }
