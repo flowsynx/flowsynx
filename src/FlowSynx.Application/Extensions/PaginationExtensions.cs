@@ -14,9 +14,15 @@ public static class PaginationExtensions
         totalCount = list.Count;
 
         normalizedPage = page < 1 ? 1 : page;
-        normalizedPageSize = pageSize < 1
-            ? totalCount == 0 ? 1 : totalCount
-            : pageSize;
+
+        if (pageSize < 1)
+        {
+            normalizedPageSize = totalCount == 0 ? 1 : totalCount;
+        }
+        else
+        {
+            normalizedPageSize = pageSize;
+        }
 
         var skip = (normalizedPage - 1) * normalizedPageSize;
         if (skip >= totalCount)
