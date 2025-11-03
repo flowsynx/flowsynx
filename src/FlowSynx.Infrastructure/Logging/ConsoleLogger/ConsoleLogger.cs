@@ -188,6 +188,7 @@ internal class ConsoleLogger : ILogger, IDisposable
             if (_disposed)
                 return;
 
+            // Only clear the current scope if this instance is the active one
             if (disposing &&_currentScope.Value == this)
             {
                 _currentScope.Value = Parent;
