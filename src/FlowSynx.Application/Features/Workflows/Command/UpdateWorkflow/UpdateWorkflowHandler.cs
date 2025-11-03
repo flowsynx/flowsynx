@@ -57,9 +57,20 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
                 throw new FlowSynxException((int)ErrorCode.WorkflowNotFound, message);
             }
 
-            var normalizedSchemaUrl = request.SchemaUrl is null
-                ? workflow.SchemaUrl
-                : (string.IsNullOrWhiteSpace(request.SchemaUrl) ? null : request.SchemaUrl);
+            string? normalizedSchemaUrl;
+
+            if (request.SchemaUrl is null)
+            {
+                normalizedSchemaUrl = workflow.SchemaUrl;
+            }
+            else if (string.IsNullOrWhiteSpace(request.SchemaUrl))
+            {
+                normalizedSchemaUrl = null;
+            }
+            else
+            {
+                normalizedSchemaUrl = request.SchemaUrl;
+            }
 
             await _workflowSchemaValidator.ValidateAsync(normalizedSchemaUrl, request.Definition, cancellationToken);
 
