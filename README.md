@@ -1,7 +1,7 @@
 <div align="center">
   <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
-  <h2>FlowSynx — Orchestrate Anything. Anywhere.</h2>
-  <p><i>Lightweight, extensible, and powerful workflow orchestration for modern automation.</i></p>
+  <h2>FlowSynx — The Open Automation Fabric</h2>
+  <p><i>Orchestrate anything. Anywhere. Powered by plugins. Defined in JSON.</i></p>
 
   [![Codacy Badge][codacy-badge]][codacy-url]
   [![Quality Gate Status][sonarcloud-quality-gate-badge]][sonarcloud-quality-gate-url]
@@ -9,12 +9,30 @@
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
   [![Good First Issues][github-good-first-issue-badge]][github-good-first-issue-url]
+
+  ✨ **Support FlowSynx by giving it a star!** ✨  
+  Your support helps others discover the project and drives continued innovation.
 </div>
 
-FlowSynx is a **next-generation workflow orchestration platform** that unifies **automation, scalability, and extensibility** in a single, developer-friendly ecosystem.  
-It bridges the gap between **low-code simplicity** and **full-code power**, allowing both developers and operations teams to automate complex tasks seamlessly across **on-prem**, **cloud**, and **hybrid** environments.
+FlowSynx is a **next-generation orchestration platform** designed to unify **automation, scalability, and extensibility** within a single, developer-centric ecosystem.  
+It bridges the gap between **low-code simplicity** and **full-code power**, enabling teams to automate complex workflows seamlessly across **on-premises**, **cloud**, and **hybrid** environments.
 
-Whether you’re streamlining **DevOps**, managing **data pipelines**, or building **enterprise-grade automations**, FlowSynx gives you the control, flexibility, and insight to make it happen.
+Built around **JSON-defined workflows** and a **plugin-driven architecture**, FlowSynx lets you connect any system, process, or service — from DevOps pipelines and AI integrations to enterprise data flows.  
+Whether you’re streamlining **operations**, managing **data pipelines**, or orchestrating **mission-critical automations**, FlowSynx delivers the control, flexibility, and visibility you need to make automation truly universal.
+
+### 💬 Share FlowSynx
+
+Help grow the community by sharing FlowSynx with your network:
+
+**[Share on X (Twitter)](https://x.com/intent/tweet?text=Check%20out%20this%20awesome%20project%20on%20GitHub!%20⭐%0Ahttps%3A%2F%2Fgithub.com%2Fflowsynx%2Fflowsynx)**  
+**[Share on LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fflowsynx%2Fflowsynx)**
+
+Or copy and share this snippet:
+
+```text
+⭐ Check out FlowSynx — an open-source automation fabric for orchestrating anything, anywhere:
+https://github.com/flowsynx/flowsynx
+```
 
 ## Table of Contents
 
@@ -25,6 +43,7 @@ Whether you’re streamlining **DevOps**, managing **data pipelines**, or buildi
 - [Execution Modes](#execution-modes)
 - [Runtime Context](#runtime-context)
 - [Why FlowSynx?](#why-flowsynx)
+- [Differentiate & Articulate Uniquely](#differentiate--articulate-uniquely)
 - [Key Features](#key-features)
 - [Roadmap](#roadmap)
 - [Get Started using FlowSynx](#get-started-using-flowsynx)
@@ -44,14 +63,14 @@ Whether you’re streamlining **DevOps**, managing **data pipelines**, or buildi
 
 ## What is FlowSynx?
 
-In today’s fast-moving software landscape, organizations demand **repeatable**, **modular**, and **secure** automation — without the lock-in of rigid platforms.
+In today’s fast-moving software landscape, teams need **repeatable**, **modular**, and **secure** automation — without being locked into rigid platforms.
 
 **FlowSynx** redefines orchestration with:
-- A **.NET-based micro-kernel engine** built for speed and reliability  
+- A **.NET-based micro-kernel engine** built for performance and reliability  
 - A **plugin-driven architecture** that evolves with your needs  
 - A **JSON-based DAG (Directed Acyclic Graph)** workflow model that’s both human-readable and machine-friendly  
 
-FlowSynx turns your processes — from data management to API and ML/AI automation — into **clear, maintainable, and reusable workflows**.
+FlowSynx transforms your processes — from data management to API and ML/AI automation — into **clear, maintainable, and reusable workflows**.
 
 ## How It Works
 
@@ -62,9 +81,9 @@ At its core, FlowSynx executes **DAG-based workflows** where each task represent
 - **Workflow JSON** — Define tasks, dependencies, and parameters in simple JSON  
 - **Plugins** — Modular building blocks for any functionality (file I/O, APIs, cloud storage, data transformation, ML/AI, etc.)  
 - **Execution Engine** — Smart orchestration with:
-  - Task dependency resolution (topological sorting)
+  - Dependency resolution (topological sorting)
   - Shared execution context and secure state handling
-  - Async execution, retries, and timeouts
+  - Asynchronous execution, retries, and timeouts
   - Built-in logging, metrics, and auditing
 
 ## Task Lifecycle
@@ -72,7 +91,7 @@ At its core, FlowSynx executes **DAG-based workflows** where each task represent
 Every task flows through a predictable, reliable lifecycle:
 
 1. **Initialization** – Validates plugin and parameters  
-2. **Dependency Wait** – Ensures prerequisite tasks are done  
+2. **Dependency Wait** – Ensures prerequisite tasks are complete  
 3. **Execution** – Runs the plugin logic (e.g., `ReadAsync`, `WriteAsync`)  
 4. **Error Handling** – Retries, fallbacks, or workflow failover  
 5. **Post-Processing** – Logs, stores outputs, and passes results downstream  
@@ -105,7 +124,51 @@ FlowSynx is designed to:
 - **Bridge teams** across development, data, and business processes  
 - **Scale effortlessly** across environments  
 
-Built on clean architecture principles, FlowSynx offers **clarity**, **control**, and **confidence** — even in the most demanding automation scenarios.
+Built on clean architecture principles, FlowSynx provides **clarity**, **control**, and **confidence** — even in the most demanding automation scenarios.
+
+## Differentiate & Articulate Uniquely
+
+There are countless workflow and orchestration engines on the market — but FlowSynx stands apart by focusing on flexibility, developer empowerment, and true portability.
+
+Here’s what makes FlowSynx unique:
+
+#### 1. NET Native & Plugin-Based
+
+- Built entirely in **.NET**, giving developers seamless integration with the .NET ecosystem.
+- **Plugin-first architecture:** add, remove, or update capabilities dynamically. No core modifications required.
+- Supports **custom plugins**, enabling anything from cloud storage and APIs to ML/AI tasks.
+
+#### 2. JSON-Defined DAG Workflows
+
+- Workflows are **fully declarative** in JSON — human-readable and machine-friendly.
+- DAG execution ensures **reliable dependency handling, asynchronous execution**, and full **observability**.
+- Unlike other engines, FlowSynx makes complex workflows **easy to version, maintain, and share**.
+
+#### 3. Human-in-the-Loop Support
+
+- Integrate **approval gates and manual tasks** directly into workflows.
+- Automate most of the process while keeping humans in control where needed — ideal for enterprise scenarios.
+
+#### 4. Hybrid, Cross-Platform Execution
+
+- Run **on-premises**, in **containers**, or fully **cloud-native** — no vendor lock-in.
+- Lightweight footprint and fast startup for **developer-friendly experimentation**.
+- Works everywhere: **Windows, Linux, macOS, Docker, Kubernetes**.
+
+#### 5. Marketplace of Plugins
+
+- Discover, share, and manage pre-built and custom plugins via a central **Marketplace/Registry**.
+- Extend capabilities quickly without reinventing the wheel.
+
+#### 6. What Competitors Lack
+
+- Many orchestration tools either:
+    - Lock you into a proprietary ecosystem,
+    - Force heavyweight deployments, or
+    - Lack support for hybrid and human-in-loop workflows.
+- FlowSynx solves these gaps **while remaining lightweight, extensible, and fully open-source**.
+
+**Bottom line:** FlowSynx is not just another orchestration engine. It’s a **developer-first, plugin-powered, hybrid automation fabric** that adapts to your environment — not the other way around.
 
 ## Key Features
 
@@ -114,12 +177,12 @@ Built on clean architecture principles, FlowSynx offers **clarity**, **control**
 ✅ **JSON-Defined Workflows** — Declarative, portable, and version-controlled  
 ✅ **Schema Validation** — Catch errors early with JSON schema checks  
 ✅ **CLI & SDK Support** — Total control for developers and DevOps teams  
-✅ **Secure Authentication** — JWT, Basic Auth  
+✅ **Secure Authentication** — Supports JWT, Basic Auth  
 ✅ **Secret Management Integration** — Infisical, Azure Key Vault, HashiCorp Vault, AWS Secrets Manager  
 ✅ **Triggers & Events** — Webhooks, schedules, and file-change detection  
 ✅ **Human-in-the-Loop Tasks** — Combine automation with human approval  
 ✅ **Advanced Logging & Auditing** — Full transparency into every execution  
-✅ **Error Handling** - Flexible Error Handling and Retry Policies per task and workflow level  
+✅ **Error Handling** - Configurable Error Handling and Retry Policies per task and workflow level  
 ✅ **Marketplace & Registry** — Discover and manage plugins easily  
 ✅ **Web Console UI** — Intuitive dashboard for workflow monitoring and control  
 
@@ -127,23 +190,115 @@ Built on clean architecture principles, FlowSynx offers **clarity**, **control**
 
 Curious about what’s next? Review the planned milestones in our [Roadmap](./docs/ROADMAP.md).
 
-## Get Started using FlowSynx
+## Quick Start Experience
 
-Ready to try FlowSynx? Start automating in minutes.
+Get up and running with FlowSynx in **under 5 minutes** — no complex setup required.
 
-📘 **Documentation:** [Getting Started Guide](https://flowsynx.io/docs/getting-started)  
-🧩 **Samples:** [Example Workflows & Configs](https://github.com/flowsynx/samples)  
+### Option 1 — Run via Docker (Recommended)
+
+If you have Docker installed, you can launch FlowSynx instantly using Docker Compose.
+
+#### 1️⃣ Create a `docker-compose.yml` file
+
+Copy and paste the following:
+
+```yaml
+version: '3.8'
+
+services:
+  flowsynx:
+    image: flowsynx/flowsynx:1.2.2-linux-amd64
+    container_name: flowsynx
+    environment:
+      DB__HOST: postgres
+      DB__PORT: 5432
+      DB__NAME: flowxDb
+      DB__USERNAME: postgres
+      DB__PASSWORD: postgrespw
+      Security__EnableBasic: true
+      Security__BasicUsers__0__Id: 0960a93d-e42b-4987-bc07-7bda806a21c7
+      Security__BasicUsers__0__Name: admin
+      Security__BasicUsers__0__Password: admin
+      Security__BasicUsers__0__Roles__0: admin
+      Security__DefaultScheme: Basic
+    volumes:
+      - flowsynx-data:/app
+    working_dir: /app
+    ports:
+      - "6262:6262"
+    command: ["--start"]
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - basicAuth_net
+
+  postgres:
+    image: postgres:15
+    container_name: flowsynx-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespw
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - basicAuth_net
+
+volumes:
+  flowsynx-data:
+  pgdata:
+
+networks:
+  basicAuth_net:
+    driver: bridge
+```
+
+#### 2️⃣ Start the stack
+
+```bash
+docker compose up -d
+```
+
+**This will:**
+- Start FlowSynx and a PostgreSQL database
+- Automatically configure admin credentials (admin / admin)
+- Expose the FlowSynx API at http://localhost:6262
+
+Verify it’s running::
+
+```
+http://localhost:6262/version
+```
+
+### Option 2 — Use a Pre-Built Binary
+
+Prefer to run FlowSynx locally?  
+Download a pre-built binary for your OS from the latest release:
+
+👉 [**Download FlowSynx Releases**](https://github.com/flowsynx/flowsynx/releases/latest)
+
+#### Prerequisites
+- PostgreSQL (must be running and reachable)
+
+Then run:
+
+```bash
+flowsynx --start
+```
 
 ## Build from Source
 
-Want to contribute or run FlowSynx locally? Use this quickstart to build from source in minutes.
+Want to contribute or customize FlowSynx?  
+You can build it locally in just a few commands.
 
 ### Prerequisites
-
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) — confirm with `dotnet --version` (should report 9.x)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) — verify with `dotnet --version` (should report 9.x)
 - Git
 
-### Quickstart
+### Local Build
 
 ```bash
 git clone https://github.com/flowsynx/flowsynx
@@ -153,10 +308,72 @@ dotnet build --configuration Release
 dotnet test
 ```
 
-- Commands are cross-platform (Windows, Linux, macOS).
-- Build artifacts land in each project's `bin/Release` directory.
+- Works seamlessly on **Windows**, **Linux**, and **macOS**.  
+- Build outputs are placed in each project’s `bin/Release` directory.
 
-For advanced workflows (Docker, local environment setup, contributing guidelines), see [CONTRIBUTING.md](https://github.com/flowsynx/flowsynx/blob/master/CONTRIBUTING.md).
+
+## Hello Workflow Example
+Once FlowSynx is running (via Docker or binary), try creating and executing your first workflow using the REST API.
+
+### 1️⃣ Add a Workflow
+Call this api:
+
+```bash
+curl -u admin:admin -X POST http://localhost:6262/workflows \
+  -H "Content-Type: application/json" \
+  -d '
+  {
+      "name": "Hello Workflow",
+      "description": "A minimal FlowSynx workflow example",
+      "tasks": [
+        {
+          "name": "print_hello",
+          "type": "",
+          "parameters": {
+            "operation": "write",
+            "path": "results/test.txt",
+            "data": "Hello, FlowSynx!",
+            "overwrite": false
+          }
+        }
+      ]
+    }
+  '
+```
+
+### Example response
+```json
+{
+  "data": {
+    "id": "<UUID>",
+    "name": "Hello Workflow"
+  },
+  "messages": [
+    "The workflow has been added successfully."
+  ],
+  "succeeded": true,
+  "generatedAtUtc": "2025-11-04T14:40:27Z"
+}
+```
+📘 Note: Keep the <UUID> value — you’ll need it to run the workflow.
+
+### 2️⃣ Execute the Workflow
+```bash
+curl -u admin:admin -X POST http://localhost:6262/workflows/<UUID>/executions
+```
+
+###  3️⃣ Verify Output
+After execution, check the file `results/test.txt`
+inside the FlowSynx container or on your host system — you should see:
+
+```
+Hello, FlowSynx!
+```
+
+For advanced workflows, Docker setup:
+
+📘 **Documentation:** [Getting Started Guide](https://flowsynx.io/docs/getting-started)  
+🧩 **Samples:** [Example Workflows & Configs](https://github.com/flowsynx/samples)
 
 ## Configuration Sources
 
@@ -221,7 +438,7 @@ Refer to [docs/infisical-configuration.md](./docs/infisical-configuration.md) fo
 - **Trigger Engine** — React to events, schedules, and external signals  
 
 ### Environments
-Deploy FlowSynx in **local**, **server**, **container**, or **cloud-native** setups — with complete portability.
+Deploy FlowSynx locally, in containers, or cloud-native — with complete portability.
 
 ## User Interfaces
 
@@ -256,7 +473,7 @@ A clean, interactive dashboard for:
 
 ## Community & Contributing
 
-Join a growing community of developers and automation experts.  
+Join our growing community of developers and automation experts.  
 You can:
 - 💡 Submit ideas and feature requests  
 - 🔌 Build and publish plugins  
@@ -268,12 +485,8 @@ You can:
 
 ## Communication and Discord
 
-We would greatly appreciate your contributions and suggestions!  
-One of the easiest ways to contribute is to participate in Discord discussions.
-
-### Questions and Issues
-Reach out with any questions you may have — we’ll make sure to answer them as soon as possible.  
-As a community member, feel free to jump in and help others, too!
+We’d love your contributions and feedback!
+Join our community and discussions on Discord or follow us on X (Twitter):
 
 | Platform | Link |
 |-----------|------|
