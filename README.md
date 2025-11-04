@@ -14,11 +14,15 @@
   Your support helps others discover the project and drives continued innovation.
 </div>
 
-FlowSynx is a **next-generation orchestration platform** designed to unify **automation, scalability, and extensibility** within a single, developer-centric ecosystem.  
-It bridges the gap between **low-code simplicity** and **full-code power**, enabling teams to automate complex workflows seamlessly across **on-premises**, **cloud**, and **hybrid** environments.
+FlowSynx is a **next-generation orchestration platform** designed to unify **automation, scalability, 
+and extensibility** within a single, developer-centric ecosystem. It bridges the gap between **low-code simplicity** 
+and **full-code power**, enabling teams to automate complex workflows seamlessly across **on-premises**, **cloud**, 
+and **hybrid** environments.
 
-Built around **JSON-defined workflows** and a **plugin-driven architecture**, FlowSynx lets you connect any system, process, or service — from DevOps pipelines and AI integrations to enterprise data flows.  
-Whether you’re streamlining **operations**, managing **data pipelines**, or orchestrating **mission-critical automations**, FlowSynx delivers the control, flexibility, and visibility you need to make automation truly universal.
+Built around **JSON-defined workflows** and a **plugin-driven architecture**, FlowSynx lets you connect any system, 
+process, or service — from DevOps pipelines and AI integrations to enterprise data flows. Whether you’re streamlining 
+**operations**, managing **data pipelines**, or orchestrating **mission-critical automations**, FlowSynx delivers the 
+control, flexibility, and visibility you need to make automation truly universal.
 
 ### 💬 Share FlowSynx
 
@@ -48,7 +52,6 @@ https://github.com/flowsynx/flowsynx
 - [Roadmap](#roadmap)
 - [Get Started using FlowSynx](#get-started-using-flowsynx)
 - [Build from Source](#build-from-source)
-- [Configuration Sources](#configuration-sources)
 - [Architecture Overview](#architecture-overview)
   - [Interaction Layers](#interaction-layers)
   - [Core Components](#core-components)
@@ -221,6 +224,7 @@ services:
       Security__BasicUsers__0__Password: admin
       Security__BasicUsers__0__Roles__0: admin
       Security__DefaultScheme: Basic
+      Encryption__Key: u3W1rKiLcnJrGLRt3SbRWDL/XWrjEybG3EDIdxAioIU=
     volumes:
       - flowsynx-data:/app
     working_dir: /app
@@ -281,7 +285,29 @@ Download a pre-built binary for your OS from the latest release:
 👉 [**Download FlowSynx Releases**](https://github.com/flowsynx/flowsynx/releases/latest)
 
 #### Prerequisites
-- PostgreSQL (must be running and reachable)
+- A running and accessible PostgreSQL instance.
+- Update your appsettings.json to define the database connection and encryption key, for example:
+
+```json
+{
+  "Db": {
+    "Host": "localhost",
+    "Port": 5432,
+    "Name": "fxdb",
+    "UserName": "postgres",
+    "Password": "p@$$w0rd",
+    "AdditionalOptions": {
+      "SslMode": "Disable",
+      "Pooling": true
+    }
+  },
+  "Encryption": {
+    "Key": "u3W1rKiLcnJrGLRt3SbRWDL/XWrjEybG3EDIdxAioIU="
+  }
+}
+```
+
+- Ensure the PostgreSQL database and user exist and match the settings defined in appsettings.json (or your chosen configuration).
 
 Then run:
 
@@ -374,52 +400,6 @@ For advanced workflows, Docker setup:
 
 📘 **Documentation:** [Getting Started Guide](https://flowsynx.io/docs/getting-started)  
 🧩 **Samples:** [Example Workflows & Configs](https://github.com/flowsynx/samples)
-
-## Configuration Sources
-
-FlowSynx can augment its `appsettings*.json` and environment variables with secrets from a provider. By default only JSON/env configuration is used. To enable Infisical as a configuration source, configure the `Secrets` section:
-
-- Set `Secrets:Enabled` to `true`.
-- Set `Secrets:DefaultProvider` to `Infisical`.
-- Provide the `Secrets:Providers:Infisical` options.
-
-Environment variable mappings (examples):
-
-- `Secrets__Enabled=true`
-- `Secrets__DefaultProvider=Infisical`
-- `Secrets__Providers__Infisical__HostUri=https://app.infisical.com`
-- `Secrets__Providers__Infisical__ProjectId=<project-id>`
-- `Secrets__Providers__Infisical__EnvironmentSlug=<environment-slug>`
-- `Secrets__Providers__Infisical__SecretPath=/`
-- `Secrets__Providers__Infisical__ClientId=<machine-identity-client-id>`
-- `Secrets__Providers__Infisical__ClientSecret=<machine-identity-client-secret>`
-
-Notes:
-- Provider names under `Secrets:Providers` are case-sensitive and must match `Secrets:DefaultProvider` exactly.
-- Provider option keys (inside a provider block like `Infisical`) are case-insensitive.
-- If `Secrets:Enabled` is `false`, the secret provider is not used.
-- If required provider options are missing or the provider is unreachable, startup fails; there is no automatic fallback to JSON.
-
-Example configuration:
-
-```json
-"Secrets": {
-  "Enabled": true,
-  "DefaultProvider": "Infisical",
-  "Providers": {
-    "Infisical": {
-      "HostUri": "https://app.infisical.com",
-      "ProjectId": "<project-id>",
-      "EnvironmentSlug": "<environment-slug>",
-      "SecretPath": "/",
-      "ClientId": "<machine-identity-client-id>",
-      "ClientSecret": "<machine-identity-client-secret>"
-    }
-  }
-}
-```
-
-Refer to [docs/infisical-configuration.md](./docs/infisical-configuration.md) for end-to-end setup guidance, including secret naming conventions and recommended access policies.
 
 ## Architecture Overview
 
