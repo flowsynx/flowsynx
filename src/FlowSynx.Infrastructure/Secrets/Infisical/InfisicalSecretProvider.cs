@@ -84,8 +84,9 @@ public class InfisicalSecretProvider : ISecretProvider, IConfigurableSecret
         }
         catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            _logger?.LogWarning(ex, "Unexpected error while retrieving configuration secrets from Infisical.");
-            throw;
+            var message = $"Unexpected error while retrieving configuration secrets from Infisical for project '{_options.ProjectId}' in environment '{_options.EnvironmentSlug}'.";
+            _logger?.LogError(ex, message);
+            throw new InvalidOperationException(message, ex);
         }
     }
 
