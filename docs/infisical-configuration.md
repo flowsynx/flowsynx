@@ -41,7 +41,8 @@ export Infisical__ClientSecret="..."
 
 ## Observability & Logging
 
-No secret values are logged—only the provider state—helping you confirm behaviour without exposing sensitive information.
+No secret values are logged—only the provider state—helping you confirm behaviour without exposing sensitive information.  
+Unexpected failures surfaced by the Infisical SDK are wrapped in an `InvalidOperationException` that includes the project and environment identifiers. This improves log signal for operators but means any downstream consumers that relied on concrete Infisical exception types should now expect `InvalidOperationException` instead.
 
 ## Secret Refresh
 
