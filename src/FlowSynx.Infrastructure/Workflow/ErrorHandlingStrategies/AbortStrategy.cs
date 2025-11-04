@@ -15,7 +15,7 @@ public class AbortStrategy: IErrorHandlingStrategy
 
     public Task<ErrorHandlingResult> HandleAsync(
         ErrorHandlingContext context, 
-        CancellationToken cancellation)
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(Localization.Get("Workflow_AbortStrategy_Handle", context.TaskName));
         return Task.FromResult(new ErrorHandlingResult { ShouldAbortWorkflow = true });
