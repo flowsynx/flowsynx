@@ -155,6 +155,25 @@ public class InfisicalSecretProviderTests
     }
 
     [Fact]
+    public async Task GetSecretsAsync_WhenUnexpectedException_AddsContext()
+    {
+        var provider = new ThrowingInfisicalSecretProvider(new ApplicationException("boom"));
+        provider.Configure(new Dictionary<string, string>
+        {
+            ["ProjectId"] = "proj-123",
+            ["EnvironmentSlug"] = "dev",
+            ["ClientId"] = "cid",
+            ["ClientSecret"] = "csecret",
+        });
+
+        var ex = await Assert.ThrowsAsync<Exception>(() => provider.GetSecretsAsync());
+
+        Assert.Equal("Error retrieving configuration secrets from Infisical for environment 'dev'.", ex.Message);
+        Assert.IsType<ApplicationException>(ex.InnerException);
+        Assert.Equal("boom", ex.InnerException?.Message);
+    }
+
+    [Fact]
     public void BuildListSecretOptions_UsesConfiguredValues()
     {
         var provider = new InfisicalSecretProvider();
@@ -238,5 +257,21 @@ public class InfisicalSecretProviderTests
         Assert.NotNull(mi);
         var result = mi!.Invoke(null, args ?? Array.Empty<object>());
         return (T)result!;
+    }
+
+    private sealed class ThrowingInfisicalSecretProvider : InfisicalSecretProvider
+    {
+        private readonly Exception _exception;
+
+        public ThrowingInfisicalSecretProvider(Exception exception)
+        {
+            _exception = exception;
+        }
+
+        protected override Task<IReadOnlyCollection<KeyValuePair<string, string>>> ExecuteInternalAsync(
+            CancellationToken cancellationToken)
+        {
+            return Task.FromException<IReadOnlyCollection<KeyValuePair<string, string>>>(_exception);
+        }
     }
 }
