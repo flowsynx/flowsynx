@@ -180,7 +180,7 @@ Here’s what makes FlowSynx unique:
 ✅ **JSON-Defined Workflows** — Declarative, portable, and version-controlled  
 ✅ **Schema Validation** — Catch errors early with JSON schema checks  
 ✅ **CLI & SDK Support** — Total control for developers and DevOps teams  
-✅ **Secure Authentication** — Supports JWT, Basic Auth  
+✅ **Robust Authentication & Access Control** — Compatible with JWT and Basic Auth, featuring RBAC  
 ✅ **Secret Management Integration** — Infisical, Azure Key Vault, HashiCorp Vault, AWS Secrets Manager  
 ✅ **Triggers & Events** — Webhooks, schedules, and file-change detection  
 ✅ **Human-in-the-Loop Tasks** — Combine automation with human approval  
