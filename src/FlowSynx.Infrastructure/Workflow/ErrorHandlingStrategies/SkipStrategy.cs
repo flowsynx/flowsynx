@@ -15,7 +15,7 @@ public class SkipStrategy: IErrorHandlingStrategy
 
     public Task<ErrorHandlingResult> HandleAsync(
         ErrorHandlingContext context,
-        CancellationToken cancellation)
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(Localization.Get("Workflow_SkipStrategy_handle", context.TaskName));
         return Task.FromResult(new ErrorHandlingResult { ShouldSkip = true });
