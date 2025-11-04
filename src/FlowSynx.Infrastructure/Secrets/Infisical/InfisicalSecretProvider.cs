@@ -35,6 +35,27 @@ public class InfisicalSecretProvider : ISecretProvider, IConfigurableSecret
         ValidateRequiredOptions();
         cancellationToken.ThrowIfCancellationRequested();
 
+        try
+        {
+            return await ExecuteInternalAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not InvalidOperationException)
+        {
+            var environment = string.IsNullOrWhiteSpace(_options.EnvironmentSlug)
+                ? "<unspecified>"
+                : _options.EnvironmentSlug;
+
+            var message = $"Error retrieving configuration secrets from Infisical for environment '{environment}'.";
+            _logger?.LogWarning(ex, message);
+
+            throw new Exception(message, ex);
+        }
+    }
+
+    // Executes the Infisical SDK calls to retrieve and normalize secrets.
+    protected virtual async Task<IReadOnlyCollection<KeyValuePair<string, string>>> ExecuteInternalAsync(
+        CancellationToken cancellationToken)
+    {
         var settingsBuilder = new InfisicalSdkSettingsBuilder();
         if (!string.IsNullOrWhiteSpace(_options.HostUri))
         {
@@ -48,45 +69,37 @@ public class InfisicalSecretProvider : ISecretProvider, IConfigurableSecret
 
         var infisicalClient = new InfisicalClient(settingsBuilder.Build());
 
-        try
+        await infisicalClient
+            .Auth()
+            .UniversalAuth()
+            .LoginAsync(_options.ClientId, _options.ClientSecret)
+            .ConfigureAwait(false);
+
+        var secrets = await infisicalClient
+            .Secrets()
+            .ListAsync(BuildListSecretOptions())
+            .ConfigureAwait(false);
+
+        if (secrets is null || secrets.Length == 0)
+            return Array.Empty<KeyValuePair<string, string>>();
+
+        var result = new List<KeyValuePair<string, string>>(secrets.Length);
+        foreach (var secret in secrets)
         {
-            await infisicalClient
-                .Auth()
-                .UniversalAuth()
-                .LoginAsync(_options.ClientId, _options.ClientSecret)
-                .ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(secret.SecretKey))
+                continue;
 
-            var secrets = await infisicalClient
-                .Secrets()
-                .ListAsync(BuildListSecretOptions())
-                .ConfigureAwait(false);
+            var normalizedKey = NormalizeKey(secret.SecretKey);
+            if (string.IsNullOrEmpty(normalizedKey))
+                continue;
 
-            if (secrets is null || secrets.Length == 0)
-                return Array.Empty<KeyValuePair<string, string>>();
+            if (secret.SecretValue is null)
+                continue;
 
-            var result = new List<KeyValuePair<string, string>>(secrets.Length);
-            foreach (var secret in secrets)
-            {
-                if (string.IsNullOrWhiteSpace(secret.SecretKey))
-                    continue;
-
-                var normalizedKey = NormalizeKey(secret.SecretKey);
-                if (string.IsNullOrEmpty(normalizedKey))
-                    continue;
-
-                if (secret.SecretValue is null)
-                    continue;
-
-                result.Add(new KeyValuePair<string, string>(normalizedKey, secret.SecretValue));
-            }
-
-            return result;
+            result.Add(new KeyValuePair<string, string>(normalizedKey, secret.SecretValue));
         }
-        catch (Exception ex) when (ex is not InvalidOperationException)
-        {
-            _logger?.LogWarning(ex, "Unexpected error while retrieving configuration secrets from Infisical.");
-            throw;
-        }
+
+        return result;
     }
 
     private void ValidateRequiredOptions()
