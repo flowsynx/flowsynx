@@ -311,7 +311,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 var result = await HandleApprovalStatusAsync(
                     status, 
                     userId, 
-                    workflowId, 
                     executionEntity, 
                     task, 
                     cancellationToken);
@@ -334,7 +333,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private async Task<WorkflowExecutionStatus> HandleApprovalStatusAsync(
         WorkflowApprovalStatus status,
         string userId,
-        Guid workflowId,
         WorkflowExecutionEntity executionEntity,
         WorkflowTask task,
         CancellationToken cancellationToken)
@@ -480,13 +478,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         await Task.WhenAll(executions);
         return errors.ToList();
-    }
-
-    private static void ThrowIfAnyTaskFailed(IEnumerable<Exception> errors)
-    {
-        throw new FlowSynxException(new ErrorMessage(
-            (int)ErrorCode.WorkflowTaskExecutionsList,
-            string.Join(Environment.NewLine, errors.Select(e => e.Message))));
     }
 
     private async Task PauseForManualApprovalAsync(
@@ -642,14 +633,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             // Ready logic:
             // - Normal tasks: all deps completed successfully
             // - Failure handler tasks: one of RunOnFailureOf has failed
-            if (!hasFailureTriggers && depsSatisfied)
+            if ((!hasFailureTriggers && depsSatisfied) || (hasFailureTriggers && failureTriggered))
             {
-                // Normal task ready
-                ready.Add(taskName);
-            }
-            else if (hasFailureTriggers && failureTriggered)
-            {
-                // Failure handler ready
                 ready.Add(taskName);
             }
         }
