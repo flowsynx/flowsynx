@@ -27,6 +27,7 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
             ErrorStrategy.Retry => CreateRetry(errorHandling.RetryPolicy),
             ErrorStrategy.Skip => new SkipStrategy(_logger),
             ErrorStrategy.Abort => new AbortStrategy(_logger),
+            ErrorStrategy.TriggerTask => CreateTriggerTask(errorHandling.TriggerPolicy),
             _ => throw new ArgumentException(_localization.Get("Workflow_ErrorHandlingStratgeyFactory_UnknownErrorHandlingStrategy", errorHandling?.Strategy))
         };
     }
@@ -53,5 +54,16 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
         };
 
         return new RetryStrategy(retryPolicy.MaxRetries, backoff, _logger);
+    }
+
+    private IErrorHandlingStrategy CreateTriggerTask(TriggerPolicy? triggerPolicy)
+    {
+        if (triggerPolicy is null)
+            throw new ArgumentException(_localization.Get("Workflow_ErrorHandlingStratgeyFactory_MissingTriggerPolicy"));
+
+        if (string.IsNullOrWhiteSpace(triggerPolicy.TaskName))
+            throw new ArgumentException(_localization.Get("Workflow_ErrorHandlingStratgeyFactory_TriggerTaskNameRequired"));
+
+        return new TriggerTaskStrategy(triggerPolicy.TaskName, triggerPolicy.SkipCurrentTaskAfterTrigger, _logger);
     }
 }

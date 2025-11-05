@@ -30,7 +30,8 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         return new ErrorHandling
         {
             Strategy = taskHandling.Strategy ?? defaultHandling.Strategy,
-            RetryPolicy = MergeRetryPolicy(taskHandling.RetryPolicy, defaultHandling.RetryPolicy ?? new RetryPolicy())
+            RetryPolicy = MergeRetryPolicy(taskHandling.RetryPolicy, defaultHandling.RetryPolicy ?? new RetryPolicy()),
+            TriggerPolicy = MergeTriggerPolicy(taskHandling.TriggerPolicy, defaultHandling.TriggerPolicy)
         };
     }
 
@@ -46,6 +47,21 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
             InitialDelay = IsPositive(taskPolicy.InitialDelay) ? taskPolicy.InitialDelay : defaultPolicy.InitialDelay,
             MaxDelay = IsPositive(taskPolicy.MaxDelay) ? taskPolicy.MaxDelay : defaultPolicy.MaxDelay,
             BackoffCoefficient = IsPositive(taskPolicy.BackoffCoefficient) ? taskPolicy.BackoffCoefficient : defaultPolicy.BackoffCoefficient
+        };
+    }
+
+    private static TriggerPolicy? MergeTriggerPolicy(TriggerPolicy? taskPolicy, TriggerPolicy? defaultPolicy)
+    {
+        if (taskPolicy is null)
+            return defaultPolicy;
+
+        if (defaultPolicy is null)
+            return taskPolicy;
+
+        return new TriggerPolicy
+        {
+            TaskName = string.IsNullOrWhiteSpace(taskPolicy.TaskName) ? defaultPolicy.TaskName : taskPolicy.TaskName,
+            SkipCurrentTaskAfterTrigger = taskPolicy.SkipCurrentTaskAfterTrigger
         };
     }
 

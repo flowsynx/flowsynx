@@ -76,5 +76,8 @@
   "Workflow_Schema_FetchFailed": "Failed to fetch workflow schema. Status code '{0}' from '{1}'.",
   "Workflow_Schema_InvalidSchemaPayload": "Schema content is invalid: {0}",
   "Workflow_Schema_ValidationFailed": "Workflow definition failed schema validation: {0}",
-  "Workflow_Schema_InvalidJsonPayload": "Workflow definition contains invalid JSON: {0}"
+  "Workflow_Schema_InvalidJsonPayload": "Workflow definition contains invalid JSON: {0}",
+  "Workflow_ErrorHandlingStratgeyFactory_MissingTriggerPolicy": "Missing trigger policy configuration for the error handling strategy.",
+  "Workflow_ErrorHandlingStratgeyFactory_TriggerTaskNameRequired": "Trigger task name is required for the trigger policy.",
+  "Workflow_TriggerTaskStrategy_Handle": "Task '{0}' has failed; task '{1}' will be triggered in accordance with the defined error handling strategy."
 }

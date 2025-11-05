@@ -3,5 +3,6 @@
 public class ErrorHandling
 {
     public ErrorStrategy? Strategy { get; set; } = ErrorStrategy.Abort;
+    public TriggerPolicy? TriggerPolicy { get; set; }
     public RetryPolicy? RetryPolicy { get; set; } = new RetryPolicy();
 }

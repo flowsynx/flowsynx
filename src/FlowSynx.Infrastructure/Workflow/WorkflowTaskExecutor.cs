@@ -25,6 +25,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     private readonly ISystemClock _systemClock;
     private readonly ILocalization _localization;
     private readonly IEventPublisher _eventPublisher;
+    private readonly ITriggeredTaskQueue _triggeredTaskQueue;
 
     public WorkflowTaskExecutor(
         ILogger<WorkflowTaskExecutor> logger,
@@ -34,7 +35,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         IWorkflowTaskExecutionService workflowTaskExecutionService,
         ISystemClock systemClock,
         ILocalization localization,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        ITriggeredTaskQueue triggeredTaskQueue)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _pluginTypeService = pluginTypeService ?? throw new ArgumentNullException(nameof(pluginTypeService));
@@ -44,6 +46,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
         _localization = localization ?? throw new ArgumentNullException(nameof(localization));
         _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
+        _triggeredTaskQueue = triggeredTaskQueue ?? throw new ArgumentNullException(nameof(triggeredTaskQueue));
     }
 
     public async Task<object?> ExecuteAsync(
@@ -134,6 +137,14 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             }
 
             var result = await retryStrategy.HandleAsync(errorContext, token);
+
+            if (result?.ShouldTriggerTask == true && !string.IsNullOrWhiteSpace(result.TaskToTrigger))
+            {
+                _triggeredTaskQueue.Enqueue(taskExecution.WorkflowExecutionId, result.TaskToTrigger);
+                _logger.LogInformation("Triggered task '{TaskToTrigger}' due to error in '{TaskName}'.",
+                    result.TaskToTrigger, task.Name);
+            }
+
             if (result?.ShouldRetry == true)
             {
                 await UpdateTaskStatusAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);

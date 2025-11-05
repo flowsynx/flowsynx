@@ -4,5 +4,6 @@ public enum ErrorStrategy
 {
     Retry,
     Skip,
-    Abort
+    Abort,
+    TriggerTask
 }

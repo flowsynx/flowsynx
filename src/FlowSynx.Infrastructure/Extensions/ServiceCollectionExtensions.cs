@@ -65,7 +65,8 @@ public static class ServiceCollectionExtensions
             .AddScoped<IManualApprovalService, ManualApprovalService>()
             .AddSingleton<IWorkflowHttpListener, InMemoryWorkflowHttpListener>()
             .AddScoped<IWorkflowTriggerProcessor, WorkflowTimeTriggerProcessor>()
-            .AddScoped<IWorkflowTriggerProcessor, WorkflowHttpTriggerProcessor>();
+            .AddScoped<IWorkflowTriggerProcessor, WorkflowHttpTriggerProcessor>()
+            .AddSingleton<ITriggeredTaskQueue, TriggeredTaskQueue>();
 
         return services;
     }
