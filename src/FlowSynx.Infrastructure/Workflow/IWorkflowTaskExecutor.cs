@@ -5,7 +5,7 @@ namespace FlowSynx.Infrastructure.Workflow;
 
 public interface IWorkflowTaskExecutor
 {
-    Task<object?> ExecuteAsync(
+    Task<TaskOutput> ExecuteAsync(
         WorkflowExecutionContext executionContext,
         WorkflowTask task, 
         IExpressionParser parser,

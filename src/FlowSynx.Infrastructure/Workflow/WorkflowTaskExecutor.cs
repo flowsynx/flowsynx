@@ -49,7 +49,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _triggeredTaskQueue = triggeredTaskQueue ?? throw new ArgumentNullException(nameof(triggeredTaskQueue));
     }
 
-    public async Task<object?> ExecuteAsync(
+    public async Task<TaskOutput> ExecuteAsync(
         WorkflowExecutionContext executionContext,
         WorkflowTask task,
         IExpressionParser parser,
@@ -81,7 +81,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         }
     }
 
-    public async Task<object?> ExecuteTaskAsync(
+    public async Task<TaskOutput> ExecuteTaskAsync(
         string userId,
         WorkflowTask task,
         WorkflowTaskExecutionEntity taskExecution,
@@ -110,7 +110,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             
             await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' completed.", task.Name);
-            return output;
+            return TaskOutput.Success(output);
         }
         catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
         {
@@ -156,13 +156,13 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             {
                 await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
                 _logger.LogWarning("Workflow task '{TaskName}' skipped.", task.Name);
-                return null;
+                return TaskOutput.Success(null);
             }
 
             await FailTaskAsync(userId, taskExecution, ex, globalCancellationToken, task.Name);
         }
 
-        return null; // unreachable, all branches throw
+        return TaskOutput.Success(null); // unreachable, all branches throw
     }
 
     private async Task FailTaskAsync(

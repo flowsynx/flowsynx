@@ -7,6 +7,7 @@ public class WorkflowTask(string name)
     public object? Type { get; set; }
     public Dictionary<string, object?>? Parameters { get; set; } = new();
     public ErrorHandling? ErrorHandling { get; set; }
+    public List<string> RunOnFailureOf { get; set; } = new();
     public ManualApproval? ManualApproval { get; set; }
     public int? Timeout { get; set; }
     public List<string> Dependencies { get; set; } = new();

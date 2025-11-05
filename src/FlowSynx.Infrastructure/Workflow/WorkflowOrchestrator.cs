@@ -35,7 +35,9 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private readonly ILocalization _localization;
     private readonly IEventPublisher _eventPublisher;
     private readonly ITriggeredTaskQueue _triggeredTaskQueue;
-    private ConcurrentDictionary<string, object?> _taskOutputs = new();
+
+    // New typed outputs: status + result
+    private ConcurrentDictionary<string, TaskOutput> _taskOutputs = new();
 
     public WorkflowOrchestrator(
         ILogger<WorkflowOrchestrator> logger,
@@ -228,23 +230,47 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         var pending = new HashSet<string>(taskMap.Keys);
         var context = new WorkflowExecutionContext(userId, workflowId, executionEntity.Id);
 
+        var hadFailures = false;
+
         while (pending.Any())
         {
             var readyTasks = GetReadyTasks(executionEntity.Id, taskMap, pending);
             if (!readyTasks.Any())
                 return await HandleFailedDependenciesAsync(executionEntity, cancellationToken);
 
-            var parser = _parserFactory.CreateParser(_taskOutputs.ToDictionary(), definition.Variables);
+            // Pass only the actual results to the parser
+            var parserInputs = _taskOutputs.ToDictionary(kv => kv.Key, kv => kv.Value.Result);
+            var parser = _parserFactory.CreateParser(parserInputs, definition.Variables);
+
             var approvedTasks = await GetApprovedTasksAsync(userId, workflowId, executionEntity, readyTasks, taskMap, cancellationToken);
 
             if (!approvedTasks.Any())
                 return WorkflowExecutionStatus.Paused;
 
-            var taskErrors = await ExecuteApprovedTasksAsync(context, approvedTasks, parser, definition.Configuration, cancellationToken, registeredToken);
+            var taskErrors = await ExecuteApprovedTasksAsync(
+                context, 
+                approvedTasks, 
+                parser, 
+                definition.Configuration, 
+                cancellationToken, 
+                registeredToken);
+
             if (taskErrors.Any())
-                return await HandleTaskErrorsAsync(executionEntity, taskErrors, cancellationToken);
+            {
+                hadFailures = true;
+                _logger.LogWarning("Errors occurred in parallel task execution: {Errors}",
+                    string.Join(", ", taskErrors.Select(e => e.Message)));
+            }
 
             UpdatePendingTasks(pending, readyTasks, executionEntity.Id);
+        }
+
+        if (hadFailures)
+        {
+            await UpdateWorkflowAsFailedAsync(executionEntity, cancellationToken);
+            _workflowCancellationRegistry.Remove(userId, workflowId, executionEntity.Id);
+            _triggeredTaskQueue.Clear(executionEntity.Id);
+            return WorkflowExecutionStatus.Failed;
         }
 
         return await CompleteWorkflowAsync(userId, workflowId, executionEntity, cancellationToken);
@@ -255,7 +281,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         Dictionary<string, WorkflowTask> taskMap, 
         HashSet<string> pending)
     {
-        var readyTasks = FindExecutableTasks(taskMap, pending);
+        var readyTasks = FindExecutableTasks(taskMap, pending).ToList();
         var triggered = DequeueTriggeredTasks(executionId);
         return readyTasks.Union(triggered).ToList();
     }
@@ -359,19 +385,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return WorkflowExecutionStatus.Failed;
     }
 
-    private async Task<WorkflowExecutionStatus> HandleTaskErrorsAsync(
-        WorkflowExecutionEntity executionEntity,
-        List<Exception> taskErrors,
-        CancellationToken cancellationToken)
-    {
-        _logger.LogError("Errors occurred in parallel task execution: {Errors}",
-            string.Join(", ", taskErrors.Select(e => e.Message)));
-
-        await UpdateWorkflowAsFailedAsync(executionEntity, cancellationToken);
-        _triggeredTaskQueue.Clear(executionEntity.Id);
-        return WorkflowExecutionStatus.Failed;
-    }
-
     private void UpdatePendingTasks(HashSet<string> pending, IEnumerable<string> completed, Guid executionId)
     {
         foreach (var taskId in completed)
@@ -456,6 +469,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             }
             catch (Exception ex)
             {
+                _taskOutputs[task.Name] = TaskOutput.Failure(ex);
                 errors.Add(new Exception(_localization.Get("WorkflowOrchestrator_TaskFailed", task.Name, ex.Message), ex));
             }
             finally
@@ -511,7 +525,12 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     {
         if (_taskOutputs == null) return;
 
-        await _resultStorageProvider.SaveResultAsync(context, _taskOutputs, cancellationToken);
+        // Persist as ConcurrentDictionary<string, object?> with TaskOutput objects as values
+        var toPersist = new ConcurrentDictionary<string, object?>(
+            _taskOutputs.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value))
+        );
+
+        await _resultStorageProvider.SaveResultAsync(context, toPersist, cancellationToken);
         _logger.LogInformation("Saved result for workflow '{WorkflowExecutionId}' to storage", context.WorkflowExecutionId);
     }
 
@@ -520,8 +539,28 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         CancellationToken cancellationToken)
     {
         var result = await _resultStorageProvider.LoadResultAsync(context, cancellationToken);
-        _taskOutputs = result ?? new ConcurrentDictionary<string, object?>();
+
+        if (result == null)
+        {
+            _taskOutputs = new ConcurrentDictionary<string, TaskOutput>();
+        }
+        else
+        {
+            _taskOutputs = new ConcurrentDictionary<string, TaskOutput>(
+                result.Select(kv => new KeyValuePair<string, TaskOutput>(kv.Key, MapToTaskOutput(kv.Value)))
+            );
+        }
+
         _logger.LogInformation("Result for workflow '{WorkflowExecutionId}' are restored", context.WorkflowExecutionId);
+    }
+
+    private TaskOutput MapToTaskOutput(object? value)
+    {
+        // If it's already our new type
+        if (value is TaskOutput to) return to;
+
+        // Otherwise treat as successful result payload
+        return TaskOutput.Success(value);
     }
 
     private async Task UpdateWorkflowAsRunningAsync(
@@ -578,28 +617,41 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         await _eventPublisher.PublishToUserAsync(execution.UserId, "WorkflowExecutionUpdated", update, cancellationToken);
     }
 
-    //private List<string> FindExecutableTasks(Dictionary<string, WorkflowTask> taskMap, HashSet<string> pending) =>
-    //    pending.Where(t => taskMap[t].Dependencies.All(d => _taskOutputs.ContainsKey(d))).ToList();
-
-    private IEnumerable<string> FindExecutableTasks(Dictionary<string, WorkflowTask> taskMap, HashSet<string> pending)
+    private IEnumerable<string> FindExecutableTasks(
+        Dictionary<string, WorkflowTask> taskMap,
+        HashSet<string> pending)
     {
         var ready = new List<string>();
+
+        // Collect failed task names
+        var failedTasks = _taskOutputs
+            .Where(kv => kv.Value.Status == TaskOutputStatus.Failed)
+            .Select(kv => kv.Key)
+            .ToHashSet(StringComparer.Ordinal);
 
         foreach (var taskName in pending)
         {
             var task = taskMap[taskName];
 
-            // Task without dependencies is ready
-            if (task.Dependencies == null || task.Dependencies.Count == 0)
-            {
-                ready.Add(taskName);
-                continue;
-            }
+            var hasDeps = task.Dependencies is { Count: > 0 };
+            var depsSatisfied = !hasDeps || task.Dependencies.All(dep => _taskOutputs.ContainsKey(dep));
 
-            // Task is ready if all dependencies are executed
-            var allDepsDone = task.Dependencies.All(dep => _taskOutputs.ContainsKey(dep));
-            if (allDepsDone)
+            var hasFailureTriggers = task.RunOnFailureOf is { Count: > 0 };
+            var failureTriggered = hasFailureTriggers && task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
+
+            // Ready logic:
+            // - Normal tasks: all deps completed successfully
+            // - Failure handler tasks: one of RunOnFailureOf has failed
+            if (!hasFailureTriggers && depsSatisfied)
+            {
+                // Normal task ready
                 ready.Add(taskName);
+            }
+            else if (hasFailureTriggers && failureTriggered)
+            {
+                // Failure handler ready
+                ready.Add(taskName);
+            }
         }
 
         return ready;

@@ -61,7 +61,6 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         return new TriggerPolicy
         {
             TaskName = string.IsNullOrWhiteSpace(taskPolicy.TaskName) ? defaultPolicy.TaskName : taskPolicy.TaskName,
-            SkipCurrentTaskAfterTrigger = taskPolicy.SkipCurrentTaskAfterTrigger
         };
     }
 

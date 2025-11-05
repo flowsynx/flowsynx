@@ -64,6 +64,6 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
         if (string.IsNullOrWhiteSpace(triggerPolicy.TaskName))
             throw new ArgumentException(_localization.Get("Workflow_ErrorHandlingStratgeyFactory_TriggerTaskNameRequired"));
 
-        return new TriggerTaskStrategy(triggerPolicy.TaskName, triggerPolicy.SkipCurrentTaskAfterTrigger, _logger);
+        return new TriggerTaskStrategy(triggerPolicy.TaskName, _logger);
     }
 }

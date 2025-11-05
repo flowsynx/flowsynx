@@ -3,5 +3,4 @@
 public class TriggerPolicy
 {
     public required string TaskName { get; set; }
-    public bool SkipCurrentTaskAfterTrigger { get; set; } = true;
 }
