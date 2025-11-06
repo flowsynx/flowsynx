@@ -1,0 +1,5 @@
+http://localhost:6262/
+http://localhost:6262
+http://localhost:6262/version
+http://localhost:6262/workflows
+http://localhost:6262/workflows/<UUID>/executions
