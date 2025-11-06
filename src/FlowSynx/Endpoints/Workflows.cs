@@ -12,10 +12,15 @@ namespace FlowSynx.Endpoints;
 
 public class Workflows : EndpointGroupBase
 {
-    public override void Map(WebApplication app, string rateLimitPolicy)
+    /// <summary>
+    /// Register the workflow endpoints and attach the configured rate-limiting policy.
+    /// </summary>
+    /// <param name="app">Application builder used to wire up the workflow routes.</param>
+    /// <param name="rateLimitPolicyName">Named rate-limiting policy applied to the workflow group.</param>
+    public override void Map(WebApplication app, string rateLimitPolicyName)
     {
         var group = app.MapGroup(this)
-                       .RequireRateLimiting(rateLimitPolicy);
+                       .RequireRateLimiting(rateLimitPolicyName);
 
         #region workflow
         group.MapGet("", GetAllWorkflows)

@@ -269,12 +269,12 @@ docker compose up -d
 **This will:**
 - Start FlowSynx and a PostgreSQL database
 - Automatically configure admin credentials (admin / admin)
-- Expose the FlowSynx API at http://localhost:6262
+- Expose the FlowSynx API at `http://localhost:6262` (local-only access)
 
-Verify it’s running::
+Verify it's running:
 
-```
-http://localhost:6262/version
+```bash
+curl http://localhost:6262/version
 ```
 
 ### Option 2 — Use a Pre-Built Binary
