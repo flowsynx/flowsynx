@@ -1,21 +1,23 @@
-﻿using Microsoft.OpenApi.Models;
-using System.Text.Json.Serialization;
-using FlowSynx.Application.Configuration;
-using FlowSynx.Application.Models;
-using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain.Log;
-using FlowSynx.Infrastructure.PluginHost;
-using FlowSynx.Persistence.SQLite.Contexts;
-using FlowSynx.HealthCheck;
-using FlowSynx.Services;
-using FlowSynx.Application.Services;
-using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Security;
+﻿using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Configuration.Database;
 using FlowSynx.Application.Localizations;
-using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
-using FlowSynx.Persistence.Postgres.Extensions;
+using FlowSynx.Application.Models;
+using FlowSynx.Application.Services;
+using FlowSynx.Domain.Log;
+using FlowSynx.HealthCheck;
 using FlowSynx.Hubs;
+using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Persistence.Core.Postgres.Extensions;
+using FlowSynx.Persistence.Core.Sqlite.Extensions;
+using FlowSynx.Persistence.Logging.Sqlite.Contexts;
+using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Security;
+using FlowSynx.Services;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
 
 namespace FlowSynx.Extensions;
 
@@ -429,7 +431,7 @@ public static class ServiceCollectionExtensions
             {
                 case "durable":
                     logger.LogInformation("Initializing Durable Workflow Queue");
-                    return services.AddDurableWorkflowQueueService();
+                    return services.AddPostgreDurableWorkflowQueueService();
                 case "inmemory":
                     logger.LogInformation("Initializing InMemory Workflow Queue");
                     return services.AddInMemoryWorkflowQueueService();
@@ -443,5 +445,87 @@ public static class ServiceCollectionExtensions
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
             throw new FlowSynxException(errorMessage);
         }
+    }
+
+    public static IServiceCollection AddPersistence(
+    this IServiceCollection services,
+    IConfiguration configuration)
+    {
+        var dbConfig = Load(configuration);
+        var activeConnection = dbConfig.GetActiveConnection();
+
+        services.AddSingleton(dbConfig);
+        services.AddSingleton(activeConnection);
+
+        switch (activeConnection.Provider.ToLowerInvariant())
+        {
+            case "postgres":
+                services.AddPostgresPersistenceLayer(activeConnection);
+                break;
+
+            case "sqlite":
+                services.AddSqlitePersistenceLayer(activeConnection);
+                break;
+
+            default:
+                throw new InvalidOperationException(
+                    $"Unsupported database provider '{activeConnection.Provider}'.");
+        }
+
+        return services;
+    }
+
+    private static DatabaseConfiguration Load(IConfiguration configuration)
+    {
+        var section = configuration.GetSection("Databases");
+
+        if (!section.Exists() || !section.GetChildren().Any())
+        {
+            return new DatabaseConfiguration
+            {
+                Default = "SQLite",
+                Connections = new Dictionary<string, DatabaseConnection>
+                {
+                    ["SQLite"] = new SqliteDatabaseConnection
+                    {
+                        Provider = "SQLite",
+                        FilePath = "flowsynx.db"
+                    }
+                }
+            };
+        }
+
+        var config = new DatabaseConfiguration
+        {
+            Default = section.GetValue<string>("Default") ?? "SQLite"
+        };
+
+        var connectionsSection = section.GetSection("Connections");
+        if (!connectionsSection.Exists() || !connectionsSection.GetChildren().Any())
+        {
+            config.Connections["SQLite"] = new SqliteDatabaseConnection
+            {
+                Provider = "SQLite",
+                FilePath = "flowsynx.db"
+            };
+
+            return config;
+        }
+
+        foreach (var child in connectionsSection.GetChildren())
+        {
+            var provider = child.GetValue<string>("Provider") ?? "SQLite";
+            DatabaseConnection connection = provider.ToLowerInvariant() switch
+            {
+                "postgres" => child.Get<PostgreDatabaseConnection>()!,
+                "sqlite" => child.Get<SqliteDatabaseConnection>()!,
+                _ => throw new InvalidOperationException($"Unsupported provider: {provider}")
+            };
+
+            connection.Provider = provider;
+            config.Connections[child.Key] = connection;
+        }
+
+        return config;
     }
 }

@@ -4,8 +4,7 @@ using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.Secrets;
 using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
-using FlowSynx.Persistence.Postgres.Extensions;
-using FlowSynx.Persistence.SQLite.Extensions;
+using FlowSynx.Persistence.Logging.Sqlite.Extensions;
 using FlowSynx.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -80,7 +79,7 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
-        .AddPostgresPersistenceLayer(config)
+        .AddPersistence(config)
         .AddWorkflowQueueService(config)
         .AddEndpoint(config)
         .AddPluginsPath()

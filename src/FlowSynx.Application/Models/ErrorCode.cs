@@ -157,6 +157,10 @@ public enum ErrorCode
     SecretConfigurationInvalidProviderName = 2701,
     #endregion
 
+    #region Database
+    DatabaseProviderNotSupported           = 2801,
+    #endregion
+
     #region Unknown error codes
     UnknownError = 9999
     #endregion
