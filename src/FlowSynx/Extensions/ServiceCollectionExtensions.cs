@@ -477,18 +477,19 @@ public static class ServiceCollectionExtensions
 
     private static DatabaseConfiguration Load(IConfiguration configuration)
     {
+        const string SQLite = "SQLite";
         var section = configuration.GetSection("Databases");
 
         if (!section.Exists() || !section.GetChildren().Any())
         {
             return new DatabaseConfiguration
             {
-                Default = "SQLite",
+                Default = SQLite,
                 Connections = new Dictionary<string, DatabaseConnection>
                 {
-                    ["SQLite"] = new SqliteDatabaseConnection
+                    [SQLite] = new SqliteDatabaseConnection
                     {
-                        Provider = "SQLite",
+                        Provider = SQLite,
                         FilePath = "flowsynx.db"
                     }
                 }
@@ -497,15 +498,15 @@ public static class ServiceCollectionExtensions
 
         var config = new DatabaseConfiguration
         {
-            Default = section.GetValue<string>("Default") ?? "SQLite"
+            Default = section.GetValue<string>("Default") ?? SQLite
         };
 
         var connectionsSection = section.GetSection("Connections");
         if (!connectionsSection.Exists() || !connectionsSection.GetChildren().Any())
         {
-            config.Connections["SQLite"] = new SqliteDatabaseConnection
+            config.Connections[SQLite] = new SqliteDatabaseConnection
             {
-                Provider = "SQLite",
+                Provider = SQLite,
                 FilePath = "flowsynx.db"
             };
 
@@ -514,7 +515,7 @@ public static class ServiceCollectionExtensions
 
         foreach (var child in connectionsSection.GetChildren())
         {
-            var provider = child.GetValue<string>("Provider") ?? "SQLite";
+            var provider = child.GetValue<string>("Provider") ?? SQLite;
             DatabaseConnection connection = provider.ToLowerInvariant() switch
             {
                 "postgres" => child.Get<PostgreDatabaseConnection>()!,

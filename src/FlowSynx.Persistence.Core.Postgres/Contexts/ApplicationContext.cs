@@ -12,6 +12,7 @@ using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Domain;
 using FlowSynx.Application.Serialization;
+using FlowSynx.Persistence.Core.Common.Contexts;
 
 namespace FlowSynx.Persistence.Core.Postgres.Contexts;
 

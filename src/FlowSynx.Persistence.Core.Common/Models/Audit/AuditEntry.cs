@@ -2,7 +2,7 @@
 using FlowSynx.Domain.Audit;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace FlowSynx.Persistence.Core.Sqlite.Models.Audit;
+namespace FlowSynx.Persistence.Core.Common.Models.Audit;
 
 public class AuditEntry(EntityEntry entry, string userId, string tableName)
 {

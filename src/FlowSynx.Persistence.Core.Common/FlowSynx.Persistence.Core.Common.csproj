@@ -20,7 +20,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
-		<ProjectReference Include="..\FlowSynx.Persistence.Core.Common\FlowSynx.Persistence.Core.Common.csproj" />
 	</ItemGroup>
 
 </Project>

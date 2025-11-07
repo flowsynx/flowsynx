@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Domain.Audit;
-using FlowSynx.Persistence.Core.Postgres.Models.Audit;
+using FlowSynx.Persistence.Core.Common.Models.Audit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace FlowSynx.Persistence.Core.Postgres.Contexts;
+namespace FlowSynx.Persistence.Core.Common.Contexts;
 
 public abstract class AuditableContext(DbContextOptions options) : DbContext(options)
 {
