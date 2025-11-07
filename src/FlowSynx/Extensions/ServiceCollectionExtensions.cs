@@ -319,8 +319,7 @@ public static class ServiceCollectionExtensions
             var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, "The '--start' argument is required.");
             logger.LogError(errorMessage.ToString());
 
-            // if the console closes immediately, the output may not be visible.
-            // So, added await Task.Delay(500) here;
+            // Brief delay to ensure the error message is visible before exiting
             Task.Delay(500).Wait();
 
             Environment.Exit(1);
