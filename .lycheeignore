@@ -1,5 +1,6 @@
-http://localhost:6262/
+# Local development endpoints documented in README; they are intentionally unreachable during CI.
 http://localhost:6262
+http://localhost:6262/
 http://localhost:6262/version
 http://localhost:6262/workflows
 http://localhost:6262/workflows/<UUID>/executions
