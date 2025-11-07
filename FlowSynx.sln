@@ -17,7 +17,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Domain", "src\Flow
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure", "src\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj", "{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Persistence.Core.Postgres", "src\FlowSynx.Persistence.Core.Postgres\FlowSynx.Persistence.Core.Postgres.csproj", "{C9ABAD15-0A7A-4861-8055-027A0461BDAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Persistence.Postgres", "src\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj", "{C9ABAD15-0A7A-4861-8055-027A0461BDAC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Logging.Sqlite", "src\FlowSynx.Persistence.Logging.Sqlite\FlowSynx.Persistence.Logging.Sqlite.csproj", "{6CF87669-59CF-4CBF-94F4-0EE562E661D0}"
 EndProject
@@ -31,9 +31,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Loggin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.UnitTests", "tests\FlowSynx.UnitTests\FlowSynx.UnitTests.csproj", "{FFCDA942-678A-4D98-A67F-1308D1F89D15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Core.Sqlite", "src\FlowSynx.Persistence.Core.Sqlite\FlowSynx.Persistence.Core.Sqlite.csproj", "{9CA701F0-B455-BC9F-1E20-5552E2842019}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Sqlite", "src\FlowSynx.Persistence.Sqlite\FlowSynx.Persistence.Sqlite.csproj", "{9CA701F0-B455-BC9F-1E20-5552E2842019}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Core.Common", "src\FlowSynx.Persistence.Core.Common\FlowSynx.Persistence.Core.Common.csproj", "{85AEAD00-E803-F74D-63A0-302A94CAAA59}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Shared", "src\FlowSynx.Persistence.Shared\FlowSynx.Persistence.Shared.csproj", "{85AEAD00-E803-F74D-63A0-302A94CAAA59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
