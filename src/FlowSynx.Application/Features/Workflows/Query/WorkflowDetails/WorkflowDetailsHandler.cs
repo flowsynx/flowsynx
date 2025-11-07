@@ -52,7 +52,7 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            var workflow = await _workflowService.Get(_currentUserService.UserId(), workflowId, cancellationToken);
             if (workflow is null)
             {
                 var message = _localization.Get("Feature_Workflow_Details_WorkflowNotFound", request.WorkflowId);
@@ -85,3 +85,4 @@ internal class WorkflowDetailsHandler : IRequestHandler<WorkflowDetailsRequest, 
         }
     }
 }
+

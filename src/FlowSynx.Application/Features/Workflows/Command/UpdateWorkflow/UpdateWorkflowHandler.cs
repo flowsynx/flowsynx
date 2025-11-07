@@ -50,7 +50,7 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            var workflow = await _workflowService.Get(_currentUserService.UserId(), workflowId, cancellationToken);
             if (workflow == null)
             {
                 var message = _localization.Get("Feature_Workflow_Update_WorkflowNotFound", request.WorkflowId);
@@ -86,7 +86,7 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
 
             if (!string.Equals(workflow.Name, workflowDefinition.Name, StringComparison.OrdinalIgnoreCase))
             {
-                var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId, workflowDefinition.Name, cancellationToken);
+                var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId(), workflowDefinition.Name, cancellationToken);
                 if (isWorkflowExist)
                 {
                     var workflowExistMessage = _localization.Get("Features_Workflow_Update_WorkflowAlreadyExists", workflowDefinition.Name);
@@ -109,3 +109,4 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
         }
     }
 }
+

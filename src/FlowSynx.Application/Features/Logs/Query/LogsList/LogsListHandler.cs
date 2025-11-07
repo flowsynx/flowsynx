@@ -31,7 +31,7 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, PaginatedResul
         {
             _currentUserService.ValidateAuthentication();
 
-            var predicate = PredicateBuilder.Create<LogEntity>(p => p.UserId == _currentUserService.UserId);
+            var predicate = PredicateBuilder.Create<LogEntity>(p => p.UserId == _currentUserService.UserId());
 
             if (!string.IsNullOrEmpty(request.Level))
                 predicate = predicate.And(p => p.Level == ToLogsLevel(request.Level));
@@ -85,3 +85,4 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, PaginatedResul
         return level;
     }
 }
+

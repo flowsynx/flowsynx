@@ -34,7 +34,7 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Paginate
         {
             _currentUserService.ValidateAuthentication();
 
-            var plugins = await _pluginService.All(_currentUserService.UserId, cancellationToken);
+            var plugins = await _pluginService.All(_currentUserService.UserId(), cancellationToken);
             var response = plugins.Select(p => new PluginsListResponse
             {
                 Id = p.Id,
@@ -61,3 +61,4 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Paginate
         }
     }
 }
+

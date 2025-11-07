@@ -35,7 +35,7 @@ internal class SummaryHandler : IRequestHandler<SummaryRequest, Result<SummaryRe
         try
         {
             _currentUserService.ValidateAuthentication();
-            var userId = _currentUserService.UserId;
+            var userId = _currentUserService.UserId();
 
             var response = new SummaryResponse()
             {

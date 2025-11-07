@@ -38,7 +38,7 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
         {
             _currentUserService.ValidateAuthentication();
 
-            var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId, cancellationToken);
+            var pluginConfigs = await _pluginConfigurationService.All(_currentUserService.UserId(), cancellationToken);
             var response = pluginConfigs.Select(config => new PluginConfigListResponse
             {
                 Id = config.Id,
@@ -67,3 +67,4 @@ internal class PluginConfigListHandler : IRequestHandler<PluginConfigListRequest
         }
     }
 }
+

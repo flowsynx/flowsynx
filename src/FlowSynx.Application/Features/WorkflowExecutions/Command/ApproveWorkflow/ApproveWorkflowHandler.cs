@@ -45,10 +45,10 @@ internal class ApproveWorkflowHandler : IRequestHandler<ApproveWorkflowRequest, 
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
             var workflowExecutionApprovalId = Guid.Parse(request.WorkflowExecutionApprovalId);
 
-            await _manualApprovalService.ApproveAsync(_currentUserService.UserId, workflowId, 
+            await _manualApprovalService.ApproveAsync(_currentUserService.UserId(), workflowId, 
                 workflowExecutionId, workflowExecutionApprovalId, cancellationToken);
 
-            var result = await _workflowOrchestrator.ResumeWorkflowAsync(_currentUserService.UserId, workflowId, 
+            var result = await _workflowOrchestrator.ResumeWorkflowAsync(_currentUserService.UserId(), workflowId, 
                 workflowExecutionId, cancellationToken);
 
             if (result == Domain.Workflow.WorkflowExecutionStatus.Paused)

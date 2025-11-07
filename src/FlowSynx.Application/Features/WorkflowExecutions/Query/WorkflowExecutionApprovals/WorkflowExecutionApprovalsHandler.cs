@@ -43,7 +43,7 @@ internal class WorkflowExecutionApprovalsHandler : IRequestHandler<WorkflowExecu
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
-            var workflowApprovals = await _workflowApprovalService.GetPendingApprovalsAsync(_currentUserService.UserId, 
+            var workflowApprovals = await _workflowApprovalService.GetPendingApprovalsAsync(_currentUserService.UserId(), 
                 workflowId, workflowExecutionId, cancellationToken);
 
             var response = workflowApprovals.Select(l => new WorkflowExecutionApprovalsResponse
@@ -77,3 +77,4 @@ internal class WorkflowExecutionApprovalsHandler : IRequestHandler<WorkflowExecu
         }
     }
 }
+

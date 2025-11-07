@@ -51,7 +51,7 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
         {
             _currentUserService.ValidateAuthentication();
 
-            var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, 
+            var pluginEntity = await _pluginService.Get(_currentUserService.UserId(), request.Type, 
                 request.Version, cancellationToken);
             if (pluginEntity is null)
             {
@@ -67,7 +67,7 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             if (!isPluginSpecificationsValid.Valid)
                 return await Result<AddPluginConfigResponse>.FailAsync(isPluginSpecificationsValid.Messages!);
             
-            var isPluginConfigurationExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, 
+            var isPluginConfigurationExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId(), 
                 request.Name, cancellationToken);
             if (isPluginConfigurationExist)
             {
@@ -80,7 +80,7 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
             var pluginConfiguration = new PluginConfigurationEntity
             {
                 Id = Guid.NewGuid(),
-                UserId = _currentUserService.UserId,
+                UserId = _currentUserService.UserId(),
                 Name = request.Name,
                 Type = request.Type,
                 Version = request.Version,

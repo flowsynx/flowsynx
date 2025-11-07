@@ -41,7 +41,7 @@ internal class CancelWorkflowHandler : IRequestHandler<CancelWorkflowRequest, Re
             var workflowId = Guid.Parse(request.WorkflowId);
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
 
-            _workflowCancellationRegistry.Cancel(_currentUserService.UserId, workflowId, workflowExecutionId);
+            _workflowCancellationRegistry.Cancel(_currentUserService.UserId(), workflowId, workflowExecutionId);
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_WorkflowExecution_CancelledSuccessfully", workflowId));
         }
         catch (FlowSynxException ex)
