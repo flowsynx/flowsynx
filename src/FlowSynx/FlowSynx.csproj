@@ -46,8 +46,9 @@
 	<ItemGroup>
 		<ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
 		<ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
-		<ProjectReference Include="..\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
-		<ProjectReference Include="..\FlowSynx.Persistence.SQLite\FlowSynx.Persistence.SQLite.csproj" />
+		<ProjectReference Include="..\FlowSynx.Persistence.Core.Postgres\FlowSynx.Persistence.Core.Postgres.csproj" />
+		<ProjectReference Include="..\FlowSynx.Persistence.Core.Sqlite\FlowSynx.Persistence.Core.Sqlite.csproj" />
+		<ProjectReference Include="..\FlowSynx.Persistence.Logging.SQLite\FlowSynx.Persistence.Logging.Sqlite.csproj" />
 	</ItemGroup>
 
 	<Target Name="RemoveDevAppSettingsFromPublish" AfterTargets="ComputeFilesToPublish">
