@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\FlowSynx.Persistence.Logging.Sqlite\FlowSynx.Persistence.Logging.Sqlite.csproj" />
+    <ProjectReference Include="..\..\src\FlowSynx.Persistence\FlowSynx.Persistence.Logging.Sqlite\FlowSynx.Persistence.Logging.Sqlite.csproj" />
   </ItemGroup>
 
   <ItemGroup>
