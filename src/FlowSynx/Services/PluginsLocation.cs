@@ -22,7 +22,7 @@ public class PluginsLocation : IPluginsLocation
             return;
 
         logger.LogError("Base location not found");
-        throw new Exception(_localization.Get("FlowSynxLocationBaseLocationNotFound"));
+        throw new ArgumentException(_localization.Get("FlowSynxLocationBaseLocationNotFound"));
     }
 
     public string Path => GetPluginsPath();
