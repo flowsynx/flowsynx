@@ -39,7 +39,7 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
             _currentUserService.ValidateAuthentication();
 
             var pluginId = Guid.Parse(request.PluginId);
-            var plugin = await _pluginService.Get(_currentUserService.UserId, pluginId, cancellationToken);
+            var plugin = await _pluginService.Get(_currentUserService.UserId(), pluginId, cancellationToken);
             if (plugin is null)
             {
                 var message = _localization.Get("Features_Plugin_Details_PluginCouldNotBeFound", pluginId);

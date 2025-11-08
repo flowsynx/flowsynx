@@ -61,7 +61,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
 
             _workflowValidator.Validate(workflowDefinition);
 
-            var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId, workflowDefinition.Name, cancellationToken);
+            var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId(), workflowDefinition.Name, cancellationToken);
             if (isWorkflowExist)
             {
                 var workflowExistMessage = _localization.Get("Features_Workflow_Add_WorkflowAlreadyExists", workflowDefinition.Name);
@@ -73,7 +73,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
             var workflowEntity = new WorkflowEntity
             {
                 Id = Guid.NewGuid(),
-                UserId = _currentUserService.UserId,
+                UserId = _currentUserService.UserId(),
                 Name = workflowDefinition.Name,
                 Definition = request.Definition,
                 SchemaUrl = request.SchemaUrl
@@ -106,3 +106,4 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
         }
     }
 }
+

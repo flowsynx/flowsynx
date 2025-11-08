@@ -43,7 +43,7 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Pagina
         {
             _currentUserService.ValidateAuthentication();
 
-            var workflows = await _workflowService.All(_currentUserService.UserId, cancellationToken);
+            var workflows = await _workflowService.All(_currentUserService.UserId(), cancellationToken);
             var response = workflows.Select(workflow => new WorkflowListResponse
             {
                 Id = workflow.Id,
@@ -72,3 +72,4 @@ internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, Pagina
         }
     }
 }
+

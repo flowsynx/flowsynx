@@ -43,7 +43,7 @@ internal class WorkflowExecutionListHandler : IRequestHandler<WorkflowExecutionL
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var executions = await _workflowExecutionService.All(_currentUserService.UserId, 
+            var executions = await _workflowExecutionService.All(_currentUserService.UserId(), 
                 workflowId, cancellationToken);
 
             var response = executions.Select(execution => new WorkflowExecutionListResponse
@@ -73,3 +73,4 @@ internal class WorkflowExecutionListHandler : IRequestHandler<WorkflowExecutionL
         }
     }
 }
+

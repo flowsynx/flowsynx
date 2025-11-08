@@ -44,7 +44,7 @@ internal class UpdateWorkflowTriggerHandler : IRequestHandler<UpdateWorkflowTrig
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            var workflow = await _workflowService.Get(_currentUserService.UserId(), workflowId, cancellationToken);
             if (workflow == null)
             {
                 var message = _localization.Get("Feature_WorkflowTriggers_Update_WorkflowNotFound", request.WorkflowId);

@@ -44,7 +44,7 @@ internal class AddWorkflowTriggerHandler : IRequestHandler<AddWorkflowTriggerReq
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            var workflow = await _workflowService.Get(_currentUserService.UserId(), workflowId, cancellationToken);
             if (workflow == null)
             {
                 var message = _localization.Get("Feature_WorkflowTriggers_Add_WorkflowNotFound", request.WorkflowId);
@@ -54,7 +54,7 @@ internal class AddWorkflowTriggerHandler : IRequestHandler<AddWorkflowTriggerReq
             var workflowTriggerEntity = new WorkflowTriggerEntity
             {
                 Id = Guid.NewGuid(),
-                UserId = _currentUserService.UserId,
+                UserId = _currentUserService.UserId(),
                 WorkflowId = workflowId,
                 Type = request.Type,
                 Properties = request.Properties,

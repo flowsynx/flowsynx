@@ -20,7 +20,7 @@ public static class WorkflowHttpListenerExtensions
         {
             var userService = context.RequestServices.GetRequiredService<ICurrentUserService>();
             userService.ValidateAuthentication();
-            var userId = userService.UserId;
+            var userId = userService.UserId();
 
             var path = context.Request.Path.Value ?? "/";
             var method = context.Request.Method.ToUpperInvariant();
