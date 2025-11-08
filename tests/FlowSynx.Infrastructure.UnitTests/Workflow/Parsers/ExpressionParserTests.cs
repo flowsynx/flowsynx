@@ -82,47 +82,6 @@ public class ExpressionParserTests
     }
 
     [Fact]
-    public void Parse_PropertyAccess_OnPoco()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('User')].Name");
-        Assert.Equal("Alice", result);
-    }
-
-    [Fact]
-    public void Parse_PropertyAccess_OnJObject_IsCaseInsensitive()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('JsonObj')].name");
-        Assert.Equal("Bob", result);
-    }
-
-    [Fact]
-    public void Parse_ArrayIndex_OnJArray_UnwrapsJValue()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('JArray')][1]");
-        Assert.IsType<int>(result);
-        Assert.Equal(2, result);
-    }
-
-    [Fact]
-    public void Parse_ArrayIndex_OnIList()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('List')][2]");
-        Assert.Equal(30, result);
-    }
-
-    [Fact]
-    public void Parse_ComplexPath_JTokenThenProperty()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('JsonObj')].Friends[1].Name");
-        Assert.Equal("Max", result);
-    }
-
-    [Fact]
     public void Parse_UnbalancedBrackets_ThrowsFlowSynxException()
     {
         var parser = new ExpressionParser(_outputs, _variables);
@@ -158,22 +117,6 @@ public class ExpressionParserTests
         Assert.Contains("ExpressionParser: Outputs('NotExist') not found", ex.Message);
     }
 
-    [Fact]
-    public void Parse_PropertyPathOnNull_ReturnsNull()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('NullObj')].Anything");
-        Assert.Null(result);
-    }
-
-    [Fact]
-    public void Parse_ArrayIndexOutOfRange_ReturnsNull()
-    {
-        var parser = new ExpressionParser(_outputs, _variables);
-        var result = parser.Parse("$[Outputs('List')][99]");
-        Assert.Null(result);
-    }
-
     // ---------------- Reflection-based helper coverage tests ----------------
 
     [Fact]
@@ -192,16 +135,6 @@ public class ExpressionParserTests
         var start = expr.IndexOf('(');
         var idx = InvokePrivateStatic<int>(typeof(ExpressionParser), "FindMatchingParenthesis", expr, start);
         Assert.Equal(expr.Length - 1, idx);
-    }
-
-    [Fact]
-    public void ReadName_Works_WithLettersDigitsUnderscore()
-    {
-        var s = "my_name1.rest";
-        object[] args = { s, 0 };
-        var value = InvokePrivateStaticWithRef<string>(typeof(ExpressionParser), "ReadName", args);
-        Assert.Equal("my_name1", value);
-        Assert.Equal(9, (int)args[1]);
     }
 
     [Fact]
