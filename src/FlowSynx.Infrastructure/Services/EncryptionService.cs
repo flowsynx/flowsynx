@@ -3,22 +3,30 @@ using System.Security.Cryptography;
 
 namespace FlowSynx.Infrastructure.Services;
 
-public class EncryptionService: IEncryptionService
+public class EncryptionService : IEncryptionService
 {
-    private readonly byte[] _key;
+    private readonly byte[]? _key;
 
-    public EncryptionService(string encryptionKey)
+    public EncryptionService(string? encryptionKey)
     {
-        if (string.IsNullOrEmpty(encryptionKey))
-            throw new InvalidOperationException("Encryption key not set.");
-
-        _key = Convert.FromBase64String(encryptionKey);
-        if (_key.Length != 32)
-            throw new InvalidOperationException("Encryption Key must be 256 bits (32 bytes).");
+        if (!string.IsNullOrEmpty(encryptionKey))
+        {
+            _key = Convert.FromBase64String(encryptionKey);
+            if (_key.Length != 32)
+                throw new InvalidOperationException("Encryption Key must be 256 bits (32 bytes).");
+        }
+        else
+        {
+            _key = null; // no encryption
+        }
     }
 
     public string Encrypt(string plainText)
     {
+        // If no key, return plain text directly
+        if (_key == null)
+            return plainText;
+
         using var aes = Aes.Create();
         aes.Key = _key;
         aes.GenerateIV();
@@ -37,6 +45,10 @@ public class EncryptionService: IEncryptionService
 
     public string Decrypt(string cipherText)
     {
+        // If no key, return cipherText directly
+        if (_key == null)
+            return cipherText;
+
         var fullCipher = Convert.FromBase64String(cipherText);
         using var aes = Aes.Create();
         aes.Key = _key;
