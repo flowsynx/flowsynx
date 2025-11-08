@@ -38,7 +38,7 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
         {
             _currentUserService.ValidateAuthentication();
 
-            if (string.IsNullOrEmpty(_currentUserService.UserId))
+            if (string.IsNullOrEmpty(_currentUserService.UserId()))
                 throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired, 
                     _localization.Get("Authentication_Access_Denied"));
 

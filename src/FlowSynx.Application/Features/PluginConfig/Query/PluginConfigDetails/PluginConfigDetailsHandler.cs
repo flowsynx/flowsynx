@@ -39,7 +39,7 @@ internal class PluginConfigDetailsHandler : IRequestHandler<PluginConfigDetailsR
             _currentUserService.ValidateAuthentication();
 
             var configId = Guid.Parse(request.ConfigId);
-            var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, cancellationToken);
+            var pluginConfig = await _pluginConfigurationService.Get(_currentUserService.UserId(), configId, cancellationToken);
             if (pluginConfig is null)
             {
                 var message = _localization.Get("Feature_PluginConfig_DetailsNotFound", configId);

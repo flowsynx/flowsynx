@@ -42,7 +42,7 @@ internal class WorkflowExecutionDetailsHandler : IRequestHandler<WorkflowExecuti
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
-            var workflowExecution = await _workflowExecutionService.Get(_currentUserService.UserId, 
+            var workflowExecution = await _workflowExecutionService.Get(_currentUserService.UserId(), 
                 workflowId, workflowExecutionId, cancellationToken);
 
             if (workflowExecution is null)

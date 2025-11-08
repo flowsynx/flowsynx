@@ -6,6 +6,9 @@ using System.Security.Claims;
 
 namespace FlowSynx.Services;
 
+/// <summary>
+/// Provides safe access to the current HTTP user's identity information.
+/// </summary>
 public class CurrentUserService : ICurrentUserService
 {
     private readonly HttpContext? _httpContext;
@@ -23,91 +26,82 @@ public class CurrentUserService : ICurrentUserService
         _localization = localization;
     }
 
-    public string UserId
+    /// <inheritdoc />
+    public string UserId()
     {
-        get
+        try
         {
-            try
-            {
-                var userId = _httpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-                return userId;
-            }
-            catch (Exception ex)
-            {
-                var errorMessage = new ErrorMessage((int)ErrorCode.SecurityGetUserId, ex.Message);
-                _logger.LogError(errorMessage.ToString());
-                throw new FlowSynxException(errorMessage);
-            }
+            return _httpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            throw CreateFlowSynxException(ErrorCode.SecurityGetUserId, ex);
         }
     }
 
-    public string UserName
+    /// <inheritdoc />
+    public string UserName()
     {
-        get
+        try
         {
-            try
-            {
-                var userId = _httpContext?.User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
-                return userId;
-            }
-            catch (Exception ex)
-            {
-                var errorMessage = new ErrorMessage((int)ErrorCode.SecurityGetUserName, ex.Message);
-                _logger.LogError(errorMessage.ToString());
-                throw new FlowSynxException(errorMessage);
-            }
+            return _httpContext?.User.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            throw CreateFlowSynxException(ErrorCode.SecurityGetUserName, ex);
         }
     }
 
-    public bool IsAuthenticated
+    /// <inheritdoc />
+    public bool IsAuthenticated()
     {
-        get
+        try
         {
-            try
-            {
-                var identity = _httpContext?.User.Identity;
-                return identity is { IsAuthenticated: true };
-            }
-            catch (Exception ex)
-            {
-                var errorMessage = new ErrorMessage((int)ErrorCode.SecurityCheckIsAuthenticated, ex.Message);
-                _logger.LogError(errorMessage.ToString());
-                throw new FlowSynxException(errorMessage);
-            }
+            var identity = _httpContext?.User.Identity;
+            return identity is { IsAuthenticated: true };
+        }
+        catch (Exception ex)
+        {
+            throw CreateFlowSynxException(ErrorCode.SecurityCheckIsAuthenticated, ex);
         }
     }
 
-
-    public List<string> Roles
+    /// <inheritdoc />
+    public List<string> Roles()
     {
-        get
+        try
         {
-            try
-            {
-                var user = _httpContext?.User;
-                if (user == null)
-                    return new List<string>();
+            var user = _httpContext?.User;
+            if (user == null)
+                return new List<string>();
 
-                var roles = user.Claims
-                    .Where(c => c.Type == ClaimTypes.Role)
-                    .Select(c => c.Value)
-                    .ToList();
+            var roles = user.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
 
-                return roles;
-            }
-            catch (Exception ex)
-            {
-                var errorMessage = new ErrorMessage((int)ErrorCode.SecurityGetUserRoles, ex.Message);
-                _logger.LogError(errorMessage.ToString());
-                throw new FlowSynxException(errorMessage);
-            }
+            return roles;
+        }
+        catch (Exception ex)
+        {
+            throw CreateFlowSynxException(ErrorCode.SecurityGetUserRoles, ex);
         }
     }
 
+    /// <inheritdoc />
     public void ValidateAuthentication()
     {
-        if (string.IsNullOrEmpty(UserId))
+        if (string.IsNullOrEmpty(UserId()))
+        {
             throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired,
                 _localization.Get("Authentication_Access_Denied"));
+        }
+    }
+
+    private FlowSynxException CreateFlowSynxException(ErrorCode errorCode, Exception exception)
+    {
+        var errorMessage = new ErrorMessage((int)errorCode, exception.Message);
+        _logger.LogError(errorMessage.ToString());
+        return new FlowSynxException(errorMessage);
     }
 }

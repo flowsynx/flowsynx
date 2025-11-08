@@ -43,7 +43,7 @@ internal class WorkflowExecutionLogsHandler : IRequestHandler<WorkflowExecutionL
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
-            var logs = await _loggerService.GetWorkflowExecutionLogs(_currentUserService.UserId, 
+            var logs = await _loggerService.GetWorkflowExecutionLogs(_currentUserService.UserId(), 
                 workflowId, workflowExecutionId, cancellationToken);
 
             var response = logs.Select(l => new WorkflowExecutionLogsResponse
@@ -74,3 +74,4 @@ internal class WorkflowExecutionLogsHandler : IRequestHandler<WorkflowExecutionL
         }
     }
 }
+

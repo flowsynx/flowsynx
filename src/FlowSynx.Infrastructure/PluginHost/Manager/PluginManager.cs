@@ -111,7 +111,7 @@ public class PluginManager : IPluginManager
 
     public async Task Uninstall(string pluginType, string version, CancellationToken cancellationToken)
     {
-        var pluginEntity = await _pluginService.Get(_currentUserService.UserId, pluginType, version, cancellationToken);
+        var pluginEntity = await _pluginService.Get(_currentUserService.UserId(), pluginType, version, cancellationToken);
         if (pluginEntity is null)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
@@ -121,7 +121,7 @@ public class PluginManager : IPluginManager
 
         try
         {
-            var index = new PluginCacheIndex(_currentUserService.UserId, pluginEntity.Type, pluginEntity.Version);
+            var index = new PluginCacheIndex(_currentUserService.UserId(), pluginEntity.Type, pluginEntity.Version);
             _pluginCacheService.RemoveByIndex(index);
             await Task.Delay(1000, cancellationToken);
 
@@ -144,7 +144,7 @@ public class PluginManager : IPluginManager
     #region internal methods
     private async Task<bool> PluginAlreadyExists(string pluginType, string pluginVersion, CancellationToken cancellationToken)
     {
-        var exists = await _pluginService.IsExist(_currentUserService.UserId, pluginType, pluginVersion, cancellationToken);
+        var exists = await _pluginService.IsExist(_currentUserService.UserId(), pluginType, pluginVersion, cancellationToken);
         if (!exists)
             return false;
 
@@ -201,7 +201,7 @@ public class PluginManager : IPluginManager
 
     private string GetPluginLocalDirectory(string pluginType, string pluginVersion)
     {
-        var rootLocation = Path.Combine(_pluginsLocation.Path, _currentUserService.UserId);
+        var rootLocation = Path.Combine(_pluginsLocation.Path, _currentUserService.UserId());
         return Path.Combine(rootLocation, pluginType, pluginVersion);
     }
 
@@ -254,7 +254,7 @@ public class PluginManager : IPluginManager
             Version = metadata.Version,
             Checksum = metadata.Checksum,
             PluginLocation = dllPath,
-            UserId = _currentUserService.UserId,
+            UserId = _currentUserService.UserId(),
             Owners = metadata.Owners.ToList(),
             Description = metadata.Description,
             Copyright = metadata.Copyright,

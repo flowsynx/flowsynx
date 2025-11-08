@@ -44,12 +44,12 @@ internal class ExecuteWorkflowHandler :
 
             var workflowId = Guid.Parse(request.WorkflowId);
             var result = await _workflowOrchestrator.CreateWorkflowExecutionAsync(
-                _currentUserService.UserId, 
+                _currentUserService.UserId(), 
                 workflowId, 
                 cancellationToken);
 
             await _workflowExecutionQueue.EnqueueAsync(new ExecutionQueueRequest(
-                _currentUserService.UserId,
+                _currentUserService.UserId(),
                 workflowId,
                 result.Id,
                 cancellationToken), cancellationToken);

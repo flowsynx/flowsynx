@@ -50,7 +50,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
             _currentUserService.ValidateAuthentication();
 
             var configId = Guid.Parse(request.ConfigId);
-            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, 
+            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId(), 
                 configId, cancellationToken);
             if (pluginConfiguration == null)
             {
@@ -60,7 +60,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
 
             if (!string.Equals(request.Name, pluginConfiguration.Name, StringComparison.OrdinalIgnoreCase))
             {
-                var ispluginConfigExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId, 
+                var ispluginConfigExist = await _pluginConfigurationService.IsExist(_currentUserService.UserId(), 
                     request.Name, cancellationToken);
                 if (ispluginConfigExist)
                 {
@@ -72,7 +72,7 @@ internal class UpdatePluginConfigHandler : IRequestHandler<UpdatePluginConfigReq
                 }
             }
 
-            var pluginEntity = await _pluginService.Get(_currentUserService.UserId, request.Type, 
+            var pluginEntity = await _pluginService.Get(_currentUserService.UserId(), request.Type, 
                 request.Version, cancellationToken);
             if (pluginEntity is null)
             {

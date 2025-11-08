@@ -41,7 +41,7 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
             _currentUserService.ValidateAuthentication();
 
             var configId = Guid.Parse(request.ConfigId);
-            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId, configId, 
+            var pluginConfiguration = await _pluginConfigurationService.Get(_currentUserService.UserId(), configId, 
                 cancellationToken);
             if (pluginConfiguration == null)
             {

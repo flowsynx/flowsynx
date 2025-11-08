@@ -45,10 +45,10 @@ internal class RejectWorkflowHandler : IRequestHandler<RejectWorkflowRequest, Re
             var workflowExecutionId = Guid.Parse(request.WorkflowExecutionId);
             var workflowExecutionApprovalId = Guid.Parse(request.WorkflowExecutionApprovalId);
 
-            await _manualApprovalService.RejectAsync(_currentUserService.UserId, workflowId, 
+            await _manualApprovalService.RejectAsync(_currentUserService.UserId(), workflowId, 
                 workflowExecutionId, workflowExecutionApprovalId, cancellationToken);
 
-            await UpdateWorkflowExecutionAsFailedAsync(_currentUserService.UserId, workflowId, workflowExecutionId, cancellationToken).ConfigureAwait(false);
+            await UpdateWorkflowExecutionAsFailedAsync(_currentUserService.UserId(), workflowId, workflowExecutionId, cancellationToken).ConfigureAwait(false);
 
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_WorkflowExecution_ManualApprovalRejected", workflowExecutionApprovalId));
         }

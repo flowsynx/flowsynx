@@ -39,7 +39,7 @@ internal class DeleteWorkflowHandler : IRequestHandler<DeleteWorkflowRequest, Re
             _currentUserService.ValidateAuthentication();
 
             var workflowId = Guid.Parse(request.WorkflowId);
-            var workflow = await _workflowService.Get(_currentUserService.UserId, workflowId, cancellationToken);
+            var workflow = await _workflowService.Get(_currentUserService.UserId(), workflowId, cancellationToken);
             if (workflow == null)
             {
                 var message = _localization.Get("Features_Workflow_Delete_WorkflowCouldNotBeFound", request.WorkflowId);
