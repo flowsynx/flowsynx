@@ -1,4 +1,13 @@
-﻿using FlowSynx.Application.Configuration.Database;
+﻿using FlowSynx.Application.Configuration.Cors;
+using FlowSynx.Application.Configuration.Database;
+using FlowSynx.Application.Configuration.Endpoint;
+using FlowSynx.Application.Configuration.HealthCheck;
+using FlowSynx.Application.Configuration.Logger;
+using FlowSynx.Application.Configuration.OpenApi;
+using FlowSynx.Application.Configuration.PluginRegistry;
+using FlowSynx.Application.Configuration.RateLimiting;
+using FlowSynx.Application.Configuration.Security;
+using FlowSynx.Application.Configuration.WorkflowQueue;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
@@ -7,9 +16,9 @@ using FlowSynx.HealthCheck;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.PluginHost;
+using FlowSynx.Persistence.Logging.Sqlite.Contexts;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Persistence.Sqlite.Extensions;
-using FlowSynx.Persistence.Logging.Sqlite.Contexts;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
@@ -17,39 +26,43 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
-using FlowSynx.Application.Configuration.Security;
-using FlowSynx.Application.Configuration.WorkflowQueue;
-using FlowSynx.Application.Configuration.Cors;
-using FlowSynx.Application.Configuration.RateLimiting;
-using FlowSynx.Application.Configuration.PluginRegistry;
-using FlowSynx.Application.Configuration.OpenApi;
-using FlowSynx.Application.Configuration.HealthCheck;
-using FlowSynx.Application.Configuration.Logger;
-using FlowSynx.Application.Configuration.Endpoint;
 
 namespace FlowSynx.Extensions;
 
+/// <summary>
+/// Extension methods for configuring services used across the FlowSynx application.
+/// Focused on clarity, consistency and small helper extraction to reduce duplication.
+/// </summary>
 public static class ServiceCollectionExtensions
 {
+    private const string DefaultSqliteProvider = "SQLite";
+    private const string DatabaseSectionName = "Databases";
+    private const string WorkflowQueueSectionName = "WorkflowQueue";
+
+    #region Simple registrations
+
+    /// <summary>Registers a single CancellationTokenSource as a singleton.</summary>
     public static IServiceCollection AddCancellationTokenSource(this IServiceCollection services)
     {
-        var cancellationTokenSource = new CancellationTokenSource();
-        services.AddSingleton(cancellationTokenSource);
+        services.AddSingleton(new CancellationTokenSource());
         return services;
     }
 
+    /// <summary>Register plugin location provider.</summary>
     public static IServiceCollection AddPluginsPath(this IServiceCollection services)
     {
         services.AddSingleton<IPluginsLocation, PluginsLocation>();
         return services;
     }
 
+    /// <summary>Register application version provider.</summary>
     public static IServiceCollection AddVersion(this IServiceCollection services)
     {
         services.AddSingleton<IVersion, FlowSynxVersion>();
         return services;
     }
 
+    /// <summary>Register SignalR and the event publisher implementation.</summary>
     public static IServiceCollection AddEventPublisher(this IServiceCollection services)
     {
         services.AddSignalR();
@@ -57,37 +70,50 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Bind and register endpoint configuration.</summary>
     public static IServiceCollection AddEndpoint(this IServiceCollection services, IConfiguration configuration)
     {
-        var endpointConfiguration = new EndpointConfiguration();
-        configuration.GetSection("Endpoints").Bind(endpointConfiguration);
+        var endpointConfiguration = configuration.BindSection<EndpointConfiguration>("Endpoints");
         services.AddSingleton(endpointConfiguration);
         return services;
     }
 
+    /// <summary>Register current user service (transient).</summary>
     public static IServiceCollection AddUserService(this IServiceCollection services)
     {
         services.AddTransient<ICurrentUserService, CurrentUserService>();
         return services;
     }
 
+    #endregion
+
+    #region Logging
+
+    /// <summary>Filter EF Core database command logs to warning or above.</summary>
     public static void AddLoggingFilter(this ILoggingBuilder builder)
     {
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
     }
 
+    /// <summary>
+    /// Configure application logging from configuration, register console and database loggers and ensure the
+    /// logging database exists.
+    /// </summary>
     public static IServiceCollection AddLoggingService(
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var loggerConfiguration = new LoggerConfiguration();
-        configuration.GetSection("Logger").Bind(loggerConfiguration);
+        var loggerConfiguration = configuration.BindSection<LoggerConfiguration>("Logger");
         services.AddSingleton(loggerConfiguration);
 
-        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-        var httpContextAccessor = serviceProviderScope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
-        var logService = serviceProviderScope.ServiceProvider.GetRequiredService<ILoggerService>();
-        var cancellationTokenSource = serviceProviderScope.ServiceProvider.GetRequiredService<CancellationTokenSource>();
+        // NOTE: resolving services during startup is unavoidable here because database and http-context
+        // dependent loggers are created. We scope the provider to keep this localized.
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var provider = scope.ServiceProvider;
+
+        var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
+        var logService = provider.GetRequiredService<ILoggerService>();
+        var cancellationTokenSource = provider.GetRequiredService<CancellationTokenSource>();
 
         var cancellationToken = cancellationTokenSource.Token;
         var logLevel = loggerConfiguration.Level.ToLogLevel();
@@ -95,7 +121,6 @@ public static class ServiceCollectionExtensions
         services.AddLogging(builder =>
         {
             builder.ClearProviders();
-
             builder.SetMinimumLevel(logLevel);
             builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
@@ -113,7 +138,6 @@ public static class ServiceCollectionExtensions
             }, httpContextAccessor, logService);
         });
 
-        // Ensure log database exists
         services.EnsureLogDatabaseCreated();
 
         return services;
@@ -121,8 +145,8 @@ public static class ServiceCollectionExtensions
 
     private static void EnsureLogDatabaseCreated(this IServiceCollection services)
     {
-        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-        var context = serviceProviderScope.ServiceProvider.GetRequiredService<LoggerContext>();
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<LoggerContext>();
 
         try
         {
@@ -136,7 +160,7 @@ public static class ServiceCollectionExtensions
 
     private static LogLevel ToLogLevel(this string logsLevel)
     {
-        var level = logsLevel.ToLower() switch
+        return logsLevel?.ToLowerInvariant() switch
         {
             "none" => LogLevel.None,
             "dbug" => LogLevel.Debug,
@@ -146,21 +170,23 @@ public static class ServiceCollectionExtensions
             "crit" => LogLevel.Critical,
             _ => LogLevel.Information,
         };
-
-        return level;
     }
 
+    #endregion
+
+    #region Health checks
+
+    /// <summary>Register health check configuration and checks if enabled.</summary>
     public static IServiceCollection AddHealthChecker(this IServiceCollection services, IConfiguration configuration)
     {
-        var healthCheckConfiguration = new HealthCheckConfiguration();
-        configuration.GetSection("HealthCheck").Bind(healthCheckConfiguration);
+        var healthCheckConfiguration = configuration.BindSection<HealthCheckConfiguration>("HealthCheck");
         services.AddSingleton(healthCheckConfiguration);
 
         if (!healthCheckConfiguration.Enabled)
             return services;
 
-        var serviceProvider = services.BuildServiceProvider();
-        var localization = serviceProvider.GetRequiredService<ILocalization>();
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var localization = scope.ServiceProvider.GetRequiredService<ILocalization>();
 
         services
             .AddHealthChecks()
@@ -171,19 +197,20 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    #endregion
+
+    #region OpenAPI (Swagger)
+
+    /// <summary>Configure OpenAPI/Swagger when enabled in configuration.</summary>
     public static IServiceCollection AddOpenApi(this IServiceCollection services, IConfiguration configuration)
     {
         try
         {
-            var openApiConfiguration = new OpenApiConfiguration();
-            configuration.GetSection("OpenApi").Bind(openApiConfiguration);
+            var openApiConfiguration = configuration.BindSection<OpenApiConfiguration>("OpenApi");
             services.AddSingleton(openApiConfiguration);
 
             if (!openApiConfiguration.Enabled)
                 return services;
-
-            var serviceProvider = services.BuildServiceProvider();
-            var securityConfiguration = serviceProvider.GetRequiredService<SecurityConfiguration>();
 
             services.AddSwaggerGen(c =>
             {
@@ -244,6 +271,11 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    #endregion
+
+    #region JSON options
+
+    /// <summary>Configure default HTTP JSON serialization options.</summary>
     public static IServiceCollection AddHttpJsonOptions(this IServiceCollection services)
     {
         services.ConfigureHttpJsonOptions(options =>
@@ -254,25 +286,32 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    #endregion
+
+    #region Plugin manager
+
     public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services, IConfiguration configuration)
     {
-        var pluginRegistryConfiguration = new PluginRegistryConfiguration();
-        configuration.GetSection("PluginRegistry").Bind(pluginRegistryConfiguration);
+        var pluginRegistryConfiguration = configuration.BindSection<PluginRegistryConfiguration>("PluginRegistry");
         services.AddSingleton(pluginRegistryConfiguration);
         services.AddPluginManager();
 
         return services;
     }
 
+    #endregion
+
+    #region Security
+
+    /// <summary>Configures authentication providers and authorization policies.</summary>
     public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
     {
         try
         {
-            using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-            var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            using var scope = services.BuildServiceProvider().CreateScope();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            var securityConfiguration = new SecurityConfiguration();
-            configuration.GetSection("Security").Bind(securityConfiguration);
+            var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Security");
             services.AddSingleton(securityConfiguration);
 
             securityConfiguration.ValidateDefaultScheme(logger);
@@ -293,18 +332,21 @@ public static class ServiceCollectionExtensions
             foreach (var provider in providers)
                 provider.Configure(authBuilder);
 
-            // Add authorization policies
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("admin", policy => policy.RequireRole("admin"));
-                options.AddPolicy("user", policy => policy.RequireRole("user"));
-                options.AddPolicy("audits", policy => policy.RequireRole("audits"));
-                options.AddPolicy("config", policy => policy.RequireRole("config"));
-                options.AddPolicy("logs", policy => policy.RequireRole("logs"));
-                options.AddPolicy("plugins", policy => policy.RequireRole("plugins"));
-                options.AddPolicy("workflows", policy => policy.RequireRole("workflows"));
-                options.AddPolicy("executions", policy => policy.RequireRole("executions"));
-                options.AddPolicy("triggers", policy => policy.RequireRole("triggers"));
+                // keep authorization roles explicit and grouped for readability
+                void AddRolePolicy(string name, string role) => 
+                    options.AddPolicy(name, policy => policy.RequireRole(role));
+
+                AddRolePolicy("admin", "admin");
+                AddRolePolicy("user", "user");
+                AddRolePolicy("audits", "audits");
+                AddRolePolicy("config", "config");
+                AddRolePolicy("logs", "logs");
+                AddRolePolicy("plugins", "plugins");
+                AddRolePolicy("workflows", "workflows");
+                AddRolePolicy("executions", "executions");
+                AddRolePolicy("triggers", "triggers");
 
                 logger.LogInformation("Authorization initialized.");
             });
@@ -318,18 +360,23 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    #endregion
+
+    #region Arguments / Version helpers
+
+    /// <summary>Parse required startup arguments and exit the process with an error when missing.</summary>
     public static IServiceCollection ParseArguments(this IServiceCollection services, string[] args)
     {
-        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-        bool hasStartArgument = args.Contains("--start");
+        var hasStartArgument = args.Contains("--start");
         if (!hasStartArgument)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, "The '--start' argument is required.");
             logger.LogError(errorMessage.ToString());
 
-            // Brief delay to ensure the error message is visible before exiting
+            // short delay to help ensure message appears in console before exit
             Task.Delay(500).Wait();
 
             Environment.Exit(1);
@@ -338,6 +385,25 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Check for version flags and print the application version.</summary>
+    public static bool HandleVersionFlag(this string[] args)
+    {
+        if (args.Any(arg => arg.Equals("--version", StringComparison.OrdinalIgnoreCase) ||
+                            arg.Equals("-v", StringComparison.OrdinalIgnoreCase)))
+        {
+            var version = FlowSynxVersion.GetApplicationVersion();
+            Console.WriteLine($"FlowSynx Version: {version}");
+            return true;
+        }
+
+        return false;
+    }
+
+    #endregion
+
+    #region Rate limiting
+
+    /// <summary>Add rate limiting services.</summary>
     public static IServiceCollection AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         var rateLimitingConfiguration = new RateLimitingConfiguration();
@@ -358,26 +424,16 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static bool HandleVersionFlag(this string[] args)
-    {
-        if (args.Any(arg => arg.Equals("--version", StringComparison.OrdinalIgnoreCase) ||
-                            arg.Equals("-v", StringComparison.OrdinalIgnoreCase)))
-        {
-            var version = FlowSynxVersion.GetApplicationVersion();
-            Console.WriteLine($"FlowSynx Version: {version}");
-            return true;
-        }
+    #endregion
 
-        return false;
-    }
+    #region CORS
 
     public static IServiceCollection AddConfiguredCors(this IServiceCollection services, IConfiguration configuration)
     {
-        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-        var corsConfiguration = new CorsConfiguration();
-        configuration.GetSection("Cors").Bind(corsConfiguration);
+        var corsConfiguration = configuration.BindSection<CorsConfiguration>("Cors");
         services.AddSingleton(corsConfiguration);
 
         var allowedOrigins = corsConfiguration.AllowedOrigins?.ToArray() ?? Array.Empty<string>();
@@ -418,53 +474,27 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddWorkflowQueueService(
-        this IServiceCollection services, 
-        IConfiguration configuration)
+    #endregion
+
+    #region Persistence
+
+    /// <summary>Setup persistence configuration and register provider-specific persistence layers.</summary>
+    public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
-        try
-        {
-            using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-            var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            var localization = serviceProviderScope.ServiceProvider.GetRequiredService<ILocalization>();
-
-            var workflowQueueConfiguration = new WorkflowQueueConfiguration();
-            configuration.GetSection("WorkflowQueue").Bind(workflowQueueConfiguration);
-            services.AddSingleton(workflowQueueConfiguration);
-
-            if (string.IsNullOrEmpty(workflowQueueConfiguration.Provider))
-                return services.AddInMemoryWorkflowQueueService();
-
-            switch (workflowQueueConfiguration.Provider.ToLowerInvariant())
-            {
-                case "durable":
-                    logger.LogInformation("Initializing Durable Workflow Queue");
-                    return services.AddPostgreDurableWorkflowQueueService();
-                case "inmemory":
-                    logger.LogInformation("Initializing InMemory Workflow Queue");
-                    return services.AddInMemoryWorkflowQueueService();
-                default:
-                    throw new FlowSynxException((int)ErrorCode.WorkflowQueueProviderNotSupported,
-                        localization.Get("WorkflowQueueProvider_NotSupported", workflowQueueConfiguration.Provider));
-            }
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    public static IServiceCollection AddPersistence(
-    this IServiceCollection services,
-    IConfiguration configuration)
-    {
-        var dbConfig = Load(configuration);
+        var dbConfig = LoadDatabaseConfiguration(configuration);
         var activeConnection = dbConfig.GetActiveConnection();
 
         services.AddSingleton(dbConfig);
         services.AddSingleton(activeConnection);
+        services.AddSingleton<IDatabaseProvider>(new DatabaseProvider(activeConnection.Provider));
 
+        RegisterPersistenceLayer(services, activeConnection);
+
+        return services;
+    }
+
+    private static void RegisterPersistenceLayer(IServiceCollection services, DatabaseConnection activeConnection)
+    {
         switch (activeConnection.Provider.ToLowerInvariant())
         {
             case "postgres":
@@ -476,65 +506,144 @@ public static class ServiceCollectionExtensions
                 break;
 
             default:
-                throw new InvalidOperationException(
-                    $"Unsupported database provider '{activeConnection.Provider}'.");
+                throw new InvalidOperationException($"Unsupported database provider '{activeConnection.Provider}'.");
         }
-
-        return services;
     }
 
-    private static DatabaseConfiguration Load(IConfiguration configuration)
+    private static DatabaseConfiguration LoadDatabaseConfiguration(IConfiguration configuration)
     {
-        const string SQLite = "SQLite";
-        var section = configuration.GetSection("Databases");
+        var databasesSection = configuration.GetSection(DatabaseSectionName);
 
-        if (!section.Exists() || !section.GetChildren().Any())
-        {
-            return new DatabaseConfiguration
-            {
-                Default = SQLite,
-                Connections = new Dictionary<string, DatabaseConnection>
-                {
-                    [SQLite] = new SqliteDatabaseConnection
-                    {
-                        Provider = SQLite,
-                        FilePath = "flowsynx.db"
-                    }
-                }
-            };
-        }
+        if (!databasesSection.Exists() || !databasesSection.GetChildren().Any())
+            return CreateDefaultDatabaseConfiguration();
 
         var config = new DatabaseConfiguration
         {
-            Default = section.GetValue<string>("Default") ?? SQLite
+            Default = databasesSection.GetValue<string>("Default") ?? DefaultSqliteProvider
         };
 
-        var connectionsSection = section.GetSection("Connections");
+        var connectionsSection = databasesSection.GetSection("Connections");
         if (!connectionsSection.Exists() || !connectionsSection.GetChildren().Any())
         {
-            config.Connections[SQLite] = new SqliteDatabaseConnection
-            {
-                Provider = SQLite,
-                FilePath = "flowsynx.db"
-            };
-
+            config.Connections[DefaultSqliteProvider] = CreateDefaultSqliteConnection();
             return config;
         }
 
-        foreach (var child in connectionsSection.GetChildren())
+        foreach (var connectionSection in connectionsSection.GetChildren())
         {
-            var provider = child.GetValue<string>("Provider") ?? SQLite;
+            var provider = connectionSection.GetValue<string>("Provider") ?? DefaultSqliteProvider;
+
             DatabaseConnection connection = provider.ToLowerInvariant() switch
             {
-                "postgres" => child.Get<PostgreDatabaseConnection>()!,
-                "sqlite" => child.Get<SqliteDatabaseConnection>()!,
+                "postgres" => connectionSection.Get<PostgreDatabaseConnection>()!,
+                "sqlite" => connectionSection.Get<SqliteDatabaseConnection>()!,
                 _ => throw new InvalidOperationException($"Unsupported provider: {provider}")
             };
 
             connection.Provider = provider;
-            config.Connections[child.Key] = connection;
+            config.Connections[connectionSection.Key] = connection;
         }
 
         return config;
     }
+
+    private static DatabaseConfiguration CreateDefaultDatabaseConfiguration() => new()
+    {
+        Default = DefaultSqliteProvider,
+        Connections = new Dictionary<string, DatabaseConnection>
+        {
+            [DefaultSqliteProvider] = CreateDefaultSqliteConnection()
+        }
+    };
+
+    private static SqliteDatabaseConnection CreateDefaultSqliteConnection() => new()
+    {
+        Provider = DefaultSqliteProvider,
+        FilePath = "flowsynx.db"
+    };
+
+    #endregion
+
+    #region Workflow Queue
+
+    public static IServiceCollection AddWorkflowQueueService(this IServiceCollection services, IConfiguration configuration)
+    {
+        try
+        {
+            using var scope = services.BuildServiceProvider().CreateScope();
+            var provider = scope.ServiceProvider;
+
+            var logger = provider.GetRequiredService<ILogger<Program>>();
+            var localization = provider.GetRequiredService<ILocalization>();
+            var dbProvider = provider.GetRequiredService<IDatabaseProvider>();
+
+            var config = configuration.BindSection<WorkflowQueueConfiguration>(WorkflowQueueSectionName);
+            services.AddSingleton(config);
+
+            var providerName = config.Provider?.Trim().ToLowerInvariant();
+
+            if (string.IsNullOrEmpty(providerName))
+                return RegisterInMemoryQueue(services, logger);
+
+            return providerName switch
+            {
+                "durable" => RegisterDurableQueue(services, logger, dbProvider, localization, config),
+                "inmemory" => RegisterInMemoryQueue(services, logger),
+                _ => ThrowQueueProviderNotSupported(config, localization)
+            };
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    private static IServiceCollection RegisterInMemoryQueue(IServiceCollection services, ILogger logger)
+    {
+        logger.LogInformation("Initializing In-Memory Workflow Queue...");
+        return services.AddInMemoryWorkflowQueueService();
+    }
+
+    private static IServiceCollection RegisterDurableQueue(
+        IServiceCollection services,
+        ILogger logger,
+        IDatabaseProvider dbProvider,
+        ILocalization localization,
+        WorkflowQueueConfiguration config)
+    {
+        var dbName = dbProvider.Name?.ToLowerInvariant();
+        logger.LogInformation("Initializing Durable Workflow Queue (Database: {Database})", dbName);
+
+        return dbName switch
+        {
+            "postgres" => services.AddPostgreDurableWorkflowQueueService(),
+            "sqlite" => services.AddSqliteDurableWorkflowQueueService(),
+            _ => ThrowQueueProviderNotSupported(config, localization)
+        };
+    }
+
+    private static IServiceCollection ThrowQueueProviderNotSupported(WorkflowQueueConfiguration config, ILocalization localization)
+    {
+        throw new FlowSynxException(
+            (int)ErrorCode.WorkflowQueueProviderNotSupported,
+            localization.Get("WorkflowQueueProvider_NotSupported", config.Provider));
+    }
+
+    #endregion
+
+    #region Helpers
+
+    /// <summary>
+    /// Bind a configuration section to a configuration object and return it. Simplifies repeated
+    /// pattern of creating config instances and binding sections.
+    /// </summary>
+    private static T BindSection<T>(this IConfiguration configuration, string sectionName) where T : new()
+    {
+        var section = new T();
+        configuration.GetSection(sectionName).Bind(section);
+        return section;
+    }
+
+    #endregion
 }
