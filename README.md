@@ -9,6 +9,7 @@
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
   [![Good First Issues][github-good-first-issue-badge]][github-good-first-issue-url]
+  [![⭐ Star on GitHub](https://img.shields.io/badge/⭐%20Star%20on%20GitHub-555555?style=flat&logo=github)](https://github.com/flowsynx/flowsynx)
 
   ✨ **Support FlowSynx by giving it a star!** ✨  
   Your support helps others discover the project and drives continued innovation.
