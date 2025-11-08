@@ -51,7 +51,7 @@ https://github.com/flowsynx/flowsynx
 - [Differentiate & Articulate Uniquely](#differentiate--articulate-uniquely)
 - [Key Features](#key-features)
 - [Roadmap](#roadmap)
-- [Get Started using FlowSynx](#get-started-using-flowsynx)
+- [Quick Start Experience](#quick-start-experience)
 - [Build from Source](#build-from-source)
 - [Architecture Overview](#architecture-overview)
   - [Interaction Layers](#interaction-layers)
