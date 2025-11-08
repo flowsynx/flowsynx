@@ -25,7 +25,7 @@ process, or service — from DevOps pipelines and AI integrations to enterprise 
 **operations**, managing **data pipelines**, or orchestrating **mission-critical automations**, FlowSynx delivers the 
 control, flexibility, and visibility you need to make automation truly universal.
 
-![Demo GIF](/img/demo.gif)
+![Demo GIF](/img/Demo.gif)
 
 ### 💬 Share FlowSynx
 
