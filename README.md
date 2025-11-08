@@ -211,21 +211,15 @@ version: '3.8'
 
 services:
   flowsynx:
-    image: flowsynx/flowsynx:1.2.2-linux-amd64
+    image: flowsynx/flowsynx:1.2.3-linux-amd64
     container_name: flowsynx
     environment:
-      DB__HOST: postgres
-      DB__PORT: 5432
-      DB__NAME: flowxDb
-      DB__USERNAME: postgres
-      DB__PASSWORD: postgrespw
       Security__EnableBasic: true
       Security__BasicUsers__0__Id: 0960a93d-e42b-4987-bc07-7bda806a21c7
       Security__BasicUsers__0__Name: admin
       Security__BasicUsers__0__Password: admin
       Security__BasicUsers__0__Roles__0: admin
       Security__DefaultScheme: Basic
-      Encryption__Key: u3W1rKiLcnJrGLRt3SbRWDL/XWrjEybG3EDIdxAioIU=
     volumes:
       - flowsynx-data:/app
     working_dir: /app
@@ -233,28 +227,11 @@ services:
       - "6262:6262"
     command: ["--start"]
     restart: unless-stopped
-    depends_on:
-      - postgres
-    networks:
-      - basicAuth_net
-
-  postgres:
-    image: postgres:15
-    container_name: flowsynx-db
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespw
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: unless-stopped
     networks:
       - basicAuth_net
 
 volumes:
   flowsynx-data:
-  pgdata:
 
 networks:
   basicAuth_net:
@@ -268,7 +245,7 @@ docker compose up -d
 ```
 
 **This will:**
-- Start FlowSynx and a PostgreSQL database
+- Start FlowSynx
 - Automatically configure admin credentials (admin / admin)
 - Expose the FlowSynx API at `http://localhost:6262` (local-only access)
 
@@ -286,29 +263,24 @@ Download a pre-built binary for your OS from the latest release:
 👉 [**Download FlowSynx Releases**](https://github.com/flowsynx/flowsynx/releases/latest)
 
 #### Prerequisites
-- A running and accessible PostgreSQL instance.
-- Update your appsettings.json to define the database connection and encryption key, for example:
+- Update your appsettings.json to define the users for Basic authentication mode, for example:
 
 ```json
 {
-  "Db": {
-    "Host": "localhost",
-    "Port": 5432,
-    "Name": "fxdb",
-    "UserName": "postgres",
-    "Password": "p@$$w0rd",
-    "AdditionalOptions": {
-      "SslMode": "Disable",
-      "Pooling": true
-    }
-  },
-  "Encryption": {
-    "Key": "u3W1rKiLcnJrGLRt3SbRWDL/XWrjEybG3EDIdxAioIU="
+  "Security": {
+    "EnableBasic": true,
+    "BasicUsers": [
+      {
+        "id": "0960a93d-e42b-4987-bc07-7bda806a21c7",
+        "name": "admin",
+        "password": "admin",
+        "roles": [ "admin" ]
+      }
+    ],
+    "DefaultScheme": "Basic"
   }
 }
 ```
-
-- Ensure the PostgreSQL database and user exist and match the settings defined in appsettings.json (or your chosen configuration).
 
 Then run:
 
