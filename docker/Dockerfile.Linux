@@ -1,35 +1,47 @@
+# Set default build arguments
 ARG BUILD_CONFIGURATION=Release
 ARG APP_VERSION="1.0.0"
 
+# Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION
 ARG APP_VERSION
 
 WORKDIR /code
 
+# Copy project files for dependency restore
 COPY ["src/FlowSynx/FlowSynx.csproj", "src/FlowSynx/"]
-COPY ["src/FlowSynx.Application/FlowSynx.Application.csproj", "src/FlowSynx.Application/"]
 COPY ["src/FlowSynx.Domain/FlowSynx.Domain.csproj", "src/FlowSynx.Domain/"]
-COPY ["src/FlowSynx.Infrastructure/FlowSynx.Infrastructure.csproj", "src/FlowSynx.Infrastructure/"]
-COPY ["src/FlowSynx.Persistence.Postgres/FlowSynx.Persistence.Postgres.csproj", "src/FlowSynx.Persistence.Postgres/"]
 COPY ["src/FlowSynx.Application/FlowSynx.Application.csproj", "src/FlowSynx.Application/"]
-COPY ["src/FlowSynx.Persistence.SQLite/FlowSynx.Persistence.SQLite.csproj", "src/FlowSynx.Persistence.SQLite/"]
+COPY ["src/FlowSynx.Infrastructure/FlowSynx.Infrastructure.csproj", "src/FlowSynx.Infrastructure/"]
+COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Shared/FlowSynx.Persistence.Shared.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Shared/"]
+COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Postgres/FlowSynx.Persistence.Postgres.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Postgres/"]
+COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Sqlite/FlowSynx.Persistence.Sqlite.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Sqlite/"]
+COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Logging.Sqlite/FlowSynx.Persistence.Logging.Sqlite.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Logging.Sqlite/"]
 COPY ["plugins/FlowSynx.Plugins.LocalFileSystem/FlowSynx.Plugins.LocalFileSystem.csproj", "plugins/FlowSynx.Plugins.LocalFileSystem/"]
 
+# Restore dependencies
 RUN dotnet restore "./src/FlowSynx/FlowSynx.csproj"
 
+# Copy the full source and build
 COPY . .
 WORKDIR "/code/src/FlowSynx"
 RUN dotnet build "./FlowSynx.csproj" -c ${BUILD_CONFIGURATION} -o /app/build --no-restore
 
+# Stage 2: Publish
 FROM build AS publish
 ARG BUILD_CONFIGURATION
 ARG APP_VERSION
-RUN dotnet publish "./FlowSynx.csproj" -c ${BUILD_CONFIGURATION} -o /app/publish /p:UseAppHost=false /p:Version=${APP_VERSION} --runtime "linux-x64"
+RUN dotnet publish "./FlowSynx.csproj" -c ${BUILD_CONFIGURATION} -o /app/publish \
+    /p:UseAppHost=false /p:Version=${APP_VERSION} --runtime "linux-x64"
 
+# Stage 3: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0
 USER app
 WORKDIR /app
 EXPOSE 6262
+
+# Copy published output
 COPY --from=publish /app/publish .
+
 ENTRYPOINT ["dotnet", "flowsynx.dll"]
