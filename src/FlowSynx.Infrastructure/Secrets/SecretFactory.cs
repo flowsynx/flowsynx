@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration;
+﻿using FlowSynx.Application.Configuration.Secrets;
 using FlowSynx.Application.Secrets;
 
 namespace FlowSynx.Infrastructure.Secrets;

@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Configuration;
+﻿namespace FlowSynx.Application.Configuration.Endpoint;
 
 public class EndpointConfiguration
 {

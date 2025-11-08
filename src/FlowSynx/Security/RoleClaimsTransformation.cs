@@ -1,4 +1,4 @@
-using FlowSynx.Application.Configuration;
+using FlowSynx.Application.Configuration.Security;
 using Microsoft.AspNetCore.Authentication;
 using System;
 using System.Linq;

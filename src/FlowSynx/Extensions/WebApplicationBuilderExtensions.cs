@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration;
+﻿using FlowSynx.Application.Configuration.Endpoint;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;

@@ -1,9 +1,8 @@
-﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Configuration;
+namespace FlowSynx.Application.Configuration.Security;
 
 public class SecurityConfiguration
 {
@@ -33,7 +32,7 @@ public class SecurityConfiguration
             if (!validSchemes.Contains(DefaultScheme))
             {
                 throw new FlowSynxException((int)ErrorCode.SecurityConfigurationInvalidScheme, 
-                    Localization.Get("SecurityConfiguration_InvalidScheme", DefaultScheme, 
+                    Localizations.Localization.Get("SecurityConfiguration_InvalidScheme", DefaultScheme, 
                     string.Join(", ", validSchemes)));
             }
 

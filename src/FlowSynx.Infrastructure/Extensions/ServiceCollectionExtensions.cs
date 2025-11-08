@@ -1,4 +1,7 @@
-﻿using FlowSynx.Application.Configuration;
+﻿using FlowSynx.Application.Configuration.Encryption;
+using FlowSynx.Application.Configuration.Localization;
+using FlowSynx.Application.Configuration.Secrets;
+using FlowSynx.Application.Configuration.Storage;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.PluginHost.Manager;

@@ -1,9 +1,8 @@
-﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Configuration;
+namespace FlowSynx.Application.Configuration.Secrets;
 
 public class SecretConfiguration
 {
@@ -27,7 +26,7 @@ public class SecretConfiguration
             if (!validProviders.Contains(DefaultProvider))
             {
                 throw new FlowSynxException((int)ErrorCode.SecretConfigurationInvalidProviderName,
-                    Localization.Get("SecretConfiguration_InvalidProvider", DefaultProvider,
+                    Localizations.Localization.Get("SecretConfiguration_InvalidProvider", DefaultProvider,
                     string.Join(", ", validProviders)));
             }
 

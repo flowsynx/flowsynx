@@ -1,4 +1,7 @@
-﻿using FlowSynx.Application.Configuration;
+﻿using FlowSynx.Application.Configuration.Cors;
+using FlowSynx.Application.Configuration.Endpoint;
+using FlowSynx.Application.Configuration.HealthCheck;
+using FlowSynx.Application.Configuration.OpenApi;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;

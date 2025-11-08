@@ -1,10 +1,8 @@
-﻿using System.Linq;
-using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+﻿using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Configuration;
+namespace FlowSynx.Application.Configuration.Storage;
 
 public class ResultStorageConfiguration
 {
@@ -30,7 +28,7 @@ public class ResultStorageConfiguration
             if (!validStorage.Contains(DefaultProvider))
             {
                 throw new FlowSynxException((int)ErrorCode.SecurityConfigurationInvalidScheme,
-                    Localization.Get("SecurityConfiguration_InvalidScheme", DefaultProvider,
+                    Localizations.Localization.Get("SecurityConfiguration_InvalidScheme", DefaultProvider,
                     string.Join(", ", validStorage)));
             }
 

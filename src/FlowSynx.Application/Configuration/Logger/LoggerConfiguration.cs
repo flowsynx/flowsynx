@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Domain.Log;
 
-namespace FlowSynx.Application.Configuration;
+namespace FlowSynx.Application.Configuration.Logger;
 
 public class LoggerConfiguration
 {

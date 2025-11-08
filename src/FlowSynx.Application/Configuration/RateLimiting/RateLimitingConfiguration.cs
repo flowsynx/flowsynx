@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Configuration;
+﻿namespace FlowSynx.Application.Configuration.RateLimiting;
 
 public class RateLimitingConfiguration
 {

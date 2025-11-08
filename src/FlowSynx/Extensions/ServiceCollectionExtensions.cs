@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Configuration;
-using FlowSynx.Application.Configuration.Database;
+﻿using FlowSynx.Application.Configuration.Database;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
@@ -18,6 +17,15 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using FlowSynx.Application.Configuration.Security;
+using FlowSynx.Application.Configuration.WorkflowQueue;
+using FlowSynx.Application.Configuration.Cors;
+using FlowSynx.Application.Configuration.RateLimiting;
+using FlowSynx.Application.Configuration.PluginRegistry;
+using FlowSynx.Application.Configuration.OpenApi;
+using FlowSynx.Application.Configuration.HealthCheck;
+using FlowSynx.Application.Configuration.Logger;
+using FlowSynx.Application.Configuration.Endpoint;
 
 namespace FlowSynx.Extensions;
 
