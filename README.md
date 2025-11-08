@@ -471,7 +471,7 @@ Join our community and discussions on Discord or follow us on X (Twitter):
 
 | Platform | Link |
 |-----------|------|
-| **Discord (preferred)** | [Discord](http://discord.flowsynx.io) |
+| **Discord (preferred)** | [Discord](https://discord.gg/KJwtjkv7Rj) |
 | **X (Twitter)** | [@flowsynxio](https://x.com/flowsynxio) |
 
 ## Security
