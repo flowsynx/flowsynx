@@ -78,26 +78,6 @@ public class WorkflowService : IWorkflowService
         }
     }
 
-    public async Task<bool> IsExist(string userId, string workflowName, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-            var result = await context.Workflows
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.Name.ToLower() == workflowName.ToLower() && x.IsDeleted == false,
-                cancellationToken)
-                .ConfigureAwait(false);
-
-            return result != null;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowCheckExistence, ex.Message);
-            _logger.LogError(errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
     public async Task Add(WorkflowEntity workflowEntity, CancellationToken cancellationToken)
     {
         try

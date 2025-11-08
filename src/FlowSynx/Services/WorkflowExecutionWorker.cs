@@ -31,7 +31,7 @@ public class WorkflowExecutionWorker : BackgroundService
                     request.UserId,
                     request.WorkflowId,
                     request.ExecutionId,
-                    request.CancellationToken);
+                    stoppingToken);
 
                 await workflowExecutionQueue.CompleteAsync(request.ExecutionId, stoppingToken);
                 _logger.LogInformation("Workflow {WorkflowId} execution {ExecutionId} finished with status {Status}",

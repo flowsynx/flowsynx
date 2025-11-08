@@ -13,7 +13,7 @@ public class CancellationRegistryKey : IEquatable<CancellationRegistryKey>
         WorkflowExecutionId = workflowExecutionId;
     }
 
-    public override bool Equals(object obj) => 
+    public override bool Equals(object? obj) => 
         obj is CancellationRegistryKey other && Equals(other);
 
     public bool Equals(CancellationRegistryKey? other) => 

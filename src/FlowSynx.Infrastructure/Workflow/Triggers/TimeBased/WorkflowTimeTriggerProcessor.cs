@@ -92,8 +92,7 @@ public class WorkflowTimeTriggerProcessor : IWorkflowTriggerProcessor
             await _workflowExecutionQueue.EnqueueAsync(new ExecutionQueueRequest(
                 trigger.UserId,
                 trigger.WorkflowId,
-                executionEntity.Id,
-                cancellationToken), cancellationToken);
+                executionEntity.Id), cancellationToken);
         }
         catch (Exception ex)
         {

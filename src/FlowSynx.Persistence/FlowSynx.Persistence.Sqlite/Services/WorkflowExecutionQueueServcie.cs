@@ -3,7 +3,6 @@ using FlowSynx.Application.Models;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Persistence.Sqlite.Contexts;
-using FlowSynx.Persistence.Sqlite.Services;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -77,8 +76,7 @@ public class WorkflowExecutionQueueServcie : IWorkflowExecutionQueue
                 yield return new ExecutionQueueRequest(
                     entity.UserId,
                     entity.WorkflowId,
-                    entity.ExecutionId,
-                    cancellationToken);
+                    entity.ExecutionId);
             }
             else
             {

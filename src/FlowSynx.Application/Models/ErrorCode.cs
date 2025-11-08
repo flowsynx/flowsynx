@@ -106,7 +106,6 @@ public enum ErrorCode
     WorkflowCyclicDependencies                      = 2406,
     WorkflowsGetList                                = 2407,
     WorkflowGetItem                                 = 2408,
-    WorkflowCheckExistence                          = 2409,
     WorkflowAdd                                     = 2410,
     WorkflowUpdate                                  = 2411,
     WorkflowDelete                                  = 2412,

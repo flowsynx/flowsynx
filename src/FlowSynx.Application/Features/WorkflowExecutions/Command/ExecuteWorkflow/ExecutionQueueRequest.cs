@@ -1,21 +1,8 @@
 ﻿namespace FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 
-public class ExecutionQueueRequest
+public class ExecutionQueueRequest(string userId, Guid workflowId, Guid executionId)
 {
-    public string UserId { get; }
-    public Guid WorkflowId { get; }
-    public Guid ExecutionId { get; }
-    public CancellationToken CancellationToken { get; }
-
-    public ExecutionQueueRequest(
-        string userId, 
-        Guid workflowId, 
-        Guid executionId, 
-        CancellationToken cancellationToken)
-    {
-        UserId = userId;
-        WorkflowId = workflowId;
-        ExecutionId = executionId;
-        CancellationToken = cancellationToken;
-    }
+    public string UserId { get; } = userId;
+    public Guid WorkflowId { get; } = workflowId;
+    public Guid ExecutionId { get; } = executionId;
 }

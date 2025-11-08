@@ -84,17 +84,6 @@ internal class UpdateWorkflowHandler : IRequestHandler<UpdateWorkflowRequest, Re
                 throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue,
                     _localization.Get("Features_Workflow_Update_WorkflowNameMustHaveValue"));
 
-            if (!string.Equals(workflow.Name, workflowDefinition.Name, StringComparison.OrdinalIgnoreCase))
-            {
-                var isWorkflowExist = await _workflowService.IsExist(_currentUserService.UserId(), workflowDefinition.Name, cancellationToken);
-                if (isWorkflowExist)
-                {
-                    var workflowExistMessage = _localization.Get("Features_Workflow_Update_WorkflowAlreadyExists", workflowDefinition.Name);
-                    _logger.LogWarning(workflowExistMessage);
-                    return await Result<Unit>.FailAsync(workflowExistMessage);
-                }
-            }
-
             workflow.Name = workflowDefinition.Name;
             workflow.Definition = request.Definition;
             workflow.SchemaUrl = normalizedSchemaUrl;

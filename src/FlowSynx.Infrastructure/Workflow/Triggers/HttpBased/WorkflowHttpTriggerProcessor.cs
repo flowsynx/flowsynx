@@ -115,8 +115,7 @@ public class WorkflowHttpTriggerProcessor : IWorkflowTriggerProcessor
             await _workflowExecutionQueue.EnqueueAsync(new ExecutionQueueRequest(
                 trigger.UserId,
                 trigger.WorkflowId,
-                executionEntity.Id,
-                cancellationToken), cancellationToken);
+                executionEntity.Id), cancellationToken);
 
             _logger.LogInformation(_localization.Get(
                 "Workflow_Http_TriggerProcessor_Triggered", trigger.WorkflowId, trigger.UserId));

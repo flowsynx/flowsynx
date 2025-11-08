@@ -36,7 +36,9 @@ internal class ExecuteWorkflowHandler :
         _localization = localization;
     }
 
-    public async Task<Result<ExecuteWorkflowResponse>> Handle(ExecuteWorkflowRequest request, CancellationToken cancellationToken)
+    public async Task<Result<ExecuteWorkflowResponse>> Handle(
+        ExecuteWorkflowRequest request, 
+        CancellationToken cancellationToken)
     {
         try
         {
@@ -51,8 +53,7 @@ internal class ExecuteWorkflowHandler :
             await _workflowExecutionQueue.EnqueueAsync(new ExecutionQueueRequest(
                 _currentUserService.UserId(),
                 workflowId,
-                result.Id,
-                cancellationToken), cancellationToken);
+                result.Id), cancellationToken);
 
             var response = new ExecuteWorkflowResponse 
             {

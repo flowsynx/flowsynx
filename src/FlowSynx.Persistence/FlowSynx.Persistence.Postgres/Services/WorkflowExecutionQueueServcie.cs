@@ -77,8 +77,7 @@ public class WorkflowExecutionQueueServcie : IWorkflowExecutionQueue
                 yield return new ExecutionQueueRequest(
                     entity.UserId,
                     entity.WorkflowId,
-                    entity.ExecutionId,
-                    cancellationToken);
+                    entity.ExecutionId);
             }
             else
             {
