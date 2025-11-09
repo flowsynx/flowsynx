@@ -398,6 +398,8 @@ FodyWeavers.xsd
 # SQLite Database
 logs.db*
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 
 appsettings.Development.json
