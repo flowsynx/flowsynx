@@ -7,6 +7,8 @@ using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using FlowSynx.Application.Features.Workflows.Command.GenerateFromIntent;
+using FlowSynx.Application.Features.Workflows.Command.OptimizeWorkflow;
 
 namespace FlowSynx.Endpoints;
 
@@ -130,6 +132,16 @@ public class Workflows : EndpointGroupBase
             .WithName("DeleteTrigger")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "triggers"));
+
+        group.MapPost("/intents", GenerateFromIntent)
+            .WithName("GenerateFromIntent")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
+
+        group.MapPost("/{workflowId}/optimize", OptimizeWorkflow)
+            .WithName("OptimizeWorkflow")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
     }
 
     public async Task<IResult> GetAllWorkflows(
@@ -411,6 +423,41 @@ public class Workflows : EndpointGroupBase
     {
         var result = await mediator.DeleteWorkflowTrigger(workflowId, triggerId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> GenerateFromIntent(
+        HttpContext context,
+        [FromServices] IMediator mediator,
+        [FromServices] IJsonDeserializer jsonDeserializer,
+        CancellationToken cancellationToken)
+    {
+        var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
+        var request = jsonDeserializer.Deserialize<GenerateFromIntentRequest>(jsonString);
+
+        var result = await mediator.GenerateWorkflowFromIntent(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.BadRequest(result);
+    }
+
+    public async Task<IResult> OptimizeWorkflow(
+        string workflowId,
+        HttpContext context,
+        [FromServices] IMediator mediator,
+        [FromServices] IJsonDeserializer jsonDeserializer,
+        CancellationToken cancellationToken)
+    {
+        var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
+        var input = string.IsNullOrWhiteSpace(jsonString) ? new { ApplyChanges = false, SchemaUrl = (string?)null }
+                                                          : jsonDeserializer.Deserialize<dynamic>(jsonString);
+
+        var request = new OptimizeWorkflowRequest
+        {
+            WorkflowId = workflowId,
+            ApplyChanges = (bool?)input?.ApplyChanges ?? false,
+            SchemaUrl = (string?)input?.SchemaUrl
+        };
+
+        var result = await mediator.OptimizeWorkflow(request, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.BadRequest(result);
     }
 
     private sealed class WorkflowUpsertPayload

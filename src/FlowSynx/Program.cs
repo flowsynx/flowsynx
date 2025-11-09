@@ -97,7 +97,8 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddOpenApi(config)
         .AddHostedService<WorkflowExecutionWorker>()
         .AddHostedService<TriggerProcessingService>()
-        .AddConfiguredCors(config);
+        .AddConfiguredCors(config)
+        .AddAiService(config);
 
     if (!env.IsDevelopment())
         builder.Services.ParseArguments(args);

@@ -160,6 +160,10 @@ public enum ErrorCode
     DatabaseProviderNotSupported           = 2801,
     #endregion
 
+    #region AI error codes
+    AIConfigurationInvalidProviderName     = 3001,
+    #endregion
+
     #region Unknown error codes
     UnknownError = 9999
     #endregion

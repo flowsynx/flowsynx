@@ -1,4 +1,6 @@
-﻿using FlowSynx.Application.Configuration.Encryption;
+﻿using FlowSynx.Application.AI;
+using FlowSynx.Application.Configuration.AI;
+using FlowSynx.Application.Configuration.Encryption;
 using FlowSynx.Application.Configuration.Localization;
 using FlowSynx.Application.Configuration.Secrets;
 using FlowSynx.Application.Configuration.Storage;
@@ -9,6 +11,8 @@ using FlowSynx.Application.Secrets;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
+using FlowSynx.Infrastructure.AI;
+using FlowSynx.Infrastructure.AI.AzureOpenAi;
 using FlowSynx.Infrastructure.Localizations;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
@@ -192,6 +196,29 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISecretProvider, HashiCorpVaultSecretProvider>();
         services.AddSingleton<ISecretProvider, AwsSecretsManagerSecretProvider>();
         services.AddSingleton<ISecretFactory, SecretFactory>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddAiService(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<AiFactory>>();
+
+        logger.LogInformation("Initializing AI provider");
+
+        var aiConfiguration = new AiConfiguration();
+        configuration.GetSection("AI").Bind(aiConfiguration);
+        services.AddSingleton(aiConfiguration);
+
+        aiConfiguration.ValidateAiProviders(logger);
+
+        services.AddSingleton<IAiProvider, AzureOpenAiProvider>();
+        services.AddSingleton<IAiFactory, AiFactory>();
+        services.AddSingleton<IWorkflowIntentService, WorkflowIntentService>();
+        services.AddSingleton<IWorkflowOptimizationService, WorkflowOptimizationService>();
 
         return services;
     }

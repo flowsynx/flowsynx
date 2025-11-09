@@ -1,41 +1,43 @@
-using MediatR;
-using FlowSynx.Application.Wrapper;
 using FlowSynx.Application.Features.Audit.Query.AuditDetails;
 using FlowSynx.Application.Features.Audit.Query.AuditsList;
 using FlowSynx.Application.Features.Logs.Query.LogsList;
+using FlowSynx.Application.Features.Metrics.Query;
 using FlowSynx.Application.Features.PluginConfig.Command.AddPluginConfig;
 using FlowSynx.Application.Features.PluginConfig.Command.DeletePluginConfig;
 using FlowSynx.Application.Features.PluginConfig.Command.UpdatePluginConfig;
 using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigDetails;
 using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
-using FlowSynx.Application.Features.Plugins.Command.UninstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
+using FlowSynx.Application.Features.Plugins.Command.UninstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
 using FlowSynx.Application.Features.Plugins.Query.PluginDetails;
 using FlowSynx.Application.Features.Plugins.Query.PluginsList;
 using FlowSynx.Application.Features.Version.Query;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.ApproveWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.RejectWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionDetails;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionLogs;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionTasks;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionDetails;
+using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionLogs;
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.DeleteWorkflow;
+using FlowSynx.Application.Features.Workflows.Command.GenerateFromIntent;
+using FlowSynx.Application.Features.Workflows.Command.OptimizeWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflow;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowsList;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionDetails;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionDetails;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionLogs;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecutionLogs;
-using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionList;
-using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersList;
-using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
-using FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigger;
-using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Features.WorkflowTriggers.Command.AddWorkflowTrigger;
+using FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigger;
 using FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
-using FlowSynx.Application.Features.WorkflowExecutions.Command.ApproveWorkflow;
-using FlowSynx.Application.Features.WorkflowExecutions.Command.RejectWorkflow;
-using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionTasks;
-using FlowSynx.Application.Features.Metrics.Query;
+using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
+using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersList;
+using FlowSynx.Application.Wrapper;
+using MediatR;
 
 namespace FlowSynx.Application.Extensions;
 
@@ -279,6 +281,22 @@ public static class MediatorExtensions
             TriggerId = triggerId
         },
         cancellationToken);
+    }
+
+    public static Task<Result<GenerateFromIntentResponse>> GenerateWorkflowFromIntent(
+        this IMediator mediator,
+        GenerateFromIntentRequest request,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(request,cancellationToken);
+    }
+
+    public static Task<Result<OptimizeWorkflowResponse>> OptimizeWorkflow(
+        this IMediator mediator,
+        OptimizeWorkflowRequest request,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(request, cancellationToken);
     }
 
     public static Task<PaginatedResult<WorkflowExecutionApprovalsResponse>> GetWorkflowPendingApprovals(
