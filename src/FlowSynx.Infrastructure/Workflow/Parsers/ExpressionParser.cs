@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Data;
 using System.Reflection;
+using System.Globalization;
 
 namespace FlowSynx.Infrastructure.Workflow.Parsers;
 
@@ -11,6 +12,12 @@ public class ExpressionParser : IExpressionParser
 {
     private readonly Dictionary<string, object?> _outputs;
     private readonly Dictionary<string, object?> _variables;
+
+    // Supported functional methods
+    private static readonly HashSet<string> _functionalMethods = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Min", "Max", "Sum", "Avg", "Count", "Contains"
+    };
 
     public ExpressionParser(Dictionary<string, object?> outputs, Dictionary<string, object?> variables)
     {
@@ -39,7 +46,6 @@ public class ExpressionParser : IExpressionParser
                 string inner = expr.Substring(i + 2, end - i - 2).Trim();
                 object? resolved = ResolveInnerOrConditionalOrMath(inner);
 
-                // If entire expression is just $[...], return directly
                 if (expr.Trim() == expr.Substring(i, end - i + 1))
                     return resolved;
 
@@ -53,20 +59,204 @@ public class ExpressionParser : IExpressionParser
 
     private object? ResolveInnerOrConditionalOrMath(string inner)
     {
-        // ternary ? :
         if (inner.Contains('?') && inner.Contains(':'))
             return EvaluateConditionalExpression(inner);
 
-        // boolean logic or comparisons
+        // functional methods (multi-arg) detection
+        if (TryEvaluateFunctionalExpression(inner, out var fnResult))
+            return fnResult;
+
         if (ContainsOperator(inner))
             return EvaluateBooleanExpression(inner);
 
-        // arithmetic: detect simple operators + - * / %
         if (inner.IndexOfAny(new[] { '+', '-', '*', '/', '%' }) >= 0)
             return EvaluateArithmeticExpression(inner);
 
-        // variable or output
         return ResolveInnerExpression(inner);
+    }
+
+    private bool TryEvaluateFunctionalExpression(string inner, out object? result)
+    {
+        result = null;
+        inner = inner.Trim();
+        int parenIdx = inner.IndexOf('(');
+        if (parenIdx <= 0) return false;
+
+        string name = inner.Substring(0, parenIdx).Trim();
+        if (!_functionalMethods.Contains(name)) return false;
+
+        int endParen = FindMatchingParenthesis(inner, parenIdx);
+        if (endParen == -1)
+            throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,
+                $"Unbalanced parentheses in functional expression: {inner}");
+
+        string argsSegment = inner.Substring(parenIdx + 1, endParen - parenIdx - 1);
+        var args = SplitArguments(argsSegment);
+
+        var evaluatedArgs = args.Select(EvaluateFunctionalArgument).ToList();
+
+        result = name.ToLowerInvariant() switch
+        {
+            "min" => EvaluateMin(evaluatedArgs),
+            "max" => EvaluateMax(evaluatedArgs),
+            "sum" => EvaluateSum(evaluatedArgs),
+            "avg" => EvaluateAvg(evaluatedArgs),
+            "count" => EvaluateCount(evaluatedArgs),
+            "contains" => EvaluateContains(evaluatedArgs),
+            _ => null
+        };
+        return true;
+    }
+
+    private static List<string> SplitArguments(string argsSegment)
+    {
+        var list = new List<string>();
+        if (string.IsNullOrWhiteSpace(argsSegment)) return list;
+
+        int depth = 0;
+        bool inQuotes = false;
+        char quoteChar = '\0';
+        int start = 0;
+
+        for (int i = 0; i < argsSegment.Length; i++)
+        {
+            char c = argsSegment[i];
+
+            if ((c == '\'' || c == '"'))
+            {
+                if (!inQuotes)
+                {
+                    inQuotes = true;
+                    quoteChar = c;
+                }
+                else if (quoteChar == c)
+                {
+                    inQuotes = false;
+                }
+            }
+
+            if (!inQuotes)
+            {
+                if (c == '(' || c == '[') depth++;
+                else if (c == ')' || c == ']') depth--;
+                else if (c == ',' && depth == 0)
+                {
+                    list.Add(argsSegment.Substring(start, i - start).Trim());
+                    start = i + 1;
+                }
+            }
+        }
+        // last arg
+        if (start < argsSegment.Length)
+            list.Add(argsSegment.Substring(start).Trim());
+
+        return list.Where(a => a.Length > 0).ToList();
+    }
+
+    private object? EvaluateFunctionalArgument(string arg)
+    {
+        arg = arg.Trim();
+        // If argument itself is another functional expression
+        if (TryEvaluateFunctionalExpression(arg, out var fnValue))
+            return fnValue;
+
+        // Wrap into $[...] to reuse existing parsing for complex constructs
+        if (arg.StartsWith("Outputs(") || arg.StartsWith("Variables(") ||
+            ContainsOperator(arg) || arg.Contains("$[") || arg.Contains('?') || arg.Contains(':'))
+        {
+            return Parse($"$[{arg}]");
+        }
+
+        // Literal or simple value
+        var lit = ResolveLiteralOrValue(arg);
+        return lit;
+    }
+
+    private static IEnumerable<double> ExtractNumericValues(IEnumerable<object?> values)
+    {
+        foreach (var v in values)
+        {
+            if (v == null) continue;
+
+            if (v is IEnumerable enumerable and not string)
+            {
+                foreach (var inner in enumerable)
+                {
+                    if (inner == null) continue;
+                    if (double.TryParse(inner.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dn))
+                        yield return dn;
+                }
+                continue;
+            }
+
+            if (double.TryParse(v.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+                yield return d;
+        }
+    }
+
+    private static object EvaluateMin(List<object?> args)
+    {
+        var nums = ExtractNumericValues(args).ToList();
+        if (nums.Count == 0) return 0d;
+        return nums.Min();
+    }
+
+    private static object EvaluateMax(List<object?> args)
+    {
+        var nums = ExtractNumericValues(args).ToList();
+        if (nums.Count == 0) return 0d;
+        return nums.Max();
+    }
+
+    private static object EvaluateSum(List<object?> args)
+    {
+        var nums = ExtractNumericValues(args).ToList();
+        if (nums.Count == 0) return 0d;
+        return nums.Sum();
+    }
+
+    private static object EvaluateAvg(List<object?> args)
+    {
+        var nums = ExtractNumericValues(args).ToList();
+        if (nums.Count == 0) return 0d;
+        return nums.Average();
+    }
+
+    private static object EvaluateCount(List<object?> args)
+    {
+        if (args.Count == 1 && args[0] is IEnumerable enumerable and not string)
+        {
+            int count = 0;
+            foreach (var _ in enumerable) count++;
+            return count;
+        }
+        return args.Count;
+    }
+
+    private static object EvaluateContains(List<object?> args)
+    {
+        if (args.Count != 2)
+            throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,
+                "Contains() expects exactly 2 arguments");
+
+        var container = args[0];
+        var target = args[1];
+
+        if (container is string s)
+            return target != null && s.Contains(target.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+
+        if (container is IEnumerable enumerable and not string)
+        {
+            foreach (var item in enumerable)
+            {
+                if (string.Equals(item?.ToString(), target?.ToString(), StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
+        }
+
+        // Fallback single value comparison
+        return string.Equals(container?.ToString(), target?.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
     private object? EvaluateConditionalExpression(string expr)
@@ -77,19 +267,14 @@ public class ExpressionParser : IExpressionParser
             if (expr[i] == '?')
             {
                 if (depth == 0 && questionIdx == -1)
-                {
                     questionIdx = i;
-                }
                 depth++;
             }
-            else if (expr[i] == ':') 
-            { 
+            else if (expr[i] == ':')
+            {
                 depth--;
-
-                if (depth == 0 && colonIdx == -1) 
-                {
+                if (depth == 0 && colonIdx == -1)
                     colonIdx = i;
-                }
             }
         }
 
@@ -155,8 +340,6 @@ public class ExpressionParser : IExpressionParser
     private object? EvaluateArithmeticExpression(string expr)
     {
         expr = ReplaceEmbeddedExpressions(expr);
-
-        // manually replace variable references like Outputs(...) or Variables(...)
         expr = ReplaceVariables(expr);
 
         try
@@ -244,8 +427,7 @@ public class ExpressionParser : IExpressionParser
     {
         str = str.Trim();
 
-        if (str.StartsWith('\'') && str.EndsWith('\''))
-            return StripQuotes(str);
+        if (str.StartsWith('\'') && str.EndsWith('\'')) return StripQuotes(str);
 
         if (str.StartsWith("Outputs(") || str.StartsWith("Variables("))
             return ResolveInnerExpression(str);
@@ -258,7 +440,6 @@ public class ExpressionParser : IExpressionParser
 
     private object? EvaluateExpression(string inner)
     {
-        // Handle ternary expressions
         if (inner.Contains('?') && inner.Contains(':'))
         {
             var parts = SplitTernary(inner);
@@ -275,7 +456,6 @@ public class ExpressionParser : IExpressionParser
                 : Parse($"$[{falseExpr}]");
         }
 
-        // handle normal boolean/comparison cases...
         return EvaluateBooleanExpression(inner);
     }
 
@@ -327,17 +507,14 @@ public class ExpressionParser : IExpressionParser
     {
         inner = inner.Trim();
 
-        // detect ternary or comparison
-        if (ContainsOperator(inner))
-        {
-            return EvaluateExpression(inner);
-        }
+        if (TryEvaluateFunctionalExpression(inner, out var fnValue))
+            return fnValue;
 
-        // handle literal values safely
+        if (ContainsOperator(inner))
+            return EvaluateExpression(inner);
+
         if (IsLiteral(inner))
-        {
             return ParseLiteral(inner);
-        }
 
         string sourceType;
         if (inner.StartsWith("Outputs("))
@@ -397,7 +574,6 @@ public class ExpressionParser : IExpressionParser
 
         return inner;
     }
-
 
     private string ResolveTopLevelExpression(string expr)
     {

@@ -212,6 +212,82 @@ public class ExpressionParserTests
         Assert.True((bool)result!);
     }
 
+    // ---------------- Functional Methods Tests ----------------
+
+    [Fact]
+    public void Parse_Functional_Min_WithNumbersAndOutputs_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Min(Outputs('a'), Outputs('b'), 2, 100)]");
+        Assert.Equal(2d, result);
+    }
+
+    [Fact]
+    public void Parse_Functional_Max_WithEnumerable_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Max(Outputs('List'))]");
+        Assert.Equal(30d, result);
+    }
+
+    [Fact]
+    public void Parse_Functional_Sum_WithEnumerableAndScalars_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Sum(Outputs('List'), 5, 0.5)]");
+        Assert.Equal(65.5d, result);
+    }
+
+    [Fact]
+    public void Parse_Functional_Avg_WithJArray_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Avg(Outputs('JArray'))]");
+        Assert.Equal(2d, result);
+    }
+
+    [Fact]
+    public void Parse_Functional_Count_EnumerableAndScalarArgs_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result1 = parser.Parse("$[Count(Outputs('JArray'))]");
+        var result2 = parser.Parse("$[Count(1, 2, 3, 4)]");
+        Assert.Equal(3, result1);
+        Assert.Equal(4, result2);
+    }
+
+    [Fact]
+    public void Parse_Functional_Contains_StringAndList_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+
+        var containsStr = parser.Parse("$[Contains(Outputs('Greeting'), 'ell')]");
+        var containsListTrue = parser.Parse("$[Contains(Outputs('List'), 20)]");
+        var containsListFalse = parser.Parse("$[Contains(Outputs('List'), 99)]");
+
+        Assert.True((bool)containsStr!);
+        Assert.True((bool)containsListTrue!);
+        Assert.False((bool)containsListFalse!);
+    }
+
+    [Fact]
+    public void Parse_Functional_Nested_Functions_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Min(Sum(1, 2, 3), Max(Outputs('List')))]");
+        // Sum(1,2,3)=6, Max(List)=30, Min(6,30)=6
+        Assert.Equal(6d, result);
+    }
+
+    [Fact]
+    public void Parse_Functional_Contains_InvalidArgs_Throws()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var ex = Assert.Throws<FlowSynxException>(() => parser.Parse("$[Contains(Outputs('List'))]"));
+        Assert.Equal((int)ErrorCode.ExpressionParserKeyNotFound, ex.ErrorCode);
+        Assert.Contains("Contains() expects exactly 2 arguments", ex.Message);
+    }
+
     // ---------------- Reflection-based helper coverage tests ----------------
 
     [Fact]
