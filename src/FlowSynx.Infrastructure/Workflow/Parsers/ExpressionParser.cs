@@ -75,8 +75,23 @@ public class ExpressionParser : IExpressionParser
         int questionIdx = -1, colonIdx = -1, depth = 0;
         for (int i = 0; i < expr.Length; i++)
         {
-            if (expr[i] == '?') { if (depth == 0 && questionIdx == -1) questionIdx = i; depth++; }
-            else if (expr[i] == ':') { depth--; if (depth == 0 && colonIdx == -1) colonIdx = i; }
+            if (expr[i] == '?')
+            {
+                if (depth == 0 && questionIdx == -1)
+                {
+                    questionIdx = i;
+                }
+                depth++;
+            }
+            else if (expr[i] == ':') 
+            { 
+                depth--;
+
+                if (depth == 0 && colonIdx == -1) 
+                {
+                    colonIdx = i;
+                }
+            }
         }
 
         if (questionIdx == -1 || colonIdx == -1 || colonIdx < questionIdx)
@@ -96,11 +111,11 @@ public class ExpressionParser : IExpressionParser
         expr = ReplaceEmbeddedExpressions(expr);
 
         // handle NOT
-        if (expr.StartsWith("!"))
+        if (expr.StartsWith('!'))
             return !EvaluateBooleanExpression(expr[1..]);
 
         // parentheses
-        if (expr.StartsWith("(") && expr.EndsWith(")"))
+        if (expr.StartsWith('(') && expr.EndsWith(')'))
             return EvaluateBooleanExpression(expr[1..^1]);
 
         // AND / OR
@@ -165,10 +180,9 @@ public class ExpressionParser : IExpressionParser
     private string ReplaceEmbeddedExpressions(string expr)
     {
         var matches = Regex.Matches(expr, @"\$\[[^\]]+\]");
-        foreach (Match m in matches)
+        foreach (string sub in matches.Cast<Match>().Select(m => m.Value))
         {
-            string sub = m.Value;
-            string inner = sub[2..^1];
+            string inner = sub[2..^1]; // remove first 2 and last character
             object? val = ResolveInnerOrConditionalOrMath(inner);
             expr = expr.Replace(sub, val?.ToString() ?? "null");
         }
@@ -203,7 +217,7 @@ public class ExpressionParser : IExpressionParser
     {
         str = str.Trim();
 
-        if (str.StartsWith("'") && str.EndsWith("'"))
+        if (str.StartsWith('\'') && str.EndsWith('\''))
             return StripQuotes(str);
 
         if (str.StartsWith("Outputs(") || str.StartsWith("Variables("))
@@ -330,8 +344,8 @@ public class ExpressionParser : IExpressionParser
 
         // Quoted string, number, boolean, or null
         return
-            (inner.StartsWith("'") && inner.EndsWith("'")) ||
-            (inner.StartsWith("\"") && inner.EndsWith("\"")) ||
+            (inner.StartsWith('\'') && inner.EndsWith('\'')) ||
+            (inner.StartsWith('\"') && inner.EndsWith('\"')) ||
             double.TryParse(inner, out _) ||
             bool.TryParse(inner, out _) ||
             inner.Equals("null", StringComparison.OrdinalIgnoreCase);
@@ -341,8 +355,8 @@ public class ExpressionParser : IExpressionParser
     {
         inner = inner.Trim();
 
-        if ((inner.StartsWith("'") && inner.EndsWith("'")) ||
-            (inner.StartsWith("\"") && inner.EndsWith("\"")))
+        if ((inner.StartsWith('\'') && inner.EndsWith('\'')) ||
+            (inner.StartsWith('\"') && inner.EndsWith('\"')))
             return inner.Substring(1, inner.Length - 2);
 
         if (bool.TryParse(inner, out bool b))
