@@ -4,7 +4,6 @@ using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Data;
 using System.Reflection;
-using System.Text.RegularExpressions;
 
 namespace FlowSynx.Infrastructure.Workflow.Parsers;
 
@@ -55,15 +54,15 @@ public class ExpressionParser : IExpressionParser
     private object? ResolveInnerOrConditionalOrMath(string inner)
     {
         // ternary ? :
-        if (Regex.IsMatch(inner, @"\?.*:"))
+        if (inner.Contains('?') && inner.Contains(':'))
             return EvaluateConditionalExpression(inner);
 
         // boolean logic or comparisons
-        if (Regex.IsMatch(inner, @"[=!<>]=?|&&|\|\|"))
+        if (ContainsOperator(inner))
             return EvaluateBooleanExpression(inner);
 
-        // arithmetic
-        if (Regex.IsMatch(inner, @"[\+\-\*/%]"))
+        // arithmetic: detect simple operators + - * / %
+        if (inner.IndexOfAny(new[] { '+', '-', '*', '/', '%' }) >= 0)
             return EvaluateArithmeticExpression(inner);
 
         // variable or output
@@ -157,12 +156,8 @@ public class ExpressionParser : IExpressionParser
     {
         expr = ReplaceEmbeddedExpressions(expr);
 
-        // Replace variable expressions
-        expr = Regex.Replace(expr, @"(Outputs|Variables)\([^)]*\)", m =>
-        {
-            var val = ResolveInnerExpression(m.Value);
-            return val?.ToString() ?? "0";
-        });
+        // manually replace variable references like Outputs(...) or Variables(...)
+        expr = ReplaceVariables(expr);
 
         try
         {
@@ -172,19 +167,51 @@ public class ExpressionParser : IExpressionParser
         }
         catch
         {
-            // if numeric conversion fails, fallback to string/variable
             return ResolveLiteralOrValue(expr);
         }
     }
 
+    private string ReplaceVariables(string expr)
+    {
+        int pos = 0;
+        while (pos < expr.Length)
+        {
+            if (expr.Substring(pos).StartsWith("Outputs(") || expr.Substring(pos).StartsWith("Variables("))
+            {
+                bool isOutput = expr.Substring(pos).StartsWith("Outputs(");
+                string sourceType = isOutput ? "Outputs" : "Variables";
+                int start = pos + sourceType.Length;
+                int end = FindMatchingParenthesis(expr, start);
+                if (end == -1) break;
+
+                string keyExpr = expr.Substring(start + 1, end - start - 1);
+                string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr));
+                object? val = ResolveSourceValue(sourceType, resolvedKey);
+
+                expr = expr.Substring(0, pos) + (val?.ToString() ?? "0") + expr.Substring(end + 1);
+            }
+            else pos++;
+        }
+        return expr;
+    }
+
     private string ReplaceEmbeddedExpressions(string expr)
     {
-        var matches = Regex.Matches(expr, @"\$\[[^\]]+\]");
-        foreach (string sub in matches.Cast<Match>().Select(m => m.Value))
+        int pos = 0;
+        while (pos < expr.Length)
         {
-            string inner = sub[2..^1]; // remove first 2 and last character
+            int start = expr.IndexOf("$[", pos, StringComparison.Ordinal);
+            if (start == -1) break;
+
+            int end = FindMatchingBracket(expr, start + 1);
+            if (end == -1)
+                throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,
+                    $"Unbalanced brackets in expression: {expr}");
+
+            string inner = expr.Substring(start + 2, end - start - 2).Trim();
             object? val = ResolveInnerOrConditionalOrMath(inner);
-            expr = expr.Replace(sub, val?.ToString() ?? "null");
+            expr = expr.Substring(0, start) + (val?.ToString() ?? "null") + expr.Substring(end + 1);
+            pos = start + (val?.ToString() ?? "null").Length;
         }
         return expr;
     }
