@@ -227,10 +227,24 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         if (task == null)
             return;
 
+        // Replace top-level simple fields
         ReplaceTopLevelStrings(task, parser);
+
+        // Parameters, Manual Approval, Dependencies, etc.
         ProcessTaskParameters(task, parser);
         ProcessManualApproval(task.ManualApproval, parser);
         ReplaceStringListItems(task.Dependencies, parser);
+        ReplaceStringListItems(task.RunOnFailureOf, parser);
+
+        // Process ErrorHandling deeply
+        ProcessErrorHandling(task.ErrorHandling, parser);
+
+        // Process Position (X, Y)
+        if (task.Position is not null)
+        {
+            task.Position.X = ReplaceDoubleIfPlaceholder(task.Position.X, parser);
+            task.Position.Y = ReplaceDoubleIfPlaceholder(task.Position.Y, parser);
+        }
     }
 
     /// <summary>
@@ -253,24 +267,112 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
         foreach (var key in task.Parameters.Keys.ToList())
         {
-            task.Parameters[key] = NormalizeParameterValue(task.Parameters[key], parser);
+            task.Parameters[key] = ProcessValueDeep(task.Parameters[key], parser);
         }
 
         _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, parser);
     }
 
-    private object? NormalizeParameterValue(object? value, IExpressionParser parser)
+    /// <summary>
+    /// Recursively processes a value that might be a string, JObject, array, dictionary, or PluginContext.
+    /// </summary>
+    private object? ProcessValueDeep(object? value, IExpressionParser parser)
     {
-        if (value is null)
+        if (value == null)
             return null;
 
-        return value switch
+        switch (value)
         {
-            JObject jObject => ProcessPluginContextObject(jObject, parser),
-            JArray jArray => ProcessPluginContextArray(jArray, parser),
-            string s => ReplaceIfNotNull(s, parser),
-            _ => value
-        };
+            case string s:
+                return ReplaceIfNotNull(s, parser);
+
+            case JObject jObj:
+                // Try PluginContext first
+                var pc = TryDeserializePluginContext(jObj);
+                if (pc != null)
+                {
+                    ApplyPlaceholdersToPluginContext(pc, parser);
+                    return pc;
+                }
+
+                // Otherwise recursively process all properties
+                foreach (var prop in jObj.Properties().ToList())
+                    jObj[prop.Name] = JToken.FromObject(ProcessValueDeep(jObj[prop.Name], parser) ?? JValue.CreateNull());
+                return jObj;
+
+            case JArray jArray:
+                var list = new List<object?>();
+                foreach (var item in jArray)
+                    list.Add(ProcessValueDeep(item, parser));
+                return list;
+
+            case IDictionary<string, object?> dict:
+                var newDict = new Dictionary<string, object?>();
+                foreach (var kvp in dict)
+                    newDict[kvp.Key] = ProcessValueDeep(kvp.Value, parser);
+                return newDict;
+
+            case IEnumerable<object?> enumerable:
+                return enumerable.Select(e => ProcessValueDeep(e, parser)).ToList();
+
+            case PluginContext pluginCtx:
+                ApplyPlaceholdersToPluginContext(pluginCtx, parser);
+                return pluginCtx;
+
+            default:
+                return value;
+        }
+    }
+
+    /// <summary>
+    /// Replaces all placeholders inside ErrorHandling object including RetryPolicy and TriggerPolicy.
+    /// </summary>
+    private void ProcessErrorHandling(ErrorHandling? errorHandling, IExpressionParser parser)
+    {
+        if (errorHandling == null)
+            return;
+
+        // RetryPolicy
+        if (errorHandling.RetryPolicy != null)
+        {
+            var rp = errorHandling.RetryPolicy;
+
+            rp.InitialDelay = ReplaceNumberIfPlaceholder(rp.InitialDelay, parser);
+            rp.MaxDelay = ReplaceNumberIfPlaceholder(rp.MaxDelay, parser);
+            rp.BackoffCoefficient = ReplaceDoubleIfPlaceholder(rp.BackoffCoefficient, parser);
+            rp.MaxRetries = ReplaceNumberIfPlaceholder(rp.MaxRetries, parser);
+        }
+
+        // TriggerPolicy
+        if (errorHandling.TriggerPolicy != null)
+        {
+            errorHandling.TriggerPolicy.TaskName = ReplaceIfNotNull(errorHandling.TriggerPolicy.TaskName, parser);
+        }
+    }
+
+    /// <summary>
+    /// Replaces numeric placeholders if the value is a placeholder expression.
+    /// </summary>
+    private int ReplaceNumberIfPlaceholder(int value, IExpressionParser parser)
+    {
+        var str = value.ToString();
+
+        var replaced = _placeholderReplacer.ReplacePlaceholders(str, parser);
+        if (int.TryParse(replaced, out var num))
+            return num;
+
+        return value;
+    }
+
+    private double ReplaceDoubleIfPlaceholder(double value, IExpressionParser parser)
+    {
+        var str = value.ToString();
+
+        var replaced = _placeholderReplacer.ReplacePlaceholders(str, parser);
+        if (double.TryParse(replaced, out var num))
+            return num;
+
+        return value;
     }
 
     private object ProcessPluginContextObject(JObject jObject, IExpressionParser parser)
@@ -327,26 +429,14 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
     private static PluginContext? TryDeserializePluginContext(JObject jObject)
     {
-        try
-        {
-            return jObject.ToObject<PluginContext>();
-        }
-        catch
-        {
-            return null;
-        }
+        try { return jObject.ToObject<PluginContext>(); }
+        catch { return null; }
     }
 
     private static List<PluginContext>? TryDeserializePluginContextList(JArray jArray)
     {
-        try
-        {
-            return jArray.ToObject<List<PluginContext>>();
-        }
-        catch
-        {
-            return null;
-        }
+        try { return jArray.ToObject<List<PluginContext>>(); }
+        catch { return null; }
     }
 
     /// <summary>
