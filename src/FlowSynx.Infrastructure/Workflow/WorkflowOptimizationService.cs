@@ -22,7 +22,7 @@ public sealed class WorkflowOptimizationService : IWorkflowOptimizationService
         var explanation = new List<string>();
 
         // 1) Compute structural parallelism width (simple levelization)
-        var (levels, maxWidth) = ComputeLevels(copy.Tasks);
+        var (_, maxWidth) = ComputeLevels(copy.Tasks);
         if (maxWidth > 0)
         {
             var recommendedDop = Math.Clamp(maxWidth, 2, Environment.ProcessorCount * 2);
@@ -41,13 +41,10 @@ public sealed class WorkflowOptimizationService : IWorkflowOptimizationService
         }
 
         // 3) Per-task timeouts: if missing, add modest default (e.g., 2 minutes)
-        foreach (var task in copy.Tasks)
+        foreach (var task in copy.Tasks.Where(t => t.Timeout is null))
         {
-            if (task.Timeout is null)
-            {
-                task.Timeout = 2 * 60 * 1000;
-                explanation.Add($"Task '{task.Name}': applied default timeout 2m (ms).");
-            }
+            task.Timeout = 2 * 60 * 1000;
+            explanation.Add($"Task '{task.Name}': applied default timeout 2m (ms).");
         }
 
         // 4) Normalize dependencies collections

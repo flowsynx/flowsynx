@@ -425,7 +425,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GenerateFromIntent(
+    public static async Task<IResult> GenerateFromIntent(
         HttpContext context,
         [FromServices] IMediator mediator,
         [FromServices] IJsonDeserializer jsonDeserializer,

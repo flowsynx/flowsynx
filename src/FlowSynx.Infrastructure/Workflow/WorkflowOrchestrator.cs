@@ -545,7 +545,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         _logger.LogInformation("Result for workflow '{WorkflowExecutionId}' are restored", context.WorkflowExecutionId);
     }
 
-    private TaskOutput MapToTaskOutput(object? value)
+    private static TaskOutput MapToTaskOutput(object? value)
     {
         // If it's already our new type
         if (value is TaskOutput to) return to;

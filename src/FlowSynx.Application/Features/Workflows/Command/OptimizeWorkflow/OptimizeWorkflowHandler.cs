@@ -79,12 +79,12 @@ internal class OptimizeWorkflowHandler : IRequestHandler<OptimizeWorkflowRequest
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, ex.ToString());
             return await Result<OptimizeWorkflowResponse>.FailAsync(ex.ToString());
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, ex.Message);
             return await Result<OptimizeWorkflowResponse>.FailAsync(ex.Message);
         }
     }

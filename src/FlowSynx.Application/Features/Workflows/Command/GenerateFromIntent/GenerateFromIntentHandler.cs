@@ -20,7 +20,6 @@ internal class GenerateFromIntentHandler : IRequestHandler<GenerateFromIntentReq
     private readonly IWorkflowValidator _workflowValidator;
     private readonly IWorkflowSchemaValidator _schemaValidator;
     private readonly ILocalization _localization;
-    private readonly IJsonDeserializer _deserializer;
 
     public GenerateFromIntentHandler(
         ILogger<GenerateFromIntentHandler> logger,
@@ -29,8 +28,7 @@ internal class GenerateFromIntentHandler : IRequestHandler<GenerateFromIntentReq
         IWorkflowIntentService intentService,
         IWorkflowValidator workflowValidator,
         IWorkflowSchemaValidator schemaValidator,
-        ILocalization localization,
-        IJsonDeserializer deserializer)
+        ILocalization localization)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -39,7 +37,6 @@ internal class GenerateFromIntentHandler : IRequestHandler<GenerateFromIntentReq
         _workflowValidator = workflowValidator ?? throw new ArgumentNullException(nameof(workflowValidator));
         _schemaValidator = schemaValidator ?? throw new ArgumentNullException(nameof(schemaValidator));
         _localization = localization ?? throw new ArgumentNullException(nameof(localization));
-        _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
     }
 
     public async Task<Result<GenerateFromIntentResponse>> Handle(GenerateFromIntentRequest request, CancellationToken cancellationToken)
@@ -89,12 +86,12 @@ internal class GenerateFromIntentHandler : IRequestHandler<GenerateFromIntentReq
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, ex.Message);
             return await Result<GenerateFromIntentResponse>.FailAsync(ex.ToString());
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, ex.Message);
             return await Result<GenerateFromIntentResponse>.FailAsync(ex.Message);
         }
     }
