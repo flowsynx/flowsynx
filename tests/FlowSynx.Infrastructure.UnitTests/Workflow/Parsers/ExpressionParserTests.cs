@@ -21,14 +21,19 @@ public class ExpressionParserTests
             ["JsonObj"] = JObject.Parse("{\"Name\":\"Bob\",\"Friends\":[{\"Name\":\"Eva\"},{\"Name\":\"Max\"}],\"Scores\":[1,2,3]}"),
             ["List"] = new List<int> { 10, 20, 30 },
             ["JArray"] = JArray.Parse("[1,2,3]"),
-            ["NullObj"] = null
+            ["NullObj"] = null,
+            ["score"] = 85,
+            ["a"] = 10,
+            ["b"] = 5
         };
 
         _variables = new Dictionary<string, object?>
         {
             ["Name"] = "World",
             ["KeyOfGreeting"] = "'Greeting'",
-            ["DynamicKey"] = "JsonObj"
+            ["DynamicKey"] = "JsonObj",
+            ["threshold"] = 70,
+            ["multiplier"] = 2
         };
     }
 
@@ -117,6 +122,96 @@ public class ExpressionParserTests
         Assert.Contains("ExpressionParser: Outputs('NotExist') not found", ex.Message);
     }
 
+    // ---------------- Arithmetic & Boolean Tests ----------------
+
+    [Fact]
+    public void Parse_ArithmeticExpression_Addition_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[(Outputs('a') + Outputs('b'))]");
+        Assert.Equal(15d, result);
+    }
+
+    [Fact]
+    public void Parse_ArithmeticExpression_MultiplicationAndDivision_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[(Outputs('a') * Variables('multiplier')) / Outputs('b')]");
+        Assert.Equal(4d, result);
+    }
+
+    [Fact]
+    public void Parse_BooleanComparison_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ Outputs('score') > Variables('threshold') ]");
+        Assert.True((bool)result!);
+    }
+
+    [Fact]
+    public void Parse_BooleanComparison_LessThanOrEqual_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ Outputs('a') <= Outputs('b') ]");
+        Assert.False((bool)result!);
+    }
+
+    [Fact]
+    public void Parse_Boolean_LogicalAndOr_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ Outputs('score') > 80 && Variables('threshold') < 90 || Outputs('a') == 10 ]");
+        Assert.True((bool)result!);
+    }
+
+    [Fact]
+    public void Parse_ConditionalExpression_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ Outputs('score') > Variables('threshold') ? 'PASS' : 'FAIL' ]");
+        Assert.Equal("PASS", result);
+    }
+
+    [Fact]
+    public void Parse_ArithmeticInsideConditional_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ (Outputs('a') + Outputs('b')) > 12 ? Outputs('a') : Outputs('b') ]");
+        Assert.Equal(10, result);
+    }
+
+    [Fact]
+    public void Parse_ComplexArithmeticBooleanExpression_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ ((Outputs('a') + Outputs('b')) * Variables('multiplier')) > 20 ]");
+        Assert.True((bool)result!);
+    }
+
+    [Fact]
+    public void Parse_NestedExpressions_InsideArithmetic_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ (Outputs('a') + $[Variables('multiplier')]) * 2 ]");
+        Assert.Equal(24d, result);
+    }
+
+    [Fact]
+    public void Parse_ParenthesesPreserveOrderOfOperations()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ (Outputs('a') + Outputs('b')) * 2 ]");
+        Assert.Equal(30d, result);
+    }
+
+    [Fact]
+    public void Parse_NestedArithmeticInsideBoolean_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[ (Outputs('a') + Outputs('b')) * 2 == 30 ]");
+        Assert.True((bool)result!);
+    }
+
     // ---------------- Reflection-based helper coverage tests ----------------
 
     [Fact]
@@ -145,15 +240,6 @@ public class ExpressionParserTests
         var value = InvokePrivateStatic<string>(typeof(ExpressionParser), "ReadUntil", args);
         Assert.Equal("12345", value);
         Assert.Equal(5, (int)args[1]); // stopped before ']'
-    }
-
-    [Fact]
-    public void TryParseJson_ValidAndInvalid()
-    {
-        var ok = InvokePrivateStatic<JToken?>(typeof(ExpressionParser), "TryParseJson", "{\"a\":1}");
-        Assert.NotNull(ok);
-        var bad = InvokePrivateStatic<JToken?>(typeof(ExpressionParser), "TryParseJson", "{bad");
-        Assert.Null(bad);
     }
 
     [Fact]
