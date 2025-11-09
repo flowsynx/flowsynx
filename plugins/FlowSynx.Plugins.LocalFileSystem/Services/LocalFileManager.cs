@@ -96,10 +96,10 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(createParameters.Path);
         if (string.IsNullOrEmpty(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         if (!PathHelper.IsDirectory(path))
-            throw new Exception(Resources.ThePathIsNotDirectory);
+            throw new ArgumentException(Resources.ThePathIsNotDirectory, nameof(path));
 
         var directory = Directory.CreateDirectory(path);
         if (createParameters.Hidden is true)
@@ -116,13 +116,13 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(deleteParameters.Path);
         if (string.IsNullOrEmpty(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         if (!PathHelper.IsFile(path))
-            throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotFile, path));
+            throw new ArgumentException(Resources.ThePathIsNotFile, nameof(path));
 
         if (!File.Exists(path))
-            throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+            throw new ArgumentException(string.Format(Resources.TheSpecifiedPathIsNotExist, path), nameof(path));
 
         File.Delete(path);
         _logger.LogInfo(string.Format(Resources.TheSpecifiedPathWasDeleted, path));
@@ -136,7 +136,7 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(existParameters.Path);
         if (string.IsNullOrWhiteSpace(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         var isExist = PathHelper.IsDirectory(path) ? Directory.Exists(path) : File.Exists(path);
         return Task.FromResult(isExist);
@@ -150,13 +150,13 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(listParameters.Path);
         if (string.IsNullOrEmpty(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         if (!PathHelper.IsDirectory(path))
-            throw new Exception(Resources.ThePathIsNotDirectory);
+            throw new ArgumentException(Resources.ThePathIsNotDirectory, nameof(path));
 
         if (!Directory.Exists(path))
-            throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+            throw new ArgumentException(string.Format(Resources.TheSpecifiedPathIsNotExist, path), nameof(path));
 
         var directoryInfo = new DirectoryInfo(path);
 
@@ -176,13 +176,13 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(purgeParameters.Path);
         if (string.IsNullOrEmpty(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         if (!PathHelper.IsDirectory(path))
-            throw new Exception(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path));
+            throw new ArgumentException(string.Format(Resources.TheSpecifiedDirectoryPathIsNotDirectory, path), nameof(path));
 
         if (!Directory.Exists(path))
-            throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+            throw new ArgumentException(string.Format(Resources.TheSpecifiedPathIsNotExist, path), nameof(path));
 
         var directoryInfo = new DirectoryInfo(path);
         var deleteRecursively = purgeParameters.Force ?? false;
@@ -201,13 +201,13 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(readParameters.Path);
         if (string.IsNullOrEmpty(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         if (!PathHelper.IsFile(path))
-            throw new Exception(Resources.ThePathIsNotFile);
+            throw new ArgumentException(Resources.ThePathIsNotFile, nameof(path));
 
         if (!File.Exists(path))
-            throw new Exception(string.Format(Resources.TheSpecifiedPathIsNotExist, path));
+            throw new ArgumentException(string.Format(Resources.TheSpecifiedPathIsNotExist, path), nameof(path));
 
         var fileInfo = new FileInfo(path);
         var entity = fileInfo.ToContext(true);
@@ -225,10 +225,10 @@ internal class LocalFileManager : ILocalFileManager
         var targetPath = PathHelper.ToUnixPath(renameParameters.TargetPath);
 
         if (!File.Exists(sourcePath) && !Directory.Exists(sourcePath))
-            throw new Exception(string.Format(Resources.RenameSourcePathDoesNotExist, sourcePath));
+            throw new ArgumentException(string.Format(Resources.RenameSourcePathDoesNotExist, sourcePath), nameof(renameParameters.Path));
 
         if (File.Exists(targetPath) || Directory.Exists(renameParameters.TargetPath))
-            throw new Exception(string.Format(Resources.RenameTargetPathIsAlreadyExist, renameParameters.TargetPath));
+            throw new ArgumentException(string.Format(Resources.RenameTargetPathIsAlreadyExist, renameParameters.TargetPath), nameof(renameParameters.TargetPath));
 
         if (File.Exists(sourcePath))
         {
@@ -252,7 +252,7 @@ internal class LocalFileManager : ILocalFileManager
 
         var path = PathHelper.ToUnixPath(writeParameters.Path);
         if (string.IsNullOrEmpty(path))
-            throw new Exception(Resources.TheSpecifiedPathMustBeNotEmpty);
+            throw new ArgumentException(Resources.TheSpecifiedPathMustBeNotEmpty, nameof(path));
 
         var dataValue = writeParameters.Data;
         var pluginContextes = new List<PluginContext>();
@@ -260,21 +260,21 @@ internal class LocalFileManager : ILocalFileManager
         if (dataValue is PluginContext pluginContext)
         {
             if (!PathHelper.IsFile(path))
-                throw new Exception(Resources.ThePathIsNotFile);
+                throw new ArgumentException(Resources.ThePathIsNotFile, nameof(path));
 
             pluginContextes.Add(pluginContext);
         }
         else if (dataValue is IEnumerable<PluginContext> pluginContextDataList)
         {
             if (!PathHelper.IsDirectory(path))
-                throw new Exception(Resources.ThePathIsNotDirectory);
+                throw new ArgumentException(Resources.ThePathIsNotDirectory, nameof(path));
 
             pluginContextes.AddRange(pluginContextDataList);
         }
         else if (dataValue is string data)
         {
             if (!PathHelper.IsFile(path))
-                throw new Exception(Resources.ThePathIsNotFile);
+                throw new ArgumentException(Resources.ThePathIsNotFile, nameof(path));
 
             var contextData = CreateContextDataFromStringData(path, data);
             pluginContextes.Add(contextData);
@@ -335,15 +335,15 @@ internal class LocalFileManager : ILocalFileManager
             Directory.CreateDirectory(parentDirectory);
 
         if (!PathHelper.IsFile(fullPath))
-            throw new Exception(Resources.ThePathIsNotFile);
+            throw new ArgumentException(Resources.ThePathIsNotFile, nameof(fullPath));
 
         if (File.Exists(fullPath) && overwrite is false)
-            throw new Exception(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath));
+            throw new ArgumentException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath), nameof(fullPath));
 
         if (File.Exists(fullPath))
         {
             if (overwrite is false)
-                throw new Exception(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath));
+                throw new ArgumentException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath), nameof(fullPath));
             else
                 DeleteEntity(new DeleteParameters { Path = fullPath }, cancellationToken);
         }
