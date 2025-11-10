@@ -275,7 +275,7 @@ public class ExpressionParser : IExpressionParser
             else if (expr[i] == ':')
             {
                 depth--;
-                if (depth == 0 && colonIdx == -1)
+                if (colonIdx == -1 && depth == 0)
                     colonIdx = i;
             }
         }
@@ -711,7 +711,7 @@ public class ExpressionParser : IExpressionParser
                     return null;
                 }
 
-                if (obj is null) return null;
+                if (obj == null) return null;
                 obj = GetArrayItem(obj, idx);
 
                 // advance past closing ']'
@@ -797,12 +797,10 @@ public class ExpressionParser : IExpressionParser
                 return UnwrapJToken(val);
 
             // Try case-insensitive
-            foreach (var kv in stringDict)
-            {
-                if (string.Equals(kv.Key, propertyKey, StringComparison.OrdinalIgnoreCase))
-                    return UnwrapJToken(kv.Value);
-            }
-            return null;
+            return stringDict
+                .Where(kv => string.Equals(kv.Key, propertyKey, StringComparison.OrdinalIgnoreCase))
+                .Select(kv => UnwrapJToken(kv.Value))
+                .FirstOrDefault();
         }
 
         // IDictionary (non-generic)
