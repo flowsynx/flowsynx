@@ -711,10 +711,6 @@ public class ExpressionParser : IExpressionParser
                     return null;
                 }
 
-                // Ensure obj is not null before array access
-                if (obj == null)
-                    return null;
-
                 obj = GetArrayItem(obj, idx);
 
                 // advance past closing ']'
@@ -727,10 +723,6 @@ public class ExpressionParser : IExpressionParser
                 var name = ReadName(accessPath, ref i);
                 if (string.IsNullOrEmpty(name))
                     break;
-
-                // Ensure obj is not null before property access
-                if (obj == null)
-                    return null;
 
                 obj = GetPropertyValue(obj, name);
             }
