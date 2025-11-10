@@ -4,7 +4,6 @@ using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
-using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
@@ -12,9 +11,7 @@ using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
-using System.Linq.Expressions;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
@@ -38,8 +35,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private readonly ILocalization _localization;
     private readonly IEventPublisher _eventPublisher;
     private readonly ITriggeredTaskQueue _triggeredTaskQueue;
-
-    // New typed outputs: status + result
     private ConcurrentDictionary<string, TaskOutput> _taskOutputs = new();
 
     public WorkflowOrchestrator(
@@ -251,7 +246,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             if (!readyTasks.Any())
                 return await HandleFailedDependenciesAsync(executionEntity, cancellationToken);
 
-            // Pass only the actual results to the parser
             var parserInputs = _taskOutputs.ToDictionary(kv => kv.Key, kv => kv.Value.Result);
             var parser = _parserFactory.CreateParser(parserInputs, definition.Variables);
 
@@ -268,8 +262,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 cancellationToken,
                 registeredToken);
 
-            // Process conditional branches
-            await ProcessConditionalBranchesAsync(executionResults, taskMap, pending, parser, executionEntity.Id);
+            ProcessConditionalBranches(executionResults, taskMap, pending, parser, executionEntity.Id);
 
             if (executionResults.Errors.Any())
             {
@@ -279,7 +272,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             }
 
             var completedTasks = executionResults.TaskResults.Values
-                .Where(r => r.WasExecuted) // only remove executed ones
+                .Where(r => r.WasExecuted)
                 .Select(r => r.TaskName)
                 .ToList();
 
@@ -295,15 +288,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         }
 
         return await CompleteWorkflowAsync(userId, workflowId, executionEntity, cancellationToken);
-    }
-
-    private class ConditionalTaskResult
-    {
-        public string TaskName { get; set; } = string.Empty;
-        public bool WasExecuted { get; set; }
-        public bool WasConditionMet { get; set; }
-        public TaskOutput Output { get; set; } = TaskOutput.Success(null);
-        public Exception? Error { get; set; }
     }
 
     private async Task<ConditionalExecutionResult> ExecuteApprovedTasksWithConditionalsAsync(
@@ -329,8 +313,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             await semaphore.WaitAsync(linkedCts.Token);
             try
             {
-                // Check if task should execute based on condition
-                var shouldExecute = await EvaluateTaskConditionAsync(task, parser, linkedCts.Token);
+                var shouldExecute = EvaluateTaskCondition(task, parser);
 
                 if (!shouldExecute)
                 {
@@ -385,17 +368,15 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         };
     }
 
-    private async Task<bool> EvaluateTaskConditionAsync(
-        WorkflowTask task, 
-        IExpressionParser parser, 
-        CancellationToken cancellationToken)
+    private bool EvaluateTaskCondition(
+        WorkflowTask task,
+        IExpressionParser parser)
     {
         if (task.ExecutionCondition == null || string.IsNullOrWhiteSpace(task.ExecutionCondition.Expression))
-            return true; // No condition means always execute
+            return true;
 
         try
         {
-            // ✅ Ensure variables (task outputs, workflow vars) are visible to the parser
             var result = parser.Parse(task.ExecutionCondition.Expression);
 
             bool final = false;
@@ -424,7 +405,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
 
-    private async Task ProcessConditionalBranchesAsync(
+    private void ProcessConditionalBranches(
         ConditionalExecutionResult executionResults,
         Dictionary<string, WorkflowTask> taskMap,
         HashSet<string> pending,
@@ -464,7 +445,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                         if (!pending.Contains(branch.TargetTaskName))
                             pending.Add(branch.TargetTaskName);
 
-                        // Avoid enqueueing duplicates
                         _triggeredTaskQueue.Enqueue(executionId, branch.TargetTaskName);
 
                         _logger.LogInformation("Conditional branch taken from '{Source}' → '{Target}' (expr: {Expr})",
@@ -479,73 +459,13 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         }
     }
 
-
-    private async Task<bool> EvaluateConditionalBranchesAsync(
-        WorkflowTask task,
-        ConditionalTaskResult taskResult,
-        IExpressionParser parser,
-        HashSet<string> pending,
-        Guid executionId)
-    {
-        foreach (var branch in task.ConditionalBranches!)
-        {
-            try
-            {
-                var shouldTakeBranch = parser.Parse(branch.Expression);
-                var conditionResult = shouldTakeBranch;
-
-                if (shouldTakeBranch is bool b)
-                    conditionResult = b;
-
-                if (conditionResult is string s && bool.TryParse(s, out var sb))
-                    conditionResult = sb;
-
-                if (conditionResult is bool finalResult && finalResult)
-                {
-                    // Add the target task to pending and trigger queue
-                    if (pending.Contains(branch.TargetTaskName))
-                    {
-                        _triggeredTaskQueue.Enqueue(executionId, branch.TargetTaskName);
-                        _logger.LogInformation(
-                            "Conditional branch from '{SourceTask}' to '{TargetTask}' activated",
-                            task.Name, branch.TargetTaskName);
-                    }
-                    else
-                    {
-                        _logger.LogWarning(
-                            "Conditional branch target '{TargetTask}' not found in pending tasks",
-                            branch.TargetTaskName);
-                    }
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Failed to evaluate conditional branch from '{SourceTask}' to '{TargetTask}': {Condition}",
-                    task.Name, branch.TargetTaskName, branch.Expression);
-            }
-        }
-        return false;
-    }
-
-    // Helper classes for conditional execution results
-    private class ConditionalExecutionResult
-    {
-        public List<Exception> Errors { get; set; } = new();
-        public ConcurrentDictionary<string, ConditionalTaskResult> TaskResults { get; set; } = new();
-    }
-
     private List<string> GetReadyTasks(
         Guid executionId,
         Dictionary<string, WorkflowTask> taskMap,
         HashSet<string> pending,
         HashSet<string> conditionalTargets)
     {
-        // Regular dependency-driven ready tasks
         var ready = FindExecutableTasks(executionId, taskMap, pending, conditionalTargets).ToList();
-
-        // Conditionally triggered tasks
         var triggered = DequeueTriggeredTasks(executionId).ToList();
 
         foreach (var taskName in triggered)
@@ -589,9 +509,9 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                     cancellationToken);
 
                 if (result == WorkflowExecutionStatus.Failed)
-                    return new List<WorkflowTask>(); // stop further processing
+                    return new List<WorkflowTask>();
                 if (result == WorkflowExecutionStatus.Paused)
-                    return new List<WorkflowTask>(); // return empty to indicate pause
+                    return new List<WorkflowTask>();
                 approvedTasks.Add(task);
             }
             else
@@ -619,7 +539,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 return WorkflowExecutionStatus.Failed;
 
             case WorkflowApprovalStatus.Approved:
-                return WorkflowExecutionStatus.Completed; // signal continue
+                return WorkflowExecutionStatus.Completed;
 
             default:
                 _logger.LogInformation("Manual approval required for task '{TaskName}'", task.Name);
@@ -627,23 +547,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 _triggeredTaskQueue.Clear(executionEntity.Id);
                 return WorkflowExecutionStatus.Paused;
         }
-    }
-
-    private async Task<List<Exception>> ExecuteApprovedTasksAsync(
-        WorkflowExecutionContext context,
-        List<WorkflowTask> approvedTasks,
-        IExpressionParser parser,
-        WorkflowConfiguration config,
-        CancellationToken cancellationToken,
-        CancellationToken registeredToken)
-    {
-        return await ExecuteTasksInParallelAsync(
-            context, 
-            approvedTasks, 
-            parser, 
-            config, 
-            cancellationToken, 
-            registeredToken);
     }
 
     private async Task<WorkflowExecutionStatus> HandleFailedDependenciesAsync(
@@ -656,14 +559,10 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return WorkflowExecutionStatus.Failed;
     }
 
-    private void UpdatePendingTasks(HashSet<string> pending, IEnumerable<string> completed, Guid executionId)
+    private static void UpdatePendingTasks(HashSet<string> pending, IEnumerable<string> completed, Guid executionId)
     {
         foreach (var taskId in completed)
             pending.Remove(taskId);
-
-        //var triggered = DequeueTriggeredTasks(executionId);
-        //foreach (var triggeredTask in triggered)
-        //    pending.Add(triggeredTask);
     }
 
     private async Task<WorkflowExecutionStatus> CompleteWorkflowAsync(
@@ -712,47 +611,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         _logger.LogInformation("Initialized task executions for workflow '{WorkflowId}'", workflowId);
     }
-
-    private async Task<List<Exception>> ExecuteTasksInParallelAsync(
-        WorkflowExecutionContext context,
-        IEnumerable<WorkflowTask> tasks,
-        IExpressionParser parser,
-        WorkflowConfiguration config,
-        CancellationToken globalToken,
-        CancellationToken localToken)
-    {
-        var errors = new ConcurrentBag<Exception>();
-        var semaphore = _semaphoreFactory.Create(config.DegreeOfParallelism ?? 3);
-
-        using var timeoutCts = new CancellationTokenSource(config.Timeout.HasValue
-            ? TimeSpan.FromMilliseconds(config.Timeout.Value)
-            : Timeout.InfiniteTimeSpan);
-
-        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(localToken, timeoutCts.Token);
-
-        var executions = tasks.Select(async task =>
-        {
-            await semaphore.WaitAsync(linkedCts.Token);
-            try
-            {
-                var result = await _taskExecutor.ExecuteAsync(context, task, parser, globalToken, linkedCts.Token);
-                _taskOutputs[task.Name] = result;
-            }
-            catch (Exception ex)
-            {
-                _taskOutputs[task.Name] = TaskOutput.Failure(ex);
-                errors.Add(new Exception(_localization.Get("WorkflowOrchestrator_TaskFailed", task.Name, ex.Message), ex));
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-        });
-
-        await Task.WhenAll(executions);
-        return errors.ToList();
-    }
-
     private async Task PauseForManualApprovalAsync(
         string userId, 
         WorkflowExecutionEntity execution, 
@@ -789,7 +647,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     {
         if (_taskOutputs == null) return;
 
-        // Persist as ConcurrentDictionary<string, object?> with TaskOutput objects as values
         var toPersist = new ConcurrentDictionary<string, object?>(
             _taskOutputs.Select(kv => new KeyValuePair<string, object?>(kv.Key, kv.Value))
         );
@@ -820,10 +677,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
     private static TaskOutput MapToTaskOutput(object? value)
     {
-        // If it's already our new type
         if (value is TaskOutput to) return to;
-
-        // Otherwise treat as successful result payload
         return TaskOutput.Success(value);
     }
 
@@ -899,11 +753,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             .Select(kv => kv.Key)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        //var failedTasks = _taskOutputs
-        //    .Where(kv => kv.Value.Status == TaskOutputStatus.Failed)
-        //    .Select(kv => kv.Key)
-        //    .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
         foreach (var taskName in pending)
         {
             if (!taskMap.TryGetValue(taskName, out var task))
@@ -915,33 +764,19 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             if (isConditionalTarget && !isTriggered)
                 continue;
 
-            // 🔹 No dependencies — ready to run
             if (task.Dependencies == null || task.Dependencies.Count == 0)
             {
                 ready.Add(taskName);
                 continue;
             }
 
-            // 🔹 Dependencies succeeded
             bool depsSucceeded = task.Dependencies.All(dep => succeededTasks.Contains(dep));
 
-            // 🔹 Failure trigger check
             bool failureTriggered = task.RunOnFailureOf is { Count: > 0 } &&
                                     task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
 
-            // ✅ Eligible for execution
             if (depsSucceeded || failureTriggered)
                 ready.Add(taskName);
-
-            //var task = taskMap[taskName];
-            //var depsSatisfied = task.Dependencies == null ||
-            //                    task.Dependencies.All(dep => _taskOutputs.ContainsKey(dep));
-
-            //var hasFailureTriggers = task.RunOnFailureOf is { Count: > 0 };
-            //var failureTriggered = hasFailureTriggers && task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
-
-            //if ((!hasFailureTriggers && depsSatisfied) || (hasFailureTriggers && failureTriggered))
-            //    ready.Add(taskName);
         }
 
         return ready;
@@ -949,4 +784,21 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
     private static LogScopeContext CreateWorkflowLogScope(Guid workflowId) => new() { { "WorkflowId", workflowId } };
     private static LogScopeContext CreateWorkflowExecutionLogScope(Guid workflowExecutionId) => new() { { "WorkflowExecutionId", workflowExecutionId } };
+
+
+    private sealed class ConditionalTaskResult
+    {
+        public string TaskName { get; set; } = string.Empty;
+        public bool WasExecuted { get; set; }
+        public bool WasConditionMet { get; set; }
+        public TaskOutput Output { get; set; } = TaskOutput.Success(null);
+        public Exception? Error { get; set; }
+    }
+
+
+    private sealed class ConditionalExecutionResult
+    {
+        public List<Exception> Errors { get; set; } = new();
+        public ConcurrentDictionary<string, ConditionalTaskResult> TaskResults { get; set; } = new();
+    }
 }
