@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
@@ -25,6 +20,15 @@ public class TriggeredTaskQueue : ITriggeredTaskQueue
             return false;
 
         return queue.TryDequeue(out taskName!);
+    }
+
+    public bool Contains(Guid workflowExecutionId, string taskName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(taskName);
+        if (!_queues.TryGetValue(workflowExecutionId, out var queue))
+            return false;
+
+        return queue.Contains(taskName);
     }
 
     public void Clear(Guid workflowExecutionId)

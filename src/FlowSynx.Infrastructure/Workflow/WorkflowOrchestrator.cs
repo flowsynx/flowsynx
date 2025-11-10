@@ -4,6 +4,7 @@ using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
+using FlowSynx.Application.Wrapper;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
@@ -11,7 +12,9 @@ using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
+using System.Linq.Expressions;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
@@ -227,14 +230,24 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         var registeredToken = _workflowCancellationRegistry.Register(userId, workflowId, executionEntity.Id);
         var taskMap = definition.Tasks.ToDictionary(t => t.Name);
-        var pending = new HashSet<string>(taskMap.Keys);
+
+        var conditionalTargets = definition.Tasks
+            .Where(t => t.ConditionalBranches is { Count: > 0 })
+            .SelectMany(t => t.ConditionalBranches.Select(b => b.TargetTaskName))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var pending = new HashSet<string>(
+            taskMap.Keys.Where(k => !conditionalTargets.Contains(k)),
+            StringComparer.OrdinalIgnoreCase
+        );
+
         var context = new WorkflowExecutionContext(userId, workflowId, executionEntity.Id);
 
         var hadFailures = false;
 
-        while (pending.Any())
+        while (pending.Any() && !cancellationToken.IsCancellationRequested)
         {
-            var readyTasks = GetReadyTasks(executionEntity.Id, taskMap, pending);
+            var readyTasks = GetReadyTasks(executionEntity.Id, taskMap, pending, conditionalTargets);
             if (!readyTasks.Any())
                 return await HandleFailedDependenciesAsync(executionEntity, cancellationToken);
 
@@ -247,22 +260,30 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             if (!approvedTasks.Any())
                 return WorkflowExecutionStatus.Paused;
 
-            var taskErrors = await ExecuteApprovedTasksAsync(
-                context, 
-                approvedTasks, 
-                parser, 
-                definition.Configuration, 
-                cancellationToken, 
+            var executionResults = await ExecuteApprovedTasksWithConditionalsAsync(
+                context,
+                approvedTasks,
+                parser,
+                definition.Configuration,
+                cancellationToken,
                 registeredToken);
 
-            if (taskErrors.Any())
+            // Process conditional branches
+            await ProcessConditionalBranchesAsync(executionResults, taskMap, pending, parser, executionEntity.Id);
+
+            if (executionResults.Errors.Any())
             {
                 hadFailures = true;
                 _logger.LogWarning("Errors occurred in parallel task execution: {Errors}",
-                    string.Join(", ", taskErrors.Select(e => e.Message)));
+                    string.Join(", ", executionResults.Errors.Select(e => e.Message)));
             }
 
-            UpdatePendingTasks(pending, readyTasks, executionEntity.Id);
+            var completedTasks = executionResults.TaskResults.Values
+                .Where(r => r.WasExecuted) // only remove executed ones
+                .Select(r => r.TaskName)
+                .ToList();
+
+            UpdatePendingTasks(pending, completedTasks, executionEntity.Id);
         }
 
         if (hadFailures)
@@ -276,14 +297,266 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return await CompleteWorkflowAsync(userId, workflowId, executionEntity, cancellationToken);
     }
 
-    private List<string> GetReadyTasks(
-        Guid executionId, 
-        Dictionary<string, WorkflowTask> taskMap, 
-        HashSet<string> pending)
+    private class ConditionalTaskResult
     {
-        var readyTasks = FindExecutableTasks(taskMap, pending).ToList();
-        var triggered = DequeueTriggeredTasks(executionId);
-        return readyTasks.Union(triggered).ToList();
+        public string TaskName { get; set; } = string.Empty;
+        public bool WasExecuted { get; set; }
+        public bool WasConditionMet { get; set; }
+        public TaskOutput Output { get; set; } = TaskOutput.Success(null);
+        public Exception? Error { get; set; }
+    }
+
+    private async Task<ConditionalExecutionResult> ExecuteApprovedTasksWithConditionalsAsync(
+        WorkflowExecutionContext context,
+        List<WorkflowTask> approvedTasks,
+        IExpressionParser parser,
+        WorkflowConfiguration config,
+        CancellationToken globalToken,
+        CancellationToken localToken)
+    {
+        var errors = new ConcurrentBag<Exception>();
+        var conditionalResults = new ConcurrentDictionary<string, ConditionalTaskResult>();
+        var semaphore = _semaphoreFactory.Create(config.DegreeOfParallelism ?? 3);
+
+        using var timeoutCts = new CancellationTokenSource(config.Timeout.HasValue
+            ? TimeSpan.FromMilliseconds(config.Timeout.Value)
+            : Timeout.InfiniteTimeSpan);
+
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(localToken, timeoutCts.Token);
+
+        var executions = approvedTasks.Select(async task =>
+        {
+            await semaphore.WaitAsync(linkedCts.Token);
+            try
+            {
+                // Check if task should execute based on condition
+                var shouldExecute = await EvaluateTaskConditionAsync(task, parser, linkedCts.Token);
+
+                if (!shouldExecute)
+                {
+                    _logger.LogInformation("Task '{TaskName}' skipped due to condition evaluation", task.Name);
+                    conditionalResults[task.Name] = new ConditionalTaskResult
+                    {
+                        TaskName = task.Name,
+                        WasExecuted = false,
+                        WasConditionMet = false,
+                        Output = TaskOutput.Success(null)
+                    };
+                    return;
+                }
+
+                var result = await _taskExecutor.ExecuteAsync(context, task, parser, globalToken, linkedCts.Token);
+                _taskOutputs[task.Name] = result;
+
+                conditionalResults[task.Name] = new ConditionalTaskResult
+                {
+                    TaskName = task.Name,
+                    WasExecuted = true,
+                    WasConditionMet = true,
+                    Output = result
+                };
+            }
+            catch (Exception ex)
+            {
+                _taskOutputs[task.Name] = TaskOutput.Failure(ex);
+                errors.Add(new Exception(_localization.Get("WorkflowOrchestrator_TaskFailed", task.Name, ex.Message), ex));
+
+                conditionalResults[task.Name] = new ConditionalTaskResult
+                {
+                    TaskName = task.Name,
+                    WasExecuted = true,
+                    WasConditionMet = true,
+                    Output = TaskOutput.Failure(ex),
+                    Error = ex
+                };
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(executions);
+
+        return new ConditionalExecutionResult
+        {
+            Errors = errors.ToList(),
+            TaskResults = conditionalResults
+        };
+    }
+
+    private async Task<bool> EvaluateTaskConditionAsync(
+        WorkflowTask task, 
+        IExpressionParser parser, 
+        CancellationToken cancellationToken)
+    {
+        if (task.ExecutionCondition == null || string.IsNullOrWhiteSpace(task.ExecutionCondition.Expression))
+            return true; // No condition means always execute
+
+        try
+        {
+            // ✅ Ensure variables (task outputs, workflow vars) are visible to the parser
+            var result = parser.Parse(task.ExecutionCondition.Expression);
+
+            bool final = false;
+            switch (result)
+            {
+                case bool b:
+                    final = b;
+                    break;
+                case string s when bool.TryParse(s, out var sb):
+                    final = sb;
+                    break;
+                default:
+                    _logger.LogWarning("Execution condition '{Expression}' for task '{Task}' returned non-boolean result: {Value}",
+                        task.ExecutionCondition.Expression, task.Name, result);
+                    break;
+            }
+
+            _logger.LogDebug("Execution condition for task '{Task}': {Expression} = {Result}", task.Name, task.ExecutionCondition.Expression, final);
+            return final;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error evaluating ExecutionCondition for task '{TaskName}': {Expression}", task.Name, task.ExecutionCondition.Expression);
+            return false;
+        }
+    }
+
+
+    private async Task ProcessConditionalBranchesAsync(
+        ConditionalExecutionResult executionResults,
+        Dictionary<string, WorkflowTask> taskMap,
+        HashSet<string> pending,
+        IExpressionParser parser,
+        Guid executionId)
+    {
+        foreach (var taskResult in executionResults.TaskResults.Values)
+        {
+            if (!taskResult.WasExecuted || taskResult.Error != null)
+                continue;
+
+            if (!taskMap.TryGetValue(taskResult.TaskName, out var task))
+                continue;
+
+            if (task.ConditionalBranches is not { Count: > 0 })
+                continue;
+
+            foreach (var branch in task.ConditionalBranches)
+            {
+                try
+                {
+                    var condition = parser.Parse(branch.Expression);
+                    bool takeBranch = false;
+
+                    switch (condition)
+                    {
+                        case bool b:
+                            takeBranch = b;
+                            break;
+                        case string s when bool.TryParse(s, out var sb):
+                            takeBranch = sb;
+                            break;
+                    }
+
+                    if (takeBranch)
+                    {
+                        if (!pending.Contains(branch.TargetTaskName))
+                            pending.Add(branch.TargetTaskName);
+
+                        // Avoid enqueueing duplicates
+                        _triggeredTaskQueue.Enqueue(executionId, branch.TargetTaskName);
+
+                        _logger.LogInformation("Conditional branch taken from '{Source}' → '{Target}' (expr: {Expr})",
+                            task.Name, branch.TargetTaskName, branch.Expression);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to evaluate conditional branch '{Expr}' from '{Source}'", branch.Expression, task.Name);
+                }
+            }
+        }
+    }
+
+
+    private async Task<bool> EvaluateConditionalBranchesAsync(
+        WorkflowTask task,
+        ConditionalTaskResult taskResult,
+        IExpressionParser parser,
+        HashSet<string> pending,
+        Guid executionId)
+    {
+        foreach (var branch in task.ConditionalBranches!)
+        {
+            try
+            {
+                var shouldTakeBranch = parser.Parse(branch.Expression);
+                var conditionResult = shouldTakeBranch;
+
+                if (shouldTakeBranch is bool b)
+                    conditionResult = b;
+
+                if (conditionResult is string s && bool.TryParse(s, out var sb))
+                    conditionResult = sb;
+
+                if (conditionResult is bool finalResult && finalResult)
+                {
+                    // Add the target task to pending and trigger queue
+                    if (pending.Contains(branch.TargetTaskName))
+                    {
+                        _triggeredTaskQueue.Enqueue(executionId, branch.TargetTaskName);
+                        _logger.LogInformation(
+                            "Conditional branch from '{SourceTask}' to '{TargetTask}' activated",
+                            task.Name, branch.TargetTaskName);
+                    }
+                    else
+                    {
+                        _logger.LogWarning(
+                            "Conditional branch target '{TargetTask}' not found in pending tasks",
+                            branch.TargetTaskName);
+                    }
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to evaluate conditional branch from '{SourceTask}' to '{TargetTask}': {Condition}",
+                    task.Name, branch.TargetTaskName, branch.Expression);
+            }
+        }
+        return false;
+    }
+
+    // Helper classes for conditional execution results
+    private class ConditionalExecutionResult
+    {
+        public List<Exception> Errors { get; set; } = new();
+        public ConcurrentDictionary<string, ConditionalTaskResult> TaskResults { get; set; } = new();
+    }
+
+    private List<string> GetReadyTasks(
+        Guid executionId,
+        Dictionary<string, WorkflowTask> taskMap,
+        HashSet<string> pending,
+        HashSet<string> conditionalTargets)
+    {
+        // Regular dependency-driven ready tasks
+        var ready = FindExecutableTasks(executionId, taskMap, pending, conditionalTargets).ToList();
+
+        // Conditionally triggered tasks
+        var triggered = DequeueTriggeredTasks(executionId).ToList();
+
+        foreach (var taskName in triggered)
+            pending.Add(taskName);
+
+        var all = ready.Union(triggered).Distinct().ToList();
+
+        if (all.Count == 0)
+            _logger.LogTrace("No tasks ready for execution at this time.");
+
+        return all;
     }
 
     private async Task<List<WorkflowTask>> GetApprovedTasksAsync(
@@ -388,9 +661,9 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         foreach (var taskId in completed)
             pending.Remove(taskId);
 
-        var triggered = DequeueTriggeredTasks(executionId);
-        foreach (var triggeredTask in triggered)
-            pending.Add(triggeredTask);
+        //var triggered = DequeueTriggeredTasks(executionId);
+        //foreach (var triggeredTask in triggered)
+        //    pending.Add(triggeredTask);
     }
 
     private async Task<WorkflowExecutionStatus> CompleteWorkflowAsync(
@@ -609,34 +882,66 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
     private IEnumerable<string> FindExecutableTasks(
+        Guid executionId,
         Dictionary<string, WorkflowTask> taskMap,
-        HashSet<string> pending)
+        HashSet<string> pending,
+        HashSet<string> conditionalTargets)
     {
         var ready = new List<string>();
 
-        // Collect failed task names
+        var succeededTasks = _taskOutputs
+            .Where(kv => kv.Value.Status == TaskOutputStatus.Succeeded)
+            .Select(kv => kv.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var failedTasks = _taskOutputs
             .Where(kv => kv.Value.Status == TaskOutputStatus.Failed)
             .Select(kv => kv.Key)
-            .ToHashSet(StringComparer.Ordinal);
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        //var failedTasks = _taskOutputs
+        //    .Where(kv => kv.Value.Status == TaskOutputStatus.Failed)
+        //    .Select(kv => kv.Key)
+        //    .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var taskName in pending)
         {
-            var task = taskMap[taskName];
+            if (!taskMap.TryGetValue(taskName, out var task))
+                continue;
 
-            var hasDeps = task.Dependencies is { Count: > 0 };
-            var depsSatisfied = !hasDeps || task.Dependencies.All(dep => _taskOutputs.ContainsKey(dep));
+            bool isConditionalTarget = conditionalTargets.Contains(taskName);
+            bool isTriggered = _triggeredTaskQueue.Contains(executionId, taskName);
 
-            var hasFailureTriggers = task.RunOnFailureOf is { Count: > 0 };
-            var failureTriggered = hasFailureTriggers && task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
+            if (isConditionalTarget && !isTriggered)
+                continue;
 
-            // Ready logic:
-            // - Normal tasks: all deps completed successfully
-            // - Failure handler tasks: one of RunOnFailureOf has failed
-            if ((!hasFailureTriggers && depsSatisfied) || (hasFailureTriggers && failureTriggered))
+            // 🔹 No dependencies — ready to run
+            if (task.Dependencies == null || task.Dependencies.Count == 0)
             {
                 ready.Add(taskName);
+                continue;
             }
+
+            // 🔹 Dependencies succeeded
+            bool depsSucceeded = task.Dependencies.All(dep => succeededTasks.Contains(dep));
+
+            // 🔹 Failure trigger check
+            bool failureTriggered = task.RunOnFailureOf is { Count: > 0 } &&
+                                    task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
+
+            // ✅ Eligible for execution
+            if (depsSucceeded || failureTriggered)
+                ready.Add(taskName);
+
+            //var task = taskMap[taskName];
+            //var depsSatisfied = task.Dependencies == null ||
+            //                    task.Dependencies.All(dep => _taskOutputs.ContainsKey(dep));
+
+            //var hasFailureTriggers = task.RunOnFailureOf is { Count: > 0 };
+            //var failureTriggered = hasFailureTriggers && task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
+
+            //if ((!hasFailureTriggers && depsSatisfied) || (hasFailureTriggers && failureTriggered))
+            //    ready.Add(taskName);
         }
 
         return ready;

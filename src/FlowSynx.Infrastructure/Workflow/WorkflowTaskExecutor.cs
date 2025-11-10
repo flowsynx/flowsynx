@@ -238,6 +238,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
         // Process ErrorHandling deeply
         ProcessErrorHandling(task.ErrorHandling, parser);
+        ProcessConditionalProperties(task, parser);
 
         // Process Position (X, Y)
         if (task.Position is not null)
@@ -347,6 +348,25 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         if (errorHandling.TriggerPolicy != null)
         {
             errorHandling.TriggerPolicy.TaskName = ReplaceIfNotNull(errorHandling.TriggerPolicy.TaskName, parser);
+        }
+    }
+
+    private void ProcessConditionalProperties(WorkflowTask task, IExpressionParser parser)
+    {
+        if (task.ExecutionCondition != null)
+        {
+            task.ExecutionCondition.Expression = ReplaceIfNotNull(task.ExecutionCondition.Expression, parser);
+            task.ExecutionCondition.Description = ReplaceIfNotNull(task.ExecutionCondition.Description, parser);
+        }
+
+        if (task.ConditionalBranches is { Count: > 0 })
+        {
+            foreach (var branch in task.ConditionalBranches)
+            {
+                branch.Expression = ReplaceIfNotNull(branch.Expression, parser);
+                branch.TargetTaskName = ReplaceIfNotNull(branch.TargetTaskName, parser);
+                branch.Description = ReplaceIfNotNull(branch.Description, parser);
+            }
         }
     }
 
