@@ -12,6 +12,8 @@ public class ExpressionParser : IExpressionParser
 {
     private readonly Dictionary<string, object?> _outputs;
     private readonly Dictionary<string, object?> _variables;
+    private const string OutputsPrefix = "Outputs(";
+    private const string VariablesPrefix = "Variables(";
 
     // Supported functional methods
     private static readonly HashSet<string> _functionalMethods = new(StringComparer.OrdinalIgnoreCase)
@@ -161,7 +163,7 @@ public class ExpressionParser : IExpressionParser
             return fnValue;
 
         // Wrap into $[...] to reuse existing parsing for complex constructs
-        if (arg.StartsWith("Outputs(") || arg.StartsWith("Variables(") ||
+        if (arg.StartsWith(OutputsPrefix) || arg.StartsWith(VariablesPrefix) ||
             ContainsOperator(arg) || arg.Contains("$[") || arg.Contains('?') || arg.Contains(':'))
         {
             return Parse($"$[{arg}]");
@@ -359,9 +361,9 @@ public class ExpressionParser : IExpressionParser
         int pos = 0;
         while (pos < expr.Length)
         {
-            if (expr.Substring(pos).StartsWith("Outputs(") || expr.Substring(pos).StartsWith("Variables("))
+            if (expr.Substring(pos).StartsWith(OutputsPrefix) || expr.Substring(pos).StartsWith(VariablesPrefix))
             {
-                bool isOutput = expr.Substring(pos).StartsWith("Outputs(");
+                bool isOutput = expr.Substring(pos).StartsWith(OutputsPrefix);
                 string sourceType = isOutput ? "Outputs" : "Variables";
                 int start = pos + sourceType.Length;
                 int end = FindMatchingParenthesis(expr, start);
@@ -429,7 +431,7 @@ public class ExpressionParser : IExpressionParser
 
         if (str.StartsWith('\'') && str.EndsWith('\'')) return StripQuotes(str);
 
-        if (str.StartsWith("Outputs(") || str.StartsWith("Variables("))
+        if (str.StartsWith(OutputsPrefix) || str.StartsWith(VariablesPrefix))
             return ResolveInnerExpression(str);
 
         if (double.TryParse(str, out double num)) return num;
@@ -517,9 +519,9 @@ public class ExpressionParser : IExpressionParser
             return ParseLiteral(inner);
 
         string sourceType;
-        if (inner.StartsWith("Outputs("))
+        if (inner.StartsWith(OutputsPrefix))
             sourceType = "Outputs";
-        else if (inner.StartsWith("Variables("))
+        else if (inner.StartsWith(VariablesPrefix))
             sourceType = "Variables";
         else
             throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound, $"Invalid expression: {inner}");
@@ -578,7 +580,7 @@ public class ExpressionParser : IExpressionParser
     private string ResolveTopLevelExpression(string expr)
     {
         expr = expr.Trim();
-        if (expr.StartsWith("Outputs(") || expr.StartsWith("Variables("))
+        if (expr.StartsWith(OutputsPrefix) || expr.StartsWith(VariablesPrefix))
             return Parse($"$[{expr}]")?.ToString() ?? string.Empty;
 
         return expr;
