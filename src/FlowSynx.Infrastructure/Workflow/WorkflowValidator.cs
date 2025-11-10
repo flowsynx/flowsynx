@@ -112,13 +112,20 @@ public class WorkflowValidator : IWorkflowValidator
     private List<string> AllDependenciesExist(List<WorkflowTask> workflowTasks)
     {
         var definedTaskNames = workflowTasks.Select(t => t.Name).ToHashSet();
+
         var missingDependencies = workflowTasks
             .SelectMany(t => t.Dependencies)
             .Where(dep => !definedTaskNames.Contains(dep))
             .Distinct()
             .ToList();
 
-        return missingDependencies;
+        var missingBranchTargets = workflowTasks
+            .SelectMany(t => t.ConditionalBranches?.Select(b => b.TargetTaskName) ?? [])
+            .Where(target => !definedTaskNames.Contains(target))
+            .Distinct()
+            .ToList();
+
+        return missingDependencies.Concat(missingBranchTargets).Distinct().ToList();
     }
 
     private WorkflowValidatorResult CheckCyclic(IEnumerable<WorkflowTask> workflowTasks)
@@ -143,10 +150,19 @@ public class WorkflowValidator : IWorkflowValidator
             }
         }
 
-        if (visitedCount >= inDegree.Count) 
-            return new WorkflowValidatorResult { Cyclic = false };
+        if (visitedCount >= inDegree.Count)
         {
-            var cyclicNodes = inDegree.Where(kv => kv.Value > 0).Select(kv => kv.Key).ToList();
+            // No cycle
+            return new WorkflowValidatorResult { Cyclic = false };
+        }
+        else
+        {
+            // There is a cycle
+            var cyclicNodes = inDegree
+                .Where(kv => kv.Value > 0)
+                .Select(kv => kv.Key)
+                .ToList();
+
             return new WorkflowValidatorResult
             {
                 Cyclic = true,
@@ -173,6 +189,9 @@ public class WorkflowValidator : IWorkflowValidator
 
             inDegree.TryAdd(task.Name, 0);
 
+            // ─────────────────────────────────────────────
+            // Add standard dependencies (edges: dep -> task)
+            // ─────────────────────────────────────────────
             foreach (var dep in task.Dependencies)
             {
                 if (!graph.ContainsKey(dep))
@@ -180,6 +199,22 @@ public class WorkflowValidator : IWorkflowValidator
 
                 graph[dep].Add(task.Name);
                 inDegree[task.Name] = inDegree.GetValueOrDefault(task.Name) + 1;
+            }
+
+            // ─────────────────────────────────────────────
+            // Add conditional branches (edges: task -> target)
+            // ─────────────────────────────────────────────
+            if (task.ConditionalBranches is { Count: > 0 })
+            {
+                foreach (var branch in task.ConditionalBranches)
+                {
+                    if (!graph.ContainsKey(branch.TargetTaskName))
+                        graph[branch.TargetTaskName] = new List<string>();
+
+                    graph[task.Name].Add(branch.TargetTaskName);
+                    inDegree.TryAdd(branch.TargetTaskName, 0);
+                    inDegree[branch.TargetTaskName]++;
+                }
             }
         }
 
