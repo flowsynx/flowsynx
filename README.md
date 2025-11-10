@@ -1,7 +1,7 @@
 <div align="center">
   <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
   <h2>FlowSynx — The Open Automation Fabric</h2>
-  <p><i>Orchestrate anything. Anywhere. Powered by plugins. Defined in JSON.</i></p>
+  <p><i>A declarative orchestration with Source-Agnostic Processing. Infinite extensibility through plugins.</i></p>
 
   [![Codacy Badge][codacy-badge]][codacy-url]
   [![Quality Gate Status][sonarcloud-quality-gate-badge]][sonarcloud-quality-gate-url]
@@ -9,21 +9,23 @@
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
   [![Good First Issues][github-good-first-issue-badge]][github-good-first-issue-url]
-  [![⭐ Star on GitHub](https://img.shields.io/badge/⭐%20Star%20on%20GitHub-555555?style=flat&logo=github)](https://github.com/flowsynx/flowsynx)
-
-  ✨ **Support FlowSynx by giving it a star!** ✨  
-  Your support helps others discover the project and drives continued innovation.
+  
+  > [![⭐ Star on GitHub](https://img.shields.io/badge/⭐%20Star%20on%20GitHub-555555?style=flat&logo=github)](https://github.com/flowsynx/flowsynx)  
+  > ✨ **Support FlowSynx by giving it a star!** ✨  
+  > Your support helps others discover the project and drives continued innovation.
 </div>
 
-FlowSynx is a **next-generation orchestration platform** designed to unify **automation, scalability, 
-and extensibility** within a single, developer-centric ecosystem. It bridges the gap between **low-code simplicity** 
-and **full-code power**, enabling teams to automate complex workflows seamlessly across **on-premises**, **cloud**, 
-and **hybrid** environments.
+**FlowSynx is a next-generation orchestration platform** designed to unify **automation**, **scalability**, 
+and **extensibility** within a single, developer-centric ecosystem. It empowers teams to automate 
+complex workflows seamlessly across **on-premises**, **cloud**, and **hybrid** environments.
 
-Built around **JSON-defined workflows** and a **plugin-driven architecture**, FlowSynx lets you connect any system, 
-process, or service — from DevOps pipelines and AI integrations to enterprise data flows. Whether you’re streamlining 
-**operations**, managing **data pipelines**, or orchestrating **mission-critical automations**, FlowSynx delivers the 
-control, flexibility, and visibility you need to make automation truly universal.
+Built on **JSON-defined workflows** and a **plugin-driven architecture**, FlowSynx lets you orchestrate 
+any system, process, or service — from DevOps pipelines and AI integrations to enterprise data flows. 
+With **Source-Agnostic Processing** and infinite extensibility, FlowSynx connects heterogeneous environments 
+and makes automation truly universal.
+
+Whether you’re streamlining **operations**, managing **data pipelines**, or orchestrating **mission-critical automations**, 
+FlowSynx provides the **control, flexibility, and visibility** needed to power your automation fabric at scale.
 
 ![Demo GIF](/img/Demo.gif)
 
@@ -187,10 +189,14 @@ Here’s what makes FlowSynx unique:
 ✅ **Secret Management Integration** — Infisical, Azure Key Vault, HashiCorp Vault, AWS Secrets Manager  
 ✅ **Triggers & Events** — Webhooks, schedules, and file-change detection  
 ✅ **Human-in-the-Loop Tasks** — Combine automation with human approval  
+✅ **Conditional Flow Control** — Execute tasks based on conditions and branching logic  
+✅ **Expression Evaluation** — Dynamic parameterization using expressions  
 ✅ **Advanced Logging & Auditing** — Full transparency into every execution  
 ✅ **Error Handling** - Configurable Error Handling and Retry Policies per task and workflow level  
 ✅ **Marketplace & Registry** — Discover and manage plugins easily  
 ✅ **Web Console UI** — Intuitive dashboard for workflow monitoring and control  
+✅ **Unified Data Abstraction Layer (UDAL)** — Simplifies data access across diverse sources  
+✅ **Source-Agnostic Processing** — Operate uniformly and interchangeably, regardless of the original data source or protocol
 
 ## Roadmap
 
