@@ -206,14 +206,14 @@ public class WorkflowValidator : IWorkflowValidator
             // ─────────────────────────────────────────────
             if (task.ConditionalBranches is { Count: > 0 })
             {
-                foreach (var branch in task.ConditionalBranches)
+                foreach (var target in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
                 {
-                    if (!graph.ContainsKey(branch.TargetTaskName))
-                        graph[branch.TargetTaskName] = new List<string>();
+                    if (!graph.ContainsKey(target))
+                        graph[target] = new List<string>();
 
-                    graph[task.Name].Add(branch.TargetTaskName);
-                    inDegree.TryAdd(branch.TargetTaskName, 0);
-                    inDegree[branch.TargetTaskName]++;
+                    graph[task.Name].Add(target);
+                    inDegree.TryAdd(target, 0);
+                    inDegree[target]++;
                 }
             }
         }
