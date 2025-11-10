@@ -276,7 +276,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 .Select(r => r.TaskName)
                 .ToList();
 
-            UpdatePendingTasks(pending, completedTasks, executionEntity.Id);
+            UpdatePendingTasks(pending, completedTasks);
         }
 
         if (hadFailures)
@@ -559,7 +559,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         return WorkflowExecutionStatus.Failed;
     }
 
-    private static void UpdatePendingTasks(HashSet<string> pending, IEnumerable<string> completed, Guid executionId)
+    private static void UpdatePendingTasks(HashSet<string> pending, IEnumerable<string> completed)
     {
         foreach (var taskId in completed)
             pending.Remove(taskId);
