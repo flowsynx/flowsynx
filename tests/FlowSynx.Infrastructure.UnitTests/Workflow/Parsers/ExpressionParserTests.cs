@@ -326,6 +326,50 @@ public class ExpressionParserTests
         Assert.Equal("Casey", value);
     }
 
+    // ---------- Nested Dynamic Index Tests ----------
+
+    [Fact]
+    public void Parse_DynamicRootKey_NestedProperty_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Outputs(Variables('DynamicKey')).Name]");
+        Assert.Equal("Bob", result);
+    }
+
+    [Fact]
+    public void Parse_DynamicRootKey_NestedArrayElementProperty_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Outputs(Variables('DynamicKey')).Friends[1].Name]");
+        Assert.Equal("Max", result);
+    }
+
+    [Fact]
+    public void Parse_DynamicRootKey_NestedArrayNumericIndex_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Outputs(Variables('DynamicKey')).Scores[2]]");
+        Assert.Equal(3, (long)(result ?? -1));
+    }
+
+    [Fact]
+    public void Parse_DynamicRootKey_UsedInsideArithmetic_Works()
+    {
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Outputs(Variables('DynamicKey')).Scores[0] + Outputs(Variables('DynamicKey')).Scores[1]]");
+        // 1 + 2 = 3
+        Assert.Equal(3d, result);
+    }
+
+    [Fact]
+    public void Parse_DynamicArrayIndex_ViaVariable_NotSupported_ReturnsNull()
+    {
+        // Bracket index parsing only supports numeric literals, so using a variable inside [] should yield null access result.
+        var parser = new ExpressionParser(_outputs, _variables);
+        var result = parser.Parse("$[Outputs('JsonObj').Friends[Variables('multiplier')].Name]"); // multiplier = 2 -> would target index 2, but not parsed as number
+        Assert.Null(result);
+    }
+
     private sealed class TestUser
     {
         public string Name { get; set; } = string.Empty;

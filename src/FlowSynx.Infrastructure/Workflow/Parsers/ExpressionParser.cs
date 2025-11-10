@@ -365,17 +365,66 @@ public class ExpressionParser : IExpressionParser
             {
                 bool isOutput = expr.Substring(pos).StartsWith(OutputsPrefix);
                 string sourceType = isOutput ? "Outputs" : "Variables";
-                int start = pos + sourceType.Length;
+                int start = pos + sourceType.Length; // position of '('
                 int end = FindMatchingParenthesis(expr, start);
-                if (end == -1) break;
+                if (end == -1)
+                {
+                    pos++;
+                    continue;
+                }
 
+                // Resolve root key (may itself be an expression like Variables('DynamicKey'))
                 string keyExpr = expr.Substring(start + 1, end - start - 1);
                 string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr));
-                object? val = ResolveSourceValue(sourceType, resolvedKey);
+                object? rootValue = ResolveSourceValue(sourceType, resolvedKey);
 
-                expr = expr.Substring(0, pos) + (val?.ToString() ?? "0") + expr.Substring(end + 1);
+                // Collect optional access path (e.g. .Scores[0].Items[2])
+                int pathStart = end + 1;
+                int scan = pathStart;
+                while (scan < expr.Length)
+                {
+                    char c = expr[scan];
+                    if (c == '.')
+                    {
+                        scan++; // consume '.'
+                        // read property name
+                        while (scan < expr.Length)
+                        {
+                            char pc = expr[scan];
+                            if (char.IsLetterOrDigit(pc) || pc == '_')
+                                scan++;
+                            else
+                                break;
+                        }
+                    }
+                    else if (c == '[')
+                    {
+                        scan++; // after '['
+                        // consume until matching ']'
+                        while (scan < expr.Length && expr[scan] != ']')
+                            scan++;
+                        if (scan < expr.Length && expr[scan] == ']')
+                            scan++; // consume ']'
+                        else
+                            break; // malformed -> stop
+                    }
+                    else
+                    {
+                        break; // end of access path
+                    }
+                }
+
+                string accessPath = scan > pathStart ? expr.Substring(pathStart, scan - pathStart) : string.Empty;
+                object? finalValue = string.IsNullOrEmpty(accessPath) ? rootValue : GetNestedValue(rootValue, accessPath);
+
+                string replacement = finalValue?.ToString() ?? "0";
+                expr = expr.Substring(0, pos) + replacement + expr.Substring(scan);
+                pos += replacement.Length;
             }
-            else pos++;
+            else
+            {
+                pos++;
+            }
         }
         return expr;
     }
@@ -636,66 +685,187 @@ public class ExpressionParser : IExpressionParser
 
     private static object? GetNestedValue(object? obj, string accessPath)
     {
-        if (obj == null) return null;
+        if (obj is null || string.IsNullOrEmpty(accessPath))
+            return obj;
 
-        int i = 0;
+        var i = 0;
         while (i < accessPath.Length)
         {
-            if (accessPath[i] == '.')
+            var ch = accessPath[i];
+
+            if (ch == '.')
             {
-                i++;
-                string prop = ReadName(accessPath, ref i);
-                obj = GetPropertyValue(obj, prop);
+                i++; // skip '.'
+                if (i >= accessPath.Length) break;
+                var name = ReadName(accessPath, ref i);
+                if (string.IsNullOrEmpty(name)) break;
+                obj = GetPropertyValue(obj, name);
             }
-            else if (accessPath[i] == '[')
+            else if (ch == '[')
             {
-                i++;
-                string idxStr = ReadUntil(accessPath, ref i, ']');
-                if (int.TryParse(idxStr, out int idx))
-                    obj = GetArrayItem(obj, idx);
-                i++;
+                i++; // skip '['
+                var indexStr = ReadUntil(accessPath, ref i, ']'); // i will point at ']' when done
+                if (!int.TryParse(indexStr, out var idx))
+                {
+                    // Only numeric literal indices are supported for bracket access
+                    return null;
+                }
+
+                if (obj is null) return null;
+                obj = GetArrayItem(obj, idx);
+
+                // advance past closing ']'
+                if (i < accessPath.Length && accessPath[i] == ']')
+                    i++;
             }
-            else i++;
+            else
+            {
+                // Support initial property name without leading '.'
+                var name = ReadName(accessPath, ref i);
+                if (string.IsNullOrEmpty(name)) break;
+                obj = GetPropertyValue(obj, name);
+            }
+
+            if (obj is null) break;
         }
 
         return UnwrapJToken(obj);
     }
 
-    private static string ReadName(string s, ref int i)
-    {
-        int start = i;
-        while (i < s.Length && (char.IsLetterOrDigit(s[i]) || s[i] == '_')) i++;
-        return s.Substring(start, i - start);
-    }
-
-    private static string ReadUntil(string s, ref int i, char endChar)
-    {
-        int start = i;
-        while (i < s.Length && s[i] != endChar) i++;
-        return s.Substring(start, i - start);
-    }
-
     private static object? GetArrayItem(object obj, int index)
     {
-        if (obj is IList list && index >= 0 && index < list.Count) return list[index];
-        if (obj is JArray jArr && index >= 0 && index < jArr.Count) return jArr[index];
+        obj = UnwrapJToken(obj) ?? obj;
+
+        if (obj is JArray jarr)
+        {
+            if (index >= 0 && index < jarr.Count)
+                return UnwrapJToken(jarr[index]);
+            return null;
+        }
+
+        if (obj is IList list)
+        {
+            if (index >= 0 && index < list.Count)
+                return UnwrapJToken(list[index]);
+            return null;
+        }
+
+        if (obj is Array arr)
+        {
+            if (index >= 0 && index < arr.Length)
+                return UnwrapJToken(arr.GetValue(index));
+            return null;
+        }
+
+        // Fall back to IEnumerable traversal (inefficient but safe)
+        if (obj is IEnumerable enumerable)
+        {
+            var i = 0;
+            foreach (var item in enumerable)
+            {
+                if (i == index)
+                    return UnwrapJToken(item);
+                i++;
+            }
+            return null;
+        }
+
         return null;
     }
 
     private static object? GetPropertyValue(object? obj, string propertyKey)
     {
-        if (obj is JObject jObj)
-            return jObj.TryGetValue(propertyKey, StringComparison.OrdinalIgnoreCase, out var token) ? token : null;
-        if (obj is JToken jToken)
-            return jToken[propertyKey];
+        if (obj is null) return null;
 
-        var propInfo = obj?.GetType().GetProperty(propertyKey, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-        return propInfo?.GetValue(obj);
+        obj = UnwrapJToken(obj) ?? obj;
+
+        // JObject -> case-insensitive property lookup
+        if (obj is JObject jobj)
+        {
+            var prop = jobj.Property(propertyKey, StringComparison.OrdinalIgnoreCase);
+            return prop is null ? null : UnwrapJToken(prop.Value);
+        }
+
+        // JArray does not support property access by name (avoid exception)
+        if (obj is JArray)
+            return null;
+
+        // IDictionary<string, object?>
+        if (obj is IDictionary<string, object?> stringDict)
+        {
+            if (stringDict.TryGetValue(propertyKey, out var val))
+                return UnwrapJToken(val);
+
+            // Try case-insensitive
+            foreach (var kv in stringDict)
+            {
+                if (string.Equals(kv.Key, propertyKey, StringComparison.OrdinalIgnoreCase))
+                    return UnwrapJToken(kv.Value);
+            }
+            return null;
+        }
+
+        // IDictionary (non-generic)
+        if (obj is IDictionary dict)
+        {
+            if (dict.Contains(propertyKey))
+                return UnwrapJToken(dict[propertyKey]);
+
+            // Try case-insensitive string keys
+            foreach (DictionaryEntry de in dict)
+            {
+                if (de.Key is string sk && string.Equals(sk, propertyKey, StringComparison.OrdinalIgnoreCase))
+                    return UnwrapJToken(de.Value);
+            }
+            return null;
+        }
+
+        // Reflection on POCOs (case-insensitive)
+        var type = obj.GetType();
+        var propInfo = type.GetProperty(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+        if (propInfo != null)
+            return UnwrapJToken(propInfo.GetValue(obj));
+
+        // Field fallback (case-insensitive)
+        var fieldInfo = type.GetField(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+        if (fieldInfo != null)
+            return UnwrapJToken(fieldInfo.GetValue(obj));
+
+        return null;
     }
 
-    private static object? UnwrapJToken(object? value) => value switch
+    private static object? UnwrapJToken(object? value)
     {
-        JValue jValue => jValue.Value,
-        _ => value
-    };
+        return value switch
+        {
+            null => null,
+            JValue jv => jv.Value,
+            JToken jt when jt.Type == JTokenType.Null => null,
+            _ => value,
+        };
+    }
+
+    private static string ReadName(string s, ref int i)
+    {
+        var start = i;
+        while (i < s.Length)
+        {
+            var ch = s[i];
+            if (ch == '.' || ch == '[' || ch == ']')
+                break;
+            i++;
+        }
+        return start == i ? string.Empty : s[start..i];
+    }
+
+    private static string ReadUntil(string s, ref int i, char endChar)
+    {
+        var start = i;
+        while (i < s.Length && s[i] != endChar)
+        {
+            i++;
+        }
+        // i now points to endChar or s.Length (if not found)
+        return s[start..i];
+    }
 }
