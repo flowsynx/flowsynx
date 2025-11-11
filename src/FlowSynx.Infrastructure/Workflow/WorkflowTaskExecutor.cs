@@ -101,49 +101,42 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         try
         {
             token.ThrowIfCancellationRequested();
-            object? output;
-            var result = await plugin.ExecuteAsync(pluginParameters, token);
-            if (result is null && !string.IsNullOrEmpty(task.Output)) 
-                output = new PluginContext(task.Name, "Data") { Content = task.Output };
-            else
-                output = result;
-            
-            await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
-            _logger.LogInformation("Workflow task '{TaskName}' completed.", task.Name);
+            var executionResult = await plugin.ExecuteAsync(pluginParameters, token);
+            var output = ResolvePluginOutput(executionResult, task);
+
+            await CompleteTaskWithLogAsync(
+                userId,
+                taskExecution,
+                WorkflowTaskExecutionStatus.Completed,
+                globalCancellationToken,
+                LogLevel.Information,
+                "Workflow task '{TaskName}' completed.",
+                task.Name);
+
             return TaskOutput.Success(output);
         }
-        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested || globalCancellationToken.IsCancellationRequested)
         {
-            await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
-            _logger.LogError($"Workflow task '{task.Name}' canceled.");
-            throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
-                _localization.Get("RetryService_TaskCanceled", task.Name, 0));
-        }
-        catch (OperationCanceledException) when (globalCancellationToken.IsCancellationRequested)
-        {
-            await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
-            _logger.LogError($"Workflow task '{task.Name}' canceled.");
-            throw new FlowSynxException((int)ErrorCode.WorkflowExecutionCanceled,
-                _localization.Get("RetryService_WorkflowCanceled", task.Name, 0));
+            var reason = globalCancellationToken.IsCancellationRequested
+                ? WorkflowTaskCancellationReason.Workflow
+                : WorkflowTaskCancellationReason.Timeout;
+
+            await HandleCancellationAndThrowAsync(userId, taskExecution, task.Name, reason, globalCancellationToken);
         }
         catch (Exception ex)
         {
             if (token.IsCancellationRequested)
             {
-                await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Canceled, globalCancellationToken);
-                _logger.LogError($"Workflow task '{task.Name}' canceled.");
-                throw new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
-                    _localization.Get("RetryService_TaskCanceled", task.Name, 0));
+                await HandleCancellationAndThrowAsync(
+                    userId,
+                    taskExecution,
+                    task.Name,
+                    WorkflowTaskCancellationReason.TaskToken,
+                    globalCancellationToken);
             }
 
             var result = await retryStrategy.HandleAsync(errorContext, token);
-
-            if (result?.ShouldTriggerTask == true && !string.IsNullOrWhiteSpace(result.TaskToTrigger))
-            {
-                _triggeredTaskQueue.Enqueue(taskExecution.WorkflowExecutionId, result.TaskToTrigger);
-                _logger.LogInformation("Triggered task '{TaskToTrigger}' due to error in '{TaskName}'.",
-                    result.TaskToTrigger, task.Name);
-            }
+            TriggerTaskIfNeeded(taskExecution, task.Name, result);
 
             if (result?.ShouldRetry == true)
             {
@@ -154,8 +147,15 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
             if (result?.ShouldSkip == true)
             {
-                await CompleteTaskAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Completed, globalCancellationToken);
-                _logger.LogWarning("Workflow task '{TaskName}' skipped.", task.Name);
+                await CompleteTaskWithLogAsync(
+                    userId,
+                    taskExecution,
+                    WorkflowTaskExecutionStatus.Completed,
+                    globalCancellationToken,
+                    LogLevel.Warning,
+                    "Workflow task '{TaskName}' skipped.",
+                    task.Name);
+
                 return TaskOutput.Success(null);
             }
 
@@ -163,6 +163,83 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         }
 
         return TaskOutput.Success(null); // unreachable, all branches throw
+    }
+
+    /// <summary>
+    /// Normalizes plugin output by falling back to the configured task output when a plugin returns null.
+    /// </summary>
+    private static object? ResolvePluginOutput(object? pluginResult, WorkflowTask task)
+    {
+        if (pluginResult is not null || string.IsNullOrEmpty(task.Output))
+            return pluginResult;
+
+        return new PluginContext(task.Name, "Data") { Content = task.Output };
+    }
+
+    /// <summary>
+    /// Completes the task and logs with a consistent message template.
+    /// </summary>
+    private async Task CompleteTaskWithLogAsync(
+        string userId,
+        WorkflowTaskExecutionEntity taskExecution,
+        WorkflowTaskExecutionStatus status,
+        CancellationToken cancellationToken,
+        LogLevel logLevel,
+        string messageTemplate,
+        string taskName)
+    {
+        await CompleteTaskAsync(userId, taskExecution, status, cancellationToken);
+        _logger.Log(logLevel, messageTemplate, taskName);
+    }
+
+    /// <summary>
+    /// Handles cancellation flows by completing the task, logging, and throwing the mapped exception.
+    /// </summary>
+    private async Task HandleCancellationAndThrowAsync(
+        string userId,
+        WorkflowTaskExecutionEntity taskExecution,
+        string taskName,
+        WorkflowTaskCancellationReason reason,
+        CancellationToken cancellationToken)
+    {
+        await CompleteTaskWithLogAsync(
+            userId,
+            taskExecution,
+            WorkflowTaskExecutionStatus.Canceled,
+            cancellationToken,
+            LogLevel.Error,
+            "Workflow task '{TaskName}' canceled.",
+            taskName);
+
+        var exception = reason == WorkflowTaskCancellationReason.Workflow
+            ? new FlowSynxException((int)ErrorCode.WorkflowExecutionCanceled,
+                _localization.Get("RetryService_WorkflowCanceled", taskName, 0))
+            : new FlowSynxException((int)ErrorCode.WorkflowTaskExecutionCanceled,
+                _localization.Get("RetryService_TaskCanceled", taskName, 0));
+
+        throw exception;
+    }
+
+    /// <summary>
+    /// Enqueues follow-up tasks when the retry strategy requests it.
+    /// </summary>
+    private void TriggerTaskIfNeeded(WorkflowTaskExecutionEntity taskExecution, string taskName, ErrorHandlingResult? result)
+    {
+        if (result?.ShouldTriggerTask != true || string.IsNullOrWhiteSpace(result.TaskToTrigger))
+            return;
+
+        _triggeredTaskQueue.Enqueue(taskExecution.WorkflowExecutionId, result.TaskToTrigger);
+        _logger.LogInformation("Triggered task '{TaskToTrigger}' due to error in '{TaskName}'.", result.TaskToTrigger, taskName);
+    }
+
+    /// <summary>
+    /// Distinguishes the origin of task cancellation for accurate error reporting.
+    /// </summary>
+    private enum WorkflowTaskCancellationReason
+    {
+        Timeout,
+        Workflow,
+        TaskToken
     }
 
     private async Task FailTaskAsync(
