@@ -36,86 +36,155 @@ public class AwsSecretsManagerSecretProvider : ISecretProvider, IConfigurableSec
 
         try
         {
-            var region = RegionEndpoint.GetBySystemName(_options.Region);
-            var client = new AmazonSecretsManagerClient(_options.AccessKey, _options.SecretKey, region);
-
+            using var client = CreateSecretsManagerClient();
             var result = new List<KeyValuePair<string, string>>();
             string? nextToken = null;
 
             do
             {
-                var listRequest = new ListSecretsRequest
-                {
-                    MaxResults = 100,
-                    NextToken = nextToken
-                };
-
-                var listResponse = await client.ListSecretsAsync(listRequest, cancellationToken);
-
-                foreach (var secret in listResponse.SecretList)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (!string.IsNullOrEmpty(_options.SecretPrefix) &&
-                        !secret.Name.StartsWith(_options.SecretPrefix, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    try
-                    {
-                        var getSecretResponse = await client.GetSecretValueAsync(
-                            new GetSecretValueRequest { SecretId = secret.ARN },
-                            cancellationToken);
-
-                        if (getSecretResponse.SecretString is { Length: > 0 })
-                        {
-                            ParseSecretContent(result, secret.Name, getSecretResponse.SecretString);
-                        }
-                    }
-                    catch (ResourceNotFoundException ex)
-                    {
-                        _logger?.LogWarning(ex, "Secret '{SecretName}' not found in AWS Secrets Manager.", secret.Name);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger?.LogWarning(ex, "Failed to retrieve secret '{SecretName}' from AWS Secrets Manager.", secret.Name);
-                    }
-                }
-
+                var listResponse = await ListSecretsAsync(client, nextToken, cancellationToken).ConfigureAwait(false);
+                await ProcessSecretsAsync(client, listResponse.SecretList, result, cancellationToken).ConfigureAwait(false);
                 nextToken = listResponse.NextToken;
-
-            } while (!string.IsNullOrEmpty(nextToken));
+            }
+            while (!string.IsNullOrEmpty(nextToken));
 
             return result;
         }
         catch (Exception ex)
         {
-            var message = "Unexpected error while retrieving configuration secrets from AWS Secrets Manager.";
+            const string message = "Unexpected error while retrieving configuration secrets from AWS Secrets Manager.";
             _logger?.LogError(ex, message);
             throw new InvalidOperationException(message, ex);
         }
     }
 
+    /// <summary>
+    /// Creates an AWS Secrets Manager client that honors the configured region and credentials.
+    /// </summary>
+    private AmazonSecretsManagerClient CreateSecretsManagerClient()
+    {
+        var region = RegionEndpoint.GetBySystemName(_options.Region);
+        return new AmazonSecretsManagerClient(_options.AccessKey, _options.SecretKey, region);
+    }
+
+    /// <summary>
+    /// Lists secrets using pagination tokens to keep the iteration logic focused and testable.
+    /// </summary>
+    private static async Task<ListSecretsResponse> ListSecretsAsync(
+        IAmazonSecretsManager client,
+        string? nextToken,
+        CancellationToken cancellationToken)
+    {
+        var listRequest = new ListSecretsRequest
+        {
+            MaxResults = 100,
+            NextToken = nextToken
+        };
+
+        return await client.ListSecretsAsync(listRequest, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Processes each secret metadata entry, filtering unwanted keys and retrieving allowed secrets.
+    /// </summary>
+    private async Task ProcessSecretsAsync(
+        IAmazonSecretsManager client,
+        List<SecretListEntry>? secrets,
+        List<KeyValuePair<string, string>> result,
+        CancellationToken cancellationToken)
+    {
+        if (secrets is null || secrets.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var secret in secrets)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (!IsSecretAllowed(secret.Name))
+            {
+                continue;
+            }
+
+            await TryRetrieveSecretAsync(client, secret, result, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Determines if a secret should be processed based on the configured prefix.
+    /// </summary>
+    private bool IsSecretAllowed(string secretName) =>
+        string.IsNullOrEmpty(_options.SecretPrefix) ||
+        secretName.StartsWith(_options.SecretPrefix, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Attempts to download a secret value, logging known error cases and parsing successful responses.
+    /// </summary>
+    private async Task TryRetrieveSecretAsync(
+        IAmazonSecretsManager client,
+        SecretListEntry secret,
+        List<KeyValuePair<string, string>> result,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var getSecretResponse = await client.GetSecretValueAsync(
+                new GetSecretValueRequest { SecretId = secret.ARN },
+                cancellationToken).ConfigureAwait(false);
+
+            if (!string.IsNullOrEmpty(getSecretResponse.SecretString))
+            {
+                ParseSecretContent(result, secret.Name, getSecretResponse.SecretString);
+            }
+        }
+        catch (ResourceNotFoundException ex)
+        {
+            _logger?.LogWarning(ex, "Secret '{SecretName}' not found in AWS Secrets Manager.", secret.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Failed to retrieve secret '{SecretName}' from AWS Secrets Manager.", secret.Name);
+        }
+    }
+
+    /// <summary>
+    /// Ensures all required AWS settings are present before attempting to create a Secrets Manager client.
+    /// </summary>
     private void ValidateRequiredOptions()
     {
         if (string.IsNullOrWhiteSpace(_options.Region))
+        {
             throw new InvalidOperationException("AWS Region is required when using AWS Secrets Manager as a configuration source.");
+        }
 
         if (string.IsNullOrWhiteSpace(_options.AccessKey))
+        {
             throw new InvalidOperationException("AWS AccessKey is required when using AWS Secrets Manager as a configuration source.");
+        }
 
         if (string.IsNullOrWhiteSpace(_options.SecretKey))
+        {
             throw new InvalidOperationException("AWS SecretKey is required when using AWS Secrets Manager as a configuration source.");
+        }
     }
 
-    private static void ParseSecretContent(List<KeyValuePair<string, string>> result, string secretName, string secretString)
+    /// <summary>
+    /// Breaks down the retrieved secret payload into normalized key/value pairs.
+    /// </summary>
+    private static void ParseSecretContent(
+        List<KeyValuePair<string, string>> result,
+        string secretName,
+        string secretString)
     {
         try
         {
             // Attempt to parse JSON-based secret value
-            var jsonDoc = JsonDocument.Parse(secretString);
-            if (jsonDoc.RootElement.ValueKind == JsonValueKind.Object)
+            using var jsonDoc = JsonDocument.Parse(secretString);
+            var jsonRoot = jsonDoc.RootElement;
+            if (jsonRoot.ValueKind == JsonValueKind.Object)
             {
-                foreach (var property in jsonDoc.RootElement.EnumerateObject())
+                foreach (var property in jsonRoot.EnumerateObject())
                 {
                     var key = NormalizeKey($"{secretName}:{property.Name}");
                     var value = property.Value.GetString() ?? property.Value.ToString();
@@ -130,7 +199,7 @@ public class AwsSecretsManagerSecretProvider : ISecretProvider, IConfigurableSec
         }
         catch (JsonException)
         {
-            // Not JSON — treat as single string secret
+            // Not JSON - treat as single string secret
         }
 
         // Fallback: simple key/value
@@ -138,13 +207,19 @@ public class AwsSecretsManagerSecretProvider : ISecretProvider, IConfigurableSec
         result.Add(new KeyValuePair<string, string>(normalized, secretString));
     }
 
+    /// <summary>
+    /// Normalizes AWS secret names into configuration keys the app configuration system can consume.
+    /// </summary>
     private static string NormalizeKey(string secretKey)
     {
         var trimmedKey = secretKey.Trim();
         if (trimmedKey.Length == 0)
+        {
             return string.Empty;
+        }
 
         var normalized = trimmedKey.Replace("__", ConfigurationPath.KeyDelimiter, StringComparison.Ordinal);
         return normalized.Replace(" ", string.Empty, StringComparison.Ordinal);
     }
 }
+
