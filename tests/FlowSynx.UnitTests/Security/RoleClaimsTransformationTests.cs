@@ -1,4 +1,4 @@
-using FlowSynx.Application.Configuration.Security;
+using FlowSynx.Application.Configuration.Core.Security;
 using FlowSynx.Security;
 using System.Security.Claims;
 

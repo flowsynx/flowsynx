@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using FlowSynx.Domain.Workflow;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Configuration.Core.Security;
 
 namespace FlowSynx.Persistence.Postgres.Configurations;
 

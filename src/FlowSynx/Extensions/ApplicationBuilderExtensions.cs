@@ -1,7 +1,7 @@
-﻿using FlowSynx.Application.Configuration.Cors;
-using FlowSynx.Application.Configuration.Endpoint;
-using FlowSynx.Application.Configuration.HealthCheck;
-using FlowSynx.Application.Configuration.OpenApi;
+﻿using FlowSynx.Application.Configuration.System.Cors;
+using FlowSynx.Application.Configuration.System.HealthCheck;
+using FlowSynx.Application.Configuration.System.OpenApi;
+using FlowSynx.Application.Configuration.System.Server;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Serialization;
@@ -126,8 +126,8 @@ public static class ApplicationBuilderExtensions
     public static IApplicationBuilder UseHttps(this IApplicationBuilder app)
     {
         var serviceProvider = app.ApplicationServices;
-        var endpointConfiguration = serviceProvider.GetService<EndpointConfiguration>();
-        if (endpointConfiguration != null && endpointConfiguration.Https?.Enabled == true)
+        var serverConfiguration = serviceProvider.GetService<ServerConfiguration>();
+        if (serverConfiguration != null && serverConfiguration.Https?.Enabled == true)
         {
             app.UseHttpsRedirection();
         }

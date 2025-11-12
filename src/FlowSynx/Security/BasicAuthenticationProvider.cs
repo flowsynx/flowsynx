@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text;
-using FlowSynx.Application.Configuration.Security;
+using FlowSynx.Application.Configuration.Core.Security;
 
 namespace FlowSynx.Security;
 
@@ -45,7 +45,7 @@ public class BasicAuthenticationProvider : IAuthenticationProvider
                 var username = credentials[0];
                 var password = credentials[1];
 
-                var users = securityConfiguration.BasicUsers;
+                var users = securityConfiguration.Authentication.BasicUsers;
                 var user = users.FirstOrDefault(u => u.Name == username && u.Password == password);
                 if (user == null)
                     return Task.FromResult(AuthenticateResult.Fail("Invalid Username or Password"));

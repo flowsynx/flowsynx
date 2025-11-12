@@ -1,5 +1,5 @@
 using FlowSynx.Application.AI;
-using FlowSynx.Application.Configuration.AI;
+using FlowSynx.Application.Configuration.Core.AI;
 using FlowSynx.Infrastructure.AI;
 
 namespace FlowSynx.Infrastructure.UnitTests.AI;

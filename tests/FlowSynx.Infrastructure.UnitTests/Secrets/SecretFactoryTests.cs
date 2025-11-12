@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using FlowSynx.Application.Configuration.Secrets;
+using FlowSynx.Application.Configuration.Core.Secrets;
 using FlowSynx.Application.Secrets;
 using FlowSynx.Infrastructure.Secrets;
 using Moq;

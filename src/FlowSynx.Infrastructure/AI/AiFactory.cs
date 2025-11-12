@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.AI;
-using FlowSynx.Application.Configuration.AI;
+using FlowSynx.Application.Configuration.Core.AI;
 
 namespace FlowSynx.Infrastructure.AI;
 

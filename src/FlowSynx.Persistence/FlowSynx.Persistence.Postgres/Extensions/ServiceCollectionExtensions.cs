@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.Database;
+﻿using FlowSynx.Application.Configuration.Core.Database;
 using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Audit;

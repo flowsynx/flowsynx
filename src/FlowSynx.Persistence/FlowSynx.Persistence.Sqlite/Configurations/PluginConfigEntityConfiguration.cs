@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Application.Serialization;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Configuration.Core.Security;
 
 namespace FlowSynx.Persistence.Sqlite.Configurations
 {

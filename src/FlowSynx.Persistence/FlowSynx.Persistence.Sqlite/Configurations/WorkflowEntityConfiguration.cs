@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using FlowSynx.Domain.Workflow;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Configuration.Core.Security;
 
 namespace FlowSynx.Persistence.Sqlite.Configurations
 {

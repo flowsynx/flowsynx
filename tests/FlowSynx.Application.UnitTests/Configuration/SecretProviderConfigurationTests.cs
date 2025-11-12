@@ -1,4 +1,4 @@
-using FlowSynx.Application.Configuration.Secrets;
+using FlowSynx.Application.Configuration.Core.Secrets;
 
 namespace FlowSynx.Application.UnitTests.Configuration;
 

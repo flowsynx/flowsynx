@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.Endpoint;
+﻿using FlowSynx.Application.Configuration.System.Server;
 using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -13,12 +13,12 @@ public static class WebApplicationBuilderExtensions
     public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)
     {
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
-        var endpointConfig = scope.ServiceProvider.GetRequiredService<EndpointConfiguration>();
+        var serverConfig = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         try
         {
-            ConfigureKestrelEndpoints(builder, endpointConfig, logger);
+            ConfigureKestrelEndpoints(builder, serverConfig, logger);
             ConfigureKestrelSettings(builder);
 
             return builder;
@@ -32,9 +32,9 @@ public static class WebApplicationBuilderExtensions
     }
 
     private static void ConfigureKestrelEndpoints(
-    WebApplicationBuilder builder,
-    EndpointConfiguration config,
-    ILogger logger)
+        WebApplicationBuilder builder,
+        ServerConfiguration config,
+        ILogger logger)
     {
         builder.WebHost.ConfigureKestrel((_, options) =>
         {
@@ -63,8 +63,8 @@ public static class WebApplicationBuilderExtensions
     }
 
     private static int? GetHttpsPort(
-    EndpointConfiguration config,
-    int httpPort)
+        ServerConfiguration config,
+        int httpPort)
     {
         if (config.Https?.Enabled != true) return null;
 
@@ -76,11 +76,11 @@ public static class WebApplicationBuilderExtensions
     }
 
     private static void ConfigureHttps(
-    KestrelServerOptions options,
-    int httpsPort,
-    HttpsEndpointConfiguration? httpsConfig,
-    ILogger logger,
-    int httpPort)
+        KestrelServerOptions options,
+        int httpsPort,
+        HttpsServerConfiguration? httpsConfig,
+        ILogger logger,
+        int httpPort)
     {   
         options.ListenAnyIP(httpsPort, listenOptions =>
         {
@@ -91,8 +91,8 @@ public static class WebApplicationBuilderExtensions
     }
 
     private static void ConfigureListenOptions(
-    ListenOptions listenOptions,
-    HttpsEndpointConfiguration? httpsConfig)
+        ListenOptions listenOptions,
+        HttpsServerConfiguration? httpsConfig)
     {
         var cert = httpsConfig?.Certificate;
 
@@ -107,7 +107,7 @@ public static class WebApplicationBuilderExtensions
 
     private static void ConfigureCertificate(
         ListenOptions listenOptions,
-        CertificateOptions cert)
+        HttpsServerCertificateConfiguration cert)
     {
         if (cert == null)
             throw new ArgumentNullException(nameof(cert));

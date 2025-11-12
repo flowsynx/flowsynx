@@ -1,13 +1,13 @@
-﻿using FlowSynx.Application.Configuration.Cors;
-using FlowSynx.Application.Configuration.Database;
-using FlowSynx.Application.Configuration.Endpoint;
-using FlowSynx.Application.Configuration.HealthCheck;
-using FlowSynx.Application.Configuration.Logger;
-using FlowSynx.Application.Configuration.OpenApi;
-using FlowSynx.Application.Configuration.PluginRegistry;
-using FlowSynx.Application.Configuration.RateLimiting;
-using FlowSynx.Application.Configuration.Security;
-using FlowSynx.Application.Configuration.WorkflowQueue;
+﻿using FlowSynx.Application.Configuration.Core.Database;
+using FlowSynx.Application.Configuration.Core.Security;
+using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
+using FlowSynx.Application.Configuration.System.Cors;
+using FlowSynx.Application.Configuration.System.HealthCheck;
+using FlowSynx.Application.Configuration.System.Logger;
+using FlowSynx.Application.Configuration.System.OpenApi;
+using FlowSynx.Application.Configuration.System.RateLimiting;
+using FlowSynx.Application.Configuration.System.Server;
+using FlowSynx.Application.Configuration.System.Workflow.Queue;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
@@ -36,8 +36,8 @@ namespace FlowSynx.Extensions;
 public static class ServiceCollectionExtensions
 {
     private const string DefaultSqliteProvider = "SQLite";
-    private const string DatabaseSectionName = "Databases";
-    private const string WorkflowQueueSectionName = "WorkflowQueue";
+    private const string DatabaseSectionName = "Core:Databases";
+    private const string WorkflowQueueSectionName = "System:Workflow:Queue";
 
     #region Simple registrations
 
@@ -70,11 +70,11 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Bind and register endpoint configuration.</summary>
-    public static IServiceCollection AddEndpoint(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>Bind and register server configuration.</summary>
+    public static IServiceCollection AddServer(this IServiceCollection services, IConfiguration configuration)
     {
-        var endpointConfiguration = configuration.BindSection<EndpointConfiguration>("Endpoints");
-        services.AddSingleton(endpointConfiguration);
+        var serverConfiguration = configuration.BindSection<ServerConfiguration>("System:Server");
+        services.AddSingleton(serverConfiguration);
         return services;
     }
 
@@ -103,7 +103,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var loggerConfiguration = configuration.BindSection<LoggerConfiguration>("Logger");
+        var loggerConfiguration = configuration.BindSection<LoggerConfiguration>("System:Logger");
         services.AddSingleton(loggerConfiguration);
 
         // NOTE: resolving services during startup is unavoidable here because database and http-context
@@ -179,7 +179,7 @@ public static class ServiceCollectionExtensions
     /// <summary>Register health check configuration and checks if enabled.</summary>
     public static IServiceCollection AddHealthChecker(this IServiceCollection services, IConfiguration configuration)
     {
-        var healthCheckConfiguration = configuration.BindSection<HealthCheckConfiguration>("HealthCheck");
+        var healthCheckConfiguration = configuration.BindSection<HealthCheckConfiguration>("System:HealthCheck");
         services.AddSingleton(healthCheckConfiguration);
 
         if (!healthCheckConfiguration.Enabled)
@@ -206,7 +206,7 @@ public static class ServiceCollectionExtensions
     {
         try
         {
-            var openApiConfiguration = configuration.BindSection<OpenApiConfiguration>("OpenApi");
+            var openApiConfiguration = configuration.BindSection<OpenApiConfiguration>("System:OpenApi");
             services.AddSingleton(openApiConfiguration);
 
             if (!openApiConfiguration.Enabled)
@@ -292,7 +292,7 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services, IConfiguration configuration)
     {
-        var pluginRegistryConfiguration = configuration.BindSection<PluginRegistryConfiguration>("PluginRegistry");
+        var pluginRegistryConfiguration = configuration.BindSection<PluginRegistryConfiguration>("Integrations:PluginRegistry");
         services.AddSingleton(pluginRegistryConfiguration);
         services.AddPluginManager();
 
@@ -303,7 +303,7 @@ public static class ServiceCollectionExtensions
 
     #region Security
 
-    /// <summary>Configures authentication providers and authorization policies.</summary>
+    /// <summary>Configures authentication providers, authorization policies, and encryption service.</summary>
     public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
     {
         try
@@ -311,22 +311,22 @@ public static class ServiceCollectionExtensions
             using var scope = services.BuildServiceProvider().CreateScope();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Security");
+            var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
             services.AddSingleton(securityConfiguration);
 
-            securityConfiguration.ValidateDefaultScheme(logger);
+            securityConfiguration.Authentication.ValidateDefaultScheme(logger);
 
             var providers = new List<IAuthenticationProvider>();
 
-            if (securityConfiguration.EnableBasic && securityConfiguration.BasicUsers != null)
+            if (securityConfiguration.Authentication.EnableBasic && securityConfiguration.Authentication.BasicUsers != null)
                 providers.Add(new BasicAuthenticationProvider());
 
-            foreach (var jwt in securityConfiguration.JwtProviders)
+            foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
                 providers.Add(new JwtAuthenticationProvider(jwt));
 
             var authBuilder = services.AddAuthentication(options =>
             {
-                options.DefaultScheme = securityConfiguration.DefaultScheme ?? "Basic";
+                options.DefaultScheme = securityConfiguration.Authentication.DefaultScheme ?? "Basic";
             });
 
             foreach (var provider in providers)
@@ -349,6 +349,11 @@ public static class ServiceCollectionExtensions
                 AddRolePolicy("triggers", "triggers");
 
                 logger.LogInformation("Authorization initialized.");
+            });
+
+            services.AddSingleton<IEncryptionService>(provider =>
+            {
+                return new EncryptionService(securityConfiguration.Encryption.Key);
             });
 
             return services;
@@ -407,7 +412,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         var rateLimitingConfiguration = new RateLimitingConfiguration();
-        configuration.GetSection("RateLimiting").Bind(rateLimitingConfiguration);
+        configuration.GetSection("System:RateLimiting").Bind(rateLimitingConfiguration);
         services.AddSingleton(rateLimitingConfiguration);
 
         services.AddRateLimiter(options =>
@@ -433,7 +438,7 @@ public static class ServiceCollectionExtensions
         using var scope = services.BuildServiceProvider().CreateScope();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-        var corsConfiguration = configuration.BindSection<CorsConfiguration>("Cors");
+        var corsConfiguration = configuration.BindSection<CorsConfiguration>("System:Cors");
         services.AddSingleton(corsConfiguration);
 
         var allowedOrigins = corsConfiguration.AllowedOrigins?.ToArray() ?? Array.Empty<string>();

@@ -81,11 +81,10 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddHttpJsonOptions()
         .AddPersistence(config)
         .AddWorkflowQueueService(config)
-        .AddEndpoint(config)
+        .AddServer(config)
         .AddPluginsPath()
         .AddVersion()
         .AddApplication()
-        .AddEncryptionService(config)
         .AddInfrastructure()
         .AddInfrastructurePluginManager(config)
         .AddUserService()
@@ -98,7 +97,8 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddHostedService<WorkflowExecutionWorker>()
         .AddHostedService<TriggerProcessingService>()
         .AddConfiguredCors(config)
-        .AddAiService(config);
+        .AddAiService(config)
+        .AddNotificationsService(config);
 
     if (!env.IsDevelopment())
         builder.Services.ParseArguments(args);
