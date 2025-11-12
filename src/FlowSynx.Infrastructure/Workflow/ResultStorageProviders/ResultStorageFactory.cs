@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.Storage;
+﻿using FlowSynx.Application.Configuration.System.Storage;
 
 namespace FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 

@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.PluginRegistry;
+﻿using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.PluginHost.Manager;
