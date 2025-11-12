@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Application.AI;
-using FlowSynx.Application.Configuration.AI;
-using FlowSynx.Application.Configuration.Encryption;
-using FlowSynx.Application.Configuration.Localization;
-using FlowSynx.Application.Configuration.Secrets;
-using FlowSynx.Application.Configuration.Storage;
+using FlowSynx.Application.Configuration.Core.AI;
+using FlowSynx.Application.Configuration.Core.Secrets;
+using FlowSynx.Application.Configuration.Integrations.Notifications;
+using FlowSynx.Application.Configuration.System.Localization;
+using FlowSynx.Application.Configuration.System.Storage;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.PluginHost.Manager;
@@ -14,6 +14,7 @@ using FlowSynx.Application.Workflow;
 using FlowSynx.Infrastructure.AI;
 using FlowSynx.Infrastructure.AI.AzureOpenAi;
 using FlowSynx.Infrastructure.Localizations;
+using FlowSynx.Infrastructure.Notifications.Email;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Infrastructure.PluginHost.Manager;
@@ -97,7 +98,7 @@ public static class ServiceCollectionExtensions
         var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<JsonLocalization>>();
 
         var localizationConfiguration = new LocalizationConfiguration();
-        configuration.GetSection("Localization").Bind(localizationConfiguration);
+        configuration.GetSection("System:Localization").Bind(localizationConfiguration);
         services.AddSingleton(localizationConfiguration);
 
         var language = Language.GetByCode(localizationConfiguration.Language);
@@ -119,25 +120,6 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddEncryptionService(
-        this IServiceCollection services, 
-        IConfiguration configuration)
-    {
-        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
-
-        var encryptionConfiguration = new EncryptionConfiguration();
-        configuration.GetSection("Encryption").Bind(encryptionConfiguration);
-        services.AddSingleton(encryptionConfiguration);
-
-        services.AddSingleton<IEncryptionService>(provider =>
-        {
-            var jsonLocalization = new EncryptionService(encryptionConfiguration.Key);
-            return jsonLocalization;
-        });
-
-        return services;
-    }
-
     public static IServiceCollection AddResultStorageService(
         this IServiceCollection services, 
         IConfiguration configuration)
@@ -148,7 +130,7 @@ public static class ServiceCollectionExtensions
         logger.LogInformation("Initializing storage provider");
 
         var storageConfiguration = new StorageConfiguration();
-        configuration.GetSection("Storage").Bind(storageConfiguration);
+        configuration.GetSection("System:Storage").Bind(storageConfiguration);
 
         if (!storageConfiguration.ResultStorage.Providers.Any())
         {
@@ -186,7 +168,7 @@ public static class ServiceCollectionExtensions
         logger.LogInformation("Initializing secret provider");
 
         var secretConfiguration = new SecretConfiguration();
-        configuration.GetSection("Secrets").Bind(secretConfiguration);
+        configuration.GetSection("Core:Secrets").Bind(secretConfiguration);
         services.AddSingleton(secretConfiguration);
 
         secretConfiguration.ValidateSecretProviders(logger);
@@ -210,7 +192,7 @@ public static class ServiceCollectionExtensions
         logger.LogInformation("Initializing AI provider");
 
         var aiConfiguration = new AiConfiguration();
-        configuration.GetSection("AI").Bind(aiConfiguration);
+        configuration.GetSection("Core:AI").Bind(aiConfiguration);
         services.AddSingleton(aiConfiguration);
 
         aiConfiguration.ValidateAiProviders(logger);
@@ -219,6 +201,19 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAiFactory, AiFactory>();
         services.AddSingleton<IWorkflowIntentService, WorkflowIntentService>();
         services.AddSingleton<IWorkflowOptimizationService, WorkflowOptimizationService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddNotificationsService(
+        this IServiceCollection services, 
+        IConfiguration configuration)
+    {
+        var notificationsConfiguration = new NotificationsConfiguration();
+        configuration.GetSection("Integrations:Notifications").Bind(notificationsConfiguration);
+        services.AddSingleton(notificationsConfiguration);
+
+        services.AddTransient<EmailNotificationProvider>();
 
         return services;
     }

@@ -184,41 +184,54 @@ public class WorkflowValidator : IWorkflowValidator
 
         foreach (var task in tasks)
         {
-            if (!graph.ContainsKey(task.Name))
-                graph[task.Name] = new List<string>();
+            EnsureNodeExists(graph, inDegree, task.Name);
 
-            inDegree.TryAdd(task.Name, 0);
-
-            // ─────────────────────────────────────────────
-            // Add standard dependencies (edges: dep -> task)
-            // ─────────────────────────────────────────────
-            foreach (var dep in task.Dependencies)
-            {
-                if (!graph.ContainsKey(dep))
-                    graph[dep] = new List<string>();
-
-                graph[dep].Add(task.Name);
-                inDegree[task.Name] = inDegree.GetValueOrDefault(task.Name) + 1;
-            }
-
-            // ─────────────────────────────────────────────
-            // Add conditional branches (edges: task -> target)
-            // ─────────────────────────────────────────────
-            if (task.ConditionalBranches is { Count: > 0 })
-            {
-                foreach (var target in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
-                {
-                    if (!graph.ContainsKey(target))
-                        graph[target] = new List<string>();
-
-                    graph[task.Name].Add(target);
-                    inDegree.TryAdd(target, 0);
-                    inDegree[target]++;
-                }
-            }
+            AddDependencies(task, graph, inDegree);
+            AddConditionalBranches(task, graph, inDegree);
         }
 
         return graph;
+    }
+
+    private static void EnsureNodeExists(
+        Dictionary<string, List<string>> graph,
+        Dictionary<string, int> inDegree,
+        string node)
+    {
+        if (!graph.ContainsKey(node))
+            graph[node] = new List<string>();
+        inDegree.TryAdd(node, 0);
+    }
+
+    private static void AddDependencies(
+        WorkflowTask task,
+        Dictionary<string, List<string>> graph,
+        Dictionary<string, int> inDegree)
+    {
+        foreach (var dep in task.Dependencies)
+        {
+            EnsureNodeExists(graph, inDegree, dep);
+
+            graph[dep].Add(task.Name);
+            inDegree[task.Name] = inDegree.GetValueOrDefault(task.Name) + 1;
+        }
+    }
+
+    private static void AddConditionalBranches(
+        WorkflowTask task,
+        Dictionary<string, List<string>> graph,
+        Dictionary<string, int> inDegree)
+    {
+        if (task.ConditionalBranches is not { Count: > 0 })
+            return;
+
+        foreach (var target in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
+        {
+            EnsureNodeExists(graph, inDegree, target);
+
+            graph[task.Name].Add(target);
+            inDegree[target]++;
+        }
     }
 
     public void ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser parser)
