@@ -82,16 +82,17 @@ public class PluginCacheService : IPluginCacheService
         }
     }
 
+    /// <summary>
+    /// Attaches a post-eviction callback so plugin handles are unloaded once the cache expires or is cleared.
+    /// </summary>
     private void RegisterEvictionCallback(MemoryCacheEntryOptions options)
     {
         options.RegisterPostEvictionCallback((_, evictedValue, reason, _) =>
         {
-            if (reason is EvictionReason.Expired or EvictionReason.Removed)
+            if ((reason is EvictionReason.Expired or EvictionReason.Removed) &&
+                evictedValue is IPluginLoader pluginHandle)
             {
-                if (evictedValue is IPluginLoader pluginHandle)
-                {
-                    pluginHandle.Unload();
-                }
+                pluginHandle.Unload();
             }
         });
     }
