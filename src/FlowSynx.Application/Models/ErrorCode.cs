@@ -164,6 +164,10 @@ public enum ErrorCode
     AIConfigurationInvalidProviderName     = 3001,
     #endregion
 
+    #region Notification error codes
+    NotificationConfigurationInvalidProviderName = 3101,
+    #endregion
+
     #region Unknown error codes
     UnknownError = 9999
     #endregion

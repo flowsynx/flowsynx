@@ -19,13 +19,16 @@ public class NotificationsConfiguration
         var validProviders = Providers.Keys.ToList();
         logger.LogInformation("Configured Notification Providers: {Providers}", string.Join(", ", validProviders));
 
-        foreach (var provider in DefaultProviders)
+        var invalidProviders = DefaultProviders
+            .Where(provider => !validProviders.Contains(provider))
+            .ToList();
+
+        if (invalidProviders.Any())
         {
-            if (!validProviders.Contains(provider))
-            {
-                throw new FlowSynxException((int)ErrorCode.AIConfigurationInvalidProviderName,
-                    $"Invalid default provider '{provider}'. Available: {string.Join(", ", validProviders)}");
-            }
+            throw new FlowSynxException(
+                (int)ErrorCode.NotificationConfigurationInvalidProviderName,
+                $"Invalid default providers '{string.Join(", ", invalidProviders)}'. Available: {string.Join(", ", validProviders)}"
+            );
         }
 
         if (!DefaultProviders.Any())

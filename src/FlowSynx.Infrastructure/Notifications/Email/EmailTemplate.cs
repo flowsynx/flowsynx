@@ -2,7 +2,7 @@
 
 namespace FlowSynx.Infrastructure.Notifications.Email;
 
-public class EmailTemplate
+public static class EmailTemplate
 {
     private const string Template = @"
 <!DOCTYPE html>

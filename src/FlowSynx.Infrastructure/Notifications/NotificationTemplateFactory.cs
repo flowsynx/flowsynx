@@ -18,11 +18,6 @@ public class NotificationTemplateFactory : INotificationTemplateFactory
         _logger = logger;
     }
 
-    //public NotificationTemplateFactory(IEnumerable<INotificationTemplate> templates)
-    //{
-    //    _templates = templates.ToDictionary(t => t.ProviderName, StringComparer.OrdinalIgnoreCase);
-    //}
-
     public INotificationTemplate GetTemplate(string providerName)
     {
         if (!_config.Enabled)
@@ -35,7 +30,7 @@ public class NotificationTemplateFactory : INotificationTemplateFactory
 
         return providerConfig switch
         {
-            EmailConfiguration emailConfig => new EmailApprovalTemplate(),
+            EmailConfiguration => new EmailApprovalTemplate(),
             _ => throw new NotSupportedException($"Notification type '{providerConfig.Type}' not supported")
         };
     }
