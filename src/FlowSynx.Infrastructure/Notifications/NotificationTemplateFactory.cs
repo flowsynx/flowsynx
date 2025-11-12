@@ -5,20 +5,25 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Notifications;
 
-public class NotificationProviderFactory: INotificationProviderFactory
+public class NotificationTemplateFactory : INotificationTemplateFactory
 {
     private readonly NotificationsConfiguration _config;
-    private readonly ILogger<NotificationProviderFactory> _logger;
+    private readonly ILogger<NotificationTemplateFactory> _logger;
 
-    public NotificationProviderFactory(
+    public NotificationTemplateFactory(
         NotificationsConfiguration config,
-        ILogger<NotificationProviderFactory> logger)
+        ILogger<NotificationTemplateFactory> logger)
     {
         _config = config;
         _logger = logger;
     }
 
-    public INotificationProvider CreateProvider(string providerName)
+    //public NotificationTemplateFactory(IEnumerable<INotificationTemplate> templates)
+    //{
+    //    _templates = templates.ToDictionary(t => t.ProviderName, StringComparer.OrdinalIgnoreCase);
+    //}
+
+    public INotificationTemplate GetTemplate(string providerName)
     {
         if (!_config.Enabled)
             throw new InvalidOperationException("Notifications are disabled.");
@@ -26,11 +31,11 @@ public class NotificationProviderFactory: INotificationProviderFactory
         if (!_config.Providers.TryGetValue(providerName, out var providerConfig))
             throw new KeyNotFoundException($"Notification provider '{providerName}' is not configured.");
 
-        _logger.LogInformation("Creating notification sender for {ProviderName} ({Type})", providerName, providerConfig.Type);
+        _logger.LogInformation("Creating notification template for {ProviderName} ({Type})", providerName, providerConfig.Type);
 
         return providerConfig switch
         {
-            EmailConfiguration emailConfig => new EmailNotificationProvider(emailConfig, _logger),
+            EmailConfiguration emailConfig => new EmailApprovalTemplate(),
             _ => throw new NotSupportedException($"Notification type '{providerConfig.Type}' not supported")
         };
     }

@@ -5,6 +5,7 @@ using FlowSynx.Application.Configuration.Integrations.Notifications;
 using FlowSynx.Application.Configuration.System.Localization;
 using FlowSynx.Application.Configuration.System.Storage;
 using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Notifications;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Secrets;
@@ -14,6 +15,7 @@ using FlowSynx.Application.Workflow;
 using FlowSynx.Infrastructure.AI;
 using FlowSynx.Infrastructure.AI.AzureOpenAi;
 using FlowSynx.Infrastructure.Localizations;
+using FlowSynx.Infrastructure.Notifications;
 using FlowSynx.Infrastructure.Notifications.Email;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
@@ -209,11 +211,32 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services, 
         IConfiguration configuration)
     {
+        using var serviceProviderScope = services.BuildServiceProvider().CreateScope();
+        var logger = serviceProviderScope.ServiceProvider.GetRequiredService<ILogger<NotificationProviderFactory>>();
+
         var notificationsConfiguration = new NotificationsConfiguration();
         configuration.GetSection("Integrations:Notifications").Bind(notificationsConfiguration);
+        notificationsConfiguration.ValidateNotificationProviders(logger);
+
+        // Post-process provider configurations based on their Type
+        var providersSection = configuration.GetSection("Integrations:Notifications:Providers");
+        foreach (var provider in providersSection.GetChildren())
+        {
+            var type = provider.GetValue<string>("Type")?.ToLowerInvariant();
+            NotificationProviderConfiguration providerConfig = type switch
+            {
+                "smtp" => provider.Get<EmailConfiguration>() ?? new EmailConfiguration(),
+                _ => provider.Get<NotificationProviderConfiguration>() ?? new NotificationProviderConfiguration()
+            };
+
+            notificationsConfiguration.Providers[provider.Key] = providerConfig;
+        }
+
         services.AddSingleton(notificationsConfiguration);
 
-        services.AddTransient<EmailNotificationProvider>();
+        services.AddSingleton<INotificationProviderFactory, NotificationProviderFactory>();
+        services.AddSingleton<INotificationTemplate, EmailApprovalTemplate>();
+        services.AddSingleton<INotificationTemplateFactory, NotificationTemplateFactory>();
 
         return services;
     }

@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Notifications;
+﻿using FlowSynx.Application.Configuration.Integrations.Notifications;
+using FlowSynx.Application.Notifications;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
@@ -10,10 +11,13 @@ public class EmailNotificationProvider : INotificationProvider
     private readonly EmailConfiguration _config;
     private readonly ILogger _logger;
 
-    public EmailNotificationProvider(EmailConfiguration config, ILogger logger)
+    public EmailNotificationProvider(NotificationProviderConfiguration config, ILogger logger)
     {
-        _config = config;
-        _logger = logger;
+        if (config is not EmailConfiguration emailConfig)
+            throw new ArgumentException("Invalid configuration type. Expected EmailConfiguration.", nameof(config));
+
+        _config = emailConfig;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task SendAsync(NotificationMessage message, CancellationToken cancellationToken = default)
