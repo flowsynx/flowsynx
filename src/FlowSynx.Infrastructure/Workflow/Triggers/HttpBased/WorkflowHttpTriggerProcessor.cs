@@ -56,9 +56,9 @@ public class WorkflowHttpTriggerProcessor : IWorkflowTriggerProcessor
 
             try
             {
-                _workflowHttpListener.RegisterRoute(trigger.UserId, method, route, async (request) =>
+                _workflowHttpListener.RegisterRoute(trigger.UserId, method, route, async _ =>
                 {
-                    await ExecuteWorkflowAsync(trigger, request.Body, cancellationToken);
+                    await ExecuteWorkflowAsync(trigger, cancellationToken);
                 });
 
                 _logger.LogInformation(_localization.Get(
@@ -100,9 +100,13 @@ public class WorkflowHttpTriggerProcessor : IWorkflowTriggerProcessor
         return true;
     }
 
+    /// <summary>
+    /// Creates a workflow execution for the trigger and enqueues it for processing.
+    /// </summary>
+    /// <param name="trigger">Trigger metadata used to identify the workflow and user.</param>
+    /// <param name="cancellationToken">Propagation token for cooperative cancellation.</param>
     private async Task ExecuteWorkflowAsync(
         WorkflowTriggerEntity trigger,
-        string? requestBody,
         CancellationToken cancellationToken)
     {
         try
