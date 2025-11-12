@@ -39,7 +39,7 @@ public class EmailNotificationProvider : INotificationProvider
 
         using var client = new SmtpClient(_config.Host, _config.Port)
         {
-            EnableSsl = _config.EnableSsl
+            EnableSsl = true
         };
 
         if (!string.IsNullOrEmpty(_config.Credentials.UserName))
