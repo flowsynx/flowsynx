@@ -318,11 +318,18 @@ public static class ServiceCollectionExtensions
 
             var providers = new List<IAuthenticationProvider>();
 
-            if (securityConfiguration.Authentication.EnableBasic && securityConfiguration.Authentication.BasicUsers != null)
-                providers.Add(new BasicAuthenticationProvider());
+            if (!securityConfiguration.Authentication.Enabled)
+            {
+                providers.Add(new DisabledAuthenticationProvider());
+            }
+            else
+            {
+                if (securityConfiguration.Authentication.Basic.Enabled && securityConfiguration.Authentication.Basic.Users != null)
+                    providers.Add(new BasicAuthenticationProvider());
 
-            foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
-                providers.Add(new JwtAuthenticationProvider(jwt));
+                foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
+                    providers.Add(new JwtAuthenticationProvider(jwt));
+            }
 
             var authBuilder = services.AddAuthentication(options =>
             {
