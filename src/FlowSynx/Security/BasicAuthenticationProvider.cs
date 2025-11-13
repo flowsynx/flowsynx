@@ -45,7 +45,7 @@ public class BasicAuthenticationProvider : IAuthenticationProvider
                 var username = credentials[0];
                 var password = credentials[1];
 
-                var users = securityConfiguration.Authentication.BasicUsers;
+                var users = securityConfiguration.Authentication.Basic.Users;
                 var user = users.FirstOrDefault(u => u.Name == username && u.Password == password);
                 if (user == null)
                     return Task.FromResult(AuthenticateResult.Fail("Invalid Username or Password"));

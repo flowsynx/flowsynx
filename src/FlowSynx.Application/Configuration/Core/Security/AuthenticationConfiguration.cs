@@ -6,16 +6,33 @@ namespace FlowSynx.Application.Configuration.Core.Security;
 
 public class AuthenticationConfiguration
 {
-    public bool EnableBasic { get; set; } = true;
-    public List<BasicAuthenticationConfiguration> BasicUsers { get; set; } = new();
+    public bool Enabled { get; set; } = false;
+    public string? DefaultScheme { get; set; } = string.Empty;
+    public BasicConfiguration Basic { get; set; } = new();
     public List<JwtAuthenticationsConfiguration> JwtProviders { get; set; } = new();
-    public string? DefaultScheme { get; set; }
 
     public void ValidateDefaultScheme(ILogger logger)
     {
+        var validSchemes = GetValidSchemes(logger);
+
+        if (string.IsNullOrEmpty(DefaultScheme))
+            SetDefaultSchemeWhenEmpty(logger);
+        else
+            ValidateAndNormalizeDefaultScheme(validSchemes, logger);
+    }
+
+    private List<string> GetValidSchemes(ILogger logger)
+    {
         var validSchemes = new List<string>();
 
-        if (EnableBasic)
+        if (!Enabled)
+        {
+            validSchemes.Add("Disabled");
+            logger.LogWarning("Authentication is Disabled. This configuration introduces a security risk by allowing unrestricted access.");
+            return validSchemes;
+        }
+
+        if (Basic.Enabled)
         {
             validSchemes.Add("Basic");
             logger.LogInformation("Basic authentication is enabled.");
@@ -27,20 +44,40 @@ public class AuthenticationConfiguration
             logger.LogInformation("JWT provider '{Scheme}' configured", jwt.Name);
         }
 
-        if (!string.IsNullOrEmpty(DefaultScheme))
-        {
-            if (!validSchemes.Contains(DefaultScheme))
-            {
-                throw new FlowSynxException((int)ErrorCode.SecurityConfigurationInvalidScheme,
-                    Localizations.Localization.Get("SecurityConfiguration_InvalidScheme", DefaultScheme,
-                    string.Join(", ", validSchemes)));
-            }
+        return validSchemes;
+    }
 
-            logger.LogInformation("Default authentication scheme set to: {Scheme}", DefaultScheme);
+    private void SetDefaultSchemeWhenEmpty(ILogger logger)
+    {
+        if (!Enabled)
+        {
+            DefaultScheme = "Disabled";
+            logger.LogWarning("Default authentication scheme set to 'Disabled'. This configuration introduces a security risk by allowing unrestricted access.");
         }
         else
         {
             logger.LogWarning("No default authentication scheme is defined.");
         }
+    }
+
+    private void ValidateAndNormalizeDefaultScheme(List<string> validSchemes, ILogger logger)
+    {
+        if (!Enabled)
+        {
+            DefaultScheme = "Disabled";
+        }
+
+        if (!validSchemes.Contains(DefaultScheme))
+        {
+            throw new FlowSynxException(
+                (int)ErrorCode.SecurityConfigurationInvalidScheme,
+                Localizations.Localization.Get(
+                    "SecurityConfiguration_InvalidScheme",
+                    DefaultScheme,
+                    string.Join(", ", validSchemes))
+            );
+        }
+
+        logger.LogInformation("Default authentication scheme set to: {Scheme}", DefaultScheme);
     }
 }
