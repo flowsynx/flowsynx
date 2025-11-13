@@ -5,7 +5,6 @@ using FlowSynx.Application.Notifications;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Notifications;
-using FlowSynx.Infrastructure.Notifications.Email;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -35,7 +34,7 @@ public class ManualApprovalService: IManualApprovalService
 
     public async Task RequestApprovalAsync(
         WorkflowExecutionEntity execution,
-        ManualApproval? approvalConfig,
+        ManualApproval? manualApproval,
         CancellationToken cancellationToken)
     {
         var approvalEntity = new WorkflowApprovalEntity
@@ -47,6 +46,7 @@ public class ManualApprovalService: IManualApprovalService
             TaskName = execution.PausedAtTask!,
             RequestedBy = execution.UserId,
             RequestedAt = DateTime.UtcNow,
+            Comment = manualApproval?.Comment ?? "",
             Status = WorkflowApprovalStatus.Pending,
         };
 
@@ -132,7 +132,8 @@ public class ManualApprovalService: IManualApprovalService
             ExecutionId = approval.ExecutionId,
             TaskName = approval.TaskName,
             RequestedBy = approval.RequestedBy,
-            RequestedAt = approval.RequestedAt
+            RequestedAt = approval.RequestedAt,
+            Comment = approval.Comment,
         };
 
         try

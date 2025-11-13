@@ -504,10 +504,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         if (manualApproval == null)
             return;
 
-        manualApproval.Instructions = ReplaceIfNotNull(manualApproval.Instructions, parser);
-        manualApproval.DefaultAction = ReplaceIfNotNull(manualApproval.DefaultAction, parser);
-
-        ReplaceStringListItems(manualApproval.Approvers, parser);
+        manualApproval.Comment = ReplaceIfNotNull(manualApproval.Comment, parser);
     }
 
     /// <summary>

@@ -7,4 +7,5 @@ public record NotificationApprovalMessage
     public string TaskName { get; set; } = string.Empty;
     public string RequestedBy { get; set; } = string.Empty;
     public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+    public string? Comment { get; set; } = string.Empty;
 }

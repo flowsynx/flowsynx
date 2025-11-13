@@ -54,7 +54,7 @@ internal class WorkflowExecutionApprovalsHandler : IRequestHandler<WorkflowExecu
                 TaskName = l.TaskName,
                 RequestedBy = l.RequestedBy,
                 RequestedAt = l.RequestedAt,
-                Comments = l.Comments,
+                Comments = l.Comment,
                 Status = l.Status.ToString()
             });
             var pagedItems = response.ToPaginatedList(

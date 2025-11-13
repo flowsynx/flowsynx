@@ -4,114 +4,60 @@ namespace FlowSynx.Infrastructure.Notifications.Email;
 
 public static class EmailTemplate
 {
+    // Simplified, inline-styled template for better email client compatibility.
     private const string Template = @"
 <!DOCTYPE html>
 <html lang=""en"">
 <head>
   <meta charset=""UTF-8"">
   <title>Workflow Approval Required</title>
-  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"">
-  <style>
-    body {{
-      background-color: #f5f6fa;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }}
-    .container {{
-      background-color: #ffffff;
-      max-width: 600px;
-      margin: 40px auto;
-      padding: 24px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }}
-    h2 {{
-      color: #2f3640;
-      text-align: center;
-      margin-bottom: 24px;
-    }}
-    .info {{
-      font-size: 14px;
-      line-height: 1.6;
-      background: #f9f9f9;
-      padding: 12px 16px;
-      border-left: 4px solid #4a90e2;
-      border-radius: 4px;
-      margin-bottom: 20px;
-    }}
-    .info strong {{
-      color: #222;
-    }}
-    .actions {{
-      text-align: center;
-      margin-top: 30px;
-    }}
-    .btn {{
-      display: inline-block;
-      padding: 12px 24px;
-      margin: 0 10px;
-      text-decoration: none;
-      color: #fff;
-      border-radius: 6px;
-      font-weight: bold;
-      transition: background 0.2s ease-in-out;
-    }}
-    .btn-approve {{
-      background-color: #2ecc71;
-    }}
-    .btn-approve:hover {{
-      background-color: #27ae60;
-    }}
-    .btn-reject {{
-      background-color: #e74c3c;
-    }}
-    .btn-reject:hover {{
-      background-color: #c0392b;
-    }}
-    .footer {{
-      text-align: center;
-      font-size: 12px;
-      color: #999;
-      margin-top: 30px;
-    }}
-    .note {{
-      font-size: 13px;
-      color: #555;
-      background: #fcfcfc;
-      border: 1px dashed #ddd;
-      padding: 10px;
-      border-radius: 6px;
-      margin-top: 20px;
-    }}
-  </style>
 </head>
-<body>
-  <div class=""container"">
-    <h2>Workflow Approval Required</h2>
-    <div class=""info"">
-      <p><strong>Workflow Id:</strong> {{WorkflowId}}</p>
-      <p><strong>Execution Id:</strong> {{ExecutionId}}</p>
-      <p><strong>Task:</strong> {{TaskName}}</p>
-      <p><strong>Requested By:</strong> {{RequestedBy}}</p>
-      <p><strong>Requested At (UTC):</strong> {{RequestedAt}}</p>
-    </div>
-
-    <div class=""actions"">
-      <a href=""{{ApproveUrl}}"" class=""btn btn-approve"">Approve</a>
-      <a href=""{{RejectUrl}}"" class=""btn btn-reject"">Reject</a>
-    </div>
-
-    <div class=""note"">
-      <strong>Note:</strong> These links target <code>POST</code> endpoints.<br>
-      Use an API client or UI that issues POST requests.
-    </div>
-
-    <div class=""footer"">
-      <p>This is an automated message from your Workflow Engine.</p>
-    </div>
-  </div>
+<body style=""margin:0;padding:0;background-color:#f5f6fa;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;"">
+  <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""100%"" style=""background-color:#f5f6fa;padding:24px 0;"">
+    <tr>
+      <td align=""center"">
+        <table role=""presentation"" cellpadding=""0"" cellspacing=""0"" width=""600"" style=""max-width:600px;background-color:#ffffff;border-radius:8px;border:1px solid #e1e4e8;"">
+          <tr>
+            <td style=""padding:24px 24px 8px 24px;text-align:center;"">
+              <h2 style=""margin:0;font-size:20px;color:#2f3640;font-weight:600;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;"">
+                Workflow Approval Required
+              </h2>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:8px 24px 0 24px;"">
+              <div style=""font-size:14px;line-height:1.6;background:#f9f9f9;padding:12px 16px;border-left:4px solid #4a90e2;border-radius:4px;color:#333;"">
+                <p style=""margin:0 0 8px 0;""><strong style=""color:#222;"">Comment:</strong> {{Comment}}</p>
+                <p style=""margin:0 0 8px 0;""><strong style=""color:#222;"">Task:</strong> {{TaskName}}</p>
+                <p style=""margin:0 0 8px 0;""><strong style=""color:#222;"">Workflow Id:</strong> {{WorkflowId}}</p>
+                <p style=""margin:0 0 8px 0;""><strong style=""color:#222;"">Execution Id:</strong> {{ExecutionId}}</p>
+                <p style=""margin:0 0 8px 0;""><strong style=""color:#222;"">Requested By:</strong> {{RequestedBy}}</p>
+                <p style=""margin:0;""><strong style=""color:#222;"">Requested At (UTC):</strong> {{RequestedAt}}</p>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:24px;text-align:center;"">
+              <a href=""{{ApproveUrl}}"" style=""display:inline-block;text-decoration:none;background:#2ecc71;color:#ffffff;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:600;margin:0 6px;"">Approve</a>
+              <a href=""{{RejectUrl}}"" style=""display:inline-block;text-decoration:none;background:#e74c3c;color:#ffffff;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:600;margin:0 6px;"">Reject</a>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:0 24px 16px 24px;"">
+              <div style=""font-size:12px;color:#555;background:#fcfcfc;border:1px dashed #ddd;padding:10px;border-radius:6px;"">
+                <strong>Note:</strong> Email links issue GET requests. If your approval API requires POST, route these links to a landing page or use a one-time token endpoint.
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style=""padding:0 24px 24px 24px;text-align:center;"">
+              <p style=""margin:0;font-size:12px;color:#999;"">This is an automated message from FlowSynx Workflow Engine.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 ";
@@ -127,6 +73,7 @@ public static class EmailTemplate
             .Replace("{{TaskName}}", approvalMessage.TaskName ?? string.Empty)
             .Replace("{{RequestedBy}}", approvalMessage.RequestedBy ?? string.Empty)
             .Replace("{{RequestedAt}}", approvalMessage.RequestedAt.ToString("O"))
+            .Replace("{{Comment}}", approvalMessage.Comment ?? string.Empty)
             .Replace("{{ApproveUrl}}", approveUrl ?? "#")
             .Replace("{{RejectUrl}}", rejectUrl ?? "#");
     }

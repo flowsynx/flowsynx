@@ -11,5 +11,5 @@ public class WorkflowApprovalEntity: AuditableEntity<Guid>
     public string? Approver { get; set; }
     public DateTime? DecidedAt { get; set; }
     public WorkflowApprovalStatus Status { get; set; } = WorkflowApprovalStatus.Pending;
-    public string? Comments { get; set; }
+    public string? Comment { get; set; }
 }

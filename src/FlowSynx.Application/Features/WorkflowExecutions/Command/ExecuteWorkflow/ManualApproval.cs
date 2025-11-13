@@ -3,7 +3,5 @@
 public class ManualApproval
 {
     public bool Enabled { get; set; } = false;
-    public List<string> Approvers { get; set; } = new();
-    public string Instructions { get; set; } = string.Empty;
-    public string DefaultAction { get; set; } = "abort";
+    public string Comment { get; set; } = string.Empty;
 }
