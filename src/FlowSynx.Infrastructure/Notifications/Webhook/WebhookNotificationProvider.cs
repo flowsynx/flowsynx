@@ -42,10 +42,9 @@ public class WebhookNotificationProvider : INotificationProvider
         // Add optional headers
         if (_config.Headers != null)
         {
-            foreach (var header in _config.Headers)
+            foreach (var header in _config.Headers.Where(header => !content.Headers.Contains(header.Key)))
             {
-                if (!content.Headers.Contains(header.Key))
-                    content.Headers.Add(header.Key, header.Value);
+                content.Headers.Add(header.Key, header.Value);
             }
         }
 

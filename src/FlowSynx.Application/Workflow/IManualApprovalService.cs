@@ -7,7 +7,7 @@ public interface IManualApprovalService
 {
     Task RequestApprovalAsync(
         WorkflowExecutionEntity execution, 
-        ManualApproval? approvalConfig, 
+        ManualApproval? manualApproval, 
         CancellationToken cancellationToken);
 
     Task ApproveAsync(
