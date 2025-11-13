@@ -17,6 +17,7 @@ using FlowSynx.Infrastructure.AI.AzureOpenAi;
 using FlowSynx.Infrastructure.Localizations;
 using FlowSynx.Infrastructure.Notifications;
 using FlowSynx.Infrastructure.Notifications.Email;
+using FlowSynx.Infrastructure.Notifications.Webhook;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Infrastructure.PluginHost.Manager;
@@ -226,6 +227,7 @@ public static class ServiceCollectionExtensions
             NotificationProviderConfiguration providerConfig = type switch
             {
                 "smtp" => provider.Get<EmailConfiguration>() ?? new EmailConfiguration(),
+                "webhook" => provider.Get<WebhookConfiguration>() ?? new WebhookConfiguration(),
                 _ => provider.Get<NotificationProviderConfiguration>() ?? new NotificationProviderConfiguration()
             };
 
@@ -235,7 +237,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(notificationsConfiguration);
 
         services.AddSingleton<INotificationProviderFactory, NotificationProviderFactory>();
-        services.AddSingleton<INotificationTemplate, EmailApprovalTemplate>();
         services.AddSingleton<INotificationTemplateFactory, NotificationTemplateFactory>();
 
         return services;

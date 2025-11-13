@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Application.Configuration.Integrations.Notifications;
 using FlowSynx.Application.Notifications;
 using FlowSynx.Infrastructure.Notifications.Email;
+using FlowSynx.Infrastructure.Notifications.Webhook;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Notifications;
@@ -31,6 +32,7 @@ public class NotificationProviderFactory: INotificationProviderFactory
         return providerConfig switch
         {
             EmailConfiguration emailConfig => new EmailNotificationProvider(emailConfig, _logger),
+            WebhookConfiguration emailConfig => new WebhookNotificationProvider(emailConfig, _logger),
             _ => throw new NotSupportedException($"Notification type '{providerConfig.Type}' not supported")
         };
     }
