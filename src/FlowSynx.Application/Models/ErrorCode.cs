@@ -74,6 +74,7 @@ public enum ErrorCode
     PluginConfigurationAdd                          = 2207,
     PluginConfigurationUpdate                       = 2208,
     PluginConfigurationDelete                       = 2209,
+    PluginRegistryPluginVersionsNotFound            = 2210,
     #endregion
 
     #region Plugins error codes

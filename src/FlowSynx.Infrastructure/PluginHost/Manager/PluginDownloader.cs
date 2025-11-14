@@ -77,6 +77,29 @@ public class PluginDownloader : IPluginDownloader
         return metadata.Data;
     }
 
+    public async Task<IEnumerable<PluginVersion>> GetPluginVersionsAsync(
+        string url, 
+        string pluginType, 
+        CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient("PluginRegistry");
+        var mainUrl = new Uri(url);
+        var pluginUrl = new Uri(mainUrl, $"api/plugins/{pluginType}/versions");
+        var response = await client.GetStringAsync(pluginUrl, cancellationToken);
+        var versions = _jsonDeserializer.Deserialize<Result<IEnumerable<PluginVersion>>>(response);
+        if (versions == null)
+        {
+            var message = _localization.Get("Plugin_Download_PluginVersionsNotFound", pluginType);
+            throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginVersionsNotFound, message);
+        }
+        if (!versions.Succeeded)
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginInstall, 
+                string.Join(Environment.NewLine, versions.Messages));
+        }
+        return versions.Data;
+    }
+
     public async Task ExtractPluginAsync(
         string pluginDirectory, 
         byte[] data, 

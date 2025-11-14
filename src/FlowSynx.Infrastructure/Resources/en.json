@@ -11,6 +11,7 @@
   "Plugin_Download_Extraction_Successfully": "Plugin successfully extracted to: '{0}'",
   "Plugin_Download_FailedToFetchDataFromUrl": "Error {0} {1}. Failed to fetch data from URL.",
   "Plugin_Download_PluginNotFound": "No plugin with type '{0}' and version '{1}' found.",
+  "Plugin_Download_PluginVersionsNotFound": "The plugin registry did not return any version information for the requested plugin type.",
   "Plugin_Handle_LoadedSuccessfully": "Plugin loaded successfully.",
   "Plugin_Install_NoPluginInstalled": "No plugin with type '{0}' and version '{1}' found.",
   "Plugin_Invalid_MinimumFlowSynxVersion": "Invalid MinimumFlowSynxVersion '{0}' in plugin metadata.",

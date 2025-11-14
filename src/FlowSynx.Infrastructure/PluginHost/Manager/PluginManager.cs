@@ -61,12 +61,16 @@ public class PluginManager : IPluginManager
 
     public async Task InstallAsync(string pluginType, string pluginVersion, CancellationToken cancellationToken)
     {
-        if (await PluginAlreadyExists(pluginType, pluginVersion, cancellationToken))
+        var registryUrl = _pluginRegistryConfiguration.Url;
+
+        // Resolve latest version if requested
+        var effectiveVersion = await ResolveVersionAsync(registryUrl, pluginType, pluginVersion, cancellationToken);
+
+        if (await PluginAlreadyExists(pluginType, effectiveVersion, cancellationToken))
             return;
 
-        var registryUrl = _pluginRegistryConfiguration.Url;
-        var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(registryUrl, pluginType, pluginVersion, cancellationToken);
-        var pluginPackData = await _pluginDownloader.GetPluginDataAsync(registryUrl, pluginType, pluginVersion, cancellationToken);
+        var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(registryUrl, pluginType, effectiveVersion, cancellationToken);
+        var pluginPackData = await _pluginDownloader.GetPluginDataAsync(registryUrl, pluginType, effectiveVersion, cancellationToken);
 
         var pluginBytes = ExtractPluginFile(pluginPackData);
         ValidatePluginChecksum(pluginBytes, pluginMetadata.Checksum);
@@ -78,7 +82,7 @@ public class PluginManager : IPluginManager
         if (!string.IsNullOrEmpty(warningMessage))
             _logger.LogWarning(warningMessage);
 
-        string pluginDirectory = GetPluginLocalDirectory(pluginType, pluginVersion);
+        string pluginDirectory = GetPluginLocalDirectory(pluginType, effectiveVersion);
         await _pluginDownloader.ExtractPluginAsync(pluginDirectory, pluginBytes, cancellationToken);
 
         int installedCount = await InstallPluginAssemblies(pluginDirectory, pluginMetadata, cancellationToken);
@@ -274,6 +278,45 @@ public class PluginManager : IPluginManager
             if (fileInfo.IsReadOnly)
                 fileInfo.IsReadOnly = false;
         }
+    }
+
+    private async Task<string> ResolveVersionAsync(string registryUrl, string pluginType, string requestedVersion, CancellationToken cancellationToken)
+    {
+        // If version is provided and not "latest", use it as-is
+        if (!string.IsNullOrWhiteSpace(requestedVersion) &&
+            !requestedVersion.Equals("latest", StringComparison.OrdinalIgnoreCase))
+        {
+            return requestedVersion;
+        }
+
+        // Fetch versions from registry and pick the latest
+        var versions = await _pluginDownloader.GetPluginVersionsAsync(registryUrl, pluginType, cancellationToken);
+
+        // Try IsLatest flag first
+        var latest = versions?.FirstOrDefault(v => v.IsLatest == true)?.Version;
+
+        // Fallback: try to pick max by System.Version when possible
+        if (string.IsNullOrWhiteSpace(latest))
+        {
+            latest = versions?
+                .Where(v => !string.IsNullOrWhiteSpace(v.Version))
+                .Select(v => new
+                {
+                    raw = v.Version!,
+                    parsed = Version.TryParse(v.Version, out var ver) ? ver : null
+                })
+                .OrderByDescending(x => x.parsed is not null)
+                .ThenByDescending(x => x.parsed) // parsed versions first by numeric comparison
+                .ThenByDescending(x => x.raw, StringComparer.OrdinalIgnoreCase) // fallback to string compare
+                .FirstOrDefault()
+                ?.raw;
+        }
+
+        if (string.IsNullOrWhiteSpace(latest))
+            throw new FlowSynxException((int)ErrorCode.PluginNotFound, $"No available versions found for plugin '{pluginType}'.");
+
+        _logger.LogInformation("Resolved latest version for plugin {PluginType}: {Version}", pluginType, latest);
+        return latest!;
     }
     #endregion
 }
