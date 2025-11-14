@@ -250,10 +250,9 @@ public class WorkflowValidator : IWorkflowValidator
         if (task.ConditionalBranches is not { Count: > 0 })
             return;
 
-        foreach (var branch in task.ConditionalBranches)
+        foreach (var branch in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
         {
-            var target = branch.TargetTaskName;
-            AddEdge(graph, inDegree, task.Name, target);
+            AddEdge(graph, inDegree, task.Name, branch);
         }
     }
 
