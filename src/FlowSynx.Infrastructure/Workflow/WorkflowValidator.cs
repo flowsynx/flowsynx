@@ -177,6 +177,9 @@ public class WorkflowValidator : IWorkflowValidator
         return workflowTasks.Any(task => !seen.Add(task.Name));
     }
 
+    /// <summary>
+    /// Builds an adjacency list representing workflow dependencies and conditional branches.
+    /// </summary>
     private Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
     {
         var graph = new Dictionary<string, List<string>>();
@@ -193,6 +196,9 @@ public class WorkflowValidator : IWorkflowValidator
         return graph;
     }
 
+    /// <summary>
+    /// Ensures a node exists in both the adjacency list and in-degree map.
+    /// </summary>
     private static void EnsureNodeExists(
         Dictionary<string, List<string>> graph,
         Dictionary<string, int> inDegree,
@@ -203,6 +209,25 @@ public class WorkflowValidator : IWorkflowValidator
         inDegree.TryAdd(node, 0);
     }
 
+    /// <summary>
+    /// Adds a directed edge and updates the in-degree for the target node.
+    /// </summary>
+    private static void AddEdge(
+        Dictionary<string, List<string>> graph,
+        Dictionary<string, int> inDegree,
+        string source,
+        string target)
+    {
+        EnsureNodeExists(graph, inDegree, source);
+        EnsureNodeExists(graph, inDegree, target);
+
+        graph[source].Add(target);
+        inDegree[target] = inDegree.GetValueOrDefault(target) + 1;
+    }
+
+    /// <summary>
+    /// Registers standard dependency edges (dependency -> task).
+    /// </summary>
     private static void AddDependencies(
         WorkflowTask task,
         Dictionary<string, List<string>> graph,
@@ -210,13 +235,13 @@ public class WorkflowValidator : IWorkflowValidator
     {
         foreach (var dep in task.Dependencies)
         {
-            EnsureNodeExists(graph, inDegree, dep);
-
-            graph[dep].Add(task.Name);
-            inDegree[task.Name] = inDegree.GetValueOrDefault(task.Name) + 1;
+            AddEdge(graph, inDegree, dep, task.Name);
         }
     }
 
+    /// <summary>
+    /// Registers conditional branch edges (task -> conditional target).
+    /// </summary>
     private static void AddConditionalBranches(
         WorkflowTask task,
         Dictionary<string, List<string>> graph,
@@ -225,12 +250,10 @@ public class WorkflowValidator : IWorkflowValidator
         if (task.ConditionalBranches is not { Count: > 0 })
             return;
 
-        foreach (var target in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
+        foreach (var branch in task.ConditionalBranches)
         {
-            EnsureNodeExists(graph, inDegree, target);
-
-            graph[task.Name].Add(target);
-            inDegree[target]++;
+            var target = branch.TargetTaskName;
+            AddEdge(graph, inDegree, task.Name, target);
         }
     }
 
