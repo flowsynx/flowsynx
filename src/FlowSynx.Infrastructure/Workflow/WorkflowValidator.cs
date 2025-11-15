@@ -217,6 +217,10 @@ public class WorkflowValidator : IWorkflowValidator
         }
     }
 
+    /// <summary>
+    /// Converts each conditional branch into a directed edge so that downstream validation
+    /// (e.g. cycle detection) considers those transitions alongside explicit dependencies.
+    /// </summary>
     private static void AddConditionalBranches(
         WorkflowTask task,
         Dictionary<string, List<string>> graph,
@@ -225,12 +229,15 @@ public class WorkflowValidator : IWorkflowValidator
         if (task.ConditionalBranches is not { Count: > 0 })
             return;
 
-        foreach (var target in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
+        var adjacencyList = graph[task.Name];
+
+        foreach (var branch in task.ConditionalBranches)
         {
+            var target = branch.TargetTaskName;
             EnsureNodeExists(graph, inDegree, target);
 
-            graph[task.Name].Add(target);
-            inDegree[target]++;
+            adjacencyList.Add(target);
+            inDegree[target] = inDegree.GetValueOrDefault(target) + 1;
         }
     }
 
