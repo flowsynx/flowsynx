@@ -208,48 +208,11 @@ Get up and running with FlowSynx in **under 5 minutes** — no complex setup req
 
 ### Option 1 — Run via Docker (Recommended)
 
-If you have Docker installed, you can launch FlowSynx instantly using Docker Compose.
-
-#### 1️⃣ Create a `docker-compose.yml` file
-
-Copy and paste the following:
-
-```yaml
-version: '3.8'
-
-services:
-  flowsynx:
-    image: flowsynx/flowsynx:1.2.3-linux-amd64
-    container_name: flowsynx
-    environment:
-      Security__EnableBasic: true
-      Security__BasicUsers__0__Id: 0960a93d-e42b-4987-bc07-7bda806a21c7
-      Security__BasicUsers__0__Name: admin
-      Security__BasicUsers__0__Password: admin
-      Security__BasicUsers__0__Roles__0: admin
-      Security__DefaultScheme: Basic
-    volumes:
-      - flowsynx-data:/app
-    working_dir: /app
-    ports:
-      - "6262:6262"
-    command: ["--start"]
-    restart: unless-stopped
-    networks:
-      - basicAuth_net
-
-volumes:
-  flowsynx-data:
-
-networks:
-  basicAuth_net:
-    driver: bridge
-```
-
-#### 2️⃣ Start the stack
+If Docker is already installed on your system, you can start FlowSynx immediately using a simple Docker command.  
+Just copy and paste the following into your terminal:
 
 ```bash
-docker compose up -d
+docker run -d --name flowsynx -p 6262:6262 -v flowsynx_data:/app/data flowsynx/flowsynx:1.2.4-linux-amd64 --start
 ```
 
 **This will:**
@@ -269,26 +232,6 @@ Prefer to run FlowSynx locally?
 Download a pre-built binary for your OS from the latest release:
 
 👉 [**Download FlowSynx Releases**](https://github.com/flowsynx/flowsynx/releases/latest)
-
-#### Prerequisites
-- Update your appsettings.json to define the users for Basic authentication mode, for example:
-
-```json
-{
-  "Security": {
-    "EnableBasic": true,
-    "BasicUsers": [
-      {
-        "id": "0960a93d-e42b-4987-bc07-7bda806a21c7",
-        "name": "admin",
-        "password": "admin",
-        "roles": [ "admin" ]
-      }
-    ],
-    "DefaultScheme": "Basic"
-  }
-}
-```
 
 Then run:
 
