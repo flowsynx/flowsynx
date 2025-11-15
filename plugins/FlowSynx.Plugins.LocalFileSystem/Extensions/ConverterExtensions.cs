@@ -3,8 +3,17 @@ using System.Text;
 
 namespace FlowSynx.Plugins.LocalFileSystem.Extensions;
 
+/// <summary>
+/// Provides helper conversions between local files and FlowSynx plugin contexts.
+/// </summary>
 internal static class ConverterExtensions
 {
+    /// <summary>
+    /// Builds a <see cref="PluginContext"/> representation for a given file, optionally enriching metadata.
+    /// </summary>
+    /// <param name="file">The source file to convert.</param>
+    /// <param name="includeMetadata">When true, populates file system metadata in the context.</param>
+    /// <returns>A populated plugin context that contains either UTF-8 content or raw bytes.</returns>
     public static PluginContext ToContext(this FileInfo file, bool? includeMetadata)
     {
         var dataBytes = File.ReadAllBytes(file.FullName);
@@ -29,16 +38,44 @@ internal static class ConverterExtensions
         return context;
     }
 
-    private static bool IsBinaryFile(byte[]? data, int sampleSize = 1024)
+    /// <summary>
+    /// Performs a lightweight heuristic to determine whether the provided data represents binary content.
+    /// </summary>
+    /// <param name="data">The data to inspect.</param>
+    /// <param name="sampleSize">Maximum number of bytes to scan.</param>
+    /// <returns>True when the sample suggests the file is binary, otherwise false.</returns>
+    internal static bool IsBinaryFile(byte[]? data, int sampleSize = 1024)
     {
         if (data == null || data.Length == 0)
             return false;
 
         var checkLength = Math.Min(sampleSize, data.Length);
-        var nonPrintableCount = data.Take(checkLength)
-            .Count(b => (b < 8 || (b > 13 && b < 32)) && b != 9 && b != 10 && b != 13);
+        var nonPrintableCount = 0;
 
-        var threshold = 0.1; // 10% threshold of non-printable characters
-        return (double)nonPrintableCount / checkLength > threshold;
+        for (var i = 0; i < checkLength; i++)
+        {
+            var currentByte = data[i];
+
+            // Treat ASCII control characters (except common whitespace) as indicators of binary data.
+            if (currentByte < 32)
+            {
+                if (currentByte == 9 || currentByte == 10 || currentByte == 13)
+                {
+                    continue;
+                }
+
+                nonPrintableCount++;
+                continue;
+            }
+
+            // DEL (127) and extended ASCII bytes are typically binary.
+            if (currentByte >= 127)
+            {
+                nonPrintableCount++;
+            }
+        }
+
+        const double nonPrintableThreshold = 0.1; // 10% threshold of non-printable characters
+        return (double)nonPrintableCount / checkLength > nonPrintableThreshold;
     }
 }
