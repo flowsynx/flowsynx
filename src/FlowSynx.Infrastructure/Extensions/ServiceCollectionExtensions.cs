@@ -49,6 +49,7 @@ public static class ServiceCollectionExtensions
         services
             .AddSingleton<IPluginCacheService, PluginCacheService>()
             .AddScoped<IPluginDownloader, PluginDownloader>()
+            .AddScoped<IPluginVersionResolver, PluginVersionResolver>()
             .AddScoped<IPluginManager, PluginManager>()
             .AddSingleton<IPluginCacheKeyGeneratorService, PluginCacheKeyGeneratorService>()
             .AddScoped<IPluginTypeService, PluginTypeService>()
