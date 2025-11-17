@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
-
 namespace FlowSynx.Application.Configuration.Core.Security;
 
 public class AuthenticationConfiguration
@@ -38,11 +37,12 @@ public class AuthenticationConfiguration
             logger.LogInformation("Basic authentication is enabled.");
         }
 
-        foreach (var jwt in JwtProviders)
+        foreach (var scheme in JwtProviders.Select(jwt => jwt.Name))
         {
-            validSchemes.Add(jwt.Name);
-            logger.LogInformation("JWT provider '{Scheme}' configured", jwt.Name);
+            validSchemes.Add(scheme);
+            logger.LogInformation("JWT provider '{Scheme}' configured", scheme);
         }
+
 
         return validSchemes;
     }
