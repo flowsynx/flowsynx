@@ -136,6 +136,9 @@ internal sealed class EnsureWorkflowPluginsHandler : IRequestHandler<EnsureWorkf
                         foreach (var item in el.EnumerateArray())
                             stack.Push(item);
                         break;
+                    default:
+                        // Other JsonValueKind values are not relevant for plugin extraction.
+                        break;
                 }
             }
 
