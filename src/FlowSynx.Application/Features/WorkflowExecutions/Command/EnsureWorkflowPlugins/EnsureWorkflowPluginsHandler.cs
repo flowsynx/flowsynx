@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
 using FlowSynx.Application.Configuration.System.Workflow.Execution;
-using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.PluginHost.Manager;
@@ -99,7 +98,7 @@ internal sealed class EnsureWorkflowPluginsHandler : IRequestHandler<EnsureWorkf
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, "FlowSynx exception ensuring workflow plugins.");
             return await Result<Unit>.FailAsync(ex.ToString());
         }
         catch (Exception ex)
