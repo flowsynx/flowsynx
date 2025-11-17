@@ -259,6 +259,11 @@ public class Workflows : EndpointGroupBase
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
     {
+        // Ensure all plugins referenced in the workflow are installed before starting execution
+        var ensureResult = await mediator.EnsureWorkflowPlugins(workflowId, cancellationToken);
+        if (!ensureResult.Succeeded)
+            return Results.NotFound(ensureResult);
+
         var result = await mediator.ExecuteWorkflow(workflowId, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }

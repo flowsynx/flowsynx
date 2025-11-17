@@ -7,6 +7,7 @@ using FlowSynx.Application.Configuration.System.Logger;
 using FlowSynx.Application.Configuration.System.OpenApi;
 using FlowSynx.Application.Configuration.System.RateLimiting;
 using FlowSynx.Application.Configuration.System.Server;
+using FlowSynx.Application.Configuration.System.Workflow.Execution;
 using FlowSynx.Application.Configuration.System.Workflow.Queue;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
     private const string DefaultSqliteProvider = "SQLite";
     private const string DatabaseSectionName = "Core:Databases";
     private const string WorkflowQueueSectionName = "System:Workflow:Queue";
+    private const string EnsureWorkflowPluginsConfiguration = "System:Workflow:Execution:EnsureWorkflowPlugins";
 
     #region Simple registrations
 
@@ -603,6 +605,24 @@ public static class ServiceCollectionExtensions
                 "inmemory" => RegisterInMemoryQueue(services, logger),
                 _ => ThrowQueueProviderNotSupported(config, localization)
             };
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public static IServiceCollection AddEnsureWorkflowPluginsService(
+        this IServiceCollection services, 
+        IConfiguration configuration)
+    {
+        try
+        {
+            var config = configuration.BindSection<EnsureWorkflowPluginsConfiguration>(EnsureWorkflowPluginsConfiguration);
+            services.AddSingleton(config);
+
+            return services;
         }
         catch (Exception ex)
         {

@@ -15,6 +15,7 @@ using FlowSynx.Application.Features.Plugins.Query.PluginsList;
 using FlowSynx.Application.Features.Version.Query;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ApproveWorkflow;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.EnsureWorkflowPlugins;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.RejectWorkflow;
 using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionApprovals;
@@ -87,6 +88,14 @@ public static class MediatorExtensions
         CancellationToken cancellationToken)
     {
         return mediator.Send(new DeleteWorkflowRequest { WorkflowId = workflowId }, cancellationToken);
+    }
+
+    public static Task<Result<Unit>> EnsureWorkflowPlugins(
+        this IMediator mediator,
+        string workflowId,
+        CancellationToken cancellationToken)
+    {
+        return mediator.Send(new EnsureWorkflowPluginsRequest { WorkflowId = workflowId }, cancellationToken);
     }
 
     public static Task<PaginatedResult<WorkflowExecutionListResponse>> GetWorkflowExecutionsList(
