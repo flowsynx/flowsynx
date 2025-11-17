@@ -70,8 +70,8 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, PaginatedResul
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
-            return await PaginatedResult<LogsListResponse>.FailureAsync(ex.ToString());
+            _logger.LogError(ex, "FlowSynx exception caught in LogsListHandler.");
+            return await PaginatedResult<LogsListResponse>.FailureAsync(ex.Message);
         }
     }
 
