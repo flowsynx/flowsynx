@@ -204,7 +204,9 @@ Curious about what’s next? Review the planned milestones in our [Roadmap](./do
 
 ## Quick Start Experience
 
-Get up and running with FlowSynx in **under 5 minutes** — no complex setup required.
+Get up and running with FlowSynx in 5 minutes — no complex setup required.
+
+👉 [FlowSynx in 5 Minutes (Quickstart)](https://flowsynx.io/docs/getting-started/quickstarts/flowsynx-in-5-minutes)
 
 ### Option 1 — Run via Docker (Recommended)
 
