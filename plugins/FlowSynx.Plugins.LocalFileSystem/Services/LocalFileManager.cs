@@ -337,12 +337,12 @@ internal class LocalFileManager : ILocalFileManager
         if (!PathHelper.IsFile(fullPath))
             throw new ArgumentException(Resources.ThePathIsNotFile);
 
-        if (File.Exists(fullPath) && overwrite is false)
+        if (File.Exists(fullPath) && !overwrite)
             throw new ArgumentException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath));
 
         if (File.Exists(fullPath))
         {
-            if (overwrite is false)
+            if (!overwrite)
                 throw new ArgumentException(string.Format(Resources.FileIsAlreadyExistAndCannotBeOverwritten, fullPath));
             else
                 DeleteEntity(new DeleteParameters { Path = fullPath }, cancellationToken);
