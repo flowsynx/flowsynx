@@ -51,7 +51,10 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, PaginatedR
                 out var totalCount,
                 out var page,
                 out var pageSize);
-            _logger.LogInformation("The audit list has been retrieved successfully.");
+            _logger.LogInformation(
+                "Audit list retrieved successfully for page {Page} with size {PageSize}.",
+                page,
+                pageSize);
             return await PaginatedResult<AuditsListResponse>.SuccessAsync(
                 pagedItems,
                 totalCount,
@@ -60,7 +63,11 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, PaginatedR
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(
+                ex,
+                "FlowSynx exception caught in AuditsListHandler for page {Page} with size {PageSize}.",
+                request.Page,
+                request.PageSize);
             return await PaginatedResult<AuditsListResponse>.FailureAsync(ex.ToString());
         }
     }
