@@ -32,6 +32,12 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
         _localization = localization;
     }
 
+    /// <summary>
+    /// Retrieves audit details for the provided identifier after validating the current user.
+    /// </summary>
+    /// <param name="request">Audit details request containing the audit id.</param>
+    /// <param name="cancellationToken">Token used to observe cancellation.</param>
+    /// <returns>A success result with audit details or failure describing the error.</returns>
     public async Task<Result<AuditDetailsResponse>> Handle(AuditDetailsRequest request, CancellationToken cancellationToken)
     {
         try
@@ -67,7 +73,7 @@ internal class AuditDetailsHandler : IRequestHandler<AuditDetailsRequest, Result
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, "FlowSynx exception caught in AuditDetailsHandler for audit '{AuditId}'.", request.AuditId);
             return await Result<AuditDetailsResponse>.FailAsync(ex.ToString());
         }
     }
