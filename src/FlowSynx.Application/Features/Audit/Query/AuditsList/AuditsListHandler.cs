@@ -60,7 +60,7 @@ internal class AuditsListHandler : IRequestHandler<AuditsListRequest, PaginatedR
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
+            _logger.LogError(ex, "FlowSynxException caught while retrieving the audit list.");
             return await PaginatedResult<AuditsListResponse>.FailureAsync(ex.ToString());
         }
     }
