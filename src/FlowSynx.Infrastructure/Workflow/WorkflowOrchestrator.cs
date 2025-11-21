@@ -172,7 +172,14 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             execution.WorkflowSchemaUrl ?? workflow.SchemaUrl,
             cancellationToken);
 
-        var executionContext = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
+        var executionContext = new WorkflowExecutionContext { 
+            UserId = userId, 
+            WorkflowId = execution.WorkflowId, 
+            WorkflowExecutionId = execution.Id,
+            WorkflowVariables = definition.Variables,
+            TaskOutputs = null
+        };
+
         await LoadPreviousTaskResultsAsync(executionContext, cancellationToken);
 
         _logger.LogInformation("Resuming workflow '{WorkflowId}' from execution '{ExecutionId}'",
@@ -236,8 +243,6 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             StringComparer.OrdinalIgnoreCase
         );
 
-        var context = new WorkflowExecutionContext(userId, workflowId, executionEntity.Id);
-
         var hadFailures = false;
 
         while (pending.Any() && !cancellationToken.IsCancellationRequested)
@@ -253,6 +258,14 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
             if (!approvedTasks.Any())
                 return WorkflowExecutionStatus.Paused;
+
+            var context = new WorkflowExecutionContext { 
+                UserId = userId, 
+                WorkflowId = workflowId, 
+                WorkflowExecutionId = executionEntity.Id,
+                WorkflowVariables = definition.Variables,
+                TaskOutputs = _taskOutputs.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Result) ?? new Dictionary<string, object>()
+            };
 
             var executionResults = await ExecuteApprovedTasksWithConditionalsAsync(
                 context,
@@ -617,7 +630,12 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         WorkflowTask task, 
         CancellationToken cancellationToken)
     {
-        var context = new WorkflowExecutionContext(userId, execution.WorkflowId, execution.Id);
+        var context = new WorkflowExecutionContext { 
+            UserId = userId, 
+            WorkflowId = execution.WorkflowId, 
+            WorkflowExecutionId = execution.Id 
+        };
+
         await PersistTaskResultsAsync(context, cancellationToken);
 
         execution.Status = WorkflowExecutionStatus.Paused;

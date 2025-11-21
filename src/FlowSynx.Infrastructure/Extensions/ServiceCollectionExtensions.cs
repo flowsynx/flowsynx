@@ -201,6 +201,7 @@ public static class ServiceCollectionExtensions
         aiConfiguration.ValidateAiProviders(logger);
 
         services.AddSingleton<IAiProvider, AzureOpenAiProvider>();
+        services.AddSingleton<IAgentExecutor, AgentExecutor>();
         services.AddSingleton<IAiFactory, AiFactory>();
         services.AddSingleton<IWorkflowIntentService, WorkflowIntentService>();
         services.AddSingleton<IWorkflowOptimizationService, WorkflowOptimizationService>();

@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
+﻿using FlowSynx.Application.AI;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Models;
 using FlowSynx.Application.Services;
@@ -26,6 +27,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     private readonly ILocalization _localization;
     private readonly IEventPublisher _eventPublisher;
     private readonly ITriggeredTaskQueue _triggeredTaskQueue;
+    private readonly IAgentExecutor? _agentExecutor;
 
     public WorkflowTaskExecutor(
         ILogger<WorkflowTaskExecutor> logger,
@@ -36,7 +38,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         ISystemClock systemClock,
         ILocalization localization,
         IEventPublisher eventPublisher,
-        ITriggeredTaskQueue triggeredTaskQueue)
+        ITriggeredTaskQueue triggeredTaskQueue,
+        IAgentExecutor? agentExecutor = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _pluginTypeService = pluginTypeService ?? throw new ArgumentNullException(nameof(pluginTypeService));
@@ -47,6 +50,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _localization = localization ?? throw new ArgumentNullException(nameof(localization));
         _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
         _triggeredTaskQueue = triggeredTaskQueue ?? throw new ArgumentNullException(nameof(triggeredTaskQueue));
+        _agentExecutor = agentExecutor;
     }
 
     public async Task<TaskOutput> ExecuteAsync(
@@ -76,13 +80,13 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             await UpdateTaskStatusAsync(executionContext.UserId, taskExecution, WorkflowTaskExecutionStatus.Running, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' started.", task.Name);
             var context = new ErrorHandlingContext { TaskName = task.Name, RetryCount = 0 };
-            return await ExecuteTaskAsync(executionContext.UserId, task, taskExecution, parser, context, 
+            return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, context, 
                 globalCancellationToken, taskCancellationToken);
         }
     }
 
-    public async Task<TaskOutput> ExecuteTaskAsync(
-        string userId,
+    private async Task<TaskOutput> ExecuteTaskAsync(
+        WorkflowExecutionContext executionContext,
         WorkflowTask task,
         WorkflowTaskExecutionEntity taskExecution,
         IExpressionParser parser,
@@ -94,14 +98,195 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         var token = timeoutCts.Token;
 
         ParseWorkflowTaskPlaceholders(task, parser);
-        var plugin = await _pluginTypeService.Get(userId, task.Type, token);
+        ProcessOutputResults(executionContext.TaskOutputs, parser);
+
+        // Check if agent execution is enabled for this task
+        if (task.Agent?.Enabled == true && _agentExecutor != null)
+        {
+            return await ExecuteWithAgentAsync(
+                executionContext,
+                task,
+                taskExecution,
+                parser,
+                errorContext,
+                globalCancellationToken,
+                token);
+        }
+
+        // Standard plugin execution
+        return await ExecuteWithPluginAsync(
+            executionContext,
+            task,
+            taskExecution,
+            parser,
+            errorContext,
+            globalCancellationToken,
+            token);
+    }
+
+    /// <summary>
+    /// Executes task using AI agent with optional plugin assistance.
+    /// </summary>
+    private async Task<TaskOutput> ExecuteWithAgentAsync(
+        WorkflowExecutionContext executionContext,
+        WorkflowTask task,
+        WorkflowTaskExecutionEntity taskExecution,
+        IExpressionParser parser,
+        ErrorHandlingContext errorContext,
+        CancellationToken globalCancellationToken,
+        CancellationToken taskCancellationToken)
+    {
+        _logger.LogInformation(
+            "Executing task '{TaskName}' with AI agent in mode '{Mode}'",
+            task.Name,
+            task.Agent!.Mode);
+
+        var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
+
+        try
+        {
+            taskCancellationToken.ThrowIfCancellationRequested();
+
+            // Build agent context
+            var agentContext = new AgentExecutionContext
+            {
+                TaskName = task.Name,
+                TaskType = task.Type,
+                TaskDescription = task.Description,
+                TaskParameters = task.Parameters,
+                WorkflowVariables = executionContext.WorkflowVariables,
+                PreviousTaskOutputs = executionContext.TaskOutputs,
+                UserInstructions = task.Agent.Instructions,
+                AdditionalContext = task.Agent.Context
+            };
+
+            // Execute with agent
+            var agentResult = await _agentExecutor!.ExecuteAsync(
+                agentContext,
+                task.Agent,
+                taskCancellationToken);
+
+            // Log agent reasoning and steps
+            if (!string.IsNullOrWhiteSpace(agentResult.Reasoning))
+            {
+                _logger.LogInformation(
+                    "Agent reasoning for '{TaskName}': {Reasoning}",
+                    task.Name,
+                    agentResult.Reasoning);
+            }
+
+            foreach (var step in agentResult.Steps)
+            {
+                _logger.LogDebug("Agent step: {Step}", step);
+            }
+
+            if (!agentResult.Success)
+            {
+                throw new Exception($"Agent execution failed: {agentResult.ErrorMessage}");
+            }
+
+            // If agent mode is "assist", still execute the plugin with agent guidance
+            if (task.Agent.Mode == "assist")
+            {
+                _logger.LogInformation(
+                    "Agent provided guidance, proceeding with plugin execution for '{TaskName}'",
+                    task.Name);
+                
+                return await ExecuteWithPluginAsync(
+                    executionContext,
+                    task,
+                    taskExecution,
+                    parser,
+                    errorContext,
+                    globalCancellationToken,
+                    taskCancellationToken);
+            }
+
+            // For execute/plan/validate modes, use agent output directly
+            var output = ResolvePluginOutput(agentResult.Output, task);
+
+            await CompleteTaskWithLogAsync(
+                executionContext.UserId,
+                taskExecution,
+                WorkflowTaskExecutionStatus.Completed,
+                globalCancellationToken,
+                LogLevel.Information,
+                "Workflow task '{TaskName}' completed with agent.",
+                task.Name);
+
+            return TaskOutput.Success(output);
+        }
+        catch (OperationCanceledException) when (taskCancellationToken.IsCancellationRequested || globalCancellationToken.IsCancellationRequested)
+        {
+            var reason = globalCancellationToken.IsCancellationRequested
+                ? WorkflowTaskCancellationReason.Workflow
+                : WorkflowTaskCancellationReason.Timeout;
+
+            await HandleCancellationAndThrowAsync(executionContext.UserId, taskExecution, task.Name, reason, globalCancellationToken);
+        }
+        catch (Exception ex)
+        {
+            if (taskCancellationToken.IsCancellationRequested)
+            {
+                await HandleCancellationAndThrowAsync(
+                    executionContext.UserId,
+                    taskExecution,
+                    task.Name,
+                    WorkflowTaskCancellationReason.TaskToken,
+                    globalCancellationToken);
+            }
+
+            var result = await retryStrategy.HandleAsync(errorContext, taskCancellationToken);
+            TriggerTaskIfNeeded(taskExecution, task.Name, result);
+
+            if (result?.ShouldRetry == true)
+            {
+                await UpdateTaskStatusAsync(executionContext.UserId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
+                _logger.LogWarning("Workflow task '{TaskName}' retrying with agent.", task.Name);
+                return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, errorContext, globalCancellationToken, taskCancellationToken);
+            }
+
+            if (result?.ShouldSkip == true)
+            {
+                await CompleteTaskWithLogAsync(
+                    executionContext.UserId,
+                    taskExecution,
+                    WorkflowTaskExecutionStatus.Completed,
+                    globalCancellationToken,
+                    LogLevel.Warning,
+                    "Workflow task '{TaskName}' skipped after agent execution.",
+                    task.Name);
+
+                return TaskOutput.Success(null);
+            }
+
+            await FailTaskAsync(executionContext.UserId, taskExecution, ex, globalCancellationToken, task.Name);
+        }
+
+        return TaskOutput.Success(null);
+    }
+
+    /// <summary>
+    /// Standard plugin-based execution without agent.
+    /// </summary>
+    private async Task<TaskOutput> ExecuteWithPluginAsync(
+        WorkflowExecutionContext executionContext,
+        WorkflowTask task,
+        WorkflowTaskExecutionEntity taskExecution,
+        IExpressionParser parser,
+        ErrorHandlingContext errorContext,
+        CancellationToken globalCancellationToken,
+        CancellationToken taskCancellationToken)
+    {
+        var userId = executionContext.UserId;
+        var plugin = await _pluginTypeService.Get(userId, task.Type, taskCancellationToken);
         var pluginParameters = task.Parameters.ToPluginParameters();
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
 
         try
         {
-            token.ThrowIfCancellationRequested();
-            var executionResult = await plugin.ExecuteAsync(pluginParameters, token);
+            taskCancellationToken.ThrowIfCancellationRequested();
+            var executionResult = await plugin.ExecuteAsync(pluginParameters, taskCancellationToken);
             var output = ResolvePluginOutput(executionResult, task);
 
             await CompleteTaskWithLogAsync(
@@ -115,7 +300,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
             return TaskOutput.Success(output);
         }
-        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested || globalCancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (taskCancellationToken.IsCancellationRequested || globalCancellationToken.IsCancellationRequested)
         {
             var reason = globalCancellationToken.IsCancellationRequested
                 ? WorkflowTaskCancellationReason.Workflow
@@ -125,7 +310,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         }
         catch (Exception ex)
         {
-            if (token.IsCancellationRequested)
+            if (taskCancellationToken.IsCancellationRequested)
             {
                 await HandleCancellationAndThrowAsync(
                     userId,
@@ -135,14 +320,14 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                     globalCancellationToken);
             }
 
-            var result = await retryStrategy.HandleAsync(errorContext, token);
+            var result = await retryStrategy.HandleAsync(errorContext, taskCancellationToken);
             TriggerTaskIfNeeded(taskExecution, task.Name, result);
 
             if (result?.ShouldRetry == true)
             {
                 await UpdateTaskStatusAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
                 _logger.LogWarning("Workflow task '{TaskName}' retrying.", task.Name);
-                return await ExecuteTaskAsync(userId, task, taskExecution, parser, errorContext, globalCancellationToken, token);
+                return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, errorContext, globalCancellationToken, taskCancellationToken);
             }
 
             if (result?.ShouldSkip == true)
@@ -162,7 +347,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             await FailTaskAsync(userId, taskExecution, ex, globalCancellationToken, task.Name);
         }
 
-        return TaskOutput.Success(null); // unreachable, all branches throw
+        return TaskOutput.Success(null);
     }
 
     /// <summary>
@@ -304,20 +489,15 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         if (task == null)
             return;
 
-        // Replace top-level simple fields
         ReplaceTopLevelStrings(task, parser);
-
-        // Parameters, Manual Approval, Dependencies, etc.
         ProcessTaskParameters(task, parser);
         ProcessManualApproval(task.ManualApproval, parser);
         ReplaceStringListItems(task.Dependencies, parser);
         ReplaceStringListItems(task.RunOnFailureOf, parser);
-
-        // Process ErrorHandling deeply
         ProcessErrorHandling(task.ErrorHandling, parser);
         ProcessConditionalProperties(task, parser);
+        ProcessAgentConfiguration(task.Agent, parser);
 
-        // Process Position (X, Y)
         if (task.Position is not null)
         {
             task.Position.X = ReplaceDoubleIfPlaceholder(task.Position.X, parser);
@@ -326,8 +506,25 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     }
 
     /// <summary>
-    /// Replaces placeholders in the top-level string fields of a workflow task.
+    /// Applies placeholder replacements to agent configuration.
     /// </summary>
+    private void ProcessAgentConfiguration(AgentConfiguration? agent, IExpressionParser parser)
+    {
+        if (agent == null)
+            return;
+
+        agent.Instructions = ReplaceIfNotNull(agent.Instructions, parser);
+        agent.Mode = ReplaceIfNotNull(agent.Mode, parser) ?? "execute";
+
+        if (agent.Context is { Count: > 0 })
+        {
+            foreach (var key in agent.Context.Keys.ToList())
+            {
+                agent.Context[key] = ProcessValueDeep(agent.Context[key], parser) ?? new object();
+            }
+        }
+    }
+
     private void ReplaceTopLevelStrings(WorkflowTask task, IExpressionParser parser)
     {
         task.Name = ReplaceIfNotNull(task.Name, parser);
@@ -335,9 +532,18 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         task.Output = ReplaceIfNotNull(task.Output, parser);
     }
 
-    /// <summary>
-    /// Normalizes task parameter values by applying placeholder replacements and converting JSON payloads.
-    /// </summary>
+    private void ProcessOutputResults(Dictionary<string, object?> outputs, IExpressionParser parser)
+    {
+        if (outputs is not { Count: > 0 })
+            return;
+
+        foreach (var key in outputs.Keys.ToList())
+        {
+            outputs[key] = ProcessValueDeep(outputs[key], parser) ?? null;
+        }
+
+    }
+
     private void ProcessTaskParameters(WorkflowTask task, IExpressionParser parser)
     {
         if (task.Parameters is not { Count: > 0 })
@@ -351,9 +557,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, parser);
     }
 
-    /// <summary>
-    /// Recursively processes a value that might be a string, JObject, array, dictionary, or PluginContext.
-    /// </summary>
     private object? ProcessValueDeep(object? value, IExpressionParser parser)
     {
         if (value == null)
@@ -365,7 +568,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                 return ReplaceIfNotNull(s, parser);
 
             case JObject jObj:
-                // Try PluginContext first
                 var pc = TryDeserializePluginContext(jObj);
                 if (pc != null)
                 {
@@ -373,7 +575,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                     return pc;
                 }
 
-                // Otherwise recursively process all properties
                 foreach (var prop in jObj.Properties().ToList())
                     jObj[prop.Name] = JToken.FromObject(ProcessValueDeep(jObj[prop.Name], parser) ?? JValue.CreateNull());
                 return jObj;
@@ -402,26 +603,20 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         }
     }
 
-    /// <summary>
-    /// Replaces all placeholders inside ErrorHandling object including RetryPolicy and TriggerPolicy.
-    /// </summary>
     private void ProcessErrorHandling(ErrorHandling? errorHandling, IExpressionParser parser)
     {
         if (errorHandling == null)
             return;
 
-        // RetryPolicy
         if (errorHandling.RetryPolicy != null)
         {
             var rp = errorHandling.RetryPolicy;
-
             rp.InitialDelay = ReplaceNumberIfPlaceholder(rp.InitialDelay, parser);
             rp.MaxDelay = ReplaceNumberIfPlaceholder(rp.MaxDelay, parser);
             rp.BackoffCoefficient = ReplaceDoubleIfPlaceholder(rp.BackoffCoefficient, parser);
             rp.MaxRetries = ReplaceNumberIfPlaceholder(rp.MaxRetries, parser);
         }
 
-        // TriggerPolicy
         if (errorHandling.TriggerPolicy != null)
         {
             errorHandling.TriggerPolicy.TaskName = ReplaceIfNotNull(errorHandling.TriggerPolicy.TaskName, parser);
@@ -447,58 +642,24 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         }
     }
 
-    /// <summary>
-    /// Replaces numeric placeholders if the value is a placeholder expression.
-    /// </summary>
     private int ReplaceNumberIfPlaceholder(int value, IExpressionParser parser)
     {
         var str = value.ToString();
-
         var replaced = _placeholderReplacer.ReplacePlaceholders(str, parser);
         if (int.TryParse(replaced, out var num))
             return num;
-
         return value;
     }
 
     private double ReplaceDoubleIfPlaceholder(double value, IExpressionParser parser)
     {
         var str = value.ToString();
-
         var replaced = _placeholderReplacer.ReplacePlaceholders(str, parser);
         if (double.TryParse(replaced, out var num))
             return num;
-
         return value;
     }
 
-    private object ProcessPluginContextObject(JObject jObject, IExpressionParser parser)
-    {
-        var pluginContext = TryDeserializePluginContext(jObject);
-        if (pluginContext == null)
-            return jObject;
-
-        ApplyPlaceholdersToPluginContext(pluginContext, parser);
-        return pluginContext;
-    }
-
-    private object ProcessPluginContextArray(JArray jArray, IExpressionParser parser)
-    {
-        var pluginContexts = TryDeserializePluginContextList(jArray);
-        if (pluginContexts == null)
-            return jArray;
-
-        foreach (var context in pluginContexts)
-        {
-            ApplyPlaceholdersToPluginContext(context, parser);
-        }
-
-        return pluginContexts;
-    }
-
-    /// <summary>
-    /// Applies placeholder replacements to manual approval metadata.
-    /// </summary>
     private void ProcessManualApproval(ManualApproval? manualApproval, IExpressionParser parser)
     {
         if (manualApproval == null)
@@ -507,9 +668,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         manualApproval.Comment = ReplaceIfNotNull(manualApproval.Comment, parser);
     }
 
-    /// <summary>
-    /// Applies placeholder replacements over a list of strings when items are present.
-    /// </summary>
     private void ReplaceStringListItems(List<string>? values, IExpressionParser parser)
     {
         if (values is not { Count: > 0 })
@@ -533,27 +691,21 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         catch { return null; }
     }
 
-    /// <summary>
-    /// Applies placeholder replacements to all string-like properties and internal dictionaries of PluginContext.
-    /// </summary>
     private void ApplyPlaceholdersToPluginContext(PluginContext context, IExpressionParser parser)
     {
         if (context == null)
             return;
 
-        // Replace placeholders in all string-based properties
         context.Id = ReplaceIfNotNull(context.Id, parser);
         context.SourceType = ReplaceIfNotNull(context.SourceType, parser);
         context.Format = ReplaceIfNotNull(context.Format, parser);
         context.Content = ReplaceIfNotNull(context.Content, parser);
 
-        // Replace placeholders inside Metadata dictionary
         if (context.Metadata.Count > 0)
         {
             _placeholderReplacer.ReplacePlaceholdersInParameters(context.Metadata, parser);
         }
 
-        // Replace placeholders inside StructuredData (list of dictionaries)
         if (context.StructuredData is { Count: > 0 })
         {
             foreach (var dict in context.StructuredData)
@@ -561,8 +713,6 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                 _placeholderReplacer.ReplacePlaceholdersInParameters(dict, parser);
             }
         }
-
-        // RawData (byte[]) ignored — no placeholders applied
     }
 
     private string? ReplaceIfNotNull(string? value, IExpressionParser parser)

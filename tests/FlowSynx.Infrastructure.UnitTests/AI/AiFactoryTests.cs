@@ -1,5 +1,6 @@
 using FlowSynx.Application.AI;
 using FlowSynx.Application.Configuration.Core.AI;
+using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Infrastructure.AI;
 
 namespace FlowSynx.Infrastructure.UnitTests.AI;
@@ -11,13 +12,45 @@ public class AiFactoryTests
         public string Name { get; set; } = "AzureOpenAI";
         public Dictionary<string, string>? ReceivedConfig { get; private set; }
         public void Configure(Dictionary<string, string> configuration) => ReceivedConfig = configuration;
+
+        public Task<AgentExecutionResult> ExecuteAgenticTaskAsync(AgentExecutionContext context, AgentConfiguration config, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<string> GenerateWorkflowJsonAsync(string goal, string? capabilitiesJson, CancellationToken cancellationToken) => Task.FromResult("{}");
+
+        public Task<string> PlanTaskExecutionAsync(AgentExecutionContext context, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<(bool IsValid, string? ValidationMessage)> ValidateTaskAsync(AgentExecutionContext context, object? output, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private sealed class TestNonConfigurableProvider : IAiProvider
     {
         public string Name { get; set; } = "AzureOpenAI";
+
+        public Task<AgentExecutionResult> ExecuteAgenticTaskAsync(AgentExecutionContext context, AgentConfiguration config, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<string> GenerateWorkflowJsonAsync(string goal, string? capabilitiesJson, CancellationToken cancellationToken) => Task.FromResult("{}");
+
+        public Task<string> PlanTaskExecutionAsync(AgentExecutionContext context, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<(bool IsValid, string? ValidationMessage)> ValidateTaskAsync(AgentExecutionContext context, object? output, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     [Fact]

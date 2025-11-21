@@ -2,14 +2,9 @@
 
 public class WorkflowExecutionContext
 {
-    public string UserId { get; }
-    public Guid WorkflowId { get; }
-    public Guid WorkflowExecutionId { get; }
-
-    public WorkflowExecutionContext(string userId, Guid workflowId, Guid workflowExecutionId)
-    {
-        UserId = userId;
-        WorkflowId = workflowId;
-        WorkflowExecutionId = workflowExecutionId;
-    }
+    public string UserId { get; set; }
+    public Guid WorkflowId { get; set; }
+    public Guid WorkflowExecutionId { get; set; }
+    public Dictionary<string, object?>? WorkflowVariables { get; set; } = new();
+    public Dictionary<string, object>? TaskOutputs { get; set; } = new();
 }

@@ -13,6 +13,7 @@ public class WorkflowTask(string name)
     // Execution Configuration
     // ─────────────────────────────────────────────
     public Dictionary<string, object?>? Parameters { get; set; } = new();
+    public AgentConfiguration? Agent { get; set; }
     public int? Timeout { get; set; }
 
     // ─────────────────────────────────────────────
