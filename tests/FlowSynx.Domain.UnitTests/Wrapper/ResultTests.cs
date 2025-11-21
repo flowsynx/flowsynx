@@ -1,15 +1,19 @@
 ﻿using FlowSynx.Domain.Wrapper;
 
-namespace FlowSynx.Application.UnitTests.Wrapper;
+namespace FlowSynx.Domain.UnitTests.Wrapper;
 
 public class ResultTests
 {
     [Fact]
-    public void Fail_ShouldReturnFailedResult()
+    public void Fail_WithNoParameters_ShouldReturnFailedResult()
     {
+        // Act
         var result = Result.Fail();
+
+        // Assert
         Assert.False(result.Succeeded);
         Assert.Empty(result.Messages);
+        Assert.True((DateTime.UtcNow - result.GeneratedAtUtc).TotalSeconds < 1);
     }
 
     [Fact]

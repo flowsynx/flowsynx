@@ -1,6 +1,6 @@
 using FlowSynx.Domain.Wrapper;
 
-namespace FlowSynx.Application.UnitTests.Wrapper;
+namespace FlowSynx.Domain.UnitTests.Wrapper;
 
 public class PaginatedResultTests
 {
