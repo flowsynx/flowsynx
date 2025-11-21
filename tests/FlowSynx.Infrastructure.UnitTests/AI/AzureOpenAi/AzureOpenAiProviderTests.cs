@@ -158,7 +158,7 @@ public sealed class AzureOpenAiProviderTests
         var provider = CreateProvider(handler);
         provider.Configure(new() { ["Endpoint"] = "https://example" });
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => provider.GenerateWorkflowJsonAsync("g", null, CancellationToken.None));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GenerateWorkflowJsonAsync("g", null, CancellationToken.None));
     }
 
     [Fact]
