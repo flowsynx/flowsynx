@@ -1,9 +1,9 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Application.PluginHost;
 using FlowSynx.Application.Services;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Domain.PluginConfig;
 using FlowSynx.PluginCore.Exceptions;

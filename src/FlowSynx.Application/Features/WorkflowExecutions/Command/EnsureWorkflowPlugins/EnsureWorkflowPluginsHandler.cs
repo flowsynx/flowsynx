@@ -4,7 +4,7 @@ using FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;

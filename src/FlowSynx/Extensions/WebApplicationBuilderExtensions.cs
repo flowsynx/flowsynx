@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 

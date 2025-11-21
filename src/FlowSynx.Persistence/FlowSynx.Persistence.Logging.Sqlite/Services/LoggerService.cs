@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Persistence.Logging.Sqlite.Contexts;
 using System.Linq.Expressions;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain.Log;
 

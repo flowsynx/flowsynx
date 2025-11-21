@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 
 namespace FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
 

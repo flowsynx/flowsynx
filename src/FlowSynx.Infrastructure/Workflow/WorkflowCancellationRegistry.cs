@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Application.Workflow;
 using FlowSynx.PluginCore.Exceptions;
 using System.Collections.Concurrent;

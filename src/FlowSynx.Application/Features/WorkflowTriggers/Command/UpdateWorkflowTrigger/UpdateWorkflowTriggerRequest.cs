@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.Domain.Trigger;
 
 namespace FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Localizations;

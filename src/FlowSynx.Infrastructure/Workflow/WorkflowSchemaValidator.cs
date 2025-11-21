@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Domain;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Infrastructure.Serialization;

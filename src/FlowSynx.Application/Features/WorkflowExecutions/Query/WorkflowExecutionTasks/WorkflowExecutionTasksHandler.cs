@@ -1,10 +1,10 @@
 ﻿using FlowSynx.Application.Extensions;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Application.Localizations;
 

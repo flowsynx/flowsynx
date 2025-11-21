@@ -1,10 +1,9 @@
 ﻿using FlowSynx.Application.Extensions;
 using MediatR;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Audit;
-using FlowSynx.Application.Models;
 using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.Features.Audit.Query.AuditsList;

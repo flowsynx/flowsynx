@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Domain;
 using FlowSynx.Application.Services;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using FlowSynx.PluginCore.Exceptions;

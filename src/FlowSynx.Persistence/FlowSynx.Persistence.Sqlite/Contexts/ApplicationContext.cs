@@ -4,7 +4,6 @@ using FlowSynx.Persistence.Sqlite.Configurations;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Application.Models;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;

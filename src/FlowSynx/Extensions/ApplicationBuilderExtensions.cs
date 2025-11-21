@@ -3,7 +3,7 @@ using FlowSynx.Application.Configuration.System.HealthCheck;
 using FlowSynx.Application.Configuration.System.OpenApi;
 using FlowSynx.Application.Configuration.System.Server;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.HealthCheck;

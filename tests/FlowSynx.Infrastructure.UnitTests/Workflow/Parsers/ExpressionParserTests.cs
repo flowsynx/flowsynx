@@ -1,5 +1,5 @@
 using System.Reflection;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.PluginCore.Exceptions;
 using Newtonsoft.Json.Linq;

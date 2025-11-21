@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using FlowSynx.Application.Serialization;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Middleware;

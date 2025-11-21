@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.AI;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Extensions;

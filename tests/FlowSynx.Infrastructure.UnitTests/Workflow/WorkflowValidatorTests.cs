@@ -1,6 +1,6 @@
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Infrastructure.Workflow;
 using FlowSynx.Infrastructure.Workflow.Parsers;
 using FlowSynx.PluginCore.Exceptions;

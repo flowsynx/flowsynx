@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Models;
+using FlowSynx.Domain;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Plugin;

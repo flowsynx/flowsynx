@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Models;
+﻿namespace FlowSynx.Domain;
 
 public enum ErrorCode
 {

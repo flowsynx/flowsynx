@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Wrapper;
+﻿namespace FlowSynx.Domain.Wrapper;
 
 public class Result : IResult
 {

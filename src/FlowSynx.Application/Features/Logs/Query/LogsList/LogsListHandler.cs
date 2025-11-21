@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
 using FlowSynx.Application.Services;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using FlowSynx.Domain.Log;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;

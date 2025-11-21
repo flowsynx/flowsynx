@@ -37,7 +37,7 @@ using FlowSynx.Application.Features.WorkflowTriggers.Command.DeleteWorkflowTrigg
 using FlowSynx.Application.Features.WorkflowTriggers.Command.UpdateWorkflowTrigger;
 using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggerDetails;
 using FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersList;
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 using MediatR;
 
 namespace FlowSynx.Application.Extensions;

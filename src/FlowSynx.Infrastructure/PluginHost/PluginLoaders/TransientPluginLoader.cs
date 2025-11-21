@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Models;
+﻿using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.PluginCore;
 using System.Reflection;

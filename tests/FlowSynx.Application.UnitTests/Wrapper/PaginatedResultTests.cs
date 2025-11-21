@@ -1,4 +1,4 @@
-using FlowSynx.Application.Wrapper;
+using FlowSynx.Domain.Wrapper;
 
 namespace FlowSynx.Application.UnitTests.Wrapper;
 

@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Wrapper;
+﻿using FlowSynx.Domain.Wrapper;
 using MediatR;
 
 namespace FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowExecutionTasks;
