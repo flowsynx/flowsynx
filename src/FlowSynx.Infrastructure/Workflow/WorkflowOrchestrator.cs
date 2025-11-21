@@ -264,7 +264,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 WorkflowId = workflowId, 
                 WorkflowExecutionId = executionEntity.Id,
                 WorkflowVariables = definition.Variables,
-                TaskOutputs = _taskOutputs.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Result) ?? new Dictionary<string, object>()
+                TaskOutputs = _taskOutputs.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Result)
             };
 
             var executionResults = await ExecuteApprovedTasksWithConditionalsAsync(

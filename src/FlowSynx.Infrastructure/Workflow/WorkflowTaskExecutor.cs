@@ -182,7 +182,9 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
             if (!agentResult.Success)
             {
-                throw new Exception($"Agent execution failed: {agentResult.ErrorMessage}");
+                throw new FlowSynxException(
+                    (int)ErrorCode.AIAgentExecutionFailed,
+                    $"Agent execution failed: {agentResult.ErrorMessage}");
             }
 
             // If agent mode is "assist", still execute the plugin with agent guidance
@@ -242,7 +244,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             if (result?.ShouldRetry == true)
             {
                 await UpdateTaskStatusAsync(executionContext.UserId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
-                _logger.LogWarning("Workflow task '{TaskName}' retrying with agent.", task.Name);
+                _logger.LogWarning(ex, "Workflow task '{TaskName}' retrying with agent.", task.Name);
                 return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, errorContext, globalCancellationToken, taskCancellationToken);
             }
 

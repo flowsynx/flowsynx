@@ -9,6 +9,14 @@ namespace FlowSynx.Infrastructure.AI.AzureOpenAi;
 
 public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
 {
+    private const string SystemRole = "system";
+    private const string JsonObjectResponseFormat = "json_object";
+    private const string ApiKeyHeaderName = "api-key";
+    private const string ApplicationJsonMediaType = "application/json";
+    private const string ChoicesJsonPath = "choices";
+    private const string MessageJsonPath = "message";
+    private const string ContentJsonPath = "content";
+
     private readonly HttpClient _http;
     private readonly ILogger<AzureOpenAiProvider>? _logger;
     private readonly AzureOpenAiConfiguration _config = new AzureOpenAiConfiguration();
@@ -42,18 +50,18 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
         {
             messages = new[]
             {
-                new { role = "system", content = "You are a system that outputs only JSON that matches FlowSynx WorkflowDefinition schema. No prose." },
+                new { role = SystemRole, content = "You are a system that outputs only JSON that matches FlowSynx WorkflowDefinition schema. No prose." },
                 new { role = "user", content = BuildPrompt(goal, capabilitiesJson) }
             },
             temperature = 0.2,
-            response_format = new { type = "json_object" }
+            response_format = new { type = JsonObjectResponseFormat }
         };
 
         using var req = new HttpRequestMessage(HttpMethod.Post, $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
-        req.Headers.Add("api-key", _config.ApiKey);
+        req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
         
         var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
-        req.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
         using var res = await _http.SendAsync(req, cancellationToken);
         res.EnsureSuccessStatusCode();
@@ -61,7 +69,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
         var responseContent = await res.Content.ReadAsStringAsync(cancellationToken);
         var doc = JObject.Parse(responseContent);
 
-        var json = doc["choices"]?[0]?["message"]?["content"]?.ToString();
+        var json = doc[ChoicesJsonPath]?[0]?[MessageJsonPath]?[ContentJsonPath]?.ToString();
         if (string.IsNullOrWhiteSpace(json))
             throw new InvalidOperationException("LLM returned empty JSON.");
 
@@ -88,26 +96,26 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
             {
                 messages = new object[]
                 {
-                    new { role = "system", content = systemPrompt },
+                    new { role = SystemRole, content = systemPrompt },
                     new { role = "user", content = userPrompt }
                 },
                 temperature = config.Temperature,
-                response_format = new { type = "json_object" }
+                response_format = new { type = JsonObjectResponseFormat }
             };
 
             using var req = new HttpRequestMessage(HttpMethod.Post,
                 $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
-            req.Headers.Add("api-key", _config.ApiKey);
+            req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
             
             var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
-            req.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
             using var res = await _http.SendAsync(req, cancellationToken);
             res.EnsureSuccessStatusCode();
 
             var responseContent = await res.Content.ReadAsStringAsync(cancellationToken);
             var doc = JObject.Parse(responseContent);
-            var content = doc["choices"]?[0]?["message"]?["content"]?.ToString();
+            var content = doc[ChoicesJsonPath]?[0]?[MessageJsonPath]?[ContentJsonPath]?.ToString();
 
             if (string.IsNullOrWhiteSpace(content))
             {
@@ -170,26 +178,26 @@ Output as JSON with structure: {{ ""steps"": [...], ""considerations"": [...], "
         {
             messages = new[]
             {
-                new { role = "system", content = "You are a workflow planning assistant. Output only JSON." },
+                new { role = SystemRole, content = "You are a workflow planning assistant. Output only JSON." },
                 new { role = "user", content = prompt }
             },
             temperature = 0.3,
-            response_format = new { type = "json_object" }
+            response_format = new { type = JsonObjectResponseFormat }
         };
 
         using var req = new HttpRequestMessage(HttpMethod.Post,
             $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
-        req.Headers.Add("api-key", _config.ApiKey);
+        req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
         
         var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
-        req.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
         using var res = await _http.SendAsync(req, cancellationToken);
         res.EnsureSuccessStatusCode();
 
         var responseContent = await res.Content.ReadAsStringAsync(cancellationToken);
         var doc = JObject.Parse(responseContent);
-        return doc["choices"]?[0]?["message"]?["content"]?.ToString() ?? "{}";
+        return doc[ChoicesJsonPath]?[0]?[MessageJsonPath]?[ContentJsonPath]?.ToString() ?? "{}";
     }
 
     public async Task<(bool IsValid, string? ValidationMessage)> ValidateTaskAsync(
@@ -212,26 +220,26 @@ Return JSON: {{ ""isValid"": true/false, ""message"": ""explanation"" }}
         {
             messages = new[]
             {
-                new { role = "system", content = "You are a validation assistant. Output only JSON." },
+                new { role = SystemRole, content = "You are a validation assistant. Output only JSON." },
                 new { role = "user", content = prompt }
             },
             temperature = 0.1,
-            response_format = new { type = "json_object" }
+            response_format = new { type = JsonObjectResponseFormat }
         };
 
         using var req = new HttpRequestMessage(HttpMethod.Post,
             $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
-        req.Headers.Add("api-key", _config.ApiKey);
+        req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
         
         var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
-        req.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+        req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
         using var res = await _http.SendAsync(req, cancellationToken);
         res.EnsureSuccessStatusCode();
 
         var responseContent = await res.Content.ReadAsStringAsync(cancellationToken);
         var doc = JObject.Parse(responseContent);
-        var content = doc["choices"]?[0]?["message"]?["content"]?.ToString();
+        var content = doc[ChoicesJsonPath]?[0]?[MessageJsonPath]?[ContentJsonPath]?.ToString();
 
         if (string.IsNullOrWhiteSpace(content))
             return (false, "Validation failed: empty response");

@@ -165,6 +165,7 @@ public enum ErrorCode
 
     #region AI error codes
     AIConfigurationInvalidProviderName     = 3001,
+    AIAgentExecutionFailed                   = 3002,
     #endregion
 
     #region Notification error codes
