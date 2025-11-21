@@ -8,7 +8,6 @@ using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
-using FlowSynx.Plugins.LocalFileSystem;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Application.Localizations;
 
@@ -70,7 +69,10 @@ public class PluginTypeService : IPluginTypeService
     private async Task<IPlugin> ResolveByConfig(string userId, string? configName, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(configName))
-            return await GetLocalPlugin(userId);
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginTypeConfigShouldHaveValue,
+                _localization.Get("PluginTypeService_PluginTypeConfigShouldHaveValue"));
+        }
 
         var config = await _pluginConfigurationService.Get(userId, configName, cancellationToken) 
             ?? throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound,
@@ -86,38 +88,47 @@ public class PluginTypeService : IPluginTypeService
 
     private async Task<IPlugin> ResolveByType(string userId, object? type, CancellationToken cancellationToken)
     {
-        if (type is null)
-            return await GetLocalPlugin(userId);
-
+        ValidateType(type);
+        
         var typeConfig = _deserializer.Deserialize<PluginTypeConfiguration>(type.ToString());
-        if (string.IsNullOrEmpty(typeConfig.Plugin))
-            return await GetLocalPlugin(userId);
+        ValidatePluginInTypeConfig(typeConfig);
 
-        var pluginEntity = await _pluginService.Get(userId, typeConfig.Plugin, typeConfig.Version, cancellationToken)
-            ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
-                _localization.Get("PluginTypeService_PluginCouldNotFound", typeConfig.Plugin, typeConfig.Version));
-
+        var pluginEntity = await GetPluginEntity(userId, typeConfig, cancellationToken);
         return await GetOrLoadPlugin(pluginEntity, typeConfig.Specifications);
     }
 
-    private async Task<IPlugin> GetLocalPlugin(string userId)
+    private void ValidateType(object? type)
     {
-        var localFileSystemPlugin = new LocalFileSystemPlugin();
+        if (type is null)
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginTypeShouldHaveValue,
+                _localization.Get("PluginTypeService_PluginTypeShouldHaveValue"));
+        }
+    }
 
-        var pluginType = localFileSystemPlugin.Metadata.Type;
-        var pluginVersion = localFileSystemPlugin.Metadata.Version.ToString();
+    private void ValidatePluginInTypeConfig(PluginTypeConfiguration typeConfig)
+    {
+        if (string.IsNullOrEmpty(typeConfig.Plugin))
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginTypeShouldHaveValue,
+                _localization.Get("PluginTypeService_PluginTypeShouldHaveValue"));
+        }
+    }
 
-        var key = _pluginCacheKeyGeneratorService.GenerateKey(userId, pluginType, pluginVersion, null);
+    private async Task<PluginEntity> GetPluginEntity(
+        string userId, 
+        PluginTypeConfiguration typeConfig, 
+        CancellationToken cancellationToken)
+    {
+        var pluginEntity = await _pluginService.Get(userId, typeConfig.Plugin, typeConfig.Version, cancellationToken);
+        
+        if (pluginEntity is null)
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
+                _localization.Get("PluginTypeService_PluginCouldNotFound", typeConfig.Plugin, typeConfig.Version));
+        }
 
-        var cached = _pluginCacheService.Get(key);
-        if (cached != null)
-            return cached.Plugin;
-
-        var index = new PluginCacheIndex(userId, pluginType, pluginVersion);
-        await localFileSystemPlugin.Initialize(new PluginLoggerAdapter(_logger));
-        var localPluginLoader = new DirectPluginReferenceLoader(localFileSystemPlugin);
-        _pluginCacheService.Set(key, index, localPluginLoader, TimeSpan.FromHours(2), TimeSpan.FromMinutes(15));
-        return localFileSystemPlugin;
+        return pluginEntity;
     }
 
     private async Task<IPlugin> GetOrLoadPlugin(

@@ -34,6 +34,8 @@
   "PluginTypeService_ConfigurationCouldNotFound": "Configuration '{0}' could be not found.",
   "PluginTypeService_PluginCouldNotFound": "Plugin with type '{0}' and version '{1}' could be not found.",
   "PluginTypeService_PluginCouldNotLoad": "Plugin with type '{0}' and version '{1}' could be not load.",
+  "PluginTypeService_PluginTypeShouldHaveValue": "The plugin type must be specified; it cannot be null or empty and must contain a valid value.",
+  "PluginTypeService_PluginTypeConfigShouldHaveValue": "The plugin type configuration must be specified; it cannot be null or empty and must contain a valid value.",
   "RetryService_AttemptFailed": "Attempt {0} failed: {1}.",
   "RetryService_OperationFailedAfterAttempts": "Task '{0}' failed after {1} attempts.",
   "RetryService_RetryFailedUnexpectedly": "Retry mechanism failed unexpectedly.",
