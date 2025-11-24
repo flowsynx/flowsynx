@@ -49,8 +49,8 @@ internal class SummaryHandler : IRequestHandler<SummaryRequest, Result<SummaryRe
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
-            return await Result<SummaryResponse>.FailAsync(ex.ToString());
+            _logger.LogError(ex, "FlowSynx exception caught in SummaryHandler.");
+            return await Result<SummaryResponse>.FailAsync(ex.Message);
         }
     }
 }
