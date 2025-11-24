@@ -57,7 +57,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
             messages = new[]
             {
                 new { role = SystemRole, content = "You are a system that outputs only JSON that matches FlowSynx WorkflowDefinition schema. No prose." },
-                new { role = "user", content = await BuildPromptAsync(goal, capabilitiesJson, pluginsInfo, cancellationToken) }
+                new { role = "user", content = await BuildPromptAsync(goal, capabilitiesJson, pluginsInfo) }
             },
             temperature = 0.2,
             response_format = new { type = JsonObjectResponseFormat }
@@ -151,8 +151,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
     private static async Task<string> BuildPromptAsync(
         string goal,
         string? capabilitiesJson,
-        string pluginsInfo,
-        CancellationToken cancellationToken)
+        string pluginsInfo)
     {
         return $@"
 You are FlowSynx-WorkflowGen, an expert system that generates valid FlowSynx WorkflowDefinition JSON objects.
