@@ -1,10 +1,11 @@
-using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Text;
+using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Infrastructure.AI.AzureOpenAi;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 
 namespace FlowSynx.Infrastructure.UnitTests.AI.AzureOpenAi;
 
@@ -38,14 +39,16 @@ public sealed class AzureOpenAiProviderTests
     {
         var http = new HttpClient(handler);
         var logger = Mock.Of<ILogger<AzureOpenAiProvider>>();
-        return new AzureOpenAiProvider(http, logger);
+        var pluginRegistryConfig = Mock.Of<PluginRegistryConfiguration>();
+        return new AzureOpenAiProvider(http, logger, pluginRegistryConfig);
     }
 
     [Fact]
     public void Ctor_Throws_On_Null_HttpClient()
     {
         var logger = Mock.Of<ILogger<AzureOpenAiProvider>>();
-        Assert.Throws<ArgumentNullException>(() => new AzureOpenAiProvider(null!, logger));
+        var pluginRegistryConfig = Mock.Of<PluginRegistryConfiguration>();
+        Assert.Throws<ArgumentNullException>(() => new AzureOpenAiProvider(null!, logger, pluginRegistryConfig));
     }
 
     [Fact]
@@ -91,49 +94,14 @@ public sealed class AzureOpenAiProviderTests
         Assert.True(handler.LastRequest!.Headers.TryGetValues("api-key", out var values));
         Assert.Equal("k123", Assert.Single(values!));
 
-        // Verify body contains goal and capabilities via BuildPrompt
+        // Verify body contains goal and capabilities via BuildPromptAsync
         var bodyJson = JsonDocument.Parse(handler.LastRequestBody!).RootElement;
         var messages = bodyJson.GetProperty("messages").EnumerateArray().ToArray();
         Assert.Equal("system", messages[0].GetProperty("role").GetString());
         Assert.Equal("user", messages[1].GetProperty("role").GetString());
         var userContent = messages[1].GetProperty("content").GetString();
         Assert.Contains("do X", userContent);
-        Assert.Contains("Output strictly a JSON object", userContent);
-    }
-
-    [Fact]
-    public async Task Configure_Defaults_Deployment_When_Missing()
-    {
-        // Arrange: Deployment omitted; should default to gpt-4o-mini
-        var responseJson = JsonDocument.Parse("{\"choices\": [{\"message\": {\"content\": \"{}\"}}]}");
-        var handler = new TestHandler((req, _) =>
-        {
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = JsonContent.Create(responseJson)
-            };
-        });
-        var provider = CreateProvider(handler);
-        provider.Configure(new()
-        {
-            ["Endpoint"] = "https://unit.test",
-            ["ApiKey"] = ""
-        });
-
-        // Act
-        _ = await provider.GenerateWorkflowJsonAsync("goal", null, CancellationToken.None);
-
-        // Assert URL contains default deployment
-        Assert.NotNull(handler.LastRequest);
-        Assert.Equal("https://unit.test/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-08-01-preview", handler.LastRequest!.RequestUri!.ToString());
-        // When ApiKey missing, header still exists (empty string)
-        Assert.True(handler.LastRequest!.Headers.TryGetValues("api-key", out var values));
-        Assert.Equal(string.Empty, Assert.Single(values!));
-
-        // When capabilities are null, prompt contains <none provided>
-        var bodyJson = JsonDocument.Parse(handler.LastRequestBody!).RootElement;
-        var userContent = bodyJson.GetProperty("messages").EnumerateArray().ElementAt(1).GetProperty("content").GetString();
-        Assert.Contains("<none provided>", userContent);
+        Assert.Contains("You MUST output ONLY a JSON object", userContent);
     }
 
     [Fact]

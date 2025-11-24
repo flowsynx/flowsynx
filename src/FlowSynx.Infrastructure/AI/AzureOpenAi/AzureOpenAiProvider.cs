@@ -1,4 +1,5 @@
 using FlowSynx.Application.AI;
+using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -19,6 +20,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
 
     private readonly HttpClient _http;
     private readonly ILogger<AzureOpenAiProvider>? _logger;
+    private readonly PluginRegistryConfiguration _pluginRegistryConfiguration;
     private readonly AzureOpenAiConfiguration _config = new AzureOpenAiConfiguration();
     private readonly JsonSerializerSettings _jsonSettings = new JsonSerializerSettings
     {
@@ -28,10 +30,12 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
 
     public AzureOpenAiProvider(
         HttpClient httpClient,
-        ILogger<AzureOpenAiProvider> logger)
+        ILogger<AzureOpenAiProvider> logger,
+        PluginRegistryConfiguration pluginRegistryConfiguration)
     {
         _http = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger;
+        _pluginRegistryConfiguration = pluginRegistryConfiguration ?? throw new ArgumentNullException(nameof(pluginRegistryConfiguration));
     }
 
     public string Name { get; set; } = "AzureOpenAI";
@@ -45,13 +49,15 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
 
     public async Task<string> GenerateWorkflowJsonAsync(string goal, string? capabilitiesJson, CancellationToken cancellationToken)
     {
+        var pluginsInfo = await FetchPluginsAsync(cancellationToken);
+
         // Minimal chat body; expect JSON-only response
         var body = new
         {
             messages = new[]
             {
                 new { role = SystemRole, content = "You are a system that outputs only JSON that matches FlowSynx WorkflowDefinition schema. No prose." },
-                new { role = "user", content = BuildPrompt(goal, capabilitiesJson) }
+                new { role = "user", content = await BuildPromptAsync(goal, capabilitiesJson, pluginsInfo, cancellationToken) }
             },
             temperature = 0.2,
             response_format = new { type = JsonObjectResponseFormat }
@@ -59,7 +65,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
 
         using var req = new HttpRequestMessage(HttpMethod.Post, $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
         req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
-        
+
         var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
         req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
@@ -74,6 +80,190 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
             throw new InvalidOperationException("LLM returned empty JSON.");
 
         return json!;
+    }
+
+    private async Task<string> FetchPluginsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var baseUrl = _pluginRegistryConfiguration.Url + "api/plugins?page=";
+
+            var allPlugins = new JArray();
+
+            int currentPage = 1;
+            int totalPages = 1; // temporary until we read the first response
+
+            do
+            {
+                var url = baseUrl + currentPage;
+
+                using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                using var res = await _http.SendAsync(req, cancellationToken);
+
+                if (!res.IsSuccessStatusCode)
+                {
+                    _logger?.LogWarning(
+                        "Failed to fetch plugins from {Url}. Status: {Status}",
+                        url, res.StatusCode);
+                    break;
+                }
+
+                var content = await res.Content.ReadAsStringAsync(cancellationToken);
+                var root = JObject.Parse(content);
+
+                // Extract paging values
+                currentPage = root["currentPage"]?.Value<int>() ?? currentPage;
+                totalPages = root["totalPages"]?.Value<int>() ?? totalPages;
+
+                // Extract plugins in this page
+                var pagePlugins = root["data"] as JArray;
+                if (pagePlugins != null)
+                {
+                    foreach (var p in pagePlugins)
+                        allPlugins.Add(p);
+                }
+
+                currentPage++;
+
+            } while (currentPage <= totalPages);
+
+            // Convert to simplified format (optional)
+            var formattedPlugins = new JArray();
+            foreach (var plugin in allPlugins)
+            {
+                formattedPlugins.Add(new JObject
+                {
+                    ["type"] = plugin["type"]?.ToString() ?? "",
+                    ["version"] = plugin["version"]?.ToString() ?? "",
+                    ["description"] = plugin["description"]?.ToString() ?? ""
+                });
+            }
+
+            return formattedPlugins.ToString(Formatting.Indented);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error fetching plugins from registry");
+            return "[]";
+        }
+    }
+
+    private static async Task<string> BuildPromptAsync(
+        string goal,
+        string? capabilitiesJson,
+        string pluginsInfo,
+        CancellationToken cancellationToken)
+    {
+        return $@"
+You are FlowSynx-WorkflowGen, an expert system that generates valid FlowSynx WorkflowDefinition JSON objects.
+
+You MUST follow ALL instructions with zero deviation.
+Be deterministic, accurate, and strict. Do NOT invent any plugins, parameters, properties, or fields.
+
+---
+GOAL:
+{goal}
+
+---
+PLUGINS AVAILABLE IN REGISTRY:
+Use ONLY these plugins.
+{pluginsInfo}
+
+---
+OUTPUT FORMAT (IMPORTANT):
+You MUST output ONLY a JSON object (no markdown, no comments, no explanation).
+Your output MUST strictly follow the FlowSynx WorkflowDefinition schema.
+
+Schema to follow:
+
+{{
+  ""name"": ""string"",                
+  ""description"": ""string"",
+  ""variables"": {{ ""key"": ""value"" }},
+  ""configuration"": {{
+    ""degreeOfParallelism"": 0,
+    ""timeout"": 0,
+    ""errorHandling"": {{
+      ""strategy"": ""Abort"",
+      ""triggerPolicy"": {{ ""taskName"": ""string"" }},
+      ""retryPolicy"": {{
+        ""maxRetries"": 3,
+        ""backoffStrategy"": ""Exponential"",
+        ""initialDelay"": 1000,
+        ""maxDelay"": 60000,
+        ""backoffCoefficient"": 2.0
+      }}
+    }}
+  }},
+  ""tasks"": [
+    {{
+      ""name"": ""string"",
+      ""description"": ""string"",
+      ""type"": {{
+        ""plugin"": ""string"",
+        ""version"": ""string""
+      }},
+      ""parameters"": {{ ""key"": ""value"" }},
+      ""dependencies"": [""string""],
+      ""timeout"": 0,
+      ""agent"": {{
+        ""enabled"": true,
+        ""mode"": ""execute"",
+        ""instructions"": ""string"",
+        ""maxIterations"": 0,
+        ""temperature"": 0.0,
+        ""context"": {{}}
+      }},
+      ""manualApproval"": {{
+        ""enabled"": true,
+        ""comment"": ""string""
+      }},
+      ""errorHandling"": {{
+        ""strategy"": ""Abort"",
+        ""triggerPolicy"": {{ ""taskName"": ""string"" }},
+        ""retryPolicy"": {{
+          ""maxRetries"": 3,
+          ""backoffStrategy"": ""Exponential"",
+          ""initialDelay"": 1000,
+          ""maxDelay"": 60000,
+          ""backoffCoefficient"": 2.0
+        }}
+      }},
+      ""runOnFailureOf"": [""string""]
+    }}
+  ]
+}}
+
+---
+REQUIREMENTS & RULES (CRITICAL):
+
+1. VALID JSON ONLY — no comments, markdown, or explanation.
+2. Tasks array MUST NOT be empty.
+3. All names MUST be unique and use PascalCase.
+4. Plugin names MUST match: ""FlowSynx.<Category>.<Name>"".
+5. Plugin versions MUST use full semantic versioning: ""X.Y.Z"".
+6. Use ONLY plugins available in:
+   - pluginsInfo
+7. Do NOT invent plugins or capabilities.
+8. Ensure a valid DAG:
+   - No cycles.
+   - All dependencies refer to existing tasks.
+9. Prefer parallel tasks where they are independent.
+10. Variables:
+    - Only define variables that tasks actually use.
+    - When used in parameters, the format MUST be:
+      $[Variables('VariableName')]
+11. Include all fields shown in the schema. Empty arrays = [] and empty objects = {{}}.
+
+---
+Before producing the final JSON, validate in your reasoning:
+- All dependencies exist and no cycles are present.
+- No undefined plugin or attribute is used.
+- Output matches schema exactly.
+- Plugin names + versions match the provided registry.
+
+Finally: OUTPUT ONLY THE JSON OBJECT.
+";
     }
 
     public async Task<AgentExecutionResult> ExecuteAgenticTaskAsync(
@@ -106,7 +296,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
             using var req = new HttpRequestMessage(HttpMethod.Post,
                 $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
             req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
-            
+
             var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
             req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
@@ -188,7 +378,7 @@ Output as JSON with structure: {{ ""steps"": [...], ""considerations"": [...], "
         using var req = new HttpRequestMessage(HttpMethod.Post,
             $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
         req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
-        
+
         var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
         req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
@@ -230,7 +420,7 @@ Return JSON: {{ ""isValid"": true/false, ""message"": ""explanation"" }}
         using var req = new HttpRequestMessage(HttpMethod.Post,
             $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
         req.Headers.Add(ApiKeyHeaderName, _config.ApiKey);
-        
+
         var jsonBody = JsonConvert.SerializeObject(body, _jsonSettings);
         req.Content = new StringContent(jsonBody, Encoding.UTF8, ApplicationJsonMediaType);
 
@@ -293,49 +483,6 @@ Execute this task using mode: {config.Mode}
 Previous iteration reasoning: {response.Reasoning}
 Next action: {response.NextAction}
 Continue reasoning and execution.
-";
-    }
-
-    private static string BuildPrompt(string goal, string? capabilitiesJson)
-    {
-        return $@"
-Goal:
-{goal}
-
-Capabilities (plugins and what they do). Use only these capabilities if provided:
-{capabilitiesJson ?? "<none provided>"}
-
-Output strictly a JSON object with:
-- name: string
-- description: string
-- configuration: {{ degreeOfParallelism?: number, timeout?: number }}
-- variables?: object
-- tasks: array of {{
-    name: string,
-    description?: string,
-    type: {{ plugin: string, version?: string }},  // plugin type and version
-    parameters?: object,
-    dependencies?: string[],
-    timeout?: number,
-    agent?: {{
-        enabled: boolean,
-        mode?: ""execute""|""plan""|""validate""|""assist"",
-        instructions?: string,
-        maxIterations?: number,
-        temperature?: number,
-        context?: object
-    }},
-    manualApproval?: {{
-        enabled: boolean,
-        approvers?: string[],
-        instructions?: string
-    }},
-    errorHandling?: object,
-    runOnFailureOf?: string[]
-}}
-
-Ensure DAG is valid: no cycles; dependencies refer to defined task names; use plugins that match capabilities.
-Prefer parallelizable structure when tasks are independent.
 ";
     }
 }
