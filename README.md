@@ -1,8 +1,8 @@
 <div align="center">
   <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
   <h2>The Open Unified Orchestrator for Intelligent Information Flow</h2>
-  <p><i>A declarative, unified orchestrator with source-agnostic processing, enabling intelligent information flow across diverse environments. 
-  Secure, reliable, auditable, and fully controllable, with infinite extensibility through plugins.</i></p>
+  <p><i>A declarative, source-agnostic orchestration platform with AI-enhanced workflows, human-in-the-loop decision support, 
+  and infinite plugin extensibility. Operate securely, reliably, and transparently across any environment.</i></p>
 
   [![Codacy Badge][codacy-badge]][codacy-url]
   [![Quality Gate Status][sonarcloud-quality-gate-badge]][sonarcloud-quality-gate-url]
