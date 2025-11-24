@@ -98,8 +98,8 @@ internal class AddPluginConfigHandler : IRequestHandler<AddPluginConfigRequest, 
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
-            return await Result<AddPluginConfigResponse>.FailAsync(ex.ToString());
+            _logger.LogError(ex, "FlowSynx exception caught while adding plugin configuration.");
+            return await Result<AddPluginConfigResponse>.FailAsync(ex.Message);
         }
     }
 }
