@@ -28,7 +28,7 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 .Returns((string key, object[] args) => key);
 
             _parserFactoryMock
-                .Setup(f => f.CreateParser(It.IsAny<Dictionary<string, object?>>(), It.IsAny<Dictionary<string, object?>>()))
+                .Setup(f => f.CreateParser(It.IsAny<Dictionary<string, object?>>(), It.IsAny<Dictionary<string, object?>>(), null))
                 .Returns(_parserMock.Object);
 
             _placeholderReplacerMock

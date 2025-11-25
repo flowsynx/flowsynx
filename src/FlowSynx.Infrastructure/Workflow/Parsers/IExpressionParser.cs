@@ -2,5 +2,5 @@
 
 public interface IExpressionParser
 {
-    object? Parse(string? expression);
+    object? Parse(string? expression, CancellationToken cancellationToken = default);
 }

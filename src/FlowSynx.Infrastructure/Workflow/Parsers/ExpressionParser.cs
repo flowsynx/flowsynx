@@ -1,43 +1,96 @@
 ﻿using FlowSynx.Domain;
+using FlowSynx.Infrastructure.Secrets;
+using FlowSynx.Infrastructure.Workflow.Parsers.Functions;
+using FlowSynx.Infrastructure.Workflow.Parsers.SourceResolver;
 using FlowSynx.PluginCore.Exceptions;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Data;
 using System.Reflection;
-using System.Globalization;
 
 namespace FlowSynx.Infrastructure.Workflow.Parsers;
 
 public class ExpressionParser : IExpressionParser
 {
-    private readonly Dictionary<string, object?> _outputs;
-    private readonly Dictionary<string, object?> _variables;
-    private const string OutputsPrefix = "Outputs(";
-    private const string VariablesPrefix = "Variables(";
+    private readonly Dictionary<string, ISourceResolver> _sourceResolvers;
+    private readonly Dictionary<string, IFunctionEvaluator> _functionEvaluators;
 
-    // Supported functional methods
-    private static readonly HashSet<string> _functionalMethods = new(StringComparer.OrdinalIgnoreCase)
+    public ExpressionParser(
+        Dictionary<string, object?> outputs,
+        Dictionary<string, object?> variables,
+        ISecretFactory? secretFactory = null,
+        IEnumerable<IFunctionEvaluator>? customFunctions = null)
     {
-        "Min", "Max", "Sum", "Avg", "Count", "Contains"
-    };
+        // Initialize source resolvers with prefix mapping
+        _sourceResolvers = new Dictionary<string, ISourceResolver>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "Outputs", new DictionarySourceResolver(outputs, "Outputs") },
+            { "Variables", new DictionarySourceResolver(variables, "Variables") }
+        };
 
-    public ExpressionParser(Dictionary<string, object?> outputs, Dictionary<string, object?> variables)
-    {
-        _outputs = outputs;
-        _variables = variables;
+        // Add Secrets resolver if a secret factory is provided and has a default provider
+        if (secretFactory != null)
+        {
+            var secretProvider = secretFactory.GetDefaultProvider();
+            if (secretProvider != null)
+            {
+                _sourceResolvers.Add("Secrets", new SecretsSourceResolver(secretProvider));
+            }
+        }
+
+        // Initialize built-in function evaluators
+        _functionEvaluators = new Dictionary<string, IFunctionEvaluator>(StringComparer.OrdinalIgnoreCase);
+
+        // Register built-in functions
+        RegisterFunction(new MinFunction());
+        RegisterFunction(new MaxFunction());
+        RegisterFunction(new SumFunction());
+        RegisterFunction(new AvgFunction());
+        RegisterFunction(new CountFunction());
+        RegisterFunction(new ContainsFunction());
+
+        // Register custom functions if provided
+        if (customFunctions != null)
+        {
+            foreach (var function in customFunctions)
+            {
+                RegisterFunction(function);
+            }
+        }
     }
 
-    public object? Parse(string? expression)
+    /// <summary>
+    /// Registers a function evaluator
+    /// </summary>
+    public void RegisterFunction(IFunctionEvaluator function)
+    {
+        if (function == null)
+            throw new ArgumentNullException(nameof(function));
+
+        _functionEvaluators[function.Name] = function;
+    }
+
+    /// <summary>
+    /// Unregisters a function evaluator by name
+    /// </summary>
+    public bool UnregisterFunction(string functionName)
+    {
+        return _functionEvaluators.Remove(functionName);
+    }
+
+    public object? Parse(string? expression, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(expression)) return null;
-        return ResolveExpression(expression);
+        return ResolveExpression(expression, cancellationToken);
     }
 
-    private object? ResolveExpression(string expr)
+    private object? ResolveExpression(string expr, CancellationToken cancellationToken)
     {
         int i = 0;
         while (i < expr.Length)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (i + 2 < expr.Length && expr[i] == '$' && expr[i + 1] == '[')
             {
                 int end = FindMatchingBracket(expr, i + 1);
@@ -46,7 +99,7 @@ public class ExpressionParser : IExpressionParser
                         $"Unbalanced brackets in expression: {expr}");
 
                 string inner = expr.Substring(i + 2, end - i - 2).Trim();
-                object? resolved = ResolveInnerOrConditionalOrMath(inner);
+                object? resolved = ResolveInnerOrConditionalOrMath(inner, cancellationToken);
 
                 if (expr.Trim() == expr.Substring(i, end - i + 1))
                     return resolved;
@@ -59,25 +112,49 @@ public class ExpressionParser : IExpressionParser
         return expr;
     }
 
-    private object? ResolveInnerOrConditionalOrMath(string inner)
+    private object? ResolveInnerOrConditionalOrMath(string inner, CancellationToken cancellationToken)
     {
         if (inner.Contains('?') && inner.Contains(':'))
-            return EvaluateConditionalExpression(inner);
+            return EvaluateConditionalExpression(inner, cancellationToken);
 
-        // functional methods (multi-arg) detection
-        if (TryEvaluateFunctionalExpression(inner, out var fnResult))
+        if (TryEvaluateFunctionalExpression(inner, out var fnResult, cancellationToken))
             return fnResult;
 
         if (ContainsOperator(inner))
-            return EvaluateBooleanExpression(inner);
+            return EvaluateBooleanExpression(inner, cancellationToken);
 
         if (inner.IndexOfAny(new[] { '+', '-', '*', '/', '%' }) >= 0)
-            return EvaluateArithmeticExpression(inner);
+            return EvaluateArithmeticExpression(inner, cancellationToken);
 
-        return ResolveInnerExpression(inner);
+        return ResolveInnerExpression(inner, cancellationToken);
     }
 
-    private bool TryEvaluateFunctionalExpression(string inner, out object? result)
+    private bool TryGetSourceResolver(string expr, int pos, out ISourceResolver? resolver, out string prefix)
+    {
+        resolver = null;
+        prefix = string.Empty;
+
+        foreach (var kvp in _sourceResolvers)
+        {
+            string testPrefix = $"{kvp.Key}(";
+            if (expr.Substring(pos).StartsWith(testPrefix, StringComparison.OrdinalIgnoreCase))
+            {
+                resolver = kvp.Value;
+                prefix = testPrefix;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool StartsWithAnyPrefix(string expr)
+    {
+        return _sourceResolvers.Keys.Any(key =>
+            expr.StartsWith($"{key}(", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private bool TryEvaluateFunctionalExpression(string inner, out object? result, CancellationToken cancellationToken)
     {
         result = null;
         inner = inner.Trim();
@@ -85,7 +162,10 @@ public class ExpressionParser : IExpressionParser
         if (parenIdx <= 0) return false;
 
         string name = inner.Substring(0, parenIdx).Trim();
-        if (!_functionalMethods.Contains(name)) return false;
+
+        // Check if function is registered
+        if (!_functionEvaluators.TryGetValue(name, out var evaluator))
+            return false;
 
         int endParen = FindMatchingParenthesis(inner, parenIdx);
         if (endParen == -1)
@@ -95,18 +175,10 @@ public class ExpressionParser : IExpressionParser
         string argsSegment = inner.Substring(parenIdx + 1, endParen - parenIdx - 1);
         var args = SplitArguments(argsSegment);
 
-        var evaluatedArgs = args.Select(EvaluateFunctionalArgument).ToList();
+        var evaluatedArgs = args.Select(arg => EvaluateFunctionalArgument(arg, cancellationToken)).ToList();
 
-        result = name.ToLowerInvariant() switch
-        {
-            "min" => EvaluateMin(evaluatedArgs),
-            "max" => EvaluateMax(evaluatedArgs),
-            "sum" => EvaluateSum(evaluatedArgs),
-            "avg" => EvaluateAvg(evaluatedArgs),
-            "count" => EvaluateCount(evaluatedArgs),
-            "contains" => EvaluateContains(evaluatedArgs),
-            _ => null
-        };
+        // Use the registered evaluator
+        result = evaluator.Evaluate(evaluatedArgs);
         return true;
     }
 
@@ -148,120 +220,31 @@ public class ExpressionParser : IExpressionParser
                 }
             }
         }
-        // last arg
+
         if (start < argsSegment.Length)
             list.Add(argsSegment.Substring(start).Trim());
 
         return list.Where(a => a.Length > 0).ToList();
     }
 
-    private object? EvaluateFunctionalArgument(string arg)
+    private object? EvaluateFunctionalArgument(string arg, CancellationToken cancellationToken)
     {
         arg = arg.Trim();
-        // If argument itself is another functional expression
-        if (TryEvaluateFunctionalExpression(arg, out var fnValue))
+
+        if (TryEvaluateFunctionalExpression(arg, out var fnValue, cancellationToken))
             return fnValue;
 
-        // Wrap into $[...] to reuse existing parsing for complex constructs
-        if (arg.StartsWith(OutputsPrefix) || arg.StartsWith(VariablesPrefix) ||
-            ContainsOperator(arg) || arg.Contains("$[") || arg.Contains('?') || arg.Contains(':'))
+        if (StartsWithAnyPrefix(arg) || ContainsOperator(arg) ||
+            arg.Contains("$[") || arg.Contains('?') || arg.Contains(':'))
         {
-            return Parse($"$[{arg}]");
+            return Parse($"$[{arg}]", cancellationToken);
         }
 
-        // Literal or simple value
-        var lit = ResolveLiteralOrValue(arg);
+        var lit = ResolveLiteralOrValue(arg, cancellationToken);
         return lit;
     }
 
-    private static IEnumerable<double> ExtractNumericValues(IEnumerable<object?> values)
-    {
-        foreach (var v in values)
-        {
-            if (v == null) continue;
-
-            if (v is IEnumerable enumerable and not string)
-            {
-                foreach (var inner in enumerable)
-                {
-                    if (inner == null) continue;
-                    if (double.TryParse(inner.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dn))
-                        yield return dn;
-                }
-                continue;
-            }
-
-            if (double.TryParse(v.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
-                yield return d;
-        }
-    }
-
-    private static object EvaluateMin(List<object?> args)
-    {
-        var nums = ExtractNumericValues(args).ToList();
-        if (nums.Count == 0) return 0d;
-        return nums.Min();
-    }
-
-    private static object EvaluateMax(List<object?> args)
-    {
-        var nums = ExtractNumericValues(args).ToList();
-        if (nums.Count == 0) return 0d;
-        return nums.Max();
-    }
-
-    private static object EvaluateSum(List<object?> args)
-    {
-        var nums = ExtractNumericValues(args).ToList();
-        if (nums.Count == 0) return 0d;
-        return nums.Sum();
-    }
-
-    private static object EvaluateAvg(List<object?> args)
-    {
-        var nums = ExtractNumericValues(args).ToList();
-        if (nums.Count == 0) return 0d;
-        return nums.Average();
-    }
-
-    private static object EvaluateCount(List<object?> args)
-    {
-        if (args.Count == 1 && args[0] is IEnumerable enumerable and not string)
-        {
-            int count = 0;
-            foreach (var _ in enumerable) count++;
-            return count;
-        }
-        return args.Count;
-    }
-
-    private static object EvaluateContains(List<object?> args)
-    {
-        if (args.Count != 2)
-            throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,
-                "Contains() expects exactly 2 arguments");
-
-        var container = args[0];
-        var target = args[1];
-
-        if (container is string s)
-            return target != null && s.Contains(target.ToString() ?? string.Empty, StringComparison.OrdinalIgnoreCase);
-
-        if (container is IEnumerable enumerable and not string)
-        {
-            foreach (var item in enumerable)
-            {
-                if (string.Equals(item?.ToString(), target?.ToString(), StringComparison.OrdinalIgnoreCase))
-                    return true;
-            }
-            return false;
-        }
-
-        // Fallback single value comparison
-        return string.Equals(container?.ToString(), target?.ToString(), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private object? EvaluateConditionalExpression(string expr)
+    private object? EvaluateConditionalExpression(string expr, CancellationToken cancellationToken)
     {
         int questionIdx = -1, colonIdx = -1, depth = 0;
         for (int i = 0; i < expr.Length; i++)
@@ -287,36 +270,32 @@ public class ExpressionParser : IExpressionParser
         string truePart = expr[(questionIdx + 1)..colonIdx].Trim();
         string falsePart = expr[(colonIdx + 1)..].Trim();
 
-        bool conditionResult = EvaluateBooleanExpression(condition);
-        return Parse($"$[{(conditionResult ? truePart : falsePart)}]");
+        bool conditionResult = EvaluateBooleanExpression(condition, cancellationToken);
+        return Parse($"$[{(conditionResult ? truePart : falsePart)}]", cancellationToken);
     }
 
-    private bool EvaluateBooleanExpression(string expr)
+    private bool EvaluateBooleanExpression(string expr, CancellationToken cancellationToken)
     {
         expr = expr.Trim();
-        expr = ReplaceEmbeddedExpressions(expr);
+        expr = ReplaceEmbeddedExpressions(expr, cancellationToken);
 
-        // handle NOT
         if (expr.StartsWith('!'))
-            return !EvaluateBooleanExpression(expr[1..]);
+            return !EvaluateBooleanExpression(expr[1..], cancellationToken);
 
-        // parentheses
         if (expr.StartsWith('(') && expr.EndsWith(')'))
-            return EvaluateBooleanExpression(expr[1..^1]);
+            return EvaluateBooleanExpression(expr[1..^1], cancellationToken);
 
-        // AND / OR
         if (expr.Contains("&&"))
         {
             var parts = expr.Split(new[] { "&&" }, StringSplitOptions.RemoveEmptyEntries);
-            return parts.All(p => EvaluateBooleanExpression(p));
+            return parts.All(p => EvaluateBooleanExpression(p, cancellationToken));
         }
         if (expr.Contains("||"))
         {
             var parts = expr.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Any(p => EvaluateBooleanExpression(p));
+            return parts.Any(p => EvaluateBooleanExpression(p, cancellationToken));
         }
 
-        // comparison
         string[] ops = { ">=", "<=", "==", "!=", ">", "<" };
         foreach (var op in ops)
         {
@@ -326,23 +305,22 @@ public class ExpressionParser : IExpressionParser
                 string left = expr[..idx].Trim();
                 string right = expr[(idx + op.Length)..].Trim();
 
-                object? lVal = EvaluateArithmeticExpression(left);
-                object? rVal = EvaluateArithmeticExpression(right);
+                object? lVal = EvaluateArithmeticExpression(left, cancellationToken);
+                object? rVal = EvaluateArithmeticExpression(right, cancellationToken);
 
                 return Compare(lVal, rVal, op);
             }
         }
 
-        // fallback bool literal
         if (bool.TryParse(expr, out bool boolVal)) return boolVal;
 
         throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound, $"Invalid boolean expression: {expr}");
     }
 
-    private object? EvaluateArithmeticExpression(string expr)
+    private object? EvaluateArithmeticExpression(string expr, CancellationToken cancellationToken)
     {
-        expr = ReplaceEmbeddedExpressions(expr);
-        expr = ReplaceVariables(expr);
+        expr = ReplaceEmbeddedExpressions(expr, cancellationToken);
+        expr = ReplaceVariables(expr, cancellationToken);
 
         try
         {
@@ -352,20 +330,20 @@ public class ExpressionParser : IExpressionParser
         }
         catch
         {
-            return ResolveLiteralOrValue(expr);
+            return ResolveLiteralOrValue(expr, cancellationToken);
         }
     }
 
-    private string ReplaceVariables(string expr)
+    private string ReplaceVariables(string expr, CancellationToken cancellationToken)
     {
         int pos = 0;
         while (pos < expr.Length)
         {
-            if (expr.Substring(pos).StartsWith(OutputsPrefix) || expr.Substring(pos).StartsWith(VariablesPrefix))
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (TryGetSourceResolver(expr, pos, out var resolver, out var prefix))
             {
-                bool isOutput = expr.Substring(pos).StartsWith(OutputsPrefix);
-                string sourceType = isOutput ? "Outputs" : "Variables";
-                int start = pos + sourceType.Length; // position of '('
+                int start = pos + prefix.Length - 1;
                 int end = FindMatchingParenthesis(expr, start);
                 if (end == -1)
                 {
@@ -373,12 +351,10 @@ public class ExpressionParser : IExpressionParser
                     continue;
                 }
 
-                // Resolve root key (may itself be an expression like Variables('DynamicKey'))
                 string keyExpr = expr.Substring(start + 1, end - start - 1);
-                string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr));
-                object? rootValue = ResolveSourceValue(sourceType, resolvedKey);
+                string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr, cancellationToken));
+                object? rootValue = resolver!.Resolve(resolvedKey, cancellationToken).GetAwaiter().GetResult();
 
-                // Collect optional access path (e.g. .Scores[0].Items[2])
                 int pathStart = end + 1;
                 int scan = pathStart;
                 while (scan < expr.Length)
@@ -386,8 +362,7 @@ public class ExpressionParser : IExpressionParser
                     char c = expr[scan];
                     if (c == '.')
                     {
-                        scan++; // consume '.'
-                        // read property name
+                        scan++;
                         while (scan < expr.Length)
                         {
                             char pc = expr[scan];
@@ -399,18 +374,17 @@ public class ExpressionParser : IExpressionParser
                     }
                     else if (c == '[')
                     {
-                        scan++; // after '['
-                        // consume until matching ']'
+                        scan++;
                         while (scan < expr.Length && expr[scan] != ']')
                             scan++;
                         if (scan < expr.Length && expr[scan] == ']')
-                            scan++; // consume ']'
+                            scan++;
                         else
-                            break; // malformed -> stop
+                            break;
                     }
                     else
                     {
-                        break; // end of access path
+                        break;
                     }
                 }
 
@@ -429,11 +403,13 @@ public class ExpressionParser : IExpressionParser
         return expr;
     }
 
-    private string ReplaceEmbeddedExpressions(string expr)
+    private string ReplaceEmbeddedExpressions(string expr, CancellationToken cancellationToken)
     {
         int pos = 0;
         while (pos < expr.Length)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             int start = expr.IndexOf("$[", pos, StringComparison.Ordinal);
             if (start == -1) break;
 
@@ -443,7 +419,7 @@ public class ExpressionParser : IExpressionParser
                     $"Unbalanced brackets in expression: {expr}");
 
             string inner = expr.Substring(start + 2, end - start - 2).Trim();
-            object? val = ResolveInnerOrConditionalOrMath(inner);
+            object? val = ResolveInnerOrConditionalOrMath(inner, cancellationToken);
             expr = expr.Substring(0, start) + (val?.ToString() ?? "null") + expr.Substring(end + 1);
             pos = start + (val?.ToString() ?? "null").Length;
         }
@@ -474,14 +450,14 @@ public class ExpressionParser : IExpressionParser
         return null;
     }
 
-    private object? ResolveLiteralOrValue(string str)
+    private object? ResolveLiteralOrValue(string str, CancellationToken cancellationToken)
     {
         str = str.Trim();
 
         if (str.StartsWith('\'') && str.EndsWith('\'')) return StripQuotes(str);
 
-        if (str.StartsWith(OutputsPrefix) || str.StartsWith(VariablesPrefix))
-            return ResolveInnerExpression(str);
+        if (StartsWithAnyPrefix(str))
+            return ResolveInnerExpression(str, cancellationToken);
 
         if (double.TryParse(str, out double num)) return num;
         if (bool.TryParse(str, out bool b)) return b;
@@ -489,7 +465,7 @@ public class ExpressionParser : IExpressionParser
         return str;
     }
 
-    private object? EvaluateExpression(string inner)
+    private object? EvaluateExpression(string inner, CancellationToken cancellationToken)
     {
         if (inner.Contains('?') && inner.Contains(':'))
         {
@@ -501,13 +477,13 @@ public class ExpressionParser : IExpressionParser
             var trueExpr = parts.Value.ifTrue.Trim();
             var falseExpr = parts.Value.ifFalse.Trim();
 
-            var conditionResult = EvaluateBooleanExpression(condition);
+            var conditionResult = EvaluateBooleanExpression(condition, cancellationToken);
             return conditionResult
-                ? Parse($"$[{trueExpr}]")
-                : Parse($"$[{falseExpr}]");
+                ? Parse($"$[{trueExpr}]", cancellationToken)
+                : Parse($"$[{falseExpr}]", cancellationToken);
         }
 
-        return EvaluateBooleanExpression(inner);
+        return EvaluateBooleanExpression(inner, cancellationToken);
     }
 
     private static (string condition, string ifTrue, string ifFalse)? SplitTernary(string expr)
@@ -554,28 +530,37 @@ public class ExpressionParser : IExpressionParser
                inner.Contains("?") || inner.Contains(":");
     }
 
-    private object? ResolveInnerExpression(string inner)
+    private object? ResolveInnerExpression(string inner, CancellationToken cancellationToken)
     {
         inner = inner.Trim();
 
-        if (TryEvaluateFunctionalExpression(inner, out var fnValue))
+        if (TryEvaluateFunctionalExpression(inner, out var fnValue, cancellationToken))
             return fnValue;
 
         if (ContainsOperator(inner))
-            return EvaluateExpression(inner);
+            return EvaluateExpression(inner, cancellationToken);
 
         if (IsLiteral(inner))
             return ParseLiteral(inner);
 
-        string sourceType;
-        if (inner.StartsWith(OutputsPrefix))
-            sourceType = "Outputs";
-        else if (inner.StartsWith(VariablesPrefix))
-            sourceType = "Variables";
-        else
+        ISourceResolver? resolver = null;
+        string? matchedPrefix = null;
+
+        foreach (var kvp in _sourceResolvers)
+        {
+            string prefix = $"{kvp.Key}(";
+            if (inner.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                resolver = kvp.Value;
+                matchedPrefix = prefix;
+                break;
+            }
+        }
+
+        if (resolver == null || matchedPrefix == null)
             throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound, $"Invalid expression: {inner}");
 
-        int startKey = sourceType.Length + 1;
+        int startKey = matchedPrefix.Length;
         int endKey = FindMatchingParenthesis(inner, startKey - 1);
         if (endKey == -1)
             throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound, $"Unbalanced parentheses: {inner}");
@@ -583,8 +568,8 @@ public class ExpressionParser : IExpressionParser
         string keyExpr = inner.Substring(startKey, endKey - startKey).Trim();
         string accessPath = inner.Substring(endKey + 1).Trim();
 
-        string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr));
-        object? value = ResolveSourceValue(sourceType, resolvedKey);
+        string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr, cancellationToken));
+        object? value = resolver.Resolve(resolvedKey, cancellationToken).GetAwaiter().GetResult();
 
         if (!string.IsNullOrEmpty(accessPath))
             value = GetNestedValue(value, accessPath);
@@ -597,7 +582,6 @@ public class ExpressionParser : IExpressionParser
         if (string.IsNullOrWhiteSpace(inner))
             return false;
 
-        // Quoted string, number, boolean, or null
         return
             (inner.StartsWith('\'') && inner.EndsWith('\'')) ||
             (inner.StartsWith('\"') && inner.EndsWith('\"')) ||
@@ -626,24 +610,13 @@ public class ExpressionParser : IExpressionParser
         return inner;
     }
 
-    private string ResolveTopLevelExpression(string expr)
+    private string ResolveTopLevelExpression(string expr, CancellationToken cancellationToken)
     {
         expr = expr.Trim();
-        if (expr.StartsWith(OutputsPrefix) || expr.StartsWith(VariablesPrefix))
-            return Parse($"$[{expr}]")?.ToString() ?? string.Empty;
+        if (StartsWithAnyPrefix(expr))
+            return Parse($"$[{expr}]", cancellationToken)?.ToString() ?? string.Empty;
 
         return expr;
-    }
-
-    private object? ResolveSourceValue(string sourceType, string key)
-    {
-        var dict = sourceType.Equals("Outputs", StringComparison.OrdinalIgnoreCase) ? _outputs : _variables;
-
-        if (!dict.TryGetValue(key, out var value))
-            throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,
-                $"ExpressionParser: {sourceType}('{key}') not found");
-
-        return value;
     }
 
     private static string StripQuotes(string str)
@@ -695,7 +668,7 @@ public class ExpressionParser : IExpressionParser
 
             if (ch == '.')
             {
-                i++; // skip '.'
+                i++;
                 if (i >= accessPath.Length) break;
                 var name = ReadName(accessPath, ref i);
                 if (string.IsNullOrEmpty(name)) break;
@@ -703,30 +676,26 @@ public class ExpressionParser : IExpressionParser
             }
             else if (ch == '[')
             {
-                i++; // skip '['
-                var indexStr = ReadUntil(accessPath, ref i, ']'); // i will point at ']' when done
+                i++;
+                var indexStr = ReadUntil(accessPath, ref i, ']');
                 if (!int.TryParse(indexStr, out var idx))
                 {
-                    // Only numeric literal indices are supported for bracket access
                     return null;
                 }
 
                 obj = GetArrayItem(obj, idx);
 
-                // advance past closing ']'
                 if (i < accessPath.Length && accessPath[i] == ']')
                     i++;
             }
             else
             {
-                // Support initial property name without leading '.'
                 var name = ReadName(accessPath, ref i);
                 if (string.IsNullOrEmpty(name))
                     break;
 
                 obj = GetPropertyValue(obj, name);
             }
-
 
             if (obj is null) break;
         }
@@ -759,7 +728,6 @@ public class ExpressionParser : IExpressionParser
             return null;
         }
 
-        // Fall back to IEnumerable traversal (inefficient but safe)
         if (obj is IEnumerable enumerable)
         {
             var i = 0;
@@ -781,37 +749,31 @@ public class ExpressionParser : IExpressionParser
 
         obj = UnwrapJToken(obj) ?? obj;
 
-        // JObject -> case-insensitive property lookup
         if (obj is JObject jobj)
         {
             var prop = jobj.Property(propertyKey, StringComparison.OrdinalIgnoreCase);
             return prop is null ? null : UnwrapJToken(prop.Value);
         }
 
-        // JArray does not support property access by name (avoid exception)
         if (obj is JArray)
             return null;
 
-        // IDictionary<string, object?>
         if (obj is IDictionary<string, object?> stringDict)
         {
             if (stringDict.TryGetValue(propertyKey, out var val))
                 return UnwrapJToken(val);
 
-            // Try case-insensitive
             return stringDict
                 .Where(kv => string.Equals(kv.Key, propertyKey, StringComparison.OrdinalIgnoreCase))
                 .Select(kv => UnwrapJToken(kv.Value))
                 .FirstOrDefault();
         }
 
-        // IDictionary (non-generic)
         if (obj is IDictionary dict)
         {
             if (dict.Contains(propertyKey))
                 return UnwrapJToken(dict[propertyKey]);
 
-            // Try case-insensitive string keys
             foreach (DictionaryEntry de in dict)
             {
                 if (de.Key is string sk && string.Equals(sk, propertyKey, StringComparison.OrdinalIgnoreCase))
@@ -820,13 +782,11 @@ public class ExpressionParser : IExpressionParser
             return null;
         }
 
-        // Reflection on POCOs (case-insensitive)
         var type = obj.GetType();
         var propInfo = type.GetProperty(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
         if (propInfo != null)
             return UnwrapJToken(propInfo.GetValue(obj));
 
-        // Field fallback (case-insensitive)
         var fieldInfo = type.GetField(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
         if (fieldInfo != null)
             return UnwrapJToken(fieldInfo.GetValue(obj));
@@ -865,7 +825,6 @@ public class ExpressionParser : IExpressionParser
         {
             i++;
         }
-        // i now points to endChar or s.Length (if not found)
         return s[start..i];
     }
 }
