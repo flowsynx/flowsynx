@@ -197,9 +197,10 @@ public class ExpressionParser : IExpressionParser
 
     private static List<string> SplitArguments(string argsSegment)
     {
-        var list = new List<string>();
-        if (string.IsNullOrWhiteSpace(argsSegment)) return list;
+        if (string.IsNullOrWhiteSpace(argsSegment))
+            return new List<string>();
 
+        var list = new List<string>();
         int depth = 0;
         bool inQuotes = false;
         char quoteChar = '\0';
@@ -209,35 +210,61 @@ public class ExpressionParser : IExpressionParser
         {
             char c = argsSegment[i];
 
-            if ((c == '\'' || c == '"'))
-            {
-                if (!inQuotes)
-                {
-                    inQuotes = true;
-                    quoteChar = c;
-                }
-                else if (quoteChar == c)
-                {
-                    inQuotes = false;
-                }
-            }
+            HandleQuotes(c, ref inQuotes, ref quoteChar);
 
-            if (!inQuotes)
+            if (inQuotes)
+                continue;
+
+            HandleDepth(c, ref depth);
+
+            if (c == ',' && depth == 0)
             {
-                if (c == '(' || c == '[') depth++;
-                else if (c == ')' || c == ']') depth--;
-                else if (c == ',' && depth == 0)
-                {
-                    list.Add(argsSegment.Substring(start, i - start).Trim());
-                    start = i + 1;
-                }
+                AddSegment(list, argsSegment, start, i);
+                start = i + 1;
             }
         }
 
         if (start < argsSegment.Length)
-            list.Add(argsSegment.Substring(start).Trim());
+            AddSegment(list, argsSegment, start, argsSegment.Length);
 
-        return list.Where(a => a.Length > 0).ToList();
+        return list;
+    }
+
+    private static void HandleQuotes(char c, ref bool inQuotes, ref char quoteChar)
+    {
+        if (c != '\'' && c != '"') return;
+
+        if (!inQuotes)
+        {
+            inQuotes = true;
+            quoteChar = c;
+        }
+        else if (quoteChar == c)
+        {
+            inQuotes = false;
+        }
+    }
+
+    private static void HandleDepth(char c, ref int depth)
+    {
+        switch (c)
+        {
+            case '(':
+            case '[':
+                depth++;
+                break;
+            case ')':
+            case ']':
+                depth--;
+                break;
+        }
+    }
+
+    private static void AddSegment(List<string> list, string str, int start, int end)
+    {
+        var segment = str.Substring(start, end - start).Trim();
+        if (!string.IsNullOrEmpty(segment))
+            list.Add(segment);
     }
 
     private async Task<object?> EvaluateFunctionalArgument(string arg, CancellationToken cancellationToken)
@@ -292,33 +319,23 @@ public class ExpressionParser : IExpressionParser
         expr = expr.Trim();
         expr = await ReplaceEmbeddedExpressions(expr, cancellationToken);
 
+        // Handle negation
         if (expr.StartsWith('!'))
             return !await EvaluateBooleanExpression(expr[1..], cancellationToken);
 
+        // Handle parentheses
         if (expr.StartsWith('(') && expr.EndsWith(')'))
             return await EvaluateBooleanExpression(expr[1..^1], cancellationToken);
 
+        // Handle logical AND
         if (expr.Contains("&&"))
-        {
-            var parts = expr.Split(new[] { "&&" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var p in parts)
-            {
-                if (!await EvaluateBooleanExpression(p, cancellationToken))
-                    return false;
-            }
-            return true;
-        }
-        if (expr.Contains("||"))
-        {
-            var parts = expr.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var p in parts)
-            {
-                if (await EvaluateBooleanExpression(p, cancellationToken))
-                    return true;
-            }
-            return false;
-        }
+            return await EvaluateLogicalOperator(expr, "&&", cancellationToken, shortCircuitValue: false);
 
+        // Handle logical OR
+        if (expr.Contains("||"))
+            return await EvaluateLogicalOperator(expr, "||", cancellationToken, shortCircuitValue: true);
+
+        // Handle comparison operators
         string[] ops = { ">=", "<=", "==", "!=", ">", "<" };
         foreach (var op in ops)
         {
@@ -327,17 +344,30 @@ public class ExpressionParser : IExpressionParser
             {
                 string left = expr[..idx].Trim();
                 string right = expr[(idx + op.Length)..].Trim();
-
                 object? lVal = await EvaluateArithmeticExpression(left, cancellationToken);
                 object? rVal = await EvaluateArithmeticExpression(right, cancellationToken);
-
                 return Compare(lVal, rVal, op);
             }
         }
 
-        if (bool.TryParse(expr, out bool boolVal)) return boolVal;
+        // Handle literal boolean
+        if (bool.TryParse(expr, out bool boolVal))
+            return boolVal;
 
         throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound, $"Invalid boolean expression: {expr}");
+    }
+
+    // Helper method for evaluating AND/OR expressions
+    private async Task<bool> EvaluateLogicalOperator(string expr, string op, CancellationToken cancellationToken, bool shortCircuitValue)
+    {
+        var parts = expr.Split(new[] { op }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var part in parts)
+        {
+            bool result = await EvaluateBooleanExpression(part, cancellationToken);
+            if (result == shortCircuitValue)
+                return shortCircuitValue; // Short-circuit
+        }
+        return !shortCircuitValue;
     }
 
     private async Task<object?> EvaluateArithmeticExpression(string expr, CancellationToken cancellationToken)
@@ -361,120 +391,153 @@ public class ExpressionParser : IExpressionParser
     private async Task<string> ReplaceFunctions(string expr, CancellationToken cancellationToken)
     {
         int pos = 0;
+
         while (pos < expr.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // Look for function name patterns
-            bool foundFunction = false;
-            foreach (var funcName in _functionEvaluators.Keys)
+            if (!TryMatchFunction(expr, pos, out string funcName, out int parenStart, out int parenEnd))
             {
-                string funcPattern = $"{funcName}(";
-                if (pos + funcPattern.Length <= expr.Length &&
-                    expr.Substring(pos, funcPattern.Length).Equals(funcPattern, StringComparison.OrdinalIgnoreCase))
-                {
-                    int parenStart = pos + funcName.Length;
-                    int parenEnd = FindMatchingParenthesis(expr, parenStart);
-                    if (parenEnd == -1)
-                    {
-                        pos++;
-                        continue;
-                    }
-
-                    // Extract and evaluate the function call
-                    string funcCall = expr.Substring(pos, parenEnd - pos + 1);
-                    string argsSegment = expr.Substring(parenStart + 1, parenEnd - parenStart - 1);
-                    var args = SplitArguments(argsSegment);
-
-                    var evaluatedArgs = new List<object?>();
-                    foreach (var arg in args)
-                    {
-                        evaluatedArgs.Add(await EvaluateFunctionalArgument(arg, cancellationToken));
-                    }
-
-                    var result = _functionEvaluators[funcName].Evaluate(evaluatedArgs);
-                    string replacement = result?.ToString() ?? "0";
-                    
-                    expr = expr.Substring(0, pos) + replacement + expr.Substring(parenEnd + 1);
-                    pos += replacement.Length;
-                    foundFunction = true;
-                    break;
-                }
+                pos++;
+                continue;
             }
 
-            if (!foundFunction)
-                pos++;
+            _ = expr.Substring(pos, parenEnd - pos + 1);
+            string argsSegment = expr.Substring(parenStart + 1, parenEnd - parenStart - 1);
+            var evaluatedArgs = await EvaluateArguments(argsSegment, cancellationToken);
+
+            var result = _functionEvaluators[funcName].Evaluate(evaluatedArgs);
+            string replacement = result?.ToString() ?? "0";
+
+            expr = expr.Substring(0, pos) + replacement + expr.Substring(parenEnd + 1);
+            pos += replacement.Length;
         }
+
         return expr;
+    }
+
+    private bool TryMatchFunction(string expr, int pos, out string funcName, out int parenStart, out int parenEnd)
+    {
+        foreach (var name in _functionEvaluators.Keys)
+        {
+            string pattern = $"{name}(";
+            if (pos + pattern.Length <= expr.Length &&
+                expr.Substring(pos, pattern.Length).Equals(pattern, StringComparison.OrdinalIgnoreCase))
+            {
+                funcName = name;
+                parenStart = pos + name.Length;
+                parenEnd = FindMatchingParenthesis(expr, parenStart);
+                if (parenEnd != -1)
+                {
+                    return true;
+                }
+            }
+        }
+
+        funcName = string.Empty;
+        parenStart = -1;
+        parenEnd = -1;
+        return false;
+    }
+
+    private async Task<List<object?>> EvaluateArguments(string argsSegment, CancellationToken cancellationToken)
+    {
+        var args = SplitArguments(argsSegment);
+        var evaluatedArgs = new List<object?>();
+
+        foreach (var arg in args)
+        {
+            evaluatedArgs.Add(await EvaluateFunctionalArgument(arg, cancellationToken));
+        }
+
+        return evaluatedArgs;
     }
 
     private async Task<string> ReplaceVariables(string expr, CancellationToken cancellationToken)
     {
         int pos = 0;
+
         while (pos < expr.Length)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            if (TryGetSourceResolver(expr, pos, out var resolver, out var prefix))
+            if (!TryGetSourceResolver(expr, pos, out var resolver, out var prefix))
             {
-                int start = pos + prefix.Length - 1;
-                int end = FindMatchingParenthesis(expr, start);
-                if (end == -1)
-                {
-                    pos++;
-                    continue;
-                }
+                pos++;
+                continue;
+            }
 
-                string keyExpr = expr.Substring(start + 1, end - start - 1);
-                string resolvedKey = StripQuotes(await ResolveTopLevelExpression(keyExpr, cancellationToken));
-                object? rootValue = await resolver!.ResolveAsync(resolvedKey, cancellationToken);
+            int start = pos + prefix.Length - 1;
+            int end = FindMatchingParenthesis(expr, start);
+            if (end == -1)
+            {
+                pos++;
+                continue;
+            }
 
-                int pathStart = end + 1;
-                int scan = pathStart;
-                while (scan < expr.Length)
-                {
-                    char c = expr[scan];
-                    if (c == '.')
-                    {
-                        scan++;
-                        while (scan < expr.Length)
-                        {
-                            char pc = expr[scan];
-                            if (char.IsLetterOrDigit(pc) || pc == '_')
-                                scan++;
-                            else
-                                break;
-                        }
-                    }
-                    else if (c == '[')
-                    {
-                        scan++;
-                        while (scan < expr.Length && expr[scan] != ']')
-                            scan++;
-                        if (scan < expr.Length && expr[scan] == ']')
-                            scan++;
-                        else
-                            break;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
+            string keyExpr = expr.Substring(start + 1, end - start - 1);
+            string resolvedKey = StripQuotes(await ResolveTopLevelExpression(keyExpr, cancellationToken));
+            object? rootValue = await resolver!.ResolveAsync(resolvedKey, cancellationToken);
 
-                string accessPath = scan > pathStart ? expr.Substring(pathStart, scan - pathStart) : string.Empty;
-                object? finalValue = string.IsNullOrEmpty(accessPath) ? rootValue : GetNestedValue(rootValue, accessPath);
+            int pathStart = end + 1;
+            string accessPath = ScanAccessPath(expr, pathStart, out int scan);
 
-                string replacement = finalValue?.ToString() ?? "0";
-                expr = expr.Substring(0, pos) + replacement + expr.Substring(scan);
-                pos += replacement.Length;
+            object? finalValue = string.IsNullOrEmpty(accessPath)
+                ? rootValue
+                : GetNestedValue(rootValue, accessPath);
+
+            string replacement = finalValue?.ToString() ?? "0";
+
+            expr = expr.Substring(0, pos) + replacement + expr.Substring(scan);
+            pos += replacement.Length;
+        }
+
+        return expr;
+    }
+
+    private static string ScanAccessPath(string expr, int start, out int end)
+    {
+        int pos = start;
+        while (pos < expr.Length)
+        {
+            char c = expr[pos];
+            if (c == '.')
+            {
+                pos++;
+                pos = ScanIdentifier(expr, pos);
+            }
+            else if (c == '[')
+            {
+                pos++;
+                pos = ScanBracket(expr, pos);
+                if (pos == -1) break;
             }
             else
             {
-                pos++;
+                break;
             }
         }
-        return expr;
+        end = pos;
+        return pos > start ? expr.Substring(start, pos - start) : string.Empty;
+    }
+
+    private static int ScanIdentifier(string expr, int pos)
+    {
+        while (pos < expr.Length)
+        {
+            char c = expr[pos];
+            if (char.IsLetterOrDigit(c) || c == '_')
+                pos++;
+            else
+                break;
+        }
+        return pos;
+    }
+
+    private static int ScanBracket(string expr, int pos)
+    {
+        while (pos < expr.Length && expr[pos] != ']') pos++;
+        return pos < expr.Length && expr[pos] == ']' ? pos + 1 : -1;
     }
 
     private async Task<string> ReplaceEmbeddedExpressions(string expr, CancellationToken cancellationToken)
@@ -735,83 +798,68 @@ public class ExpressionParser : IExpressionParser
         if (obj is null || string.IsNullOrEmpty(accessPath))
             return obj;
 
-        var i = 0;
-        while (i < accessPath.Length)
+        int i = 0;
+        while (i < accessPath.Length && obj != null)
         {
-            var ch = accessPath[i];
-
-            if (ch == '.')
+            obj = accessPath[i] switch
             {
-                i++;
-                if (i >= accessPath.Length) break;
-                var name = ReadName(accessPath, ref i);
-                if (string.IsNullOrEmpty(name)) break;
-                obj = GetPropertyValue(obj, name);
-            }
-            else if (ch == '[')
-            {
-                i++;
-                var indexStr = ReadUntil(accessPath, ref i, ']');
-                if (!int.TryParse(indexStr, out var idx))
-                {
-                    return null;
-                }
-
-                obj = GetArrayItem(obj, idx);
-
-                if (i < accessPath.Length && accessPath[i] == ']')
-                    i++;
-            }
-            else
-            {
-                var name = ReadName(accessPath, ref i);
-                if (string.IsNullOrEmpty(name))
-                    break;
-
-                obj = GetPropertyValue(obj, name);
-            }
-
-            if (obj is null) break;
+                '.' => HandleProperty(obj, accessPath, ref i),
+                '[' => HandleArray(obj, accessPath, ref i),
+                _ => HandleProperty(obj, accessPath, ref i)
+            };
         }
 
         return UnwrapJToken(obj);
+    }
+
+    private static object? HandleProperty(object obj, string path, ref int i)
+    {
+        i = path[i] == '.' ? i + 1 : i; // skip the dot if present
+        var name = ReadName(path, ref i);
+        return string.IsNullOrEmpty(name) ? null : GetPropertyValue(obj, name);
+    }
+
+    private static object? HandleArray(object obj, string path, ref int i)
+    {
+        i++; // skip the '['
+        var indexStr = ReadUntil(path, ref i, ']');
+        if (!int.TryParse(indexStr, out var idx))
+            return null;
+
+        var item = GetArrayItem(obj, idx);
+
+        if (i < path.Length && path[i] == ']')
+            i++; // skip closing ']'
+
+        return item;
     }
 
     private static object? GetArrayItem(object obj, int index)
     {
         obj = UnwrapJToken(obj) ?? obj;
 
-        if (obj is JArray jarr)
+        if (index < 0)
+            return null;
+
+        switch (obj)
         {
-            if (index >= 0 && index < jarr.Count)
+            case JArray jarr when index < jarr.Count:
                 return UnwrapJToken(jarr[index]);
-            return null;
-        }
-
-        if (obj is IList list)
-        {
-            if (index >= 0 && index < list.Count)
+            case IList list when index < list.Count:
                 return UnwrapJToken(list[index]);
-            return null;
-        }
-
-        if (obj is Array arr)
-        {
-            if (index >= 0 && index < arr.Length)
+            case Array arr when index < arr.Length:
                 return UnwrapJToken(arr.GetValue(index));
-            return null;
-        }
-
-        if (obj is IEnumerable enumerable)
-        {
-            var i = 0;
-            foreach (var item in enumerable)
-            {
-                if (i == index)
-                    return UnwrapJToken(item);
-                i++;
-            }
-            return null;
+            case IEnumerable enumerable:
+                int i = 0;
+                foreach (var item in enumerable)
+                {
+                    if (i == index)
+                        return UnwrapJToken(item);
+                    i++;
+                }
+                break;
+            default:
+                return null;
         }
 
         return null;
@@ -823,49 +871,49 @@ public class ExpressionParser : IExpressionParser
 
         obj = UnwrapJToken(obj) ?? obj;
 
-        if (obj is JObject jobj)
+        switch (obj)
         {
-            var prop = jobj.Property(propertyKey, StringComparison.OrdinalIgnoreCase);
-            return prop is null ? null : UnwrapJToken(prop.Value);
+            case JObject jobj:
+                return UnwrapJToken(jobj.Property(propertyKey, StringComparison.OrdinalIgnoreCase)?.Value);
+
+            case JArray:
+                return null;
+
+            case IDictionary<string, object?> stringDict:
+                if (stringDict.TryGetValue(propertyKey, out var val))
+                    return UnwrapJToken(val);
+
+                return stringDict
+                    .FirstOrDefault(kv => string.Equals(kv.Key, propertyKey, StringComparison.OrdinalIgnoreCase))
+                    .Value
+                    is { } matchedVal
+                    ? UnwrapJToken(matchedVal)
+                    : null;
+
+            case IDictionary dict:
+                if (dict.Contains(propertyKey))
+                    return UnwrapJToken(dict[propertyKey]);
+
+                foreach (DictionaryEntry de in dict)
+                {
+                    if (de.Key is string sk && string.Equals(sk, propertyKey, StringComparison.OrdinalIgnoreCase))
+                        return UnwrapJToken(de.Value);
+                }
+                return null;
+
+            default:
+                var type = obj.GetType();
+
+                var propInfo = type.GetProperty(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+                if (propInfo != null)
+                    return UnwrapJToken(propInfo.GetValue(obj));
+
+                var fieldInfo = type.GetField(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
+                if (fieldInfo != null)
+                    return UnwrapJToken(fieldInfo.GetValue(obj));
+
+                return null;
         }
-
-        if (obj is JArray)
-            return null;
-
-        if (obj is IDictionary<string, object?> stringDict)
-        {
-            if (stringDict.TryGetValue(propertyKey, out var val))
-                return UnwrapJToken(val);
-
-            return stringDict
-                .Where(kv => string.Equals(kv.Key, propertyKey, StringComparison.OrdinalIgnoreCase))
-                .Select(kv => UnwrapJToken(kv.Value))
-                .FirstOrDefault();
-        }
-
-        if (obj is IDictionary dict)
-        {
-            if (dict.Contains(propertyKey))
-                return UnwrapJToken(dict[propertyKey]);
-
-            foreach (DictionaryEntry de in dict)
-            {
-                if (de.Key is string sk && string.Equals(sk, propertyKey, StringComparison.OrdinalIgnoreCase))
-                    return UnwrapJToken(de.Value);
-            }
-            return null;
-        }
-
-        var type = obj.GetType();
-        var propInfo = type.GetProperty(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
-        if (propInfo != null)
-            return UnwrapJToken(propInfo.GetValue(obj));
-
-        var fieldInfo = type.GetField(propertyKey, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
-        if (fieldInfo != null)
-            return UnwrapJToken(fieldInfo.GetValue(obj));
-
-        return null;
     }
 
     private static object? UnwrapJToken(object? value)

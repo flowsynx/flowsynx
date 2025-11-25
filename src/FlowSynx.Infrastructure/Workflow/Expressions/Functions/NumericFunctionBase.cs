@@ -27,24 +27,11 @@ public abstract class NumericFunctionBase : IFunctionEvaluator
         if (value == null)
             yield break;
 
-        // Handle JToken (JArray/JObject/JValue) specially to avoid treating JValue as IEnumerable
+        // Handle JToken specially
         if (value is JToken jt)
         {
-            if (jt.Type == JTokenType.Array || jt.Type == JTokenType.Object)
-            {
-                foreach (var inner in jt)
-                {
-                    foreach (var d in ExtractNumbers(inner))
-                        yield return d;
-                }
-                yield break;
-            }
-
-            // For JValue or other primitive JToken types, try to parse the contained value
-            var jvString = jt.Type == JTokenType.Null ? null : jt.ToString();
-            if (jvString != null && double.TryParse(jvString, NumberStyles.Any, CultureInfo.InvariantCulture, out var jvResult))
-                yield return jvResult;
-
+            foreach (var d in ExtractFromJToken(jt))
+                yield return d;
             yield break;
         }
 
@@ -59,8 +46,36 @@ public abstract class NumericFunctionBase : IFunctionEvaluator
             yield break;
         }
 
-        // Attempt to parse the value
-        if (double.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
+        // Attempt to parse primitive value
+        if (TryParseDouble(value, out var result))
             yield return result;
+    }
+
+    private static IEnumerable<double> ExtractFromJToken(JToken jt)
+    {
+        if (jt.Type == JTokenType.Array || jt.Type == JTokenType.Object)
+        {
+            foreach (var inner in jt)
+            {
+                foreach (var d in ExtractNumbers(inner))
+                    yield return d;
+            }
+        }
+        else
+        {
+            var jvString = jt.Type == JTokenType.Null ? null : jt.ToString();
+            if (jvString != null && double.TryParse(jvString, NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
+                yield return result;
+        }
+    }
+
+    private static bool TryParseDouble(object value, out double result)
+    {
+        return double.TryParse(
+            value?.ToString(),
+            NumberStyles.Any,
+            CultureInfo.InvariantCulture,
+            out result
+        );
     }
 }
