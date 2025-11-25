@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 
-namespace FlowSynx.Infrastructure.Workflow.Parsers.SourceResolver;
+namespace FlowSynx.Infrastructure.Workflow.Expressions.SourceResolver;
 
 internal class DictionarySourceResolver : ISourceResolver
 {
@@ -14,7 +14,7 @@ internal class DictionarySourceResolver : ISourceResolver
         _sourceName = sourceName;
     }
 
-    public Task<object?> Resolve(string key, CancellationToken cancellationToken = default)
+    public Task<object?> ResolveAsync(string key, CancellationToken cancellationToken = default)
     {
         if (!_dictionary.TryGetValue(key, out var value))
             throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,

@@ -2,7 +2,7 @@ using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using System.Collections;
 
-namespace FlowSynx.Infrastructure.Workflow.Parsers.Functions;
+namespace FlowSynx.Infrastructure.Workflow.Expressions.Functions;
 
 /// <summary>
 /// Checks if a container contains a target value

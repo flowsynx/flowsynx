@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace FlowSynx.Infrastructure.Workflow.Parsers.Functions;
+namespace FlowSynx.Infrastructure.Workflow.Expressions.Functions;
 
 /// <summary>
 /// Returns the count of arguments or items in a collection

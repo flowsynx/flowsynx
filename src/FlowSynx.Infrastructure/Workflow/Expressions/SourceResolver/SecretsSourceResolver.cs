@@ -2,11 +2,8 @@
 using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 
-namespace FlowSynx.Infrastructure.Workflow.Parsers.SourceResolver;
+namespace FlowSynx.Infrastructure.Workflow.Expressions.SourceResolver;
 
-/// <summary>
-/// Source resolver for retrieving secrets using ISecretProvider
-/// </summary>
 internal class SecretsSourceResolver : ISourceResolver
 {
     private readonly ISecretProvider _secretProvider;
@@ -20,9 +17,8 @@ internal class SecretsSourceResolver : ISourceResolver
         _throwOnMissing = throwOnMissing;
     }
 
-    public async Task<object?> Resolve(string key, CancellationToken cancellationToken = default)
+    public async Task<object?> ResolveAsync(string key, CancellationToken cancellationToken = default)
     {
-        // Load secrets into cache if not already loaded
         if (_secretsCache == null)
         {
             _cacheLock.Wait();
@@ -44,7 +40,6 @@ internal class SecretsSourceResolver : ISourceResolver
             }
         }
 
-        // Lookup secret from cache
         if (_secretsCache.TryGetValue(key, out var value))
             return value;
 

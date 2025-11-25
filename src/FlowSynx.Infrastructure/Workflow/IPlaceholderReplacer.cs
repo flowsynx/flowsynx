@@ -1,9 +1,9 @@
-﻿using FlowSynx.Infrastructure.Workflow.Parsers;
+﻿using FlowSynx.Infrastructure.Workflow.Expressions;
 
 namespace FlowSynx.Infrastructure.Workflow;
 
 public interface IPlaceholderReplacer
 {
-    string ReplacePlaceholders(string content, IExpressionParser parser);
-    void ReplacePlaceholdersInParameters(Dictionary<string, object?> parameters, IExpressionParser parser);
+    Task<string> ReplacePlaceholders(string content, IExpressionParser expressionParser, CancellationToken cancellationToken = default);
+    Task ReplacePlaceholdersInParameters(Dictionary<string, object?> parameters, IExpressionParser expressionParser, CancellationToken cancellationToken = default);
 }

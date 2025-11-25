@@ -7,7 +7,7 @@ using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
-using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.Workflow.Expressions;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -216,7 +216,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         await _workflowSchemaValidator.ValidateAsync(schemaUrl, definitionJson, cancellationToken);
         var definition = _jsonDeserializer.Deserialize<WorkflowDefinition>(definitionJson);
         _errorHandlingResolver.Resolve(definition);
-        _workflowValidator.Validate(definition);
+        await _workflowValidator.ValidateAsync(definition, cancellationToken);
         return definition;
     }
 
@@ -252,7 +252,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                 return await HandleFailedDependenciesAsync(executionEntity, cancellationToken);
 
             var parserInputs = _taskOutputs.ToDictionary(kv => kv.Key, kv => kv.Value.Result);
-            var parser = _parserFactory.CreateParser(parserInputs, definition.Variables);
+            var expressionParser = _parserFactory.CreateParser(parserInputs, definition.Variables);
 
             var approvedTasks = await GetApprovedTasksAsync(userId, workflowId, executionEntity, readyTasks, taskMap, cancellationToken);
 
@@ -270,12 +270,12 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             var executionResults = await ExecuteApprovedTasksWithConditionalsAsync(
                 context,
                 approvedTasks,
-                parser,
+                expressionParser,
                 definition.Configuration,
                 cancellationToken,
                 registeredToken);
 
-            ProcessConditionalBranches(executionResults, taskMap, pending, parser, executionEntity.Id);
+            await ProcessConditionalBranches(executionResults, taskMap, pending, expressionParser, executionEntity.Id, cancellationToken);
 
             if (executionResults.Errors.Any())
             {
@@ -306,7 +306,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     private async Task<ConditionalExecutionResult> ExecuteApprovedTasksWithConditionalsAsync(
         WorkflowExecutionContext context,
         List<WorkflowTask> approvedTasks,
-        IExpressionParser parser,
+        IExpressionParser expressionParser,
         WorkflowConfiguration config,
         CancellationToken globalToken,
         CancellationToken localToken)
@@ -326,7 +326,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             await semaphore.WaitAsync(linkedCts.Token);
             try
             {
-                var shouldExecute = EvaluateTaskCondition(task, parser);
+                var shouldExecute = await EvaluateTaskCondition(task, expressionParser, linkedCts.Token);
 
                 if (!shouldExecute)
                 {
@@ -341,7 +341,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                     return;
                 }
 
-                var result = await _taskExecutor.ExecuteAsync(context, task, parser, globalToken, linkedCts.Token);
+                var result = await _taskExecutor.ExecuteAsync(context, task, expressionParser, globalToken, linkedCts.Token);
                 _taskOutputs[task.Name] = result;
 
                 conditionalResults[task.Name] = new ConditionalTaskResult
@@ -381,16 +381,17 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         };
     }
 
-    private bool EvaluateTaskCondition(
+    private async Task<bool> EvaluateTaskCondition(
         WorkflowTask task,
-        IExpressionParser parser)
+        IExpressionParser expressionParser,
+        CancellationToken cancellationToken)
     {
         if (task.ExecutionCondition == null || string.IsNullOrWhiteSpace(task.ExecutionCondition.Expression))
             return true;
 
         try
         {
-            var result = parser.Parse(task.ExecutionCondition.Expression);
+            var result = await expressionParser.ParseAsync(task.ExecutionCondition.Expression, cancellationToken);
 
             bool final = false;
             switch (result)
@@ -418,12 +419,13 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
     }
 
 
-    private void ProcessConditionalBranches(
+    private async Task ProcessConditionalBranches(
         ConditionalExecutionResult executionResults,
         Dictionary<string, WorkflowTask> taskMap,
         HashSet<string> pending,
-        IExpressionParser parser,
-        Guid executionId)
+        IExpressionParser expressionParser,
+        Guid executionId,
+        CancellationToken cancellationToken)
     {
         foreach (var taskResult in executionResults.TaskResults.Values)
         {
@@ -440,7 +442,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             {
                 try
                 {
-                    var condition = parser.Parse(branch.Expression);
+                    var condition = await expressionParser.ParseAsync(branch.Expression, cancellationToken);
                     bool takeBranch = false;
 
                     switch (condition)
@@ -624,6 +626,7 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
 
         _logger.LogInformation("Initialized task executions for workflow '{WorkflowId}'", workflowId);
     }
+
     private async Task PauseForManualApprovalAsync(
         string userId, 
         WorkflowExecutionEntity execution, 

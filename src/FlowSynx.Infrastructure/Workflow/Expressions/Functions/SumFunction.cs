@@ -1,4 +1,4 @@
-namespace FlowSynx.Infrastructure.Workflow.Parsers.Functions;
+namespace FlowSynx.Infrastructure.Workflow.Expressions.Functions;
 
 /// <summary>
 /// Returns the sum of numeric arguments

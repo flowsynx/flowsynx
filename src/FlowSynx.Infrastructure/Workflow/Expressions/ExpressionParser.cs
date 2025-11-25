@@ -1,14 +1,14 @@
 ﻿using FlowSynx.Domain;
 using FlowSynx.Infrastructure.Secrets;
-using FlowSynx.Infrastructure.Workflow.Parsers.Functions;
-using FlowSynx.Infrastructure.Workflow.Parsers.SourceResolver;
+using FlowSynx.Infrastructure.Workflow.Expressions.Functions;
+using FlowSynx.Infrastructure.Workflow.Expressions.SourceResolver;
 using FlowSynx.PluginCore.Exceptions;
 using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Data;
 using System.Reflection;
 
-namespace FlowSynx.Infrastructure.Workflow.Parsers;
+namespace FlowSynx.Infrastructure.Workflow.Expressions;
 
 public class ExpressionParser : IExpressionParser
 {
@@ -48,6 +48,7 @@ public class ExpressionParser : IExpressionParser
         RegisterFunction(new AvgFunction());
         RegisterFunction(new CountFunction());
         RegisterFunction(new ContainsFunction());
+        RegisterFunction(new LengthFunction());
 
         // Register custom functions if provided
         if (customFunctions != null)
@@ -78,13 +79,13 @@ public class ExpressionParser : IExpressionParser
         return _functionEvaluators.Remove(functionName);
     }
 
-    public object? Parse(string? expression, CancellationToken cancellationToken = default)
+    public async Task<object?> ParseAsync(string? expression, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(expression)) return null;
-        return ResolveExpression(expression, cancellationToken);
+        return await ResolveExpression(expression, cancellationToken);
     }
 
-    private object? ResolveExpression(string expr, CancellationToken cancellationToken)
+    private async Task<object?> ResolveExpression(string expr, CancellationToken cancellationToken)
     {
         int i = 0;
         while (i < expr.Length)
@@ -99,7 +100,7 @@ public class ExpressionParser : IExpressionParser
                         $"Unbalanced brackets in expression: {expr}");
 
                 string inner = expr.Substring(i + 2, end - i - 2).Trim();
-                object? resolved = ResolveInnerOrConditionalOrMath(inner, cancellationToken);
+                object? resolved = await ResolveInnerOrConditionalOrMath(inner, cancellationToken);
 
                 if (expr.Trim() == expr.Substring(i, end - i + 1))
                     return resolved;
@@ -112,21 +113,21 @@ public class ExpressionParser : IExpressionParser
         return expr;
     }
 
-    private object? ResolveInnerOrConditionalOrMath(string inner, CancellationToken cancellationToken)
+    private async Task<object?> ResolveInnerOrConditionalOrMath(string inner, CancellationToken cancellationToken)
     {
         if (inner.Contains('?') && inner.Contains(':'))
-            return EvaluateConditionalExpression(inner, cancellationToken);
+            return await EvaluateConditionalExpression(inner, cancellationToken);
 
-        if (TryEvaluateFunctionalExpression(inner, out var fnResult, cancellationToken))
-            return fnResult;
+        if (await TryEvaluateFunctionalExpression(inner, cancellationToken) is var fnResult && fnResult.HasValue)
+            return fnResult.Value;
 
         if (ContainsOperator(inner))
-            return EvaluateBooleanExpression(inner, cancellationToken);
+            return await EvaluateBooleanExpression(inner, cancellationToken);
 
         if (inner.IndexOfAny(new[] { '+', '-', '*', '/', '%' }) >= 0)
-            return EvaluateArithmeticExpression(inner, cancellationToken);
+            return await EvaluateArithmeticExpression(inner, cancellationToken);
 
-        return ResolveInnerExpression(inner, cancellationToken);
+        return await ResolveInnerExpression(inner, cancellationToken);
     }
 
     private bool TryGetSourceResolver(string expr, int pos, out ISourceResolver? resolver, out string prefix)
@@ -154,32 +155,44 @@ public class ExpressionParser : IExpressionParser
             expr.StartsWith($"{key}(", StringComparison.OrdinalIgnoreCase));
     }
 
-    private bool TryEvaluateFunctionalExpression(string inner, out object? result, CancellationToken cancellationToken)
+    private async Task<(bool HasValue, object? Value)> TryEvaluateFunctionalExpression(string inner, CancellationToken cancellationToken)
     {
-        result = null;
         inner = inner.Trim();
         int parenIdx = inner.IndexOf('(');
-        if (parenIdx <= 0) return false;
+        if (parenIdx <= 0) return (false, null);
 
         string name = inner.Substring(0, parenIdx).Trim();
 
         // Check if function is registered
         if (!_functionEvaluators.TryGetValue(name, out var evaluator))
-            return false;
+            return (false, null);
 
         int endParen = FindMatchingParenthesis(inner, parenIdx);
         if (endParen == -1)
             throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound,
                 $"Unbalanced parentheses in functional expression: {inner}");
 
+        // Check if there's content after the function call (e.g., arithmetic operators)
+        // If so, this isn't a pure function expression and should be handled elsewhere
+        if (endParen < inner.Length - 1)
+        {
+            string remainder = inner.Substring(endParen + 1).Trim();
+            if (!string.IsNullOrEmpty(remainder))
+                return (false, null);
+        }
+
         string argsSegment = inner.Substring(parenIdx + 1, endParen - parenIdx - 1);
         var args = SplitArguments(argsSegment);
 
-        var evaluatedArgs = args.Select(arg => EvaluateFunctionalArgument(arg, cancellationToken)).ToList();
+        var evaluatedArgs = new List<object?>();
+        foreach (var arg in args)
+        {
+            evaluatedArgs.Add(await EvaluateFunctionalArgument(arg, cancellationToken));
+        }
 
         // Use the registered evaluator
-        result = evaluator.Evaluate(evaluatedArgs);
-        return true;
+        var result = evaluator.Evaluate(evaluatedArgs);
+        return (true, result);
     }
 
     private static List<string> SplitArguments(string argsSegment)
@@ -227,24 +240,24 @@ public class ExpressionParser : IExpressionParser
         return list.Where(a => a.Length > 0).ToList();
     }
 
-    private object? EvaluateFunctionalArgument(string arg, CancellationToken cancellationToken)
+    private async Task<object?> EvaluateFunctionalArgument(string arg, CancellationToken cancellationToken)
     {
         arg = arg.Trim();
 
-        if (TryEvaluateFunctionalExpression(arg, out var fnValue, cancellationToken))
-            return fnValue;
+        if (await TryEvaluateFunctionalExpression(arg, cancellationToken) is var fnValue && fnValue.HasValue)
+            return fnValue.Value;
 
         if (StartsWithAnyPrefix(arg) || ContainsOperator(arg) ||
             arg.Contains("$[") || arg.Contains('?') || arg.Contains(':'))
         {
-            return Parse($"$[{arg}]", cancellationToken);
+            return await ParseAsync($"$[{arg}]", cancellationToken);
         }
 
-        var lit = ResolveLiteralOrValue(arg, cancellationToken);
+        var lit = await ResolveLiteralOrValue(arg, cancellationToken);
         return lit;
     }
 
-    private object? EvaluateConditionalExpression(string expr, CancellationToken cancellationToken)
+    private async Task<object?> EvaluateConditionalExpression(string expr, CancellationToken cancellationToken)
     {
         int questionIdx = -1, colonIdx = -1, depth = 0;
         for (int i = 0; i < expr.Length; i++)
@@ -270,30 +283,40 @@ public class ExpressionParser : IExpressionParser
         string truePart = expr[(questionIdx + 1)..colonIdx].Trim();
         string falsePart = expr[(colonIdx + 1)..].Trim();
 
-        bool conditionResult = EvaluateBooleanExpression(condition, cancellationToken);
-        return Parse($"$[{(conditionResult ? truePart : falsePart)}]", cancellationToken);
+        bool conditionResult = await EvaluateBooleanExpression(condition, cancellationToken);
+        return await ParseAsync($"$[{(conditionResult ? truePart : falsePart)}]", cancellationToken);
     }
 
-    private bool EvaluateBooleanExpression(string expr, CancellationToken cancellationToken)
+    private async Task<bool> EvaluateBooleanExpression(string expr, CancellationToken cancellationToken)
     {
         expr = expr.Trim();
-        expr = ReplaceEmbeddedExpressions(expr, cancellationToken);
+        expr = await ReplaceEmbeddedExpressions(expr, cancellationToken);
 
         if (expr.StartsWith('!'))
-            return !EvaluateBooleanExpression(expr[1..], cancellationToken);
+            return !await EvaluateBooleanExpression(expr[1..], cancellationToken);
 
         if (expr.StartsWith('(') && expr.EndsWith(')'))
-            return EvaluateBooleanExpression(expr[1..^1], cancellationToken);
+            return await EvaluateBooleanExpression(expr[1..^1], cancellationToken);
 
         if (expr.Contains("&&"))
         {
             var parts = expr.Split(new[] { "&&" }, StringSplitOptions.RemoveEmptyEntries);
-            return parts.All(p => EvaluateBooleanExpression(p, cancellationToken));
+            foreach (var p in parts)
+            {
+                if (!await EvaluateBooleanExpression(p, cancellationToken))
+                    return false;
+            }
+            return true;
         }
         if (expr.Contains("||"))
         {
             var parts = expr.Split(new[] { "||" }, StringSplitOptions.RemoveEmptyEntries);
-            return parts.Any(p => EvaluateBooleanExpression(p, cancellationToken));
+            foreach (var p in parts)
+            {
+                if (await EvaluateBooleanExpression(p, cancellationToken))
+                    return true;
+            }
+            return false;
         }
 
         string[] ops = { ">=", "<=", "==", "!=", ">", "<" };
@@ -305,8 +328,8 @@ public class ExpressionParser : IExpressionParser
                 string left = expr[..idx].Trim();
                 string right = expr[(idx + op.Length)..].Trim();
 
-                object? lVal = EvaluateArithmeticExpression(left, cancellationToken);
-                object? rVal = EvaluateArithmeticExpression(right, cancellationToken);
+                object? lVal = await EvaluateArithmeticExpression(left, cancellationToken);
+                object? rVal = await EvaluateArithmeticExpression(right, cancellationToken);
 
                 return Compare(lVal, rVal, op);
             }
@@ -317,10 +340,11 @@ public class ExpressionParser : IExpressionParser
         throw new FlowSynxException((int)ErrorCode.ExpressionParserKeyNotFound, $"Invalid boolean expression: {expr}");
     }
 
-    private object? EvaluateArithmeticExpression(string expr, CancellationToken cancellationToken)
+    private async Task<object?> EvaluateArithmeticExpression(string expr, CancellationToken cancellationToken)
     {
-        expr = ReplaceEmbeddedExpressions(expr, cancellationToken);
-        expr = ReplaceVariables(expr, cancellationToken);
+        expr = await ReplaceEmbeddedExpressions(expr, cancellationToken);
+        expr = await ReplaceVariables(expr, cancellationToken);
+        expr = await ReplaceFunctions(expr, cancellationToken);
 
         try
         {
@@ -330,11 +354,61 @@ public class ExpressionParser : IExpressionParser
         }
         catch
         {
-            return ResolveLiteralOrValue(expr, cancellationToken);
+            return await ResolveLiteralOrValue(expr, cancellationToken);
         }
     }
 
-    private string ReplaceVariables(string expr, CancellationToken cancellationToken)
+    private async Task<string> ReplaceFunctions(string expr, CancellationToken cancellationToken)
+    {
+        int pos = 0;
+        while (pos < expr.Length)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            // Look for function name patterns
+            bool foundFunction = false;
+            foreach (var funcName in _functionEvaluators.Keys)
+            {
+                string funcPattern = $"{funcName}(";
+                if (pos + funcPattern.Length <= expr.Length &&
+                    expr.Substring(pos, funcPattern.Length).Equals(funcPattern, StringComparison.OrdinalIgnoreCase))
+                {
+                    int parenStart = pos + funcName.Length;
+                    int parenEnd = FindMatchingParenthesis(expr, parenStart);
+                    if (parenEnd == -1)
+                    {
+                        pos++;
+                        continue;
+                    }
+
+                    // Extract and evaluate the function call
+                    string funcCall = expr.Substring(pos, parenEnd - pos + 1);
+                    string argsSegment = expr.Substring(parenStart + 1, parenEnd - parenStart - 1);
+                    var args = SplitArguments(argsSegment);
+
+                    var evaluatedArgs = new List<object?>();
+                    foreach (var arg in args)
+                    {
+                        evaluatedArgs.Add(await EvaluateFunctionalArgument(arg, cancellationToken));
+                    }
+
+                    var result = _functionEvaluators[funcName].Evaluate(evaluatedArgs);
+                    string replacement = result?.ToString() ?? "0";
+                    
+                    expr = expr.Substring(0, pos) + replacement + expr.Substring(parenEnd + 1);
+                    pos += replacement.Length;
+                    foundFunction = true;
+                    break;
+                }
+            }
+
+            if (!foundFunction)
+                pos++;
+        }
+        return expr;
+    }
+
+    private async Task<string> ReplaceVariables(string expr, CancellationToken cancellationToken)
     {
         int pos = 0;
         while (pos < expr.Length)
@@ -352,8 +426,8 @@ public class ExpressionParser : IExpressionParser
                 }
 
                 string keyExpr = expr.Substring(start + 1, end - start - 1);
-                string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr, cancellationToken));
-                object? rootValue = resolver!.Resolve(resolvedKey, cancellationToken).GetAwaiter().GetResult();
+                string resolvedKey = StripQuotes(await ResolveTopLevelExpression(keyExpr, cancellationToken));
+                object? rootValue = await resolver!.ResolveAsync(resolvedKey, cancellationToken);
 
                 int pathStart = end + 1;
                 int scan = pathStart;
@@ -403,7 +477,7 @@ public class ExpressionParser : IExpressionParser
         return expr;
     }
 
-    private string ReplaceEmbeddedExpressions(string expr, CancellationToken cancellationToken)
+    private async Task<string> ReplaceEmbeddedExpressions(string expr, CancellationToken cancellationToken)
     {
         int pos = 0;
         while (pos < expr.Length)
@@ -419,7 +493,7 @@ public class ExpressionParser : IExpressionParser
                     $"Unbalanced brackets in expression: {expr}");
 
             string inner = expr.Substring(start + 2, end - start - 2).Trim();
-            object? val = ResolveInnerOrConditionalOrMath(inner, cancellationToken);
+            object? val = await ResolveInnerOrConditionalOrMath(inner, cancellationToken);
             expr = expr.Substring(0, start) + (val?.ToString() ?? "null") + expr.Substring(end + 1);
             pos = start + (val?.ToString() ?? "null").Length;
         }
@@ -450,14 +524,14 @@ public class ExpressionParser : IExpressionParser
         return null;
     }
 
-    private object? ResolveLiteralOrValue(string str, CancellationToken cancellationToken)
+    private async Task<object?> ResolveLiteralOrValue(string str, CancellationToken cancellationToken)
     {
         str = str.Trim();
 
         if (str.StartsWith('\'') && str.EndsWith('\'')) return StripQuotes(str);
 
         if (StartsWithAnyPrefix(str))
-            return ResolveInnerExpression(str, cancellationToken);
+            return await ResolveInnerExpression(str, cancellationToken);
 
         if (double.TryParse(str, out double num)) return num;
         if (bool.TryParse(str, out bool b)) return b;
@@ -465,7 +539,7 @@ public class ExpressionParser : IExpressionParser
         return str;
     }
 
-    private object? EvaluateExpression(string inner, CancellationToken cancellationToken)
+    private async Task<object?> EvaluateExpression(string inner, CancellationToken cancellationToken)
     {
         if (inner.Contains('?') && inner.Contains(':'))
         {
@@ -477,13 +551,13 @@ public class ExpressionParser : IExpressionParser
             var trueExpr = parts.Value.ifTrue.Trim();
             var falseExpr = parts.Value.ifFalse.Trim();
 
-            var conditionResult = EvaluateBooleanExpression(condition, cancellationToken);
+            var conditionResult = await EvaluateBooleanExpression(condition, cancellationToken);
             return conditionResult
-                ? Parse($"$[{trueExpr}]", cancellationToken)
-                : Parse($"$[{falseExpr}]", cancellationToken);
+                ? await ParseAsync($"$[{trueExpr}]", cancellationToken)
+                : await ParseAsync($"$[{falseExpr}]", cancellationToken);
         }
 
-        return EvaluateBooleanExpression(inner, cancellationToken);
+        return await EvaluateBooleanExpression(inner, cancellationToken);
     }
 
     private static (string condition, string ifTrue, string ifFalse)? SplitTernary(string expr)
@@ -530,15 +604,15 @@ public class ExpressionParser : IExpressionParser
                inner.Contains("?") || inner.Contains(":");
     }
 
-    private object? ResolveInnerExpression(string inner, CancellationToken cancellationToken)
+    private async Task<object?> ResolveInnerExpression(string inner, CancellationToken cancellationToken)
     {
         inner = inner.Trim();
 
-        if (TryEvaluateFunctionalExpression(inner, out var fnValue, cancellationToken))
-            return fnValue;
+        if (await TryEvaluateFunctionalExpression(inner, cancellationToken) is var fnValue && fnValue.HasValue)
+            return fnValue.Value;
 
         if (ContainsOperator(inner))
-            return EvaluateExpression(inner, cancellationToken);
+            return await EvaluateExpression(inner, cancellationToken);
 
         if (IsLiteral(inner))
             return ParseLiteral(inner);
@@ -568,8 +642,8 @@ public class ExpressionParser : IExpressionParser
         string keyExpr = inner.Substring(startKey, endKey - startKey).Trim();
         string accessPath = inner.Substring(endKey + 1).Trim();
 
-        string resolvedKey = StripQuotes(ResolveTopLevelExpression(keyExpr, cancellationToken));
-        object? value = resolver.Resolve(resolvedKey, cancellationToken).GetAwaiter().GetResult();
+        string resolvedKey = StripQuotes(await ResolveTopLevelExpression(keyExpr, cancellationToken));
+        object? value = await resolver.ResolveAsync(resolvedKey, cancellationToken);
 
         if (!string.IsNullOrEmpty(accessPath))
             value = GetNestedValue(value, accessPath);
@@ -610,11 +684,11 @@ public class ExpressionParser : IExpressionParser
         return inner;
     }
 
-    private string ResolveTopLevelExpression(string expr, CancellationToken cancellationToken)
+    private async Task<string> ResolveTopLevelExpression(string expr, CancellationToken cancellationToken)
     {
         expr = expr.Trim();
         if (StartsWithAnyPrefix(expr))
-            return Parse($"$[{expr}]", cancellationToken)?.ToString() ?? string.Empty;
+            return (await ParseAsync($"$[{expr}]", cancellationToken))?.ToString() ?? string.Empty;
 
         return expr;
     }

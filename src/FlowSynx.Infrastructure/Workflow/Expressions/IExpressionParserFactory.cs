@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Infrastructure.Secrets;
 
-namespace FlowSynx.Infrastructure.Workflow.Parsers;
+namespace FlowSynx.Infrastructure.Workflow.Expressions;
 
 public interface IExpressionParserFactory
 {

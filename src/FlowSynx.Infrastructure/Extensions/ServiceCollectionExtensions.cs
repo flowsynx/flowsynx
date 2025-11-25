@@ -31,7 +31,7 @@ using FlowSynx.Infrastructure.Services;
 using FlowSynx.Infrastructure.Workflow;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
 using FlowSynx.Infrastructure.Workflow.ManualApprovals;
-using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.Workflow.Expressions;
 using FlowSynx.Infrastructure.Workflow.ResultStorageProviders;
 using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
 using FlowSynx.Infrastructure.Workflow.Triggers.TimeBased;

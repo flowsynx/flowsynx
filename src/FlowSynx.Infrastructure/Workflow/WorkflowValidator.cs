@@ -2,7 +2,7 @@
 using FlowSynx.Application.Localizations;
 using FlowSynx.Domain;
 using FlowSynx.Application.Workflow;
-using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.Workflow.Expressions;
 using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Infrastructure.Workflow;
@@ -23,14 +23,14 @@ public class WorkflowValidator : IWorkflowValidator
         _placeholderReplacer = placeholderReplacer;
     }
 
-    public void Validate(WorkflowDefinition definition)
+    public async Task ValidateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var tasks = definition.Tasks;
 
-        var parser = _parserFactory.CreateParser(new Dictionary<string, object?>(), definition.Variables);
+        var expressionParser = _parserFactory.CreateParser(new Dictionary<string, object?>(), definition.Variables);
 
         foreach (var task in tasks)
-            ParseWorkflowTaskPlaceholders(task, parser);
+            await ParseWorkflowTaskPlaceholders(task, expressionParser, cancellationToken);
 
         EnsureNoDuplicateTaskNames(tasks);
         EnsureAllDependenciesExist(tasks);
@@ -256,30 +256,30 @@ public class WorkflowValidator : IWorkflowValidator
         }
     }
 
-    public void ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser parser)
+    private async Task ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (task == null) return;
 
         // Top-level string properties
-        task.Name = ReplaceIfNotNull(task.Name, parser);
-        task.Description = ReplaceIfNotNull(task.Description, parser);
-        task.Output = ReplaceIfNotNull(task.Output, parser);
+        task.Name = await ReplaceIfNotNull(task.Name, expressionParser, cancellationToken);
+        task.Description = await ReplaceIfNotNull(task.Description, expressionParser, cancellationToken);
+        task.Output = await ReplaceIfNotNull(task.Output, expressionParser, cancellationToken);
 
         // Dependencies
         if (task.Dependencies is { Count: > 0 })
         {
             for (int i = 0; i < task.Dependencies.Count; i++)
             {
-                task.Dependencies[i] = ReplaceIfNotNull(task.Dependencies[i], parser);
+                task.Dependencies[i] = await ReplaceIfNotNull(task.Dependencies[i], expressionParser, cancellationToken);
             }
         }
     }
 
-    private string? ReplaceIfNotNull(string? value, IExpressionParser parser)
+    private async Task<string?> ReplaceIfNotNull(string? value, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         return string.IsNullOrWhiteSpace(value)
             ? value
-            : _placeholderReplacer.ReplacePlaceholders(value, parser);
+            : await _placeholderReplacer.ReplacePlaceholders(value, expressionParser, cancellationToken);
     }
     #endregion
 }

@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Infrastructure.Workflow.Parsers;
+﻿namespace FlowSynx.Infrastructure.Workflow.Expressions;
 
 /// <summary>
 /// Interface for function evaluators in expressions

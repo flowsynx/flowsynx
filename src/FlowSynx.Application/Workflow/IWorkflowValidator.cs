@@ -4,5 +4,5 @@ namespace FlowSynx.Application.Workflow;
 
 public interface IWorkflowValidator
 {
-    void Validate(WorkflowDefinition definition);
+    Task ValidateAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default);
 }

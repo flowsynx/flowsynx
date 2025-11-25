@@ -1,4 +1,4 @@
-namespace FlowSynx.Infrastructure.Workflow.Parsers.Functions;
+namespace FlowSynx.Infrastructure.Workflow.Expressions.Functions;
 
 /// <summary>
 /// Converts string to lowercase

@@ -8,7 +8,7 @@ using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.Infrastructure.Workflow.ErrorHandlingStrategies;
-using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.Workflow.Expressions;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -56,7 +56,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     public async Task<TaskOutput> ExecuteAsync(
         WorkflowExecutionContext executionContext,
         WorkflowTask task,
-        IExpressionParser parser,
+        IExpressionParser expressionParser,
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
     {
@@ -80,7 +80,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             await UpdateTaskStatusAsync(executionContext.UserId, taskExecution, WorkflowTaskExecutionStatus.Running, globalCancellationToken);
             _logger.LogInformation("Workflow task '{TaskName}' started.", task.Name);
             var context = new ErrorHandlingContext { TaskName = task.Name, RetryCount = 0 };
-            return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, context, 
+            return await ExecuteTaskAsync(executionContext, task, taskExecution, expressionParser, context, 
                 globalCancellationToken, taskCancellationToken);
         }
     }
@@ -89,7 +89,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         WorkflowExecutionContext executionContext,
         WorkflowTask task,
         WorkflowTaskExecutionEntity taskExecution,
-        IExpressionParser parser,
+        IExpressionParser expressionParser,
         ErrorHandlingContext errorContext,
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
@@ -97,8 +97,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         using var timeoutCts = CreateTimeoutToken(task.Timeout, taskCancellationToken);
         var token = timeoutCts.Token;
 
-        ParseWorkflowTaskPlaceholders(task, parser);
-        ProcessOutputResults(executionContext.TaskOutputs, parser);
+        await ParseWorkflowTaskPlaceholders(task, expressionParser, token);
+        await ProcessOutputResults(executionContext.TaskOutputs, expressionParser, token);
 
         // Check if agent execution is enabled for this task
         if (task.Agent?.Enabled == true && _agentExecutor != null)
@@ -107,7 +107,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                 executionContext,
                 task,
                 taskExecution,
-                parser,
+                expressionParser,
                 errorContext,
                 globalCancellationToken,
                 token);
@@ -118,7 +118,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             executionContext,
             task,
             taskExecution,
-            parser,
+            expressionParser,
             errorContext,
             globalCancellationToken,
             token);
@@ -131,7 +131,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         WorkflowExecutionContext executionContext,
         WorkflowTask task,
         WorkflowTaskExecutionEntity taskExecution,
-        IExpressionParser parser,
+        IExpressionParser expressionParser,
         ErrorHandlingContext errorContext,
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
@@ -198,7 +198,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                     executionContext,
                     task,
                     taskExecution,
-                    parser,
+                    expressionParser,
                     errorContext,
                     globalCancellationToken,
                     taskCancellationToken);
@@ -245,7 +245,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             {
                 await UpdateTaskStatusAsync(executionContext.UserId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
                 _logger.LogWarning(ex, "Workflow task '{TaskName}' retrying with agent.", task.Name);
-                return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, errorContext, globalCancellationToken, taskCancellationToken);
+                return await ExecuteTaskAsync(executionContext, task, taskExecution, expressionParser, errorContext, globalCancellationToken, taskCancellationToken);
             }
 
             if (result?.ShouldSkip == true)
@@ -275,7 +275,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         WorkflowExecutionContext executionContext,
         WorkflowTask task,
         WorkflowTaskExecutionEntity taskExecution,
-        IExpressionParser parser,
+        IExpressionParser expressionParser,
         ErrorHandlingContext errorContext,
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
@@ -329,7 +329,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
             {
                 await UpdateTaskStatusAsync(userId, taskExecution, WorkflowTaskExecutionStatus.Retrying, globalCancellationToken);
                 _logger.LogWarning("Workflow task '{TaskName}' retrying.", task.Name);
-                return await ExecuteTaskAsync(executionContext, task, taskExecution, parser, errorContext, globalCancellationToken, taskCancellationToken);
+                return await ExecuteTaskAsync(executionContext, task, taskExecution, expressionParser, errorContext, globalCancellationToken, taskCancellationToken);
             }
 
             if (result?.ShouldSkip == true)
@@ -486,80 +486,79 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         return linkedCts;
     }
 
-    public void ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser parser)
+    private async Task ParseWorkflowTaskPlaceholders(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (task == null)
             return;
 
-        ReplaceTopLevelStrings(task, parser);
-        ProcessTaskParameters(task, parser);
-        ProcessManualApproval(task.ManualApproval, parser);
-        ReplaceStringListItems(task.Dependencies, parser);
-        ReplaceStringListItems(task.RunOnFailureOf, parser);
-        ProcessErrorHandling(task.ErrorHandling, parser);
-        ProcessConditionalProperties(task, parser);
-        ProcessAgentConfiguration(task.Agent, parser);
+        await ReplaceTopLevelStrings(task, expressionParser, cancellationToken);
+        await ProcessTaskParameters(task, expressionParser, cancellationToken);
+        await ProcessManualApproval(task.ManualApproval, expressionParser, cancellationToken);
+        await ReplaceStringListItems(task.Dependencies, expressionParser, cancellationToken);
+        await ReplaceStringListItems(task.RunOnFailureOf, expressionParser, cancellationToken);
+        await ProcessErrorHandling(task.ErrorHandling, expressionParser, cancellationToken);
+        await ProcessConditionalProperties(task, expressionParser, cancellationToken);
+        await ProcessAgentConfiguration(task.Agent, expressionParser, cancellationToken);
 
         if (task.Position is not null)
         {
-            task.Position.X = ReplaceDoubleIfPlaceholder(task.Position.X, parser);
-            task.Position.Y = ReplaceDoubleIfPlaceholder(task.Position.Y, parser);
+            task.Position.X = await ReplaceDoubleIfPlaceholder(task.Position.X, expressionParser, cancellationToken);
+            task.Position.Y = await ReplaceDoubleIfPlaceholder(task.Position.Y, expressionParser, cancellationToken);
         }
     }
 
     /// <summary>
     /// Applies placeholder replacements to agent configuration.
     /// </summary>
-    private void ProcessAgentConfiguration(AgentConfiguration? agent, IExpressionParser parser)
+    private async Task ProcessAgentConfiguration(AgentConfiguration? agent, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (agent == null)
             return;
 
-        agent.Instructions = ReplaceIfNotNull(agent.Instructions, parser);
-        agent.Mode = ReplaceIfNotNull(agent.Mode, parser) ?? "execute";
+        agent.Instructions = await ReplaceIfNotNull(agent.Instructions, expressionParser, cancellationToken);
+        agent.Mode = await ReplaceIfNotNull(agent.Mode, expressionParser, cancellationToken) ?? "execute";
 
         if (agent.Context is { Count: > 0 })
         {
             foreach (var key in agent.Context.Keys.ToList())
             {
-                agent.Context[key] = ProcessValueDeep(agent.Context[key], parser) ?? new object();
+                agent.Context[key] = await ProcessValueDeep(agent.Context[key], expressionParser, cancellationToken) ?? new object();
             }
         }
     }
 
-    private void ReplaceTopLevelStrings(WorkflowTask task, IExpressionParser parser)
+    private async Task ReplaceTopLevelStrings(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
-        task.Name = ReplaceIfNotNull(task.Name, parser);
-        task.Description = ReplaceIfNotNull(task.Description, parser);
-        task.Output = ReplaceIfNotNull(task.Output, parser);
+        task.Name = await ReplaceIfNotNull(task.Name, expressionParser, cancellationToken);
+        task.Description = await ReplaceIfNotNull(task.Description, expressionParser, cancellationToken);
+        task.Output = await ReplaceIfNotNull(task.Output, expressionParser, cancellationToken);
     }
 
-    private void ProcessOutputResults(Dictionary<string, object?> outputs, IExpressionParser parser)
+    private async Task ProcessOutputResults(Dictionary<string, object?> outputs, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (outputs is not { Count: > 0 })
             return;
 
         foreach (var key in outputs.Keys.ToList())
         {
-            outputs[key] = ProcessValueDeep(outputs[key], parser) ?? null;
+            outputs[key] = await ProcessValueDeep(outputs[key], expressionParser, cancellationToken) ?? null;
         }
-
     }
 
-    private void ProcessTaskParameters(WorkflowTask task, IExpressionParser parser)
+    private async Task ProcessTaskParameters(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (task.Parameters is not { Count: > 0 })
             return;
 
         foreach (var key in task.Parameters.Keys.ToList())
         {
-            task.Parameters[key] = ProcessValueDeep(task.Parameters[key], parser);
+            task.Parameters[key] = await ProcessValueDeep(task.Parameters[key], expressionParser, cancellationToken);
         }
 
-        _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, parser);
+        await _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, expressionParser, cancellationToken);
     }
 
-    private object? ProcessValueDeep(object? value, IExpressionParser parser)
+    private async Task<object?> ProcessValueDeep(object? value, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (value == null)
             return null;
@@ -567,37 +566,44 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         switch (value)
         {
             case string s:
-                return ReplaceIfNotNull(s, parser);
+                return await ReplaceIfNotNull(s, expressionParser, cancellationToken);
 
             case JObject jObj:
                 var pc = TryDeserializePluginContext(jObj);
                 if (pc != null)
                 {
-                    ApplyPlaceholdersToPluginContext(pc, parser);
+                    await ApplyPlaceholdersToPluginContext(pc, expressionParser, cancellationToken);
                     return pc;
                 }
 
                 foreach (var prop in jObj.Properties().ToList())
-                    jObj[prop.Name] = JToken.FromObject(ProcessValueDeep(jObj[prop.Name], parser) ?? JValue.CreateNull());
+                    jObj[prop.Name] = JToken.FromObject(await ProcessValueDeep(jObj[prop.Name], expressionParser, cancellationToken) ?? JValue.CreateNull());
                 return jObj;
 
             case JArray jArray:
                 var list = new List<object?>();
                 foreach (var item in jArray)
-                    list.Add(ProcessValueDeep(item, parser));
+                    list.Add(await ProcessValueDeep(item, expressionParser, cancellationToken));
                 return list;
 
             case IDictionary<string, object?> dict:
                 var newDict = new Dictionary<string, object?>();
                 foreach (var kvp in dict)
-                    newDict[kvp.Key] = ProcessValueDeep(kvp.Value, parser);
+                    newDict[kvp.Key] = await ProcessValueDeep(kvp.Value, expressionParser, cancellationToken);
                 return newDict;
 
             case IEnumerable<object?> enumerable:
-                return enumerable.Select(e => ProcessValueDeep(e, parser)).ToList();
+            {
+                var resultList = new List<object?>();
+                foreach (var e in enumerable)
+                {
+                    resultList.Add(await ProcessValueDeep(e, expressionParser, cancellationToken));
+                }
+                return resultList;
+            }
 
             case PluginContext pluginCtx:
-                ApplyPlaceholdersToPluginContext(pluginCtx, parser);
+                await ApplyPlaceholdersToPluginContext(pluginCtx, expressionParser, cancellationToken);
                 return pluginCtx;
 
             default:
@@ -605,7 +611,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         }
     }
 
-    private void ProcessErrorHandling(ErrorHandling? errorHandling, IExpressionParser parser)
+    private async Task ProcessErrorHandling(ErrorHandling? errorHandling, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (errorHandling == null)
             return;
@@ -613,71 +619,71 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         if (errorHandling.RetryPolicy != null)
         {
             var rp = errorHandling.RetryPolicy;
-            rp.InitialDelay = ReplaceNumberIfPlaceholder(rp.InitialDelay, parser);
-            rp.MaxDelay = ReplaceNumberIfPlaceholder(rp.MaxDelay, parser);
-            rp.BackoffCoefficient = ReplaceDoubleIfPlaceholder(rp.BackoffCoefficient, parser);
-            rp.MaxRetries = ReplaceNumberIfPlaceholder(rp.MaxRetries, parser);
+            rp.InitialDelay = await ReplaceNumberIfPlaceholder(rp.InitialDelay, expressionParser, cancellationToken);
+            rp.MaxDelay = await ReplaceNumberIfPlaceholder(rp.MaxDelay, expressionParser, cancellationToken);
+            rp.BackoffCoefficient = await ReplaceDoubleIfPlaceholder(rp.BackoffCoefficient, expressionParser, cancellationToken);
+            rp.MaxRetries = await ReplaceNumberIfPlaceholder(rp.MaxRetries, expressionParser, cancellationToken);
         }
 
         if (errorHandling.TriggerPolicy != null)
         {
-            errorHandling.TriggerPolicy.TaskName = ReplaceIfNotNull(errorHandling.TriggerPolicy.TaskName, parser);
+            errorHandling.TriggerPolicy.TaskName = await ReplaceIfNotNull(errorHandling.TriggerPolicy.TaskName, expressionParser, cancellationToken);
         }
     }
 
-    private void ProcessConditionalProperties(WorkflowTask task, IExpressionParser parser)
+    private async Task ProcessConditionalProperties(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (task.ExecutionCondition != null)
         {
-            task.ExecutionCondition.Expression = ReplaceIfNotNull(task.ExecutionCondition.Expression, parser);
-            task.ExecutionCondition.Description = ReplaceIfNotNull(task.ExecutionCondition.Description, parser);
+            task.ExecutionCondition.Expression = await ReplaceIfNotNull(task.ExecutionCondition.Expression, expressionParser, cancellationToken);
+            task.ExecutionCondition.Description = await ReplaceIfNotNull(task.ExecutionCondition.Description, expressionParser, cancellationToken);
         }
 
         if (task.ConditionalBranches is { Count: > 0 })
         {
             foreach (var branch in task.ConditionalBranches)
             {
-                branch.Expression = ReplaceIfNotNull(branch.Expression, parser);
-                branch.TargetTaskName = ReplaceIfNotNull(branch.TargetTaskName, parser);
-                branch.Description = ReplaceIfNotNull(branch.Description, parser);
+                branch.Expression = await ReplaceIfNotNull(branch.Expression, expressionParser, cancellationToken);
+                branch.TargetTaskName = await ReplaceIfNotNull(branch.TargetTaskName, expressionParser, cancellationToken);
+                branch.Description = await ReplaceIfNotNull(branch.Description, expressionParser, cancellationToken);
             }
         }
     }
 
-    private int ReplaceNumberIfPlaceholder(int value, IExpressionParser parser)
+    private async Task<int> ReplaceNumberIfPlaceholder(int value, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         var str = value.ToString();
-        var replaced = _placeholderReplacer.ReplacePlaceholders(str, parser);
+        var replaced = await _placeholderReplacer.ReplacePlaceholders(str, expressionParser, cancellationToken);
         if (int.TryParse(replaced, out var num))
             return num;
         return value;
     }
 
-    private double ReplaceDoubleIfPlaceholder(double value, IExpressionParser parser)
+    private async Task<double> ReplaceDoubleIfPlaceholder(double value, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         var str = value.ToString();
-        var replaced = _placeholderReplacer.ReplacePlaceholders(str, parser);
+        var replaced = await _placeholderReplacer.ReplacePlaceholders(str, expressionParser, cancellationToken);
         if (double.TryParse(replaced, out var num))
             return num;
         return value;
     }
 
-    private void ProcessManualApproval(ManualApproval? manualApproval, IExpressionParser parser)
+    private async Task ProcessManualApproval(ManualApproval? manualApproval, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (manualApproval == null)
             return;
 
-        manualApproval.Comment = ReplaceIfNotNull(manualApproval.Comment, parser);
+        manualApproval.Comment = await ReplaceIfNotNull(manualApproval.Comment, expressionParser, cancellationToken);
     }
 
-    private void ReplaceStringListItems(List<string>? values, IExpressionParser parser)
+    private async Task ReplaceStringListItems(List<string>? values, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (values is not { Count: > 0 })
             return;
 
         for (var index = 0; index < values.Count; index++)
         {
-            values[index] = ReplaceIfNotNull(values[index], parser);
+            values[index] = await ReplaceIfNotNull(values[index], expressionParser, cancellationToken);
         }
     }
 
@@ -693,34 +699,34 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         catch { return null; }
     }
 
-    private void ApplyPlaceholdersToPluginContext(PluginContext context, IExpressionParser parser)
+    private async Task ApplyPlaceholdersToPluginContext(PluginContext context, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         if (context == null)
             return;
 
-        context.Id = ReplaceIfNotNull(context.Id, parser);
-        context.SourceType = ReplaceIfNotNull(context.SourceType, parser);
-        context.Format = ReplaceIfNotNull(context.Format, parser);
-        context.Content = ReplaceIfNotNull(context.Content, parser);
+        context.Id = await ReplaceIfNotNull(context.Id, expressionParser, cancellationToken);
+        context.SourceType = await ReplaceIfNotNull(context.SourceType, expressionParser, cancellationToken);
+        context.Format = await ReplaceIfNotNull(context.Format, expressionParser, cancellationToken);
+        context.Content = await ReplaceIfNotNull(context.Content, expressionParser, cancellationToken);
 
         if (context.Metadata.Count > 0)
         {
-            _placeholderReplacer.ReplacePlaceholdersInParameters(context.Metadata, parser);
+            await _placeholderReplacer.ReplacePlaceholdersInParameters(context.Metadata, expressionParser, cancellationToken);
         }
 
         if (context.StructuredData is { Count: > 0 })
         {
             foreach (var dict in context.StructuredData)
             {
-                _placeholderReplacer.ReplacePlaceholdersInParameters(dict, parser);
+                await _placeholderReplacer.ReplacePlaceholdersInParameters(dict, expressionParser, cancellationToken);
             }
         }
     }
 
-    private string? ReplaceIfNotNull(string? value, IExpressionParser parser)
+    private async Task<string?> ReplaceIfNotNull(string? value, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
         return string.IsNullOrWhiteSpace(value)
             ? value
-            : _placeholderReplacer.ReplacePlaceholders(value, parser);
+            : await _placeholderReplacer.ReplacePlaceholders(value, expressionParser, cancellationToken);
     }
 }

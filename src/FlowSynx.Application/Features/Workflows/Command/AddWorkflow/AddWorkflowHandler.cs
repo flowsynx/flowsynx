@@ -59,7 +59,7 @@ internal class AddWorkflowHandler : IRequestHandler<AddWorkflowRequest, Result<A
                 throw new FlowSynxException((int)ErrorCode.WorkflowNameMustHaveValue,
                     _localization.Get("Features_Workflow_Add_WorkflowNameMustHaveValue"));
 
-            _workflowValidator.Validate(workflowDefinition);
+            await _workflowValidator.ValidateAsync(workflowDefinition, cancellationToken);
 
             var workflowEntity = new WorkflowEntity
             {

@@ -2,7 +2,7 @@ using FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Domain;
 using FlowSynx.Infrastructure.Workflow;
-using FlowSynx.Infrastructure.Workflow.Parsers;
+using FlowSynx.Infrastructure.Workflow.Expressions;
 using FlowSynx.PluginCore.Exceptions;
 using Moq;
 
@@ -32,8 +32,8 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 .Returns(_parserMock.Object);
 
             _placeholderReplacerMock
-                .Setup(r => r.ReplacePlaceholders(It.IsAny<string>(), It.IsAny<IExpressionParser>()))
-                .Returns((string val, IExpressionParser p) => val);
+                .Setup(r => r.ReplacePlaceholders(It.IsAny<string>(), It.IsAny<IExpressionParser>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string val, IExpressionParser p, CancellationToken ct) => val);
 
             _validator = new WorkflowValidator(
                 _localizationMock.Object,
@@ -42,7 +42,7 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
         }
 
         [Fact]
-        public void Validate_Should_Pass_When_No_Cycle()
+        public async Task Validate_Should_Pass_When_No_Cycle()
         {
             var tasks = new List<WorkflowTask>
             {
@@ -57,13 +57,13 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 Tasks = tasks
             };
 
-            var exception = Record.Exception(() => _validator.Validate(definition));
+            var exception = await Record.ExceptionAsync(async () => await _validator.ValidateAsync(definition));
 
             Assert.Null(exception);
         }
 
         [Fact]
-        public void Validate_Should_Throw_When_Cycle_In_Dependencies()
+        public async Task Validate_Should_Throw_When_Cycle_In_Dependencies()
         {
             var tasks = new List<WorkflowTask>
             {
@@ -78,12 +78,12 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 Tasks = tasks
             };
 
-            var ex = Assert.Throws<FlowSynxException>(() => _validator.Validate(definition));
+            var ex = await Assert.ThrowsAsync<FlowSynxException>(async () => await _validator.ValidateAsync(definition));
             Assert.Equal((int)ErrorCode.WorkflowCyclicDependencies, ex.ErrorCode);
         }
 
         [Fact]
-        public void Validate_Should_Throw_When_Cycle_In_ConditionalBranches()
+        public async Task Validate_Should_Throw_When_Cycle_In_ConditionalBranches()
         {
             var tasks = new List<WorkflowTask>
             {
@@ -109,12 +109,12 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 Tasks = tasks
             };
 
-            var ex = Assert.Throws<FlowSynxException>(() => _validator.Validate(definition));
+            var ex = await Assert.ThrowsAsync<FlowSynxException>(async () => await _validator.ValidateAsync(definition));
             Assert.Equal((int)ErrorCode.WorkflowCyclicDependencies, ex.ErrorCode);
         }
 
         [Fact]
-        public void Validate_Should_Throw_When_Missing_Branch_Target()
+        public async Task Validate_Should_Throw_When_Missing_Branch_Target()
         {
             var tasks = new List<WorkflowTask>
             {
@@ -133,12 +133,12 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 Tasks = tasks
             };
 
-            var ex = Assert.Throws<FlowSynxException>(() => _validator.Validate(definition));
+            var ex = await Assert.ThrowsAsync<FlowSynxException>(async () => await _validator.ValidateAsync(definition));
             Assert.Equal((int)ErrorCode.WorkflowMissingDependencies, ex.ErrorCode);
         }
 
         [Fact]
-        public void Validate_Should_Pass_When_ConditionalBranches_Are_Valid_And_No_Cycle()
+        public async Task Validate_Should_Pass_When_ConditionalBranches_Are_Valid_And_No_Cycle()
         {
             var tasks = new List<WorkflowTask>
             {
@@ -157,7 +157,7 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
                 Tasks = tasks 
             };
 
-            var exception = Record.Exception(() => _validator.Validate(definition));
+            var exception = await Record.ExceptionAsync(async () => await _validator.ValidateAsync(definition));
 
             Assert.Null(exception);
         }

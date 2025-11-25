@@ -54,7 +54,7 @@ internal class GenerateFromIntentHandler : IRequestHandler<GenerateFromIntentReq
 
             // Guardrails: schema + semantic validation
             await _schemaValidator.ValidateAsync(request.SchemaUrl, rawJson, cancellationToken);
-            _workflowValidator.Validate(definition);
+            await _workflowValidator.ValidateAsync(definition, cancellationToken);
 
             Guid? workflowId = null;
             if (request.AutoCreate)
