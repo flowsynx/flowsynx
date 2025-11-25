@@ -49,6 +49,10 @@ public class ExpressionParser : IExpressionParser
         RegisterFunction(new CountFunction());
         RegisterFunction(new ContainsFunction());
         RegisterFunction(new LengthFunction());
+        RegisterFunction(new GuidFunction());
+        RegisterFunction(new NowFunction());
+        RegisterFunction(new NowUtcFunction());
+        RegisterFunction(new IsNullFunction());
 
         // Register custom functions if provided
         if (customFunctions != null)
