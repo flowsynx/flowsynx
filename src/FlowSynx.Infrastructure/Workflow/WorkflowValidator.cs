@@ -14,8 +14,8 @@ public class WorkflowValidator : IWorkflowValidator
     private readonly IPlaceholderReplacer _placeholderReplacer;
 
     public WorkflowValidator(
-        ILocalization localization, 
-        IExpressionParserFactory parserFactory, 
+        ILocalization localization,
+        IExpressionParserFactory parserFactory,
         IPlaceholderReplacer placeholderReplacer)
     {
         _localization = localization;
@@ -31,7 +31,7 @@ public class WorkflowValidator : IWorkflowValidator
 
         foreach (var task in tasks)
             ParseWorkflowTaskPlaceholders(task, parser);
-        
+
         EnsureNoDuplicateTaskNames(tasks);
         EnsureAllDependenciesExist(tasks);
         EnsureNoCyclicDependencies(tasks);
@@ -51,7 +51,7 @@ public class WorkflowValidator : IWorkflowValidator
     private void EnsureAllDependenciesExist(List<WorkflowTask> tasks)
     {
         var missingDependencies = AllDependenciesExist(tasks);
-        if (!missingDependencies.Any()) 
+        if (!missingDependencies.Any())
             return;
 
         var message = string.Format(
@@ -66,7 +66,7 @@ public class WorkflowValidator : IWorkflowValidator
     private void EnsureNoCyclicDependencies(IEnumerable<WorkflowTask> tasks)
     {
         var validation = CheckCyclic(tasks);
-        if (!validation.Cyclic) 
+        if (!validation.Cyclic)
             return;
 
         var message = string.Format(
@@ -180,7 +180,7 @@ public class WorkflowValidator : IWorkflowValidator
     /// <summary>
     /// Builds an adjacency list representing workflow dependencies and conditional branches.
     /// </summary>
-    private Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
+    private static Dictionary<string, List<string>> BuildGraph(IEnumerable<WorkflowTask> tasks, out Dictionary<string, int> inDegree)
     {
         var graph = new Dictionary<string, List<string>>();
         inDegree = new Dictionary<string, int>();
