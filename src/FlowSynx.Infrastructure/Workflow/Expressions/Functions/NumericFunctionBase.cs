@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Globalization;
+using Newtonsoft.Json.Linq;
 
 namespace FlowSynx.Infrastructure.Workflow.Expressions.Functions;
 
@@ -16,21 +17,50 @@ public abstract class NumericFunctionBase : IFunctionEvaluator
     {
         foreach (var v in values)
         {
-            if (v == null) continue;
-
-            if (v is IEnumerable enumerable and not string)
-            {
-                foreach (var inner in enumerable)
-                {
-                    if (inner == null) continue;
-                    if (double.TryParse(inner.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var dn))
-                        yield return dn;
-                }
-                continue;
-            }
-
-            if (double.TryParse(v.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+            foreach (var d in ExtractNumbers(v))
                 yield return d;
         }
+    }
+
+    private static IEnumerable<double> ExtractNumbers(object? value)
+    {
+        if (value == null)
+            yield break;
+
+        // Handle JToken (JArray/JObject/JValue) specially to avoid treating JValue as IEnumerable
+        if (value is JToken jt)
+        {
+            if (jt.Type == JTokenType.Array || jt.Type == JTokenType.Object)
+            {
+                foreach (var inner in jt)
+                {
+                    foreach (var d in ExtractNumbers(inner))
+                        yield return d;
+                }
+                yield break;
+            }
+
+            // For JValue or other primitive JToken types, try to parse the contained value
+            var jvString = jt.Type == JTokenType.Null ? null : jt.ToString();
+            if (jvString != null && double.TryParse(jvString, NumberStyles.Any, CultureInfo.InvariantCulture, out var jvResult))
+                yield return jvResult;
+
+            yield break;
+        }
+
+        // Handle nested enumerable but not string
+        if (value is IEnumerable enumerable && value is not string)
+        {
+            foreach (var inner in enumerable)
+            {
+                foreach (var d in ExtractNumbers(inner))
+                    yield return d;
+            }
+            yield break;
+        }
+
+        // Attempt to parse the value
+        if (double.TryParse(value.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out var result))
+            yield return result;
     }
 }

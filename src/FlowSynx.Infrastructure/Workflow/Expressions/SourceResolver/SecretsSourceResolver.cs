@@ -21,12 +21,14 @@ internal class SecretsSourceResolver : ISourceResolver
     {
         if (_secretsCache == null)
         {
-            _cacheLock.Wait();
+            await _cacheLock.WaitAsync(cancellationToken);
+
             try
             {
                 if (_secretsCache == null)
                 {
-                    var secrets = await _secretProvider.GetSecretsAsync(cancellationToken).ConfigureAwait(false);
+                    var secrets = await _secretProvider.GetSecretsAsync(cancellationToken)
+                        .ConfigureAwait(false);
 
                     _secretsCache = secrets.ToDictionary(
                         kvp => kvp.Key,
