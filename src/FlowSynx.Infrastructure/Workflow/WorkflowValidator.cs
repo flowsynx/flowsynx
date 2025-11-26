@@ -89,14 +89,14 @@ public class WorkflowValidator : IWorkflowValidator
                 if (retry?.MaxRetries is < 0)
                     taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeMaxRetries", task.Name, retry.MaxRetries));
 
-                if (retry?.InitialDelay is < 0)
-                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeInitialDelay", task.Name, retry.InitialDelay));
+                if (retry?.InitialDelayMilliseconds is < 0)
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeInitialDelay", task.Name, retry.InitialDelayMilliseconds));
 
-                if (retry?.MaxDelay is < 0)
-                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeMaxDelay", task.Name, retry.MaxDelay));
+                if (retry?.MaxDelayMilliseconds is < 0)
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeMaxDelay", task.Name, retry.MaxDelayMilliseconds));
 
                 if (retry?.BackoffCoefficient is < 0)
-                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeFactor", task.Name, retry.MaxDelay));
+                    taskErrors.Add(_localization.Get("WorkflowValidator_TaskHasNegativeFactor", task.Name, retry.BackoffCoefficient));
 
                 return taskErrors;
             })

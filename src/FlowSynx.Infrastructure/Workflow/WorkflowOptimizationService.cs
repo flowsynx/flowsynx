@@ -34,16 +34,16 @@ public sealed class WorkflowOptimizationService : IWorkflowOptimizationService
         }
 
         // 2) Set conservative workflow timeout if missing (e.g., 30 minutes)
-        if (copy.Configuration.Timeout is null)
+        if (copy.Configuration.TimeoutMilliseconds is null)
         {
-            copy.Configuration.Timeout = 30 * 60 * 1000;
+            copy.Configuration.TimeoutMilliseconds = 30 * 60 * 1000;
             explanation.Add("Set workflow timeout to 30m (ms) as a conservative default.");
         }
 
         // 3) Per-task timeouts: if missing, add modest default (e.g., 2 minutes)
-        foreach (var task in copy.Tasks.Where(t => t.Timeout is null))
+        foreach (var task in copy.Tasks.Where(t => t.TimeoutMilliseconds is null))
         {
-            task.Timeout = 2 * 60 * 1000;
+            task.TimeoutMilliseconds = 2 * 60 * 1000;
             explanation.Add($"Task '{task.Name}': applied default timeout 2m (ms).");
         }
 

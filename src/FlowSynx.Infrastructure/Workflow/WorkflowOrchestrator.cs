@@ -315,8 +315,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         var conditionalResults = new ConcurrentDictionary<string, ConditionalTaskResult>();
         var semaphore = _semaphoreFactory.Create(config.DegreeOfParallelism ?? 3);
 
-        using var timeoutCts = new CancellationTokenSource(config.Timeout.HasValue
-            ? TimeSpan.FromMilliseconds(config.Timeout.Value)
+        using var timeoutCts = new CancellationTokenSource(config.TimeoutMilliseconds.HasValue
+            ? TimeSpan.FromMilliseconds(config.TimeoutMilliseconds.Value)
             : Timeout.InfiniteTimeSpan);
 
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(localToken, timeoutCts.Token);

@@ -14,7 +14,7 @@ public class WorkflowTask(string name)
     // ─────────────────────────────────────────────
     public Dictionary<string, object?>? Parameters { get; set; } = new();
     public AgentConfiguration? Agent { get; set; }
-    public int? Timeout { get; set; }
+    public int? TimeoutMilliseconds { get; set; }
 
     // ─────────────────────────────────────────────
     // Flow Control and Dependencies

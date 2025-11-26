@@ -94,7 +94,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
     {
-        using var timeoutCts = CreateTimeoutToken(task.Timeout, taskCancellationToken);
+        using var timeoutCts = CreateTimeoutToken(task.TimeoutMilliseconds, taskCancellationToken);
         var token = timeoutCts.Token;
 
         await ParseWorkflowTaskPlaceholders(task, expressionParser, token);
@@ -619,8 +619,8 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         if (errorHandling.RetryPolicy != null)
         {
             var rp = errorHandling.RetryPolicy;
-            rp.InitialDelay = await ReplaceNumberIfPlaceholder(rp.InitialDelay, expressionParser, cancellationToken);
-            rp.MaxDelay = await ReplaceNumberIfPlaceholder(rp.MaxDelay, expressionParser, cancellationToken);
+            rp.InitialDelayMilliseconds = await ReplaceNumberIfPlaceholder(rp.InitialDelayMilliseconds, expressionParser, cancellationToken);
+            rp.MaxDelayMilliseconds = await ReplaceNumberIfPlaceholder(rp.MaxDelayMilliseconds, expressionParser, cancellationToken);
             rp.BackoffCoefficient = await ReplaceDoubleIfPlaceholder(rp.BackoffCoefficient, expressionParser, cancellationToken);
             rp.MaxRetries = await ReplaceNumberIfPlaceholder(rp.MaxRetries, expressionParser, cancellationToken);
         }

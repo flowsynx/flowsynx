@@ -37,18 +37,18 @@ public class ErrorHandlingStrategyFactory: IErrorHandlingStrategyFactory
         IBackoffStrategy backoff = retryPolicy?.BackoffStrategy switch
         {
             BackoffStrategy.Exponential => new ExponentialBackoffStrategy(
-                retryPolicy.InitialDelay,
+                retryPolicy.InitialDelayMilliseconds,
                 retryPolicy.BackoffCoefficient
             ),
             BackoffStrategy.Linear => new LinearBackoffStrategy(
-                retryPolicy.InitialDelay
+                retryPolicy.InitialDelayMilliseconds
             ),
             BackoffStrategy.Jitter => new JitterBackoffStrategy(
-                retryPolicy.InitialDelay,
+                retryPolicy.InitialDelayMilliseconds,
                 retryPolicy.BackoffCoefficient
             ),
             BackoffStrategy.Fixed => new FixedBackoffStrategy(
-                retryPolicy.InitialDelay
+                retryPolicy.InitialDelayMilliseconds
             ),
             _ => throw new ArgumentException(_localization.Get("Workflow_ErrorHandlingStratgeyFactory_UnknownBackkoffStrategyType", retryPolicy?.BackoffStrategy))
         };

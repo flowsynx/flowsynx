@@ -44,8 +44,8 @@ public class ErrorHandlingResolver : IErrorHandlingResolver
         {
             MaxRetries = IsValid(taskPolicy.MaxRetries) ? taskPolicy.MaxRetries : defaultPolicy.MaxRetries,
             BackoffStrategy = IsDefined(taskPolicy.BackoffStrategy) ? taskPolicy.BackoffStrategy : defaultPolicy.BackoffStrategy,
-            InitialDelay = IsPositive(taskPolicy.InitialDelay) ? taskPolicy.InitialDelay : defaultPolicy.InitialDelay,
-            MaxDelay = IsPositive(taskPolicy.MaxDelay) ? taskPolicy.MaxDelay : defaultPolicy.MaxDelay,
+            InitialDelayMilliseconds = IsPositive(taskPolicy.InitialDelayMilliseconds) ? taskPolicy.InitialDelayMilliseconds : defaultPolicy.InitialDelayMilliseconds,
+            MaxDelayMilliseconds = IsPositive(taskPolicy.MaxDelayMilliseconds) ? taskPolicy.MaxDelayMilliseconds : defaultPolicy.MaxDelayMilliseconds,
             BackoffCoefficient = IsPositive(taskPolicy.BackoffCoefficient) ? taskPolicy.BackoffCoefficient : defaultPolicy.BackoffCoefficient
         };
     }

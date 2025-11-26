@@ -19,7 +19,7 @@ public class WorkflowOptimizationServiceTests
             Configuration = new WorkflowConfiguration
             {
                 DegreeOfParallelism = dop,
-                Timeout = workflowTimeout
+                TimeoutMilliseconds = workflowTimeout
             },
             Tasks = tasks.ToList()
         };
@@ -59,7 +59,7 @@ public class WorkflowOptimizationServiceTests
         var (optimized, explanation) = await sut.OptimizeAsync(definition, CancellationToken.None);
 
         // Assert
-        Assert.Equal(30 * 60 * 1000, optimized.Configuration.Timeout);
+        Assert.Equal(30 * 60 * 1000, optimized.Configuration.TimeoutMilliseconds);
         Assert.Contains("Set workflow timeout to 30m (ms) as a conservative default.", explanation);
     }
 
@@ -69,8 +69,8 @@ public class WorkflowOptimizationServiceTests
         // Arrange: T1 missing timeout, T2 has timeout
         var tasks = new List<WorkflowTask>
         {
-            new WorkflowTask("T1") { Name = "T1", Timeout = null },
-            new WorkflowTask("T2") { Name = "T2", Timeout =999 }
+            new WorkflowTask("T1") { Name = "T1", TimeoutMilliseconds = null },
+            new WorkflowTask("T2") { Name = "T2", TimeoutMilliseconds = 999 }
         };
         var definition = CreateDefinition(tasks);
         var sut = new WorkflowOptimizationService();
@@ -81,8 +81,8 @@ public class WorkflowOptimizationServiceTests
         // Assert
         var t1 = optimized.Tasks.Single(t => t.Name == "T1");
         var t2 = optimized.Tasks.Single(t => t.Name == "T2");
-        Assert.Equal(2 * 60 * 1000, t1.Timeout);
-        Assert.Equal(999, t2.Timeout);
+        Assert.Equal(2 * 60 * 1000, t1.TimeoutMilliseconds);
+        Assert.Equal(999, t2.TimeoutMilliseconds);
         Assert.Contains("Task 'T1': applied default timeout 2m (ms).", explanation);
         Assert.DoesNotContain("Task 'T2': applied default timeout", explanation);
     }
@@ -116,8 +116,8 @@ public class WorkflowOptimizationServiceTests
         // Arrange: width2 (two independent tasks) -> recommended DOP =2
         var tasks = new List<WorkflowTask>
         {
-            new WorkflowTask("A") { Name = "A", Timeout =100 },
-            new WorkflowTask("B") { Name = "B", Timeout =200 }
+            new WorkflowTask("A") { Name = "A", TimeoutMilliseconds = 100 },
+            new WorkflowTask("B") { Name = "B", TimeoutMilliseconds = 200 }
         };
         var recommendedDop = Math.Clamp(2, 2, Environment.ProcessorCount * 2);
         var definition = CreateDefinition(tasks, dop: recommendedDop, workflowTimeout: 30 * 60 * 1000);
