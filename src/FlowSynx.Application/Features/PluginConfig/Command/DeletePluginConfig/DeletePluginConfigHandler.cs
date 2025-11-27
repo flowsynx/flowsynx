@@ -54,8 +54,8 @@ internal class DeletePluginConfigHandler : IRequestHandler<DeletePluginConfigReq
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
-            return await Result<Unit>.FailAsync(ex.ToString());
+            _logger.LogError(ex, "FlowSynx exception caught while deleting plugin config '{ConfigId}'.", request.ConfigId);
+            return await Result<Unit>.FailAsync(ex.Message);
         }
     }
 }
