@@ -1,12 +1,12 @@
-﻿namespace FlowSynx.Domain.Log;
+﻿//namespace FlowSynx.Domain.Log;
 
-public enum LogsLevel
-{
-    None = 0,
-    Verb,
-    Dbug,
-    Info,
-    Warn,
-    Fail,
-    Crit,
-}
+//public enum LogsLevel
+//{
+//    None = 0,
+//    Verb,
+//    Dbug,
+//    Info,
+//    Warn,
+//    Fail,
+//    Crit,
+//}

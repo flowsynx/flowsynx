@@ -8,7 +8,7 @@ namespace FlowSynx.Application.Configuration.System.Logger;
 public class LoggerConfiguration
 {
     public bool Enabled { get; set; } = false;
-    public string GlobalLogLevel { get; set; } = nameof(LogsLevel.Info);
+    public string GlobalLogLevel { get; set; } = nameof(LogLevel.Information);
     public string[] DefaultProviders { get; set; } = Array.Empty<string>();
     public Dictionary<string, LoggerProviderConfiguration> Providers { get; set; } = new();
 

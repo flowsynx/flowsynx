@@ -75,14 +75,14 @@ internal class LogsListHandler : IRequestHandler<LogsListRequest, PaginatedResul
         }
     }
 
-    private static LogsLevel ToLogsLevel(string logsLevel)
+    private static string ToLogsLevel(string logsLevel)
     {
-        if (!Enum.TryParse<LogsLevel>(logsLevel, ignoreCase: true, out var level))
+        if (!Enum.TryParse<LogLevel>(logsLevel, ignoreCase: true, out var level))
         {
-            return LogsLevel.Info;
+            return LogLevel.Information.ToString();
         }
 
-        return level;
+        return level.ToString();
     }
 }
 

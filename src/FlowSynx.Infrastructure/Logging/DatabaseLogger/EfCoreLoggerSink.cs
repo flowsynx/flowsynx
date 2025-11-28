@@ -84,15 +84,15 @@ internal class EfCoreLoggerSink : ILogEventSink
     private static bool IsFrameworkScopeKey(string key) =>
         key is "RequestId" or "ConnectionId" or "RequestPath";
 
-    private static LogsLevel ToLevel(LogEventLevel lvl) =>
+    private static string ToLevel(LogEventLevel lvl) =>
         lvl switch
         {
-            LogEventLevel.Verbose => LogsLevel.Verb,
-            LogEventLevel.Debug => LogsLevel.Dbug,
-            LogEventLevel.Information => LogsLevel.Info,
-            LogEventLevel.Warning => LogsLevel.Warn,
-            LogEventLevel.Error => LogsLevel.Fail,
-            LogEventLevel.Fatal => LogsLevel.Crit,
-            _ => LogsLevel.Info
+            LogEventLevel.Verbose => "Trace",
+            LogEventLevel.Debug => "Debug",
+            LogEventLevel.Information => "Information",
+            LogEventLevel.Warning => "Warning",
+            LogEventLevel.Error => "Error",
+            LogEventLevel.Fatal => "Critical",
+            _ => "Information"
         };
 }

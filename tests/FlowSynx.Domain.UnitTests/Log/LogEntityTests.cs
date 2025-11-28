@@ -11,7 +11,7 @@ public class LogEntityTests
         var logEntity = new LogEntity
         {
             Message = "Test message",
-            Level = LogsLevel.Info,
+            Level = "Information",
             TimeStamp = DateTime.UtcNow
         };
 
@@ -30,7 +30,7 @@ public class LogEntityTests
         var id = Guid.NewGuid();
         var userId = "user123";
         var message = "Error occurred";
-        var level = LogsLevel.Fail;
+        var level = "Error";
         var category = "Application";
         var timestamp = DateTime.UtcNow;
         var exception = "System.Exception: Test exception";
@@ -64,18 +64,18 @@ public class LogEntityTests
     public void LogEntity_WithDifferentLogLevels_ShouldWork()
     {
         // Arrange & Act
-        var debugLog = new LogEntity { Message = "Debug", Level = LogsLevel.Dbug, TimeStamp = DateTime.UtcNow };
-        var infoLog = new LogEntity { Message = "Info", Level = LogsLevel.Info, TimeStamp = DateTime.UtcNow };
-        var warnLog = new LogEntity { Message = "Warn", Level = LogsLevel.Warn, TimeStamp = DateTime.UtcNow };
-        var errorLog = new LogEntity { Message = "Error", Level = LogsLevel.Fail, TimeStamp = DateTime.UtcNow };
-        var criticalLog = new LogEntity { Message = "Critical", Level = LogsLevel.Crit, TimeStamp = DateTime.UtcNow };
+        var debugLog = new LogEntity { Message = "Debug", Level = "Debug", TimeStamp = DateTime.UtcNow };
+        var infoLog = new LogEntity { Message = "Info", Level = "Information", TimeStamp = DateTime.UtcNow };
+        var warnLog = new LogEntity { Message = "Warn", Level = "Warning", TimeStamp = DateTime.UtcNow };
+        var errorLog = new LogEntity { Message = "Error", Level = "Error", TimeStamp = DateTime.UtcNow };
+        var criticalLog = new LogEntity { Message = "Critical", Level = "Critical", TimeStamp = DateTime.UtcNow };
 
         // Assert
-        Assert.Equal(LogsLevel.Dbug, debugLog.Level);
-        Assert.Equal(LogsLevel.Info, infoLog.Level);
-        Assert.Equal(LogsLevel.Warn, warnLog.Level);
-        Assert.Equal(LogsLevel.Fail, errorLog.Level);
-        Assert.Equal(LogsLevel.Crit, criticalLog.Level);
+        Assert.Equal("Debug", debugLog.Level);
+        Assert.Equal("Information", infoLog.Level);
+        Assert.Equal("Warning", warnLog.Level);
+        Assert.Equal("Error", errorLog.Level);
+        Assert.Equal("Critical", criticalLog.Level);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class LogEntityTests
         {
             UserId = null,
             Message = "Test",
-            Level = LogsLevel.Info,
+            Level = "Information",
             TimeStamp = DateTime.UtcNow
         };
 

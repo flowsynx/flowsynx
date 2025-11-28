@@ -2,6 +2,7 @@
 using FlowSynx.Persistence.Logging.Sqlite.Contexts;
 using FlowSynx.Persistence.Logging.Sqlite.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace FlowSynx.Persistence.Logging.Sqlite.UnitTests.Services;
@@ -37,7 +38,7 @@ public class LoggerServiceTests
             UserId = "User1",
             TimeStamp = DateTime.UtcNow,
             Message = "Test1",
-            Level = LogsLevel.Info
+            Level = LogLevel.Information.ToString()
         };
 
         // Act
@@ -62,14 +63,14 @@ public class LoggerServiceTests
                 UserId = "user1", 
                 TimeStamp = DateTime.UtcNow.AddMinutes(-1),
                 Message = "Test1",
-                Level = LogsLevel.Info
+                Level = LogLevel.Information.ToString()
             });
             seedContext.Logs.Add(new LogEntity { 
                 Id = Guid.NewGuid(), 
                 UserId = "user2", 
                 TimeStamp = DateTime.UtcNow,
                 Message = "Test2",
-                Level = LogsLevel.Info
+                Level = LogLevel.Information.ToString()
             });
             await seedContext.SaveChangesAsync();
         }
@@ -95,14 +96,14 @@ public class LoggerServiceTests
                 UserId = "filter-me", 
                 TimeStamp = DateTime.UtcNow,
                 Message = "filter-me message",
-                Level = LogsLevel.Info
+                Level = LogLevel.Information.ToString()
             });
             seedContext.Logs.Add(new LogEntity { 
                 Id = Guid.NewGuid(), 
                 UserId = "skip-me", 
                 TimeStamp = DateTime.UtcNow,
                 Message = "skip-me message",
-                Level = LogsLevel.Info
+                Level = LogLevel.Information.ToString()
             });
             await seedContext.SaveChangesAsync();
         }
@@ -132,7 +133,7 @@ public class LoggerServiceTests
                 UserId = userId, 
                 TimeStamp = DateTime.UtcNow,
                 Message = "my-user message",
-                Level = LogsLevel.Info
+                Level = LogLevel.Information.ToString()
             });
             await seedContext.SaveChangesAsync();
         }

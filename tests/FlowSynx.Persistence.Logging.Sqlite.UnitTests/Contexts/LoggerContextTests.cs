@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Domain.Log;
 using FlowSynx.Persistence.Logging.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Persistence.Logging.Sqlite.UnitTests.Contexts;
 
@@ -27,7 +28,13 @@ public class LoggerContextTests
         var options = CreateOptions();
         using (var context = new LoggerContext(options))
         {
-            var log = new LogEntity { Id = Guid.NewGuid(), Level = LogsLevel.Info, Message = "Test", TimeStamp = DateTime.Now};
+            var log = new LogEntity
+            {
+                Id = Guid.NewGuid(),
+                Level = LogLevel.Information.ToString(),
+                Message = "Test",
+                TimeStamp = DateTime.Now
+            };
             context.Logs.Add(log);
             context.SaveChanges();
         }

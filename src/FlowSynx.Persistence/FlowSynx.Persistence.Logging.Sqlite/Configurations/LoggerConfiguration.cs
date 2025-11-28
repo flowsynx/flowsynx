@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Domain.Log;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FlowSynx.Persistence.Logging.Sqlite.Configurations;
 
@@ -20,13 +19,7 @@ public class LoggerConfiguration : IEntityTypeConfiguration<LogEntity>
         builder.Property(t => t.TimeStamp)
                .IsRequired();
 
-        var levelConverter = new ValueConverter<LogsLevel, string>(
-            v => v.ToString(),
-            v => (LogsLevel)Enum.Parse(typeof(LogsLevel), v, true)
-        );
-
         builder.Property(t => t.Level)
-               .IsRequired()
-               .HasConversion(levelConverter);
+               .IsRequired();
     }
 }
