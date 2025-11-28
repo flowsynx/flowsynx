@@ -13,7 +13,7 @@ public static class ServiceCollectionExtensions
         const string connectionString = "Data Source=logs.db";
 
         services
-            .AddScoped<ILoggerService, LoggerService>()
+            .AddSingleton<ILoggerService, LoggerService>()
             .AddDbContextFactory<LoggerContext>(options =>
             {
                 options.UseSqlite(connectionString);

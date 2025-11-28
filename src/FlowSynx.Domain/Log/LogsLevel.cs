@@ -3,6 +3,7 @@
 public enum LogsLevel
 {
     None = 0,
+    Verb,
     Dbug,
     Info,
     Warn,

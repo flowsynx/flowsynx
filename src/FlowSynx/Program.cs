@@ -33,6 +33,8 @@ catch (Exception ex)
 #region helpers
 static void FilterLogging(WebApplicationBuilder builder)
 {
+    // Clear built-in/default logging providers so only configured providers remain
+    builder.Logging.ClearProviders();
     builder.Logging.AddLoggingFilter();
 }
 
@@ -65,6 +67,8 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 
 static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 {
+    builder.AddConfiguredLogging();
+
     var services = builder.Services;
     var config = builder.Configuration;
     var env = builder.Environment;
@@ -74,7 +78,10 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddHttpContextAccessor()
         .AddJsonSerialization()
         .AddSqLiteLoggerLayer()
-        .AddLoggingService(config)
+        .EnsureLogDatabaseCreated();
+
+    //.AddLoggingService(config)
+    services
         .AddJsonLocalization(config)
         .AddEndpointsApiExplorer()
         .AddHttpClient()

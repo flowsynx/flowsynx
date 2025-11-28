@@ -55,6 +55,7 @@ public enum ErrorCode
     LogAdd                                          = 2003,
     LoggerCreation                                  = 2004,
     LoggerTemplateInvalidProperty                   = 2005,
+    LoggerConfigurationInvalidProviderName          = 2006,
     #endregion
 
     #region Auding error codes

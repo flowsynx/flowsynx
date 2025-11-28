@@ -1,5 +1,7 @@
-﻿using FlowSynx.Application.Configuration.System.Server;
+﻿using FlowSynx.Application.Configuration.System.Logger;
+using FlowSynx.Application.Configuration.System.Server;
 using FlowSynx.Domain;
+using FlowSynx.Infrastructure.Logging;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 
@@ -9,6 +11,49 @@ public static class WebApplicationBuilderExtensions
 {
     private const int DefaultHttpPort = 6262;
     private const int DefaultHttpsPort = 6263;
+
+    private static T BindSection<T>(this IConfiguration configuration, string sectionName) where T : new()
+    {
+        var section = new T();
+        configuration.GetSection(sectionName).Bind(section);
+        return section;
+    }
+
+    public static WebApplicationBuilder AddConfiguredLogging(this WebApplicationBuilder builder)
+    {
+        var config = builder.Configuration.BindSection<LoggerConfiguration>("System:Logger");
+        builder.Services.AddSingleton(config);
+
+        if (config == null || !config.Enabled)
+            return builder;
+
+        builder.Services.AddSingleton<ILoggerProvider>(sp =>
+        {
+            var factory = new SerilogProviderFactory(sp);
+
+            var loggingProviders = new List<ILoggerProvider>();
+
+            if (config.DefaultProviders == null || config.Providers == null)
+                return new CompositeLoggerProvider(loggingProviders);
+
+            foreach (var entry in config.DefaultProviders)
+            {
+                var match = config.Providers
+                    .FirstOrDefault(p => string.Equals(p.Key, entry, StringComparison.OrdinalIgnoreCase));
+
+                if (string.IsNullOrEmpty(match.Key))
+                    continue;
+
+                var provider = factory.Create(match.Key, match.Value);
+                if (provider != null)
+                    loggingProviders.Add(provider);
+            }
+
+            return new CompositeLoggerProvider(loggingProviders);
+        });
+
+        return builder;
+    }
 
     public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)
     {
