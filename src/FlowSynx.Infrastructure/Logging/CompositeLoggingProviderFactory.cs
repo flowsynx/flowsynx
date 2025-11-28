@@ -6,11 +6,11 @@ using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Logging;
 
-public class SerilogProviderFactory : ILoggingProviderFactory
+public class CompositeLoggingProviderFactory : ILoggingProviderFactory
 {
     private readonly IReadOnlyDictionary<string, ILogProviderBuilder> _builders;
 
-    public SerilogProviderFactory(IServiceProvider serviceProvider)
+    public CompositeLoggingProviderFactory(IServiceProvider serviceProvider)
     {
         _builders = new Dictionary<string, ILogProviderBuilder>(StringComparer.OrdinalIgnoreCase)
         {

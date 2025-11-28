@@ -29,7 +29,7 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddSingleton<ILoggerProvider>(sp =>
         {
-            var factory = new SerilogProviderFactory(sp);
+            var factory = new CompositeLoggingProviderFactory(sp);
 
             var loggingProviders = new List<ILoggerProvider>();
 
