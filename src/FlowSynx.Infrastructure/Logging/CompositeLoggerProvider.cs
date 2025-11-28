@@ -50,11 +50,9 @@ public class CompositeLogger : ILogger
                             TState state, Exception? exception,
                             Func<TState, Exception?, string> formatter)
     {
-        foreach (var logger in _loggers)
-        {
-            if (logger.IsEnabled(logLevel))
-                logger.Log(logLevel, eventId, state, exception, formatter);
-        }
+        _loggers.Where(logger => logger.IsEnabled(logLevel))
+                .ToList()
+                .ForEach(logger => logger.Log(logLevel, eventId, state, exception, formatter));
     }
 
     private sealed class Scope(object? state, Scope? parent) : IDisposable

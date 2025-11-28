@@ -97,54 +97,6 @@ public static class ServiceCollectionExtensions
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
     }
 
-    ///// <summary>
-    ///// Configure application logging from configuration, register console and database loggers and ensure the
-    ///// logging database exists.
-    ///// </summary>
-    //public static IServiceCollection AddLoggingService(
-    //    this IServiceCollection services,
-    //    IConfiguration configuration)
-    //{
-    //    var loggerConfiguration = configuration.BindSection<LoggerConfiguration>("System:Logger");
-    //    services.AddSingleton(loggerConfiguration);
-
-    //    // NOTE: resolving services during startup is unavoidable here because database and http-context
-    //    // dependent loggers are created. We scope the provider to keep this localized.
-    //    using var scope = services.BuildServiceProvider().CreateScope();
-    //    var provider = scope.ServiceProvider;
-
-    //    var httpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
-    //    var logService = provider.GetRequiredService<ILoggerService>();
-    //    var cancellationTokenSource = provider.GetRequiredService<CancellationTokenSource>();
-
-    //    var cancellationToken = cancellationTokenSource.Token;
-    //    var logLevel = loggerConfiguration.Level.ToLogLevel();
-
-    //    services.AddLogging(builder =>
-    //    {
-    //        builder.ClearProviders();
-    //        builder.SetMinimumLevel(logLevel);
-    //        builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
-
-    //        builder.AddConsoleLogger(options =>
-    //        {
-    //            options.OutputTemplate = "{timestamp} [{level}] Message=\"{message}\"";
-    //            options.MinLevel = logLevel;
-    //            options.CancellationToken = cancellationToken;
-    //        });
-
-    //        builder.AddDatabaseLogger(options =>
-    //        {
-    //            options.MinLevel = LogLevel.Debug;
-    //            options.CancellationToken = cancellationToken;
-    //        }, httpContextAccessor, logService);
-    //    });
-
-    //    services.EnsureLogDatabaseCreated();
-
-    //    return services;
-    //}
-
     public static void EnsureLogDatabaseCreated(this IServiceCollection services)
     {
         using var scope = services.BuildServiceProvider().CreateScope();
@@ -159,21 +111,6 @@ public static class ServiceCollectionExtensions
             throw new FlowSynxException((int)ErrorCode.LoggerCreation, $"Error occurred while creating the logger: {ex.Message}");
         }
     }
-
-    private static LogLevel ToLogLevel(this string logsLevel)
-    {
-        return logsLevel?.ToLowerInvariant() switch
-        {
-            "none" => LogLevel.None,
-            "dbug" => LogLevel.Debug,
-            "info" => LogLevel.Information,
-            "warn" => LogLevel.Warning,
-            "fail" => LogLevel.Error,
-            "crit" => LogLevel.Critical,
-            _ => LogLevel.Information,
-        };
-    }
-
     #endregion
 
     #region Health checks
