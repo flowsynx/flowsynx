@@ -88,7 +88,7 @@ public static class WebApplicationBuilderExtensions
         }
 
         // No configuration entry: create provider with default key and no settings
-        return factory.Create(providerKey);
+        return factory.Create(providerKey, null);
     }
 
     public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)

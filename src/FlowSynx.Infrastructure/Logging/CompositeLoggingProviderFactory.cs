@@ -24,7 +24,7 @@ public class CompositeLoggingProviderFactory : ILoggingProviderFactory
 
     public ILoggerProvider? Create(
         string name,
-        LoggerProviderConfiguration? config = null)
+        LoggerProviderConfiguration? config)
     {
         if (string.IsNullOrEmpty(name))
             return null;
