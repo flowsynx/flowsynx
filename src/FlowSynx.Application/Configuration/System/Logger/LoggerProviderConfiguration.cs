@@ -2,8 +2,7 @@
 
 public class LoggerProviderConfiguration
 {
-    public string LogLevel { get; set; } = "Info";
-    public string? ConnectionString { get; set; } = $"Data Source=flowsynx-logs.db";
+    public string LogLevel { get; set; } = "Information";
     public string? FilePath { get; set; } = "logs/flowsynx.log";
     public string? RollingInterval { get; set; } = "Day";
     public int? RetainedFileCountLimit { get; set; } = 7;

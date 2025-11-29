@@ -4,6 +4,7 @@ using FlowSynx.Domain;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using FlowSynx.Persistence.Logging.Sqlite.Extensions;
 
 namespace FlowSynx.Extensions;
 
@@ -12,47 +13,82 @@ public static class WebApplicationBuilderExtensions
     private const int DefaultHttpPort = 6262;
     private const int DefaultHttpsPort = 6263;
 
-    private static T BindSection<T>(this IConfiguration configuration, string sectionName) where T : new()
-    {
-        var section = new T();
-        configuration.GetSection(sectionName).Bind(section);
-        return section;
-    }
-
-    public static WebApplicationBuilder AddConfiguredLogging(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddLoggers(this WebApplicationBuilder builder)
     {
         var config = builder.Configuration.BindSection<LoggerConfiguration>("System:Logger");
         builder.Services.AddSingleton(config);
 
-        if (config == null || !config.Enabled)
-            return builder;
+        // Always ensure the sqlite logging layer and database exist (database logger must always be available)
+        builder.Services.AddSqLiteLoggerLayer();
+        builder.Services.EnsureLogDatabaseCreated();
 
+        // Register a composite provider that always includes Console and Database providers.
+        // If the user provided configuration entries for those providers, their settings are used.
         builder.Services.AddSingleton<ILoggerProvider>(sp =>
         {
             var factory = new CompositeLoggingProviderFactory(sp);
-
             var loggingProviders = new List<ILoggerProvider>();
 
-            if (config.DefaultProviders == null || config.Providers == null)
-                return new CompositeLoggerProvider(loggingProviders);
+            // 1) Ensure Console provider is present
+            var consoleProvider = CreateProviderWithFallback(factory, config, "console");
+            if (consoleProvider != null)
+                loggingProviders.Add(consoleProvider);
 
-            foreach (var entry in config.DefaultProviders)
+            // 2) Ensure database provider is present
+            var databaseProvider = CreateProviderWithFallback(factory, config, "database");
+            if (databaseProvider != null)
+                loggingProviders.Add(databaseProvider);
+
+            // 3) If configuration enables other providers and specifies a default order, add them
+            if (config != null && config.Enabled && config.DefaultProviders != null && config.Providers != null)
             {
-                var match = config.Providers
-                    .FirstOrDefault(p => string.Equals(p.Key, entry, StringComparison.OrdinalIgnoreCase));
+                foreach (var entry in config.DefaultProviders)
+                {
+                    // Skip console and database because we already added them
+                    if (string.Equals(entry, "console", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(entry, "database", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
 
-                if (string.IsNullOrEmpty(match.Key))
-                    continue;
+                    var match = config.Providers
+                        .FirstOrDefault(p => string.Equals(p.Key, entry, StringComparison.OrdinalIgnoreCase));
 
-                var provider = factory.Create(match.Key, match.Value);
-                if (provider != null)
-                    loggingProviders.Add(provider);
+                    if (string.IsNullOrEmpty(match.Key))
+                        continue;
+
+                    var provider = factory.Create(match.Key, match.Value);
+                    if (provider != null)
+                        loggingProviders.Add(provider);
+                }
             }
 
             return new CompositeLoggerProvider(loggingProviders);
         });
 
         return builder;
+    }
+
+    private static ILoggerProvider? CreateProviderWithFallback(
+        CompositeLoggingProviderFactory factory,
+        LoggerConfiguration? config,
+        string providerKey)
+    {
+        if (factory == null)
+            throw new ArgumentNullException(nameof(factory));
+
+        // Try to find a matching configured provider entry
+        if (config?.Providers != null)
+        {
+            var match = config.Providers.FirstOrDefault(p => string.Equals(p.Key, providerKey, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(match.Key))
+            {
+                return factory.Create(match.Key, match.Value);
+            }
+        }
+
+        // No configuration entry: create provider with default key and no settings
+        return factory.Create(providerKey);
     }
 
     public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)

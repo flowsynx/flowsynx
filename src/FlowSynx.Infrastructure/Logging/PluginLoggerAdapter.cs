@@ -9,8 +9,7 @@ public class PluginLoggerAdapter : IPluginLogger
 
     public PluginLoggerAdapter(ILogger logger)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public void Log(PluginLoggerLevel level, string message)

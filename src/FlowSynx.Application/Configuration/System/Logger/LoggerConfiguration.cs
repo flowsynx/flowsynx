@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Domain;
-using FlowSynx.Domain.Log;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -8,7 +7,6 @@ namespace FlowSynx.Application.Configuration.System.Logger;
 public class LoggerConfiguration
 {
     public bool Enabled { get; set; } = false;
-    public string GlobalLogLevel { get; set; } = nameof(LogLevel.Information);
     public string[] DefaultProviders { get; set; } = Array.Empty<string>();
     public Dictionary<string, LoggerProviderConfiguration> Providers { get; set; } = new();
 

@@ -16,21 +16,6 @@ public static class LoggerExtensions
              : Serilog.Events.LogEventLevel.Information;
     }
 
-    public static LogLevel ToLogsLevel(this string logLevel)
-    {
-        return logLevel switch
-        {
-            "None" => LogLevel.None,
-            "Trace" => LogLevel.Trace,
-            "Dbug" => LogLevel.Debug,
-            "Info" => LogLevel.Information,
-            "Warn" => LogLevel.Warning,
-            "Fail" => LogLevel.Error,
-            "Crit" => LogLevel.Critical,
-            _ => LogLevel.Information,
-        };
-    }
-
     public static RollingInterval RollingIntervalFromString(this string? value)
     {
         if (string.IsNullOrEmpty(value))
@@ -41,13 +26,13 @@ public static class LoggerExtensions
             : RollingInterval.Day;
     }
 
-    public static LoggerConfiguration EfCoreLogs(
+    public static LoggerConfiguration SqliteLogs(
             this LoggerSinkConfiguration config,
             ILoggerService loggerService,
-            IHttpContextAccessor? accessor = null)
+            IHttpContextAccessor? accessor)
     {
         return config.Sink(
-            new EfCoreLoggerSink(
+            new SqliteLoggerSink(
                 loggerService: loggerService,
                 httpContextAccessor: accessor));
     }

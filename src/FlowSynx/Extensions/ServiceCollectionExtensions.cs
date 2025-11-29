@@ -600,19 +600,4 @@ public static class ServiceCollectionExtensions
     }
 
     #endregion
-
-    #region Helpers
-
-    /// <summary>
-    /// Bind a configuration section to a configuration object and return it. Simplifies repeated
-    /// pattern of creating config instances and binding sections.
-    /// </summary>
-    private static T BindSection<T>(this IConfiguration configuration, string sectionName) where T : new()
-    {
-        var section = new T();
-        configuration.GetSection(sectionName).Bind(section);
-        return section;
-    }
-
-    #endregion
 }

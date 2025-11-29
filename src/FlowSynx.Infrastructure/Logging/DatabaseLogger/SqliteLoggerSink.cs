@@ -6,15 +6,15 @@ using System.Security.Claims;
 
 namespace FlowSynx.Infrastructure.Logging.DatabaseLogger;
 
-internal class EfCoreLoggerSink : ILogEventSink
+internal class SqliteLoggerSink : ILogEventSink
 {
     private readonly ILoggerService _loggerService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly IFormatProvider? _formatProvider;
 
-    public EfCoreLoggerSink(
+    public SqliteLoggerSink(
         ILoggerService loggerService,
-        IHttpContextAccessor httpContextAccessor,
+        IHttpContextAccessor? httpContextAccessor,
         IFormatProvider? formatProvider = null)
     {
         _loggerService = loggerService;
@@ -26,7 +26,7 @@ internal class EfCoreLoggerSink : ILogEventSink
     {
         try
         {
-            var httpContext = _httpContextAccessor.HttpContext;
+            var httpContext = _httpContextAccessor?.HttpContext;
 
             var userId =
                 httpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value

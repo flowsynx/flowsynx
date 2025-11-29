@@ -6,5 +6,5 @@ namespace FlowSynx.Infrastructure.Logging;
 
 public interface ILogProviderBuilder
 {
-    ILoggerProvider? Build(string name, LoggerProviderConfiguration config);
+    ILoggerProvider? Build(string name, LoggerProviderConfiguration? config);
 }

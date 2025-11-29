@@ -19,15 +19,15 @@ public sealed class SerilogDatabaseProviderBuilder : ILogProviderBuilder
 
     public ILoggerProvider? Build(
         string name, 
-        Application.Configuration.System.Logger.LoggerProviderConfiguration config)
+        Application.Configuration.System.Logger.LoggerProviderConfiguration? config)
     {
-        var level = config.LogLevel.ToSerilogLevel();
+        var level = config?.LogLevel.ToSerilogLevel() ?? Serilog.Events.LogEventLevel.Information;
         var loggerService = _serviceProvider.GetRequiredService<ILoggerService>();
         var accessor = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
 
         var logger = new LoggerConfiguration()
             .MinimumLevel.Is(level)
-            .WriteTo.EfCoreLogs(loggerService, accessor)
+            .WriteTo.SqliteLogs(loggerService, accessor)
             .CreateLogger();
 
         return new SerilogLoggerProvider(logger, dispose: true);

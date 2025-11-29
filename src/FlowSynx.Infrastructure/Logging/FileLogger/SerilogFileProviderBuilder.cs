@@ -8,18 +8,24 @@ public sealed class SerilogFileProviderBuilder : ILogProviderBuilder
 {
     public ILoggerProvider? Build(
         string name, 
-        Application.Configuration.System.Logger.LoggerProviderConfiguration config)
+        Application.Configuration.System.Logger.LoggerProviderConfiguration? config)
     {
+        ArgumentNullException.ThrowIfNull(config);
+
         var level = config.LogLevel.ToSerilogLevel();
+        var filePath = config.FilePath ?? throw new ArgumentNullException(nameof(config.FilePath));
+        var outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [Thread:{ThreadId}] " +
+            "[Machine:{MachineName}] [Process:{ProcessName}:{ProcessId}] [{SourceContext}] " +
+            "{Message:lj}{NewLine}{Exception}";
 
         return new Serilog.Extensions.Logging.SerilogLoggerProvider(
             new LoggerConfiguration()
                 .MinimumLevel.Is(level)
                 .WriteTo.File(
-                    path: config.FilePath!,
+                    path: filePath,
                     rollingInterval: config.RollingInterval.RollingIntervalFromString(),
-                    retainedFileCountLimit: config.RetainedFileCountLimit,
-                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [Thread:{ThreadId}] [Machine:{MachineName}] [Process:{ProcessName}:{ProcessId}] [{SourceContext}] {Message:lj}{NewLine}{Exception}"
+                    retainedFileCountLimit: config.RetainedFileCountLimit ?? 7,
+                    outputTemplate: outputTemplate
                 ).CreateLogger()
         );
     }

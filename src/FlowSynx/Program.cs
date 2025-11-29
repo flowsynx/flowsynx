@@ -4,7 +4,6 @@ using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.Secrets;
 using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
-using FlowSynx.Persistence.Logging.Sqlite.Extensions;
 using FlowSynx.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -67,7 +66,7 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 
 static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 {
-    builder.AddConfiguredLogging();
+    builder.AddLoggers();
 
     var services = builder.Services;
     var config = builder.Configuration;
@@ -77,11 +76,6 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddCancellationTokenSource()
         .AddHttpContextAccessor()
         .AddJsonSerialization()
-        .AddSqLiteLoggerLayer()
-        .EnsureLogDatabaseCreated();
-
-    //.AddLoggingService(config)
-    services
         .AddJsonLocalization(config)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
