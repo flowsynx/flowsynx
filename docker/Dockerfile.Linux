@@ -18,7 +18,6 @@ COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Shared/FlowSynx.Persistence
 COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Postgres/FlowSynx.Persistence.Postgres.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Postgres/"]
 COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Sqlite/FlowSynx.Persistence.Sqlite.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Sqlite/"]
 COPY ["src/FlowSynx.Persistence/FlowSynx.Persistence.Logging.Sqlite/FlowSynx.Persistence.Logging.Sqlite.csproj", "src/FlowSynx.Persistence/FlowSynx.Persistence.Logging.Sqlite/"]
-COPY ["plugins/FlowSynx.Plugins.LocalFileSystem/FlowSynx.Plugins.LocalFileSystem.csproj", "plugins/FlowSynx.Plugins.LocalFileSystem/"]
 
 # Restore dependencies
 RUN dotnet restore "./src/FlowSynx/FlowSynx.csproj"
