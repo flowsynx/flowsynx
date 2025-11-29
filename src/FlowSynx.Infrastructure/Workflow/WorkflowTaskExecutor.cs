@@ -438,7 +438,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
     {
         await CompleteTaskAsync(userId, entity, WorkflowTaskExecutionStatus.Failed, cancellationToken);
         _logger.LogError(ex, "Workflow task '{TaskName}' failed: {Message}", taskName, ex.Message);
-        throw new Exception(ex.Message, ex);
+        throw new InvalidOperationException(ex.Message, ex);
     }
 
     private async Task UpdateTaskStatusAsync(
