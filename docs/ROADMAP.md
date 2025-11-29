@@ -39,12 +39,14 @@ leveraging plugins, triggers, and integrations, while providing robust observabi
 | **Cross-Platform Deployment** | Ensure Windows, Linux, and Docker container compatibility. | In Progress |
 | **Support Pagination** | Standardize pagination handling across API responses. | Done |
 | **Support Schema in Workflow** | Implement JSON Schema validation for workflow definitions. | Done |
+| **Support secret management integration** | Implement integration with popular secret management solutions (e.g., HashiCorp Vault, AWS Secrets Manager). | Done |
 | **Support Different Logger sinks** | Implement support for various logging sinks (e.g., file, console, remote) in the workflow engine. | In Progress |
 | **Support AI-Driven Execution** | Implement AI-driven execution strategies for workflows, leveraging machine learning models for decision-making. | In Progress |
 | **Support NLP-Based Workflow Creation** | Implement Natural Language Processing (NLP) capabilities to allow users to create workflows using natural language commands. | In Progress |
 | **Support Database trigger** | Implement DataBased Workflow Trigger that enables workflows to automatically start in response to data changes within connected database. | Planned |
 | **Configuration Management** | Implement integration of Infisical for Configuration Management. | Planned |
 | **Workflow Queue management Endpoint** | Implement endpoint api for workflow queue management. | Planned |
+| **Add more functions into expression evaluation** | Extend expression evaluation capabilities with additional functions and operators. | Planned |
 | **`flowpack` Github Actions** | Streamline CI/CD workflows using GitHub Actions to automate plugin packaging and publishing to the FlowSynx Plugin Marketplace. | Planned |
 
 ## Mid-Term Objectives (12–24 Months)
