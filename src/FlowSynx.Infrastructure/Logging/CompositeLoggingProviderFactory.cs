@@ -2,6 +2,7 @@
 using FlowSynx.Infrastructure.Logging.ConsoleLogger;
 using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using FlowSynx.Infrastructure.Logging.FileLogger;
+using FlowSynx.Infrastructure.Logging.SeqLogger;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Logging;
@@ -16,13 +17,14 @@ public class CompositeLoggingProviderFactory : ILoggingProviderFactory
         {
             { "console",  new SerilogConsoleProviderBuilder() },
             { "database", new SerilogDatabaseProviderBuilder(serviceProvider) },
-            { "file",     new SerilogFileProviderBuilder() }
+            { "file",     new SerilogFileProviderBuilder() },
+            { "seq",      new SerilogSeqProviderBuilder() }
         };
     }
 
     public ILoggerProvider? Create(
         string name,
-        LoggerProviderConfiguration config)
+        LoggerProviderConfiguration? config = null)
     {
         if (string.IsNullOrEmpty(name))
             return null;
