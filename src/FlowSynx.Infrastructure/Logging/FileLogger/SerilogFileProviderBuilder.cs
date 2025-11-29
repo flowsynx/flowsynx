@@ -15,7 +15,7 @@ public sealed class SerilogFileProviderBuilder : ILogProviderBuilder
         var level = config.LogLevel.ToSerilogLevel();
 
         var filePath = config.FilePath 
-            ?? throw new ArgumentNullException(nameof(config.FilePath), "System:Logger:Providers:File:FilePath cannot be null.");
+            ?? throw new ArgumentNullException(nameof(config), "System:Logger:Providers:File:FilePath cannot be null.");
 
         var outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [Thread:{ThreadId}] " +
             "[Machine:{MachineName}] [Process:{ProcessName}:{ProcessId}] [{SourceContext}] " +
