@@ -13,8 +13,12 @@ public sealed class SerilogSeqProviderBuilder : ILogProviderBuilder
         ArgumentNullException.ThrowIfNull(config);
 
         var level = config.LogLevel.ToSerilogLevel();
-        var serverUrl = config.Url ?? throw new ArgumentNullException(nameof(config.Url));
-        var apiKey = config.ApiKey ?? throw new ArgumentNullException(nameof(config.ApiKey));
+
+        var serverUrl = config.Url 
+            ?? throw new ArgumentNullException(nameof(config.Url), "System:Logger:Providers:Seq:Url cannot be null.");
+
+        var apiKey = config.ApiKey 
+            ?? throw new ArgumentNullException(nameof(config.ApiKey), "System:Logger:Providers:Seq:ApiKey cannot be null.");
 
         return new Serilog.Extensions.Logging.SerilogLoggerProvider(
             new LoggerConfiguration()
