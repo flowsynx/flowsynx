@@ -161,5 +161,34 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
 
             Assert.Null(exception);
         }
+
+        [Fact]
+        public async Task Validate_Should_Throw_InvalidOperation_When_RetryPolicy_Invalid()
+        {
+            var tasks = new List<WorkflowTask>
+            {
+                new("TaskA")
+                {
+                    ErrorHandling = new ErrorHandling
+                    {
+                        RetryPolicy = new RetryPolicy
+                        {
+                            MaxRetries = -1
+                        }
+                    }
+                }
+            };
+
+            var definition = new WorkflowDefinition
+            {
+                Name = "Workflow With invalid retry policy",
+                Tasks = tasks
+            };
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await _validator.ValidateAsync(definition));
+
+            Assert.Contains("WorkflowValidator_TaskHasNegativeMaxRetries", exception.Message);
+        }
     }
 }
