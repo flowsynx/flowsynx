@@ -104,7 +104,7 @@ public class WorkflowValidator : IWorkflowValidator
 
         if (errors.Any())
         {
-            throw new Exception(string.Join(Environment.NewLine, errors));
+            throw new InvalidOperationException(string.Join(Environment.NewLine, errors));
         }
     }
 
