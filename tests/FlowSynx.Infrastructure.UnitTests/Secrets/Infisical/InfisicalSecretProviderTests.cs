@@ -166,7 +166,7 @@ public class InfisicalSecretProviderTests
             ["ClientSecret"] = "csecret",
         });
 
-        var ex = await Assert.ThrowsAsync<Exception>(() => provider.GetSecretsAsync());
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.GetSecretsAsync());
 
         Assert.Equal("Error retrieving configuration secrets from Infisical for environment 'dev'.", ex.Message);
         Assert.IsType<ApplicationException>(ex.InnerException);
