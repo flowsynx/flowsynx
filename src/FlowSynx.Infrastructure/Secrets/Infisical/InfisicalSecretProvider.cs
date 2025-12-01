@@ -48,7 +48,7 @@ public class InfisicalSecretProvider : ISecretProvider, IConfigurableSecret
             var message = $"Error retrieving configuration secrets from Infisical for environment '{environment}'.";
             _logger?.LogWarning(ex, message);
 
-            throw new Exception(message, ex);
+            throw new InvalidOperationException(message, ex);
         }
     }
 
