@@ -57,12 +57,18 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddSystemClock(
+        this IServiceCollection services)
+    {
+        services.AddSingleton<ISystemClock, SystemClock>();
+        return services;
+    }
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
         services
             .AddMemoryCache()
-            .AddSingleton<ISystemClock, SystemClock>()
             .AddSingleton<IWorkflowCancellationRegistry, WorkflowCancellationRegistry>()
             .AddScoped<IExpressionParserFactory, ExpressionParserFactory>()
             .AddScoped<IPlaceholderReplacer, PlaceholderReplacer>()

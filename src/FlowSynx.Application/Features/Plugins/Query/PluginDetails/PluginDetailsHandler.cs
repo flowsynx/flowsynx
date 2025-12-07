@@ -50,8 +50,8 @@ internal class PluginDetailsHandler : IRequestHandler<PluginDetailsRequest, Resu
                 .Select(property => new PluginDetailsSpecification
                 {
                     Key = property.Name,
-                    Type = property.Type,
-                    IsRequired = property.IsRequired
+                    Type = property.Type ?? string.Empty,
+                    IsRequired = property.IsRequired ?? false
                 }).ToList();
 
             var response = new PluginDetailsResponse

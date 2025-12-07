@@ -83,6 +83,22 @@ namespace FlowSynx.Persistence.Sqlite.Configurations
             builder.Property(e => e.Specifications)
                    .HasColumnType("TEXT")
                    .HasConversion(pluginSpecificationConverter, pluginSpecificationComparer);
+
+            // JSON serialization for plugin operations
+            var pluginOperationConverter = new ValueConverter<List<PluginOperation>?, string>(
+                v => _jsonSerializer.Serialize(v),
+                v => _jsonDeserializer.Deserialize<List<PluginOperation>?>(v)
+            );
+
+            var pluginOperationComparer = new ValueComparer<List<PluginOperation>>(
+                (c1, c2) => _jsonSerializer.Serialize(c1) == _jsonSerializer.Serialize(c2),
+                c => _jsonSerializer.Serialize(c).GetHashCode(),
+                c => _jsonDeserializer.Deserialize<List<PluginOperation>>(_jsonSerializer.Serialize(c))
+            );
+
+            builder.Property(e => e.Operations)
+                   .HasColumnType("TEXT")
+                   .HasConversion(pluginOperationConverter, pluginOperationComparer);
         }
     }
 }

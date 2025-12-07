@@ -16,6 +16,7 @@ public class PluginEntity : AuditableEntity<Guid>, ISoftDeletable
     public List<string> Owners { get; set; } = new List<string>();
     public string? Checksum { get; set; }
     public required string PluginLocation { get; set; }
-    public List<PluginSpecification>? Specifications { get; set; } = new();
+    public List<PluginSpecification> Specifications { get; set; } = new List<PluginSpecification>();
+    public List<PluginOperation> Operations { get; set; } = new List<PluginOperation>();
     public bool IsDeleted { get; set; } = false;
 }

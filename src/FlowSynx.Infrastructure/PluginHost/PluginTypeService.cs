@@ -126,7 +126,7 @@ public class PluginTypeService : IPluginTypeService
 
         var cached = _pluginCacheService.Get(key);
         if (cached != null)
-            return cached.Plugin;
+            return cached.GetPlugin();
 
         var loader = new IsolatedPluginLoader(pluginEntity.PluginLocation);
 
@@ -138,9 +138,9 @@ public class PluginTypeService : IPluginTypeService
             if (specification == null)
                 specification = new Dictionary<string, object?>();
 
-            await loader.Plugin.InitializeAsync(new PluginLoggerAdapter(_logger), specification);
+            await loader.GetPlugin().InitializeAsync(new PluginLoggerAdapter(_logger), specification);
             _pluginCacheService.Set(key, index, loader, TimeSpan.FromHours(2), TimeSpan.FromMinutes(15));
-            return loader.Plugin;
+            return loader.GetPlugin();
         }
         catch (Exception)
         {

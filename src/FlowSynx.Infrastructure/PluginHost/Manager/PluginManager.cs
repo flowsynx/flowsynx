@@ -126,13 +126,37 @@ public class PluginManager : IPluginManager
         {
             var index = new PluginCacheIndex(_currentUserService.UserId(), pluginEntity.Type, pluginEntity.Version);
             _pluginCacheService.RemoveByIndex(index);
-            await Task.Delay(1000, cancellationToken);
+
+            // Ensure plugin load contexts and streams are finalized before deletion
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
 
             var parentLocation = Directory.GetParent(pluginEntity.PluginLocation);
             if (parentLocation is { Exists: true })
             {
                 RemoveReadOnlyAttribute(parentLocation);
-                parentLocation.Delete(true);
+                parentLocation.Attributes = FileAttributes.Normal;
+
+                // Retry/backoff to handle transient locks
+                const int maxAttempts = 5;
+                for (var attempt = 1; attempt <= maxAttempts; attempt++)
+                {
+                    try
+                    {
+                        parentLocation.Delete(true);
+                        break;
+                    }
+                    catch (UnauthorizedAccessException) when (attempt < maxAttempts)
+                    {
+                        await Task.Delay(500, cancellationToken);
+
+                        // try to help finalization in-between attempts
+                        GC.Collect();
+                        GC.WaitForPendingFinalizers();
+                        GC.Collect();
+                    }
+                }
             }
 
             await _pluginService.Delete(pluginEntity, cancellationToken);
@@ -221,7 +245,7 @@ public class PluginManager : IPluginManager
             try
             {
                 loader.Load();
-                var pluginEntity = CreatePluginEntity(metadata, dllPath, loader.Plugin);
+                var pluginEntity = CreatePluginEntity(metadata, dllPath, loader.GetPlugin());
                 await _pluginService.Add(pluginEntity, cancellationToken);
                 _logger.LogInformation(_localization.Get("PluginManager_Install_PluginInstalledSuccessfully",
                     metadata.Type, metadata.Version));
@@ -266,8 +290,34 @@ public class PluginManager : IPluginManager
             ProjectUrl = metadata.ProjectUrl,
             RepositoryUrl = metadata.RepositoryUrl,
             LastUpdated = metadata.LastUpdated,
-            //Specifications = plugin.GetPluginSpecification()
+            Specifications = CreateSpecifications(metadata.Specifications),
+            Operations = CreateOperations(metadata.Operations)
         };
+
+        static List<PluginSpecification> CreateSpecifications(IEnumerable<SpecificationMetadata> specs) =>
+            specs.Select(x => new PluginSpecification
+            {
+                Name = x.Name,
+                Description = x.Description,
+                Type = x.Type,
+                DefaultValue = x.DefaultValue,
+                IsRequired = x.IsRequired
+            }).ToList();
+
+        static List<PluginOperation> CreateOperations(IEnumerable<PluginOperationMetadata> ops) =>
+            ops.Select(op => new PluginOperation
+            {
+                Name = op.Name,
+                Description = op.Description,
+                Parameters = op.Parameters.Select(p => new PluginOperationParameter
+                {
+                    Name = p.Name,
+                    Description = p.Description,
+                    Type = p.Type,
+                    DefaultValue = p.DefaultValue,
+                    IsRequired = p.IsRequired
+                }).ToList()
+            }).ToList();
     }
 
     private void RemoveReadOnlyAttribute(DirectoryInfo directoryInfo)

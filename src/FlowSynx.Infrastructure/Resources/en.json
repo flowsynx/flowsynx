@@ -22,6 +22,7 @@
   "Plugin_Loader_FailedToLoadPlugin": "Failed to load plugin: {0}",
   "Plugin_Loader_FileNotFound": "Plugin file not found: {0}",
   "Plugin_Loader_NoPluginFound": "No plugin type found.",
+  "Plugin_Loader_LoadFailed": "Failed to load plugin: {0}",
   "PluginDownloader_ErrorInExtractingPackage": "An error occurred while extracting the package: {0}",
   "PluginManager_AssociatedPluginConfigIsExist": "The plugin type '{0}' with version '{1}' has associated configurations. Please remove the existing configuration(s) before proceeding.",
   "PluginManager_Install_ChecksumValidationFailed": "Checksum validation failed. Package may be corrupted or tampered with.",

@@ -32,7 +32,7 @@ public class PluginSpecificationsService : IPluginSpecificationsService
 
         foreach (var specification in expectedSpecifications)
         {
-            if (specification.IsRequired && !providedSpecifications.ContainsKey(specification.Name))
+            if (specification.IsRequired == true && !providedSpecifications.ContainsKey(specification.Name))
             {
                 var value = providedSpecifications[specification.Name.ToLowerInvariant()];
                 var valid = true;

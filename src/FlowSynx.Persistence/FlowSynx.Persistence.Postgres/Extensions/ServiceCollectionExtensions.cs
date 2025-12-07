@@ -31,6 +31,13 @@ public static class ServiceCollectionExtensions
                 options.UseNpgsql(databaseConnection.ConnectionString);
             });
 
+        using (var scope = services.BuildServiceProvider().CreateScope())
+        {
+            var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationContext>>();
+            using var context = dbFactory.CreateDbContext();
+            context.Database.EnsureCreated();
+        }
+
         return services;
     }
 

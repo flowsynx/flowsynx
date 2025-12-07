@@ -14,7 +14,7 @@ public class IsolatedPluginLoader : IPluginLoader
     private IPlugin? _pluginInstance;
     private bool _isUnloaded;
 
-    public IPlugin Plugin => _pluginInstance ?? throw new ObjectDisposedException(nameof(IsolatedPluginLoader));
+    public IPlugin GetPlugin() => _pluginInstance ?? throw new ObjectDisposedException(nameof(IsolatedPluginLoader));
 
     public IsolatedPluginLoader(string pluginLocation)
     {

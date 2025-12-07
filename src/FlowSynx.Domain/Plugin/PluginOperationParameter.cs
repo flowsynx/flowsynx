@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.Plugin;
 
-public class PluginSpecification
+public class PluginOperationParameter
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

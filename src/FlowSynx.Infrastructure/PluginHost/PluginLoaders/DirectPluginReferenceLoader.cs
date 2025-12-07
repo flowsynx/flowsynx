@@ -6,7 +6,7 @@ public class DirectPluginReferenceLoader(IPlugin pluginInstance) : IPluginLoader
 {
     private readonly IPlugin? _pluginInstance = pluginInstance;
 
-    public IPlugin Plugin => _pluginInstance ?? throw new ObjectDisposedException(nameof(DirectPluginReferenceLoader));
+    public IPlugin GetPlugin() => _pluginInstance ?? throw new ObjectDisposedException(nameof(DirectPluginReferenceLoader));
 
     public void Load() { }
 

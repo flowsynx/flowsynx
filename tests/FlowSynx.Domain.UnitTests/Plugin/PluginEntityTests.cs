@@ -45,7 +45,7 @@ public class PluginEntityTests
         var pluginLocation = "/path/to/plugin";
         var specifications = new List<PluginSpecification>
         {
-            new() { Name = "Spec1", Type = "String", IsReadable = true, IsWritable = false }
+            new() { Name = "Spec1", Type = "String", DefaultValue = "", IsRequired = false }
         };
 
         // Act

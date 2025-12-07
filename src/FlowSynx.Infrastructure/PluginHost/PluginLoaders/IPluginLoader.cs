@@ -4,7 +4,7 @@ namespace FlowSynx.Infrastructure.PluginHost.PluginLoaders;
 
 public interface IPluginLoader: IDisposable
 {
-    IPlugin Plugin { get; }
+    IPlugin GetPlugin();
     void Load();
     void Unload();
 }
