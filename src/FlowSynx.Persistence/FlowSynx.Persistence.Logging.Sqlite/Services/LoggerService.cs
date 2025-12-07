@@ -71,7 +71,10 @@ public class LoggerService : ILoggerService
         try
         {
             await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
-            var logs = await context.Logs.Where(l=> l.UserId == userId).ToListAsync(cancellationToken).ConfigureAwait(false);
+            var logs = await context.Logs
+                .Where(l => l.UserId == userId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             var result = new List<LogEntity>();
 
@@ -80,29 +83,18 @@ public class LoggerService : ILoggerService
                 if (string.IsNullOrWhiteSpace(log.Scope))
                     continue;
 
-                var scopeParts = log.Scope.Split('|');
-                var scopeDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var scopeDict = ParseScope(log.Scope);
 
-                foreach (var part in scopeParts)
-                {
-                    var keyValue = part.Split('=', 2, StringSplitOptions.TrimEntries);
-                    if (keyValue.Length == 2)
-                    {
-                        scopeDict[keyValue[0]] = keyValue[1];
-                    }
-                }
+                if (!scopeDict.TryGetValue("WorkflowId", out var wId)) continue;
+                if (!scopeDict.TryGetValue("WorkflowExecutionId", out var weId)) continue;
+                if (!Guid.TryParse(wId, out var parsedWorkflowId)) continue;
+                if (!Guid.TryParse(weId, out var parsedExecutionId)) continue;
 
-                if (scopeDict.TryGetValue("WorkflowId", out var wId) &&
-                    scopeDict.TryGetValue("WorkflowExecutionId", out var weId) &&
-                    Guid.TryParse(wId, out var parsedWorkflowId) &&
-                    Guid.TryParse(weId, out var parsedWorkflowExecutionId) &&
-                    parsedWorkflowId == workflowId &&
-                    parsedWorkflowExecutionId == workflowExecutionId)
+                if (parsedWorkflowId == workflowId && parsedExecutionId == workflowExecutionId)
                 {
                     result.Add(log);
                 }
             }
-
 
             return result;
         }
@@ -111,6 +103,22 @@ public class LoggerService : ILoggerService
             var errorMessage = new ErrorMessage((int)ErrorCode.LogsList, ex.Message);
             throw new FlowSynxException(errorMessage);
         }
+    }
+
+    private static Dictionary<string, string> ParseScope(string scope)
+    {
+        var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var part in scope.Split('|', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var keyValue = part.Split('=', 2, StringSplitOptions.TrimEntries);
+            if (keyValue.Length == 2)
+            {
+                dict[keyValue[0]] = keyValue[1];
+            }
+        }
+
+        return dict;
     }
 
     public async Task<IReadOnlyCollection<LogEntity>> GetWorkflowTaskExecutionLogs(string userId, Guid workflowId,
