@@ -4,8 +4,6 @@ using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Infrastructure.Logging;
-using FlowSynx.Domain.PluginConfig;
-using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
 using FlowSynx.Infrastructure.PluginHost.Cache;
@@ -16,7 +14,6 @@ namespace FlowSynx.Infrastructure.PluginHost;
 public class PluginTypeService : IPluginTypeService
 {
     private readonly ILogger<PluginTypeService> _logger;
-    private readonly IPluginConfigurationService _pluginConfigurationService;
     private readonly IPluginService _pluginService;
     private readonly IJsonDeserializer _deserializer;
     private readonly IPluginCacheService _pluginCacheService;
@@ -24,8 +21,7 @@ public class PluginTypeService : IPluginTypeService
     private readonly ILocalization _localization;
 
     public PluginTypeService(
-        ILogger<PluginTypeService> logger, 
-        IPluginConfigurationService pluginConfigurationService, 
+        ILogger<PluginTypeService> logger,
         IPluginService pluginService, 
         IJsonDeserializer deserializer, 
         IJsonSerializer serializer, 
@@ -33,30 +29,23 @@ public class PluginTypeService : IPluginTypeService
         IPluginCacheKeyGeneratorService pluginCacheKeyGeneratorService,
         ILocalization localization)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(pluginConfigurationService);
-        ArgumentNullException.ThrowIfNull(pluginService);
-        ArgumentNullException.ThrowIfNull(deserializer);
-        ArgumentNullException.ThrowIfNull(serializer);
-        ArgumentNullException.ThrowIfNull(pluginCacheService);
-        ArgumentNullException.ThrowIfNull(pluginCacheKeyGeneratorService);
-        ArgumentNullException.ThrowIfNull(localization);
-        _logger = logger;
-        _pluginConfigurationService = pluginConfigurationService;
-        _pluginService = pluginService;
-        _deserializer = deserializer;
-        _pluginCacheService = pluginCacheService;
-        _pluginCacheKeyGeneratorService = pluginCacheKeyGeneratorService;
-        _localization = localization;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _pluginService = pluginService ?? throw new ArgumentNullException(nameof(pluginService));
+        _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
+        _pluginCacheService = pluginCacheService ?? throw new ArgumentNullException(nameof(pluginCacheService));
+        _pluginCacheKeyGeneratorService = pluginCacheKeyGeneratorService ?? throw new ArgumentNullException(nameof(pluginCacheKeyGeneratorService));
+        _localization = localization ?? throw new ArgumentNullException(nameof(localization));
     }
 
-    public Task<IPlugin> Get(string userId, object? type, CancellationToken cancellationToken)
+    public Task<IPlugin> Get(
+        string userId,
+        string? type,
+        Dictionary<string, object?>? specification,
+        CancellationToken cancellationToken)
     {
         try
         {
-            return type is string str
-                ? ResolveByConfig(userId, str, cancellationToken)
-                : ResolveByType(userId, type, cancellationToken);
+            return Resolve(userId, type, specification, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -66,38 +55,22 @@ public class PluginTypeService : IPluginTypeService
         }
     }
 
-    private async Task<IPlugin> ResolveByConfig(string userId, string? configName, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrEmpty(configName))
-        {
-            throw new FlowSynxException((int)ErrorCode.PluginTypeConfigShouldHaveValue,
-                _localization.Get("PluginTypeService_PluginTypeConfigShouldHaveValue"));
-        }
-
-        var config = await _pluginConfigurationService.Get(userId, configName, cancellationToken) 
-            ?? throw new FlowSynxException((int)ErrorCode.PluginConfigurationNotFound,
-                _localization.Get("PluginTypeService_ConfigurationCouldNotFound", configName));
-
-        var pluginEntity = await _pluginService.Get(userId, config.Type, config.Version, cancellationToken) 
-            ?? throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
-                _localization.Get("PluginTypeService_PluginCouldNotFound", config.Type, config.Version));
-
-        var specs = config.Specifications.ToPluginSpecifications();
-        return await GetOrLoadPlugin(pluginEntity, specs);
-    }
-
-    private async Task<IPlugin> ResolveByType(string userId, object? type, CancellationToken cancellationToken)
+    private async Task<IPlugin> Resolve(
+        string userId, 
+        string? type,
+        Dictionary<string, object?>? specification,
+        CancellationToken cancellationToken)
     {
         ValidateType(type);
-        
-        var typeConfig = _deserializer.Deserialize<PluginTypeConfiguration>(type.ToString());
-        ValidatePluginInTypeConfig(typeConfig);
 
-        var pluginEntity = await GetPluginEntity(userId, typeConfig, cancellationToken);
-        return await GetOrLoadPlugin(pluginEntity, typeConfig.Specifications);
+        var (plugin, version) = ParseType(type);
+        ValidatePluginInTypeConfig((plugin, version));
+
+        var pluginEntity = await GetPluginEntity(userId, plugin, version, cancellationToken);
+        return await GetOrLoadPlugin(pluginEntity, specification);
     }
 
-    private void ValidateType(object? type)
+    private void ValidateType(string? type)
     {
         if (type is null)
         {
@@ -106,9 +79,18 @@ public class PluginTypeService : IPluginTypeService
         }
     }
 
-    private void ValidatePluginInTypeConfig(PluginTypeConfiguration typeConfig)
+    private static (string plugin, string? version) ParseType(string type)
     {
-        if (string.IsNullOrEmpty(typeConfig.Plugin))
+        var parts = type.Split(':');
+        var plugin = parts[0];
+        var version = parts.Length > 1 ? parts[1] : null;
+
+        return (plugin, version);
+    }
+
+    private void ValidatePluginInTypeConfig((string plugin, string? version) pluginInfo)
+    {
+        if (string.IsNullOrWhiteSpace(pluginInfo.plugin))
         {
             throw new FlowSynxException((int)ErrorCode.PluginTypeShouldHaveValue,
                 _localization.Get("PluginTypeService_PluginTypeShouldHaveValue"));
@@ -116,16 +98,17 @@ public class PluginTypeService : IPluginTypeService
     }
 
     private async Task<PluginEntity> GetPluginEntity(
-        string userId, 
-        PluginTypeConfiguration typeConfig, 
+        string userId,
+        string? plugin,
+        string? version,
         CancellationToken cancellationToken)
     {
-        var pluginEntity = await _pluginService.Get(userId, typeConfig.Plugin, typeConfig.Version, cancellationToken);
-        
+        var pluginEntity = await _pluginService.Get(userId, plugin, version, cancellationToken);
+
         if (pluginEntity is null)
         {
             throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound,
-                _localization.Get("PluginTypeService_PluginCouldNotFound", typeConfig.Plugin, typeConfig.Version));
+                _localization.Get("PluginTypeService_PluginCouldNotFound", plugin, version));
         }
 
         return pluginEntity;
@@ -133,13 +116,13 @@ public class PluginTypeService : IPluginTypeService
 
     private async Task<IPlugin> GetOrLoadPlugin(
         PluginEntity pluginEntity,
-        PluginSpecifications? specifications)
+        Dictionary<string, object?>? specification)
     {
         var userId = pluginEntity.UserId;
         var pluginType = pluginEntity.Type;
         var pluginVersion = pluginEntity.Version;
 
-        var key = _pluginCacheKeyGeneratorService.GenerateKey(userId, pluginType, pluginVersion, specifications);
+        var key = _pluginCacheKeyGeneratorService.GenerateKey(userId, pluginType, pluginVersion, specification);
 
         var cached = _pluginCacheService.Get(key);
         if (cached != null)
@@ -151,8 +134,11 @@ public class PluginTypeService : IPluginTypeService
         {
             loader.Load();
             var index = new PluginCacheIndex(userId, pluginType, pluginVersion);
-            loader.Plugin.Specifications = specifications;
-            await loader.Plugin.Initialize(new PluginLoggerAdapter(_logger));
+
+            if (specification == null)
+                specification = new Dictionary<string, object?>();
+
+            await loader.Plugin.InitializeAsync(new PluginLoggerAdapter(_logger), specification);
             _pluginCacheService.Set(key, index, loader, TimeSpan.FromHours(2), TimeSpan.FromMinutes(15));
             return loader.Plugin;
         }

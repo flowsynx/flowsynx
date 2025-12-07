@@ -10,16 +10,6 @@ public class UpdatePluginValidator : AbstractValidator<UpdatePluginRequest>
         RuleFor(request => request.Type)
             .NotNull()
             .NotEmpty()
-            .WithMessage(localization.Get("Features_Validation_Plugin_Type_MustHaveValue"));
-
-        RuleFor(request => request.OldVersion)
-            .NotNull()
-            .NotEmpty()
-            .WithMessage(localization.Get("Features_Validation_Plugin_OldVersion_MustHaveValue"));
-
-        RuleFor(request => request.NewVersion)
-            .NotNull()
-            .NotEmpty()
-            .WithMessage(localization.Get("Features_Validation_Plugin_NewVersion_MustHaveValue"));
+            .WithMessage(localization.Get("Features_Validation_Plugin_Type_Update_MustHaveValue"));
     }
 }

@@ -11,10 +11,5 @@ public class UninstallPluginValidator : AbstractValidator<UninstallPluginRequest
             .NotNull()
             .NotEmpty()
             .WithMessage(localization.Get("Features_Validation_Plugin_Type_MustHaveValue"));
-
-        RuleFor(request => request.Version)
-            .NotNull()
-            .NotEmpty()
-            .WithMessage(localization.Get("Features_Validation_Plugin_Version_MustHaveValue"));
     }
 }

@@ -69,8 +69,8 @@ public class WorkflowOptimizationServiceTests
         // Arrange: T1 missing timeout, T2 has timeout
         var tasks = new List<WorkflowTask>
         {
-            new WorkflowTask("T1") { Name = "T1", TimeoutMilliseconds = null },
-            new WorkflowTask("T2") { Name = "T2", TimeoutMilliseconds = 999 }
+            new WorkflowTask("T1") { Name = "T1", Execution = { TimeoutMilliseconds = null } },
+            new WorkflowTask("T2") { Name = "T2", Execution = { TimeoutMilliseconds = 999 } }
         };
         var definition = CreateDefinition(tasks);
         var sut = new WorkflowOptimizationService();
@@ -81,8 +81,8 @@ public class WorkflowOptimizationServiceTests
         // Assert
         var t1 = optimized.Tasks.Single(t => t.Name == "T1");
         var t2 = optimized.Tasks.Single(t => t.Name == "T2");
-        Assert.Equal(2 * 60 * 1000, t1.TimeoutMilliseconds);
-        Assert.Equal(999, t2.TimeoutMilliseconds);
+        Assert.Equal(2 * 60 * 1000, t1.Execution.TimeoutMilliseconds);
+        Assert.Equal(999, t2.Execution.TimeoutMilliseconds);
         Assert.Contains("Task 'T1': applied default timeout 2m (ms).", explanation);
         Assert.DoesNotContain("Task 'T2': applied default timeout", explanation);
     }
@@ -94,7 +94,9 @@ public class WorkflowOptimizationServiceTests
         var task = new WorkflowTask("T1")
         {
             Name = "T1",
-            Dependencies = new List<string> { "A", "A", "B", "B" }
+            FlowControl = {
+                Dependencies = new List<string> { "A", "A", "B", "B" }
+            }
         };
         var definition = CreateDefinition(new[] { task,
              new WorkflowTask("A") { Name = "A" },
@@ -107,7 +109,7 @@ public class WorkflowOptimizationServiceTests
 
         // Assert
         var optimizedTask = optimized.Tasks.Single(t => t.Name == "T1");
-        Assert.Equal(new[] { "A", "B" }, optimizedTask.Dependencies);
+        Assert.Equal(new[] { "A", "B" }, optimizedTask.FlowControl.Dependencies);
     }
 
     [Fact]
@@ -116,8 +118,8 @@ public class WorkflowOptimizationServiceTests
         // Arrange: width2 (two independent tasks) -> recommended DOP =2
         var tasks = new List<WorkflowTask>
         {
-            new WorkflowTask("A") { Name = "A", TimeoutMilliseconds = 100 },
-            new WorkflowTask("B") { Name = "B", TimeoutMilliseconds = 200 }
+            new WorkflowTask("A") { Name = "A", Execution = { TimeoutMilliseconds = 100 } },
+            new WorkflowTask("B") { Name = "B", Execution = { TimeoutMilliseconds = 200 } }
         };
         var recommendedDop = Math.Clamp(2, 2, Environment.ProcessorCount * 2);
         var definition = CreateDefinition(tasks, dop: recommendedDop, workflowTimeout: 30 * 60 * 1000);
@@ -138,9 +140,9 @@ public class WorkflowOptimizationServiceTests
         // Level1: B(dep A), C(dep A)
         // Level2: D(dep B,C)
         var A = new WorkflowTask("A") { Name = "A" };
-        var B = new WorkflowTask("B") { Name = "B", Dependencies = new List<string> { "A" } };
-        var C = new WorkflowTask("C") { Name = "C", Dependencies = new List<string> { "A" } };
-        var D = new WorkflowTask("D") { Name = "D", Dependencies = new List<string> { "B", "C" } };
+        var B = new WorkflowTask("B") { Name = "B", FlowControl = { Dependencies = new List<string> { "A" } } };
+        var C = new WorkflowTask("C") { Name = "C", FlowControl = { Dependencies = new List<string> { "A" } } };
+        var D = new WorkflowTask("D") { Name = "D", FlowControl = { Dependencies = new List<string> { "B", "C" } } };
         var E = new WorkflowTask("E") { Name = "E" };
         var tasks = new List<WorkflowTask> { A, B, C, D, E };
 
@@ -162,7 +164,7 @@ public class WorkflowOptimizationServiceTests
     public void ComputeLevels_IgnoresUnknownDependencies_TreatsAsRoot()
     {
         // Arrange: F depends on UNKNOWN only -> treated as no deps
-        var F = new WorkflowTask("F") { Name = "F", Dependencies = new List<string> { "UNKNOWN" } };
+        var F = new WorkflowTask("F") { Name = "F", FlowControl = { Dependencies = new List<string> { "UNKNOWN" } } };
         var tasks = new List<WorkflowTask> { F };
 
         // Act

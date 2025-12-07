@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Localizations;
 using FlowSynx.Application.PluginHost.Manager;
+using FlowSynx.Application.PluginHost.Parser;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
@@ -37,7 +38,8 @@ internal class UpdatePluginHandler : IRequestHandler<UpdatePluginRequest, Result
         {
             _currentUserService.ValidateAuthentication();
 
-            await _pluginManager.UpdateAsync(request.Type, request.OldVersion, request.NewVersion, cancellationToken);
+            var parsedPluginType = PluginTypeParser.Parse(request.Type);
+            await _pluginManager.UpdateAsync(parsedPluginType.Type, parsedPluginType.CurrentVersion, parsedPluginType.TargetVersion, cancellationToken);
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_Plugin_Update_UpdatedSuccessfully"));
         }
         catch (FlowSynxException ex)

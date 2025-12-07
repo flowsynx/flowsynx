@@ -46,9 +46,9 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
         {
             var tasks = new List<WorkflowTask>
             {
-                new("TaskA") { Dependencies = new() },
-                new("TaskB") { Dependencies = new() { "TaskA" } },
-                new("TaskC") { Dependencies = new() { "TaskB" } }
+                new("TaskA") { FlowControl = { Dependencies = new() } },
+                new("TaskB") { FlowControl = { Dependencies = new() { "TaskA" } } },
+                new("TaskC") { FlowControl = { Dependencies = new() { "TaskB" } } }
             };
 
             var definition = new WorkflowDefinition
@@ -67,9 +67,9 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
         {
             var tasks = new List<WorkflowTask>
             {
-                new("TaskA") { Dependencies = new() { "TaskC" } },
-                new("TaskB") { Dependencies = new() { "TaskA" } },
-                new("TaskC") { Dependencies = new() { "TaskB" } }
+                new("TaskA") { FlowControl = { Dependencies = new() { "TaskC" } } },
+                new("TaskB") { FlowControl = { Dependencies = new() { "TaskA" } } },
+                new("TaskC") { FlowControl = { Dependencies = new() { "TaskB" } } }
             };
 
             var definition = new WorkflowDefinition
@@ -89,16 +89,20 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
             {
                 new("TaskA")
                 {
-                    ConditionalBranches = new()
-                    {
-                        new ConditionalBranch { Expression = "true", TargetTaskName = "TaskB" }
+                    FlowControl = {
+                        ConditionalBranches = new()
+                        {
+                            new ConditionalBranch { Expression = "true", TargetTaskName = "TaskB" }
+                        }
                     }
                 },
                 new("TaskB")
                 {
-                    ConditionalBranches = new()
-                    {
-                        new ConditionalBranch { Expression = "true", TargetTaskName = "TaskA" }
+                    FlowControl = {
+                        ConditionalBranches = new()
+                        {
+                            new ConditionalBranch { Expression = "true", TargetTaskName = "TaskA" }
+                        }
                     }
                 }
             };
@@ -120,9 +124,11 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
             {
                 new("TaskA")
                 {
-                    ConditionalBranches = new()
-                    {
-                        new ConditionalBranch { Expression = "true", TargetTaskName = "NonExistentTask" }
+                    FlowControl = {
+                        ConditionalBranches = new()
+                        {
+                            new ConditionalBranch { Expression = "true", TargetTaskName = "NonExistentTask" }
+                        }
                     }
                 }
             };
@@ -144,9 +150,11 @@ namespace FlowSynx.Tests.Infrastructure.Workflow
             {
                 new("TaskA")
                 {
-                    ConditionalBranches = new()
-                    {
-                        new ConditionalBranch { Expression = "true", TargetTaskName = "TaskB" }
+                    FlowControl = {
+                        ConditionalBranches = new()
+                        {
+                            new ConditionalBranch { Expression = "true", TargetTaskName = "TaskB" }
+                        }
                     }
                 },
                 new("TaskB")

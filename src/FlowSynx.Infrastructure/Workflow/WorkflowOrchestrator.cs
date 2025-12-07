@@ -234,8 +234,8 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         var taskMap = definition.Tasks.ToDictionary(t => t.Name);
 
         var conditionalTargets = definition.Tasks
-            .Where(t => t.ConditionalBranches is { Count: > 0 })
-            .SelectMany(t => t.ConditionalBranches.Select(b => b.TargetTaskName))
+            .Where(t => t.FlowControl.ConditionalBranches is { Count: > 0 })
+            .SelectMany(t => t.FlowControl.ConditionalBranches.Select(b => b.TargetTaskName))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var pending = new HashSet<string>(
@@ -386,12 +386,12 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
         IExpressionParser expressionParser,
         CancellationToken cancellationToken)
     {
-        if (task.ExecutionCondition == null || string.IsNullOrWhiteSpace(task.ExecutionCondition.Expression))
+        if (task.FlowControl.ExecutionCondition == null || string.IsNullOrWhiteSpace(task.FlowControl.ExecutionCondition.Expression))
             return true;
 
         try
         {
-            var result = await expressionParser.ParseAsync(task.ExecutionCondition.Expression, cancellationToken);
+            var result = await expressionParser.ParseAsync(task.FlowControl.ExecutionCondition.Expression, cancellationToken);
 
             bool final = false;
             switch (result)
@@ -404,16 +404,16 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
                     break;
                 default:
                     _logger.LogWarning("Execution condition '{Expression}' for task '{Task}' returned non-boolean result: {Value}",
-                        task.ExecutionCondition.Expression, task.Name, result);
+                        task.FlowControl.ExecutionCondition.Expression, task.Name, result);
                     break;
             }
 
-            _logger.LogDebug("Execution condition for task '{Task}': {Expression} = {Result}", task.Name, task.ExecutionCondition.Expression, final);
+            _logger.LogDebug("Execution condition for task '{Task}': {Expression} = {Result}", task.Name, task.FlowControl.ExecutionCondition.Expression, final);
             return final;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error evaluating ExecutionCondition for task '{TaskName}': {Expression}", task.Name, task.ExecutionCondition.Expression);
+            _logger.LogError(ex, "Error evaluating ExecutionCondition for task '{TaskName}': {Expression}", task.Name, task.FlowControl.ExecutionCondition.Expression);
             return false;
         }
     }
@@ -435,10 +435,10 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             if (!taskMap.TryGetValue(taskResult.TaskName, out var task))
                 continue;
 
-            if (task.ConditionalBranches is not { Count: > 0 })
+            if (task.FlowControl.ConditionalBranches is not { Count: > 0 })
                 continue;
 
-            foreach (var branch in task.ConditionalBranches)
+            foreach (var branch in task.FlowControl.ConditionalBranches)
             {
                 try
                 {
@@ -785,16 +785,16 @@ public class WorkflowOrchestrator : IWorkflowOrchestrator
             if (isConditionalTarget && !isTriggered)
                 continue;
 
-            if (task.Dependencies == null || task.Dependencies.Count == 0)
+            if (task.FlowControl.Dependencies == null || task.FlowControl.Dependencies.Count == 0)
             {
                 ready.Add(taskName);
                 continue;
             }
 
-            bool depsSucceeded = task.Dependencies.All(dep => succeededTasks.Contains(dep));
+            bool depsSucceeded = task.FlowControl.Dependencies.All(dep => succeededTasks.Contains(dep));
 
-            bool failureTriggered = task.RunOnFailureOf is { Count: > 0 } &&
-                                    task.RunOnFailureOf.Any(f => failedTasks.Contains(f));
+            bool failureTriggered = task.FlowControl.RunOnFailureOf is { Count: > 0 } &&
+                                    task.FlowControl.RunOnFailureOf.Any(f => failedTasks.Contains(f));
 
             if (depsSucceeded || failureTriggered)
                 ready.Add(taskName);

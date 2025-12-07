@@ -31,4 +31,34 @@ public class AgentConfiguration
     /// Additional context or constraints for the agent.
     /// </summary>
     public Dictionary<string, object>? Context { get; set; } = new();
+
+    /// <summary>
+    /// Optional: Allow-list of tool names the agent is permitted to call.
+    /// </summary>
+    public List<string>? AllowTools { get; set; } = new();
+
+    /// <summary>
+    /// Optional: Deny-list of tool names the agent must not call.
+    /// </summary>
+    public List<string>? DenyTools { get; set; } = new();
+
+    /// <summary>
+    /// Optional: Maximum tool calls per agent run (safety cap).
+    /// </summary>
+    public int MaxToolCalls { get; set; } = 6;
+
+    /// <summary>
+    /// Optional: Whether tool calls require approval (integrates with manual approval patterns).
+    /// </summary>
+    public bool RequireToolApproval { get; set; }
+
+    /// <summary>
+    /// Optional: If true, the agent simulates tool effects and returns a plan (no side effects).
+    /// </summary>
+    public bool DryRun { get; set; }
+
+    /// <summary>
+    /// Optional: Tool selection strategy hint for providers, e.g. "auto" | "required" | "none".
+    /// </summary>
+    public string? ToolSelection { get; set; } = "auto";
 }

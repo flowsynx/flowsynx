@@ -6,6 +6,4 @@ namespace FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
 public class UpdatePluginRequest : IRequest<Result<Unit>>
 {
     public required string Type { get; set; }
-    public required string OldVersion { get; set; }
-    public required string NewVersion { get; set; }
 }

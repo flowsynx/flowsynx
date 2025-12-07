@@ -41,17 +41,17 @@ public sealed class WorkflowOptimizationService : IWorkflowOptimizationService
         }
 
         // 3) Per-task timeouts: if missing, add modest default (e.g., 2 minutes)
-        foreach (var task in copy.Tasks.Where(t => t.TimeoutMilliseconds is null))
+        foreach (var task in copy.Tasks.Where(t => t.Execution.TimeoutMilliseconds is null))
         {
-            task.TimeoutMilliseconds = 2 * 60 * 1000;
+            task.Execution.TimeoutMilliseconds = 2 * 60 * 1000;
             explanation.Add($"Task '{task.Name}': applied default timeout 2m (ms).");
         }
 
         // 4) Normalize dependencies collections
         foreach (var task in copy.Tasks)
         {
-            if (task.Dependencies != null)
-                task.Dependencies = task.Dependencies.Distinct(StringComparer.Ordinal).ToList();
+            if (task.FlowControl.Dependencies != null)
+                task.FlowControl.Dependencies = task.FlowControl.Dependencies.Distinct(StringComparer.Ordinal).ToList();
         }
 
         // (future) 5) Telemetry-driven tuning hooks can be added here (p95-based timeouts, adaptive retries, etc.)
@@ -69,7 +69,7 @@ public sealed class WorkflowOptimizationService : IWorkflowOptimizationService
 
         var depsMap = tasks.ToDictionary(
             t => t.Name,
-            t => (t.Dependencies ?? new List<string>()).Where(d => nameToTask.ContainsKey(d)).ToHashSet(StringComparer.Ordinal));
+            t => (t.FlowControl.Dependencies ?? new List<string>()).Where(d => nameToTask.ContainsKey(d)).ToHashSet(StringComparer.Ordinal));
 
         while (remaining.Count > 0)
         {

@@ -3,16 +3,14 @@ using FlowSynx.Application.Configuration.Core.Security;
 using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Application.Configuration.System.Cors;
 using FlowSynx.Application.Configuration.System.HealthCheck;
-using FlowSynx.Application.Configuration.System.Logger;
 using FlowSynx.Application.Configuration.System.OpenApi;
 using FlowSynx.Application.Configuration.System.RateLimiting;
 using FlowSynx.Application.Configuration.System.Server;
 using FlowSynx.Application.Configuration.System.Workflow.Execution;
 using FlowSynx.Application.Configuration.System.Workflow.Queue;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Log;
+using FlowSynx.Domain;
 using FlowSynx.HealthCheck;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
@@ -24,7 +22,7 @@ using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
@@ -129,7 +127,6 @@ public static class ServiceCollectionExtensions
 
         services
             .AddHealthChecks()
-            .AddCheck<PluginConfigurationServiceHealthCheck>(name: localization.Get("AddHealthCheckerConfigurationService"))
             .AddCheck<PluginsServiceHealthCheck>(name: localization.Get("AddHealthCheckerPluginService"))
             .AddCheck<LogsServiceHealthCheck>(name: localization.Get("AddHealthCheckerLoggerService"));
 
@@ -182,22 +179,15 @@ public static class ServiceCollectionExtensions
                     Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
                 });
 
-                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                c.AddSecurityRequirement(document =>
                 {
+                    var requirement = new OpenApiSecurityRequirement
                     {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Basic" }
-                        },
-                        new List<string>()
-                    },
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                        },
-                        new List<string>()
-                    }
+                        [new OpenApiSecuritySchemeReference("Basic", document)] = new List<string>(),
+                        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+                    };
+
+                    return requirement;
                 });
             });
 

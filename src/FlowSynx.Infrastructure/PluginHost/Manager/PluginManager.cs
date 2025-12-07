@@ -4,7 +4,6 @@ using FlowSynx.Domain;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Plugin;
-using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
 using FlowSynx.PluginCore;
@@ -59,12 +58,12 @@ public class PluginManager : IPluginManager
         _version = version;
     }
 
-    public async Task InstallAsync(string pluginType, string pluginVersion, CancellationToken cancellationToken)
+    public async Task InstallAsync(string pluginType, string? currentVersion, CancellationToken cancellationToken)
     {
         var registryUrl = _pluginRegistryConfiguration.Url;
 
         // Resolve latest version if requested
-        var effectiveVersion = await ResolveVersionAsync(registryUrl, pluginType, pluginVersion, cancellationToken);
+        var effectiveVersion = await ResolveVersionAsync(registryUrl, pluginType, currentVersion, cancellationToken);
 
         if (await PluginAlreadyExists(pluginType, effectiveVersion, cancellationToken))
             return;
@@ -107,19 +106,19 @@ public class PluginManager : IPluginManager
         return pluginStream.ToArray();
     }
 
-    public async Task UpdateAsync(string pluginType, string oldVersion, string newPluginVersion, CancellationToken cancellationToken)
+    public async Task UpdateAsync(string pluginType, string currentVersion, string? targetVersion, CancellationToken cancellationToken)
     {
-        await Uninstall(pluginType, oldVersion, cancellationToken);
-        await InstallAsync(pluginType, newPluginVersion, cancellationToken);
+        await Uninstall(pluginType, currentVersion, cancellationToken);
+        await InstallAsync(pluginType, targetVersion, cancellationToken);
     }
 
-    public async Task Uninstall(string pluginType, string version, CancellationToken cancellationToken)
+    public async Task Uninstall(string pluginType, string currentVersion, CancellationToken cancellationToken)
     {
-        var pluginEntity = await _pluginService.Get(_currentUserService.UserId(), pluginType, version, cancellationToken);
+        var pluginEntity = await _pluginService.Get(_currentUserService.UserId(), pluginType, currentVersion, cancellationToken);
         if (pluginEntity is null)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
-                    _localization.Get("PluginManager_PluginCouldNotFound", pluginType, version));
+                    _localization.Get("PluginManager_PluginCouldNotFound", pluginType, currentVersion));
             throw new FlowSynxException(errorMessage);
         }
 
@@ -137,7 +136,7 @@ public class PluginManager : IPluginManager
             }
 
             await _pluginService.Delete(pluginEntity, cancellationToken);
-            _logger.LogInformation(_localization.Get("PluginManager_PluginUninstalledSuccessfully", pluginType, version));
+            _logger.LogInformation(_localization.Get("PluginManager_PluginUninstalledSuccessfully", pluginType, currentVersion));
         }
         catch (Exception ex)
         {
@@ -267,7 +266,7 @@ public class PluginManager : IPluginManager
             ProjectUrl = metadata.ProjectUrl,
             RepositoryUrl = metadata.RepositoryUrl,
             LastUpdated = metadata.LastUpdated,
-            Specifications = plugin.GetPluginSpecification()
+            //Specifications = plugin.GetPluginSpecification()
         };
     }
 
@@ -280,7 +279,7 @@ public class PluginManager : IPluginManager
         }
     }
 
-    private async Task<string> ResolveVersionAsync(string registryUrl, string pluginType, string requestedVersion, CancellationToken cancellationToken)
+    private async Task<string> ResolveVersionAsync(string registryUrl, string pluginType, string? requestedVersion, CancellationToken cancellationToken)
     {
         // If version is provided and not "latest", use it as-is
         if (!string.IsNullOrWhiteSpace(requestedVersion) &&

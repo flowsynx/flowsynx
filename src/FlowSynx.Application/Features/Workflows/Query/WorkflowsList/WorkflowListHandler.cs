@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Domain;
 using FlowSynx.Application.Services;
@@ -13,14 +12,14 @@ namespace FlowSynx.Application.Features.Workflows.Query.WorkflowsList;
 
 internal class WorkflowListHandler : IRequestHandler<WorkflowListRequest, PaginatedResult<WorkflowListResponse>>
 {
-    private readonly ILogger<PluginConfigListHandler> _logger;
+    private readonly ILogger<WorkflowListHandler> _logger;
     private readonly IWorkflowService _workflowService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ISystemClock _systemClock;
     private readonly ILocalization _localization;
 
     public WorkflowListHandler(
-        ILogger<PluginConfigListHandler> logger,
+        ILogger<WorkflowListHandler> logger,
         IWorkflowService workflowService, 
         ICurrentUserService currentUserService,
         ISystemClock systemClock,

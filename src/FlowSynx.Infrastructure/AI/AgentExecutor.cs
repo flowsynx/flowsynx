@@ -8,13 +8,16 @@ public class AgentExecutor : IAgentExecutor
 {
     private readonly IAiFactory _aiFactory;
     private readonly ILogger<AgentExecutor> _logger;
+    private readonly IAgentToolRegistry? _toolRegistry;
 
     public AgentExecutor(
         IAiFactory aiFactory,
-        ILogger<AgentExecutor> logger)
+        ILogger<AgentExecutor> logger,
+        IAgentToolRegistry? toolRegistry = null)
     {
         _aiFactory = aiFactory ?? throw new ArgumentNullException(nameof(aiFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _toolRegistry = toolRegistry;
     }
 
     public async Task<AgentExecutionResult> ExecuteAsync(
@@ -31,14 +34,82 @@ public class AgentExecutor : IAgentExecutor
         {
             var provider = _aiFactory.GetDefaultProvider();
 
-            return config.Mode switch
+            // If tool selection is none or registry missing, fall back to provider behavior
+            var useToolLoop = _toolRegistry is not null && (config.ToolSelection is null || !string.Equals(config.ToolSelection, "none", StringComparison.OrdinalIgnoreCase));
+
+            if (!useToolLoop || config.Mode is "plan" or "validate")
             {
-                "execute" => await provider.ExecuteAgenticTaskAsync(context, config, cancellationToken),
-                "plan" => await ExecutePlanModeAsync(provider, context, cancellationToken),
-                "validate" => await ExecuteValidateModeAsync(provider, context, cancellationToken),
-                "assist" => await provider.ExecuteAgenticTaskAsync(context, config, cancellationToken),
-                _ => throw new ArgumentException($"Unknown agent mode: {config.Mode}")
+                return config.Mode switch
+                {
+                    "execute" => await provider.ExecuteAgenticTaskAsync(context, config, cancellationToken),
+                    "plan" => await ExecutePlanModeAsync(provider, context, cancellationToken),
+                    "validate" => await ExecuteValidateModeAsync(provider, context, cancellationToken),
+                    "assist" => await provider.ExecuteAgenticTaskAsync(context, config, cancellationToken),
+                    _ => throw new ArgumentException($"Unknown agent mode: {config.Mode}")
+                };
+            }
+
+            // Tools-first loop for execute/assist
+            var result = new AgentExecutionResult
+            {
+                Success = true,
+                Reasoning = "Action-Observation loop executed",
             };
+
+            var tools = _toolRegistry!.GetAllowedTools(config.AllowTools, config.DenyTools).ToList();
+            if (tools.Count == 0)
+            {
+                _logger.LogInformation("No allowed tools found for agent; deferring to provider.");
+                return await provider.ExecuteAgenticTaskAsync(context, config, cancellationToken);
+            }
+
+            var maxIterations = Math.Max(1, config.MaxIterations);
+            var maxToolCalls = Math.Max(1, config.MaxToolCalls);
+            var toolCalls = 0;
+
+            // Simple heuristic: pick tool by name == TaskType (string) or first allowed
+            var taskTypeName = context.TaskType?.ToString();
+            var selectedTool = tools.FirstOrDefault(t => string.Equals(t.Name, taskTypeName, StringComparison.OrdinalIgnoreCase))
+                               ?? tools.First();
+
+            for (var i = 0; i < maxIterations && toolCalls < maxToolCalls; i++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var step = new AgentStep
+                {
+                    Thought = $"Iteration {i + 1}: selecting tool '{selectedTool.Name}'",
+                    Action = selectedTool.Name,
+                    Args = new Dictionary<string, object?>(context.TaskParameters ?? new(), StringComparer.OrdinalIgnoreCase)
+                };
+
+                if (config.DryRun)
+                {
+                    step.Args["dryRun"] = true;
+                }
+
+                var observation = await selectedTool.ExecuteAsync(step.Operation, step.Args, cancellationToken);
+                step.Observation = observation.Success
+                    ? observation.Output
+                    : new { error = observation.ErrorMessage ?? "Unknown tool error" };
+
+                result.Trace.Add(step);
+                result.Steps.Add($"{selectedTool.Name} called.");
+
+                toolCalls++;
+
+                // Break condition: in assist mode, single call is sufficient to plan args
+                if (config.Mode == "assist") break;
+
+                // For execute mode: basic stop when we have a successful observation
+                if (observation.Success) break;
+            }
+
+            // Output: last observation
+            var lastObs = result.Trace.LastOrDefault()?.Observation;
+            result.Output = lastObs;
+
+            return result;
         }
         catch (Exception ex)
         {
@@ -54,7 +125,6 @@ public class AgentExecutor : IAgentExecutor
 
     public Task<bool> CanHandleAsync(string taskType, CancellationToken cancellationToken)
     {
-        // Agent can assist with any task type
         return Task.FromResult(true);
     }
 

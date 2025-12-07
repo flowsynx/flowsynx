@@ -8,7 +8,6 @@ using FlowSynx.Domain;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
-using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Persistence.Core.Common.Contexts;
@@ -47,7 +46,6 @@ public class ApplicationContext : AuditableContext
     }
 
     public DbSet<PluginEntity> Plugins { get; set; }
-    public DbSet<PluginConfigurationEntity> PluginConfiguration { get; set; }
     public DbSet<WorkflowEntity> Workflows { get; set; }
     public DbSet<WorkflowExecutionEntity> WorkflowExecutions { get; set; }
     public DbSet<WorkflowTaskExecutionEntity> WorkflowTaskExecutions { get; set; }
@@ -137,7 +135,6 @@ public class ApplicationContext : AuditableContext
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfiguration(new PluginEntityConfiguration(_jsonSerializer, _jsonDeserializer));
-            modelBuilder.ApplyConfiguration(new PluginConfigEntityConfiguration(_jsonSerializer, _jsonDeserializer, _encryptionService));
             modelBuilder.ApplyConfiguration(new WorkflowEntityConfiguration(_encryptionService));
             modelBuilder.ApplyConfiguration(new WorkflowExecutionEntityConfiguration(_encryptionService));
             modelBuilder.ApplyConfiguration(new WorkflowTaskExecutionEntityConfiguration());

@@ -4,5 +4,9 @@ namespace FlowSynx.Infrastructure.PluginHost;
 
 public interface IPluginTypeService
 {
-    Task<IPlugin> Get(string userId, object? type, CancellationToken cancellationToken);
+    Task<IPlugin> Get(
+        string userId, 
+        string? type,
+        Dictionary<string, object?>? specification,
+        CancellationToken cancellationToken);
 }

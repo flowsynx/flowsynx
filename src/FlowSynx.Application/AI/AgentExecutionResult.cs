@@ -8,4 +8,5 @@ public class AgentExecutionResult
     public List<string> Steps { get; set; } = new();
     public Dictionary<string, object>? Metadata { get; set; }
     public string? ErrorMessage { get; set; }
+    public List<AgentStep> Trace { get; set; } = new();
 }

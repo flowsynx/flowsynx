@@ -1,7 +1,8 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
 using FlowSynx.Application.PluginHost.Manager;
+using FlowSynx.Application.PluginHost.Parser;
 using FlowSynx.Application.Services;
+using FlowSynx.Domain;
 using FlowSynx.Domain.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
@@ -38,7 +39,8 @@ internal class InstallPluginHandler : IRequestHandler<InstallPluginRequest, Resu
         {
             _currentUserService.ValidateAuthentication();
 
-            await _pluginManager.InstallAsync(request.Type, request.Version, cancellationToken);
+            var parsedPluginType = PluginTypeParser.Parse(request.Type);
+            await _pluginManager.InstallAsync(parsedPluginType.Type, parsedPluginType.CurrentVersion, cancellationToken);
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_Plugin_Install_AddedSuccessfully"));
         }
         catch (FlowSynxException ex)

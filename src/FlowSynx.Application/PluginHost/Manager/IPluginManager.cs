@@ -2,7 +2,7 @@
 
 public interface IPluginManager
 {
-    Task InstallAsync(string pluginType, string pluginVersion, CancellationToken cancellationToken);
-    Task UpdateAsync(string pluginType, string oldVersion, string newPluginVersion, CancellationToken cancellationToken);
-    Task Uninstall(string pluginType, string version, CancellationToken cancellationToken);
+    Task InstallAsync(string pluginType, string? currentVersion, CancellationToken cancellationToken);
+    Task UpdateAsync(string pluginType, string currentVersion, string? targetVersion, CancellationToken cancellationToken);
+    Task Uninstall(string pluginType, string currentVersion, CancellationToken cancellationToken);
 }

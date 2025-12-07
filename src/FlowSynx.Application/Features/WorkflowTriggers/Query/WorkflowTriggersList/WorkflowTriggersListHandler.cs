@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Application.Services;
@@ -12,13 +11,13 @@ namespace FlowSynx.Application.Features.WorkflowTriggers.Query.WorkflowTriggersL
 
 internal class WorkflowTriggersListHandler : IRequestHandler<WorkflowTriggersListRequest, PaginatedResult<WorkflowTriggersListResponse>>
 {
-    private readonly ILogger<PluginConfigListHandler> _logger;
+    private readonly ILogger<WorkflowTriggersListHandler> _logger;
     private readonly IWorkflowTriggerService _workflowTriggerService;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILocalization _localization;
 
     public WorkflowTriggersListHandler(
-        ILogger<PluginConfigListHandler> logger,
+        ILogger<WorkflowTriggersListHandler> logger,
         IWorkflowTriggerService workflowTriggerService, 
         ICurrentUserService currentUserService,
         ILocalization localization)

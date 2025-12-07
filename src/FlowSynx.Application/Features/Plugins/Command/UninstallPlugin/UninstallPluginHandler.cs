@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
 using FlowSynx.Application.PluginHost.Manager;
+using FlowSynx.Application.PluginHost.Parser;
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Wrapper;
 using FlowSynx.PluginCore.Exceptions;
@@ -38,7 +38,8 @@ internal class UninstallPluginHandler : IRequestHandler<UninstallPluginRequest, 
         {
             _currentUserService.ValidateAuthentication();
 
-            await _pluginManager.Uninstall(request.Type, request.Version, cancellationToken);
+            var parsedPluginType = PluginTypeParser.Parse(request.Type);
+            await _pluginManager.Uninstall(parsedPluginType.Type, parsedPluginType.CurrentVersion, cancellationToken);
             return await Result<Unit>.SuccessAsync(_localization.Get("Feature_Plugin_Uninstall_DeletedSuccessfully"));
         }
         catch (FlowSynxException ex)

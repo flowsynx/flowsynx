@@ -114,13 +114,13 @@ public class WorkflowValidator : IWorkflowValidator
         var definedTaskNames = workflowTasks.Select(t => t.Name).ToHashSet();
 
         var missingDependencies = workflowTasks
-            .SelectMany(t => t.Dependencies)
+            .SelectMany(t => t.FlowControl.Dependencies)
             .Where(dep => !definedTaskNames.Contains(dep))
             .Distinct()
             .ToList();
 
         var missingBranchTargets = workflowTasks
-            .SelectMany(t => t.ConditionalBranches?.Select(b => b.TargetTaskName) ?? [])
+            .SelectMany(t => t.FlowControl.ConditionalBranches?.Select(b => b.TargetTaskName) ?? [])
             .Where(target => !definedTaskNames.Contains(target))
             .Distinct()
             .ToList();
@@ -233,7 +233,7 @@ public class WorkflowValidator : IWorkflowValidator
         Dictionary<string, List<string>> graph,
         Dictionary<string, int> inDegree)
     {
-        foreach (var dep in task.Dependencies)
+        foreach (var dep in task.FlowControl.Dependencies)
         {
             AddEdge(graph, inDegree, dep, task.Name);
         }
@@ -247,10 +247,10 @@ public class WorkflowValidator : IWorkflowValidator
         Dictionary<string, List<string>> graph,
         Dictionary<string, int> inDegree)
     {
-        if (task.ConditionalBranches is not { Count: > 0 })
+        if (task.FlowControl.ConditionalBranches is not { Count: > 0 })
             return;
 
-        foreach (var branch in task.ConditionalBranches.Select(branch => branch.TargetTaskName))
+        foreach (var branch in task.FlowControl.ConditionalBranches.Select(branch => branch.TargetTaskName))
         {
             AddEdge(graph, inDegree, task.Name, branch);
         }
@@ -266,11 +266,11 @@ public class WorkflowValidator : IWorkflowValidator
         task.Output = await ReplaceIfNotNull(task.Output, expressionParser, cancellationToken);
 
         // Dependencies
-        if (task.Dependencies is { Count: > 0 })
+        if (task.FlowControl.Dependencies is { Count: > 0 })
         {
-            for (int i = 0; i < task.Dependencies.Count; i++)
+            for (int i = 0; i < task.FlowControl.Dependencies.Count; i++)
             {
-                task.Dependencies[i] = await ReplaceIfNotNull(task.Dependencies[i], expressionParser, cancellationToken);
+                task.FlowControl.Dependencies[i] = await ReplaceIfNotNull(task.FlowControl.Dependencies[i], expressionParser, cancellationToken);
             }
         }
     }

@@ -65,19 +65,6 @@ public enum ErrorCode
     AuditNotFound                                   = 2104,
     #endregion
 
-    #region Plugin Configuration error codes
-    PluginConfiguration                             = 2201,
-    PluginConfigurationNotFound                     = 2202,
-    PluginConfigurationIsAlreadyExist               = 2203,
-    PluginConfigurationList                         = 2204,
-    PluginConfigurationGetItem                      = 2205,
-    PluginConfigurationCheckExistence               = 2206,
-    PluginConfigurationAdd                          = 2207,
-    PluginConfigurationUpdate                       = 2208,
-    PluginConfigurationDelete                       = 2209,
-    PluginRegistryPluginVersionsNotFound            = 2210,
-    #endregion
-
     #region Plugins error codes
     PluginNotFound                                  = 2301,
     PluginTypeNotFound                              = 2302,
@@ -99,6 +86,8 @@ public enum ErrorCode
     PluginCompatibility                             = 2318,
     PluginTypeShouldHaveValue                       = 2319,
     PluginTypeConfigShouldHaveValue                 = 2320,
+    PluginTypeInvalidInput                          = 2321,
+    PluginRegistryPluginVersionsNotFound            = 2322,
     #endregion
 
     #region Workflow error codes

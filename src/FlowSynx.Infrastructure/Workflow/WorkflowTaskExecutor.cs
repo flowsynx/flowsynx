@@ -94,14 +94,14 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         CancellationToken globalCancellationToken,
         CancellationToken taskCancellationToken)
     {
-        using var timeoutCts = CreateTimeoutToken(task.TimeoutMilliseconds, taskCancellationToken);
+        using var timeoutCts = CreateTimeoutToken(task.Execution.TimeoutMilliseconds, taskCancellationToken);
         var token = timeoutCts.Token;
 
         await ParseWorkflowTaskPlaceholders(task, expressionParser, token);
         await ProcessOutputResults(executionContext.TaskOutputs, expressionParser, token);
 
         // Check if agent execution is enabled for this task
-        if (task.Agent?.Enabled == true && _agentExecutor != null)
+        if (task.Execution.Agent?.Enabled == true && _agentExecutor != null)
         {
             return await ExecuteWithAgentAsync(
                 executionContext,
@@ -139,7 +139,7 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         _logger.LogInformation(
             "Executing task '{TaskName}' with AI agent in mode '{Mode}'",
             task.Name,
-            task.Agent!.Mode);
+            task.Execution.Agent!.Mode);
 
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
 
@@ -153,17 +153,17 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                 TaskName = task.Name,
                 TaskType = task.Type,
                 TaskDescription = task.Description,
-                TaskParameters = task.Parameters,
+                TaskParameters = task.Execution.Parameters,
                 WorkflowVariables = executionContext.WorkflowVariables,
                 PreviousTaskOutputs = executionContext.TaskOutputs,
-                UserInstructions = task.Agent.Instructions,
-                AdditionalContext = task.Agent.Context
+                UserInstructions = task.Execution.Agent.Instructions,
+                AdditionalContext = task.Execution.Agent.Context
             };
 
             // Execute with agent
             var agentResult = await _agentExecutor!.ExecuteAsync(
                 agentContext,
-                task.Agent,
+                task.Execution.Agent,
                 taskCancellationToken);
 
             // Log agent reasoning and steps
@@ -187,9 +187,23 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
                     $"Agent execution failed: {agentResult.ErrorMessage}");
             }
 
-            // If agent mode is "assist", still execute the plugin with agent guidance
-            if (task.Agent.Mode == "assist")
+            // If agent mode is "assist", merge suggested parameters and proceed with plugin execution.
+            if (task.Execution.Agent.Mode == "assist")
             {
+                var suggested = ExtractAgentSuggestedParameters(agentResult.Output);
+                if (suggested is { Count: > 0 })
+                {
+                    task.Execution.Parameters ??= new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var kv in suggested)
+                        task.Execution.Parameters[kv.Key] = kv.Value;
+
+                    _logger.LogInformation(
+                        "Agent assistance merged {Count} parameter(s) for '{TaskName}': {Keys}",
+                        suggested.Count,
+                        task.Name,
+                        string.Join(", ", suggested.Keys));
+                }
+
                 _logger.LogInformation(
                     "Agent provided guidance, proceeding with plugin execution for '{TaskName}'",
                     task.Name);
@@ -268,6 +282,35 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         return TaskOutput.Success(null);
     }
 
+    private static IDictionary<string, object?>? ExtractAgentSuggestedParameters(object? output)
+    {
+        // Supports these shapes:
+        // - { ...parameterKeyValues }
+        // - { parameters: { ...parameterKeyValues } }
+        // - JObject equivalent of the above
+        switch (output)
+        {
+            case IDictionary<string, object?> dict:
+            {
+                if (dict.TryGetValue("parameters", out var p) && p is IDictionary<string, object?> pDict)
+                    return pDict;
+                return dict;
+            }
+            case JObject jObj:
+            {
+                var token = jObj["parameters"] ?? jObj["taskParameters"] ?? jObj;
+                if (token is JObject pObj)
+                {
+                    var res = pObj.ToObject<Dictionary<string, object?>>();
+                    return res;
+                }
+                break;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Standard plugin-based execution without agent.
     /// </summary>
@@ -281,14 +324,15 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         CancellationToken taskCancellationToken)
     {
         var userId = executionContext.UserId;
-        var plugin = await _pluginTypeService.Get(userId, task.Type, taskCancellationToken);
-        var pluginParameters = task.Parameters.ToPluginParameters();
+        var plugin = await _pluginTypeService.Get(userId, task.Type, task.Execution.Specification, taskCancellationToken);
+        var operationName = task.Execution.Operation;
+        var pluginParameters = task.Execution.Parameters.ToPluginParameters();
         var retryStrategy = _errorHandlingStrategyFactory.Create(task.ErrorHandling);
 
         try
         {
             taskCancellationToken.ThrowIfCancellationRequested();
-            var executionResult = await plugin.ExecuteAsync(pluginParameters, taskCancellationToken);
+            var executionResult = await plugin.ExecuteAsync(operationName, pluginParameters, taskCancellationToken);
             var output = ResolvePluginOutput(executionResult, task);
 
             await CompleteTaskWithLogAsync(
@@ -493,11 +537,11 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
         await ReplaceTopLevelStrings(task, expressionParser, cancellationToken);
         await ProcessTaskParameters(task, expressionParser, cancellationToken);
         await ProcessManualApproval(task.ManualApproval, expressionParser, cancellationToken);
-        await ReplaceStringListItems(task.Dependencies, expressionParser, cancellationToken);
-        await ReplaceStringListItems(task.RunOnFailureOf, expressionParser, cancellationToken);
+        await ReplaceStringListItems(task.FlowControl.Dependencies, expressionParser, cancellationToken);
+        await ReplaceStringListItems(task.FlowControl.RunOnFailureOf, expressionParser, cancellationToken);
         await ProcessErrorHandling(task.ErrorHandling, expressionParser, cancellationToken);
         await ProcessConditionalProperties(task, expressionParser, cancellationToken);
-        await ProcessAgentConfiguration(task.Agent, expressionParser, cancellationToken);
+        await ProcessAgentConfiguration(task.Execution.Agent, expressionParser, cancellationToken);
 
         if (task.Position is not null)
         {
@@ -546,15 +590,15 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
     private async Task ProcessTaskParameters(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
-        if (task.Parameters is not { Count: > 0 })
+        if (task.Execution.Parameters is not { Count: > 0 })
             return;
 
-        foreach (var key in task.Parameters.Keys.ToList())
+        foreach (var key in task.Execution.Parameters.Keys.ToList())
         {
-            task.Parameters[key] = await ProcessValueDeep(task.Parameters[key], expressionParser, cancellationToken);
+            task.Execution.Parameters[key] = await ProcessValueDeep(task.Execution.Parameters[key], expressionParser, cancellationToken);
         }
 
-        await _placeholderReplacer.ReplacePlaceholdersInParameters(task.Parameters, expressionParser, cancellationToken);
+        await _placeholderReplacer.ReplacePlaceholdersInParameters(task.Execution.Parameters, expressionParser, cancellationToken);
     }
 
     private async Task<object?> ProcessValueDeep(object? value, IExpressionParser expressionParser, CancellationToken cancellationToken)
@@ -632,15 +676,15 @@ public class WorkflowTaskExecutor : IWorkflowTaskExecutor
 
     private async Task ProcessConditionalProperties(WorkflowTask task, IExpressionParser expressionParser, CancellationToken cancellationToken)
     {
-        if (task.ExecutionCondition != null)
+        if (task.FlowControl.ExecutionCondition != null)
         {
-            task.ExecutionCondition.Expression = await ReplaceIfNotNull(task.ExecutionCondition.Expression, expressionParser, cancellationToken);
-            task.ExecutionCondition.Description = await ReplaceIfNotNull(task.ExecutionCondition.Description, expressionParser, cancellationToken);
+            task.FlowControl.ExecutionCondition.Expression = await ReplaceIfNotNull(task.FlowControl.ExecutionCondition.Expression, expressionParser, cancellationToken);
+            task.FlowControl.ExecutionCondition.Description = await ReplaceIfNotNull(task.FlowControl.ExecutionCondition.Description, expressionParser, cancellationToken);
         }
 
-        if (task.ConditionalBranches is { Count: > 0 })
+        if (task.FlowControl.ConditionalBranches is { Count: > 0 })
         {
-            foreach (var branch in task.ConditionalBranches)
+            foreach (var branch in task.FlowControl.ConditionalBranches)
             {
                 branch.Expression = await ReplaceIfNotNull(branch.Expression, expressionParser, cancellationToken);
                 branch.TargetTaskName = await ReplaceIfNotNull(branch.TargetTaskName, expressionParser, cancellationToken);

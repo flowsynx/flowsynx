@@ -2,37 +2,47 @@
 
 public class WorkflowTask(string name)
 {
-    // ─────────────────────────────────────────────
-    // Core Identification
-    // ─────────────────────────────────────────────
+    /// <summary>
+    /// Gets or sets the name of the workflow task.
+    /// </summary>
     public string Name { get; set; } = name;
+
+    /// <summary>
+    /// Gets or sets the description of the workflow task.
+    /// </summary>
     public string? Description { get; set; }
-    public object? Type { get; set; }
 
-    // ─────────────────────────────────────────────
-    // Execution Configuration
-    // ─────────────────────────────────────────────
-    public Dictionary<string, object?>? Parameters { get; set; } = new();
-    public AgentConfiguration? Agent { get; set; }
-    public int? TimeoutMilliseconds { get; set; }
+    /// <summary>
+    /// Gets or sets the type identifier associated with the current task.
+    /// </summary>
+    public string? Type { get; set; }
 
-    // ─────────────────────────────────────────────
-    // Flow Control and Dependencies
-    // ─────────────────────────────────────────────
-    public List<string> Dependencies { get; set; } = new();
-    public List<string> RunOnFailureOf { get; set; } = new();
-    public Condition? ExecutionCondition { get; set; }
-    public List<ConditionalBranch> ConditionalBranches { get; set; } = new();
+    /// <summary>
+    /// Gets the configuration settings related to execution behavior.
+    /// </summary>
+    public ExecutionConfig Execution { get; init; } = new();
 
-    // ─────────────────────────────────────────────
-    // Error and Approval Handling
-    // ─────────────────────────────────────────────
+    /// <summary>
+    /// Gets the configuration settings related to flow control and dependencies.
+    /// </summary>
+    public FlowControlConfig FlowControl { get; init; } = new();
+
+    /// <summary>
+    /// Gets or sets the error handling strategy to use for this operation.
     public ErrorHandling? ErrorHandling { get; set; }
+
+    /// <summary>
+    /// Gets or sets the manual approval configuration for the operation.
+    /// </summary>
     public ManualApproval? ManualApproval { get; set; }
 
-    // ─────────────────────────────────────────────
-    // Output and Visualization
-    // ─────────────────────────────────────────────
+    /// <summary>
+    /// Gets or sets the output configuration for the operation.
+    /// </summary>
     public string? Output { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the position of the workflow task within the overall workflow.
+    /// </summary>
     public WorkflowTaskPosition? Position { get; set; } = new(0, 0);
 }

@@ -3,7 +3,6 @@ using FlowSynx.Application.Services;
 using FlowSynx.Application.Workflow;
 using FlowSynx.Domain.Audit;
 using FlowSynx.Domain.Plugin;
-using FlowSynx.Domain.PluginConfig;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Persistence.Sqlite.Contexts;
@@ -21,7 +20,6 @@ public static class ServiceCollectionExtensions
         services
             .AddScoped<IAuditService, AuditService>()
             .AddScoped<IDatabaseInitializer, PosgreSqlDatabaseInitializer>()
-            .AddScoped<IPluginConfigurationService, PluginConfigurationService>()
             .AddScoped<IPluginService, PluginService>()
             .AddScoped<IWorkflowService, WorkflowService>()
             .AddScoped<IWorkflowExecutionService, WorkflowExecutionService>()

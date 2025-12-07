@@ -2,11 +2,6 @@ using FlowSynx.Application.Features.Audit.Query.AuditDetails;
 using FlowSynx.Application.Features.Audit.Query.AuditsList;
 using FlowSynx.Application.Features.Logs.Query.LogsList;
 using FlowSynx.Application.Features.Metrics.Query;
-using FlowSynx.Application.Features.PluginConfig.Command.AddPluginConfig;
-using FlowSynx.Application.Features.PluginConfig.Command.DeletePluginConfig;
-using FlowSynx.Application.Features.PluginConfig.Command.UpdatePluginConfig;
-using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigDetails;
-using FlowSynx.Application.Features.PluginConfig.Query.PluginConfigList;
 using FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UninstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
@@ -420,52 +415,6 @@ public static class MediatorExtensions
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
-    }
-    #endregion
-
-    #region PluginConfig
-    public static Task<PaginatedResult<PluginConfigListResponse>> PluginsConfiguration(
-        this IMediator mediator,
-        int page,
-        int pageSize,
-        CancellationToken cancellationToken)
-    {
-        return mediator.Send(new PluginConfigListRequest
-        {
-            Page = page,
-            PageSize = pageSize
-        }, cancellationToken);
-    }
-
-    public static Task<Result<PluginConfigDetailsResponse>> PluginConfigurationDetails(
-        this IMediator mediator,
-         string configId,
-         CancellationToken cancellationToken)
-    {
-        return mediator.Send(new PluginConfigDetailsRequest { ConfigId = configId}, cancellationToken);
-    }
-
-    public static Task<Result<AddPluginConfigResponse>> AddPluginConfiguration(
-        this IMediator mediator,
-        AddPluginConfigRequest request,
-        CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-
-    public static Task<Result<Unit>> UpdatePluginConfiguration(
-        this IMediator mediator,
-        UpdatePluginConfigRequest request,
-        CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
-    }
-    public static Task<Result<Unit>> DeletePluginConfiguration(
-        this IMediator mediator,
-        string configId,
-        CancellationToken cancellationToken)
-    {
-        return mediator.Send(new DeletePluginConfigRequest { ConfigId = configId }, cancellationToken);
     }
     #endregion
 
