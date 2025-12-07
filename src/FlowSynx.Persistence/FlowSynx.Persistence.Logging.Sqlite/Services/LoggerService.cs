@@ -127,7 +127,10 @@ public class LoggerService : ILoggerService
         try
         {
             await using var context = await _logContextFactory.CreateDbContextAsync(cancellationToken);
-            var logs = await context.Logs.Where(l => l.UserId == userId).ToListAsync(cancellationToken).ConfigureAwait(false);
+            var logs = await context.Logs
+                .Where(l => l.UserId == userId)
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             var result = new List<LogEntity>();
 
@@ -136,32 +139,22 @@ public class LoggerService : ILoggerService
                 if (string.IsNullOrWhiteSpace(log.Scope))
                     continue;
 
-                var scopeParts = log.Scope.Split('|');
-                var scopeDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var scopeDict = ParseScope(log.Scope);
 
-                foreach (var part in scopeParts)
-                {
-                    var keyValue = part.Split('=', 2, StringSplitOptions.TrimEntries);
-                    if (keyValue.Length == 2)
-                    {
-                        scopeDict[keyValue[0]] = keyValue[1];
-                    }
-                }
+                if (!scopeDict.TryGetValue("WorkflowId", out var wId)) continue;
+                if (!scopeDict.TryGetValue("WorkflowExecutionId", out var weId)) continue;
+                if (!scopeDict.TryGetValue("WorkflowExecutionTaskId", out var wetId)) continue;
+                if (!Guid.TryParse(wId, out var parsedWorkflowId)) continue;
+                if (!Guid.TryParse(weId, out var parsedWorkflowExecutionId)) continue;
+                if (!Guid.TryParse(wetId, out var parsedWorkflowTaskExecutionId)) continue;
 
-                if (scopeDict.TryGetValue("WorkflowId", out var wId) &&
-                    scopeDict.TryGetValue("WorkflowExecutionId", out var weId) &&
-                    scopeDict.TryGetValue("WorkflowExecutionTaskId", out var wetId) &&
-                    Guid.TryParse(wId, out var parsedWorkflowId) &&
-                    Guid.TryParse(weId, out var parsedWorkflowExecutionId) &&
-                    Guid.TryParse(wetId, out var parsedWorkflowTaskExecutionId) &&
-                    parsedWorkflowId == workflowId &&
+                if (parsedWorkflowId == workflowId &&
                     parsedWorkflowExecutionId == workflowExecutionId &&
                     parsedWorkflowTaskExecutionId == workflowTaskExecutionId)
                 {
                     result.Add(log);
                 }
             }
-
 
             return result;
         }
