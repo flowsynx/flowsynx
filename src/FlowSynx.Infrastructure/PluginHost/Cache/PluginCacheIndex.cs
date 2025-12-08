@@ -2,12 +2,8 @@
 
 namespace FlowSynx.Infrastructure.PluginHost.Cache;
 
-public class PluginCacheIndex(string userId, string pluginType, string pluginVersion)
+public record class PluginCacheIndex(string UserId, string PluginType, string PluginVersion)
 {
-    public string UserId { get; } = userId;
-    public string PluginType { get; } = pluginType;
-    public string PluginVersion { get; } = pluginVersion;
-
     public override string ToString()
     {
         var key = $"{UserId}:{PluginType}:{PluginVersion}";

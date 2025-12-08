@@ -11,7 +11,11 @@ public sealed class PluginLoader : IDisposable
     private IPlugin? _pluginInstance;
     private bool _disposed;
 
+    /// <summary>
+    /// Descriptor does not load assemblies; safe to keep strongly.
+    /// </summary>
     public PluginDescriptor Descriptor { get; }
+
     public bool IsLoaded { get; private set; }
 
     public PluginLoader(string pluginEntryDllPath)
@@ -22,44 +26,49 @@ public sealed class PluginLoader : IDisposable
     public async Task<PluginLoadResult> LoadAsync(CancellationToken cancellationToken = default)
     {
         await _sync.WaitAsync(cancellationToken).ConfigureAwait(false);
+
         try
         {
-            if (IsLoaded) return PluginLoadResult.FromSuccess(_pluginInstance!);
+            if (IsLoaded)
+                return PluginLoadResult.FromSuccess(_pluginInstance!);
 
-            // Create context for plugin directory
+            // Create unloadable ALC for this plugin instance
             _context = new PluginLoadContext(Descriptor.DirectoryPath);
             _contextWeakRef = new WeakReference(_context);
 
+            // Load entry assembly inside the plugin ALC
             var pluginAssembly = _context.LoadFromAssemblyPath(Descriptor.EntryDllPath);
 
+            // Find IPlugin implementation
             var pluginType = pluginAssembly
                 .GetTypes()
-                .FirstOrDefault(t => typeof(IPlugin).IsAssignableFrom(t)
-                                     && !t.IsAbstract
-                                     && t.IsClass);
+                .FirstOrDefault(t =>
+                    typeof(IPlugin).IsAssignableFrom(t)
+                    && !t.IsAbstract
+                    && t.IsClass);
 
             if (pluginType is null)
             {
                 CleanupAfterFailedLoad();
-                return PluginLoadResult.FromFailure("No IPlugin implementation found in plugin folder.");
+                return PluginLoadResult.FromFailure("No IPlugin implementation found in plugin.");
             }
 
-            // Create instance using parameterless ctor. Consider activating via factory method for more control.
-            var ctor = pluginType.GetConstructor(Type.EmptyTypes);
-            if (ctor is null)
+            // Must have parameterless ctor
+            if (pluginType.GetConstructor(Type.EmptyTypes) is not ConstructorInfo ctor)
             {
                 CleanupAfterFailedLoad();
-                return PluginLoadResult.FromFailure("Plugin type does not have a parameterless constructor.");
+                return PluginLoadResult.FromFailure("IPlugin implementation must have a parameterless constructor.");
             }
 
             try
             {
-                // Create in plugin ALC; cast is allowed only if contract assembly is shared and identity matches.
-                var instance = (IPlugin?)Activator.CreateInstance(pluginType);
+                // Activator.CreateInstance executed inside plugin ALC
+                var instance = (IPlugin?)ctor.Invoke(null);
+
                 if (instance is null)
                 {
                     CleanupAfterFailedLoad();
-                    return PluginLoadResult.FromFailure("Failed to create plugin instance.");
+                    return PluginLoadResult.FromFailure("Failed to instantiate plugin.");
                 }
 
                 _pluginInstance = instance;
@@ -70,7 +79,8 @@ public sealed class PluginLoader : IDisposable
             catch (TargetInvocationException tie)
             {
                 CleanupAfterFailedLoad();
-                return PluginLoadResult.FromFailure($"Plugin ctor threw: {tie.InnerException?.Message ?? tie.Message}");
+                return PluginLoadResult.FromFailure(
+                    $"Plugin threw during construction: {tie.InnerException?.Message ?? tie.Message}");
             }
         }
         finally
@@ -82,40 +92,48 @@ public sealed class PluginLoader : IDisposable
     public async Task UnloadAsync(CancellationToken cancellationToken = default)
     {
         await _sync.WaitAsync(cancellationToken).ConfigureAwait(false);
+
         try
         {
-            if (!IsLoaded) return;
+            if (!IsLoaded)
+                return;
 
-            // Allow plugin to dispose/cleanup itself first (if it implements IDisposable internally)
+            // Allow plugin to perform internal cleanup
             try
             {
-                if (_pluginInstance is IDisposable d)
+                if (_pluginInstance is IDisposable disposable)
                 {
-                    d.Dispose();
+                    disposable.Dispose();
                 }
             }
-            catch { /* swallow plugin cleanup errors */ }
+            catch
+            {
+                // Swallow plugin cleanup exceptions
+            }
 
-            // Drop the instance reference
+            // IMPORTANT: Drop strong references to plugin instance first
             _pluginInstance = null;
 
-            // Drop context reference and trigger unload
+            // Request ALC unload
             if (_context != null)
             {
-                _context.DisposeCollectible();
+                _context.Unload();
             }
 
-            // Give the GC some cycles to collect the ALC
-            for (int i = 0; _contextWeakRef is not null && _contextWeakRef.IsAlive && i < 10; i++)
+            // Wait for the ALC to be collected naturally by runtime
+            if (_contextWeakRef != null)
             {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-                await Task.Delay(100, cancellationToken).ContinueWith(_ => { });
+                // ~5 seconds total (50 × 100ms)
+                for (int i = 0; i < 50 && _contextWeakRef.IsAlive; i++)
+                {
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                }
             }
 
+            // Hard release references
             _context = null;
             _contextWeakRef = null;
+
             IsLoaded = false;
         }
         finally
@@ -124,7 +142,8 @@ public sealed class PluginLoader : IDisposable
         }
     }
 
-    public IPlugin? GetPluginInstance() => IsLoaded ? _pluginInstance : null;
+    public IPlugin? GetPluginInstance() =>
+        IsLoaded ? _pluginInstance : null;
 
     private void CleanupAfterFailedLoad()
     {
@@ -143,7 +162,10 @@ public sealed class PluginLoader : IDisposable
         {
             UnloadAsync().GetAwaiter().GetResult();
         }
-        catch { }
+        catch
+        {
+            // ignore
+        }
 
         _sync.Dispose();
     }

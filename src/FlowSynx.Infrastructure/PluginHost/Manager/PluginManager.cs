@@ -104,23 +104,30 @@ public class PluginManager : IPluginManager
 
     public async Task Uninstall(string pluginType, string currentVersion, CancellationToken cancellationToken)
     {
-        var pluginEntity = await _pluginService.Get(_currentUserService.UserId(), pluginType, currentVersion, cancellationToken);
+        var pluginEntity = await _pluginService.Get(
+            _currentUserService.UserId(),
+            pluginType,
+            currentVersion,
+            cancellationToken);
+
         if (pluginEntity is null)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.PluginNotFound,
-                    _localization.Get("PluginManager_PluginCouldNotFound", pluginType, currentVersion));
+            var errorMessage = new ErrorMessage(
+                (int)ErrorCode.PluginNotFound,
+                _localization.Get("PluginManager_PluginCouldNotFound", pluginType, currentVersion));
+
             throw new FlowSynxException(errorMessage);
         }
 
         try
         {
-            var index = new PluginCacheIndex(_currentUserService.UserId(), pluginEntity.Type, pluginEntity.Version);
-            _pluginCacheService.RemoveByIndex(index);
+            // Remove plugin index from cache (should also release AssemblyLoadContext)
+            var index = new PluginCacheIndex(
+                _currentUserService.UserId(),
+                pluginEntity.Type,
+                pluginEntity.Version);
 
-            // Ensure plugin load contexts and streams are finalized before deletion
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            _pluginCacheService.RemoveByIndex(index);
 
             var parentLocation = Directory.GetParent(pluginEntity.PluginLocation);
             if (parentLocation is { Exists: true })
@@ -128,8 +135,8 @@ public class PluginManager : IPluginManager
                 RemoveReadOnlyAttribute(parentLocation);
                 parentLocation.Attributes = FileAttributes.Normal;
 
-                // Retry/backoff to handle transient locks
                 const int maxAttempts = 5;
+
                 for (var attempt = 1; attempt <= maxAttempts; attempt++)
                 {
                     try
@@ -137,20 +144,21 @@ public class PluginManager : IPluginManager
                         parentLocation.Delete(true);
                         break;
                     }
+                    catch (IOException) when (attempt < maxAttempts)
+                    {
+                        // Handles file locks caused by handles not yet released
+                        await Task.Delay(500, cancellationToken);
+                    }
                     catch (UnauthorizedAccessException) when (attempt < maxAttempts)
                     {
                         await Task.Delay(500, cancellationToken);
-
-                        // try to help finalization in-between attempts
-                        GC.Collect();
-                        GC.WaitForPendingFinalizers();
-                        GC.Collect();
                     }
                 }
             }
 
             await _pluginService.Delete(pluginEntity, cancellationToken);
-            _logger.LogInformation(_localization.Get("PluginManager_PluginUninstalledSuccessfully", pluginType, currentVersion));
+            _logger.LogInformation(
+                _localization.Get("PluginManager_PluginUninstalledSuccessfully", pluginType, currentVersion));
         }
         catch (Exception ex)
         {
