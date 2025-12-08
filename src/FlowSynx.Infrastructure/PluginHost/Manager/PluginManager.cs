@@ -1,11 +1,11 @@
 ﻿using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
 using FlowSynx.Application.PluginHost.Manager;
 using FlowSynx.Application.Services;
+using FlowSynx.Domain;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Infrastructure.PluginHost.Cache;
-using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
+using FlowSynx.Infrastructure.PluginHost.Loader;
 using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
@@ -37,25 +37,15 @@ public class PluginManager : IPluginManager
         ILocalization localization,
         IVersion version)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(pluginRegistryConfiguration);
-        ArgumentNullException.ThrowIfNull(pluginsLocation);
-        ArgumentNullException.ThrowIfNull(currentUserService);
-        ArgumentNullException.ThrowIfNull(pluginService);
-        ArgumentNullException.ThrowIfNull(pluginDownloader);
-        ArgumentNullException.ThrowIfNull(pluginCacheService);
-        ArgumentNullException.ThrowIfNull(localization);
-        ArgumentNullException.ThrowIfNull(version);
-
-        _logger = logger;
-        _pluginRegistryConfiguration = pluginRegistryConfiguration;
-        _pluginsLocation = pluginsLocation;
-        _currentUserService = currentUserService;
-        _pluginService = pluginService;
-        _pluginDownloader = pluginDownloader;
-        _pluginCacheService = pluginCacheService;
-        _localization = localization;
-        _version = version;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _pluginRegistryConfiguration = pluginRegistryConfiguration ?? throw new ArgumentNullException(nameof(pluginRegistryConfiguration));
+        _pluginsLocation = pluginsLocation ?? throw new ArgumentNullException(nameof(pluginsLocation));
+        _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        _pluginService = pluginService ?? throw new ArgumentNullException(nameof(pluginService));
+        _pluginDownloader = pluginDownloader ?? throw new ArgumentNullException(nameof(pluginDownloader));
+        _pluginCacheService = pluginCacheService ?? throw new ArgumentNullException(nameof(pluginCacheService));
+        _localization = localization ?? throw new ArgumentNullException(nameof(localization));
+        _version = version ?? throw new ArgumentNullException(nameof(version));
     }
 
     public async Task InstallAsync(string pluginType, string? currentVersion, CancellationToken cancellationToken)
@@ -241,11 +231,20 @@ public class PluginManager : IPluginManager
 
         foreach (var dllPath in Directory.GetFiles(pluginDirectory, PluginSearchPattern))
         {
-            var loader = new TransientPluginLoader(dllPath);
             try
             {
-                loader.Load();
-                var pluginEntity = CreatePluginEntity(metadata, dllPath, loader.GetPlugin());
+                using var loader = new PluginLoader(dllPath);
+                var result = await loader.LoadAsync(cancellationToken).ConfigureAwait(false);
+                if (!result.Success)
+                {
+                    _logger.LogDebug(_localization.Get("PluginManager_Install_ErrorLoading", result.ErrorMessage!));
+                    loader.Dispose();
+                    continue;
+                }
+
+                var plugin = result.PluginInstance;
+
+                var pluginEntity = CreatePluginEntity(metadata, dllPath, plugin!);
                 await _pluginService.Add(pluginEntity, cancellationToken);
                 _logger.LogInformation(_localization.Get("PluginManager_Install_PluginInstalledSuccessfully",
                     metadata.Type, metadata.Version));
@@ -259,10 +258,6 @@ public class PluginManager : IPluginManager
             catch (Exception ex)
             {
                 _logger.LogDebug(_localization.Get("PluginManager_Install_ErrorLoading", ex.Message));
-            }
-            finally
-            {
-                loader.Unload();
             }
         }
 

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
+using FlowSynx.Infrastructure.PluginHost.Loader;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace FlowSynx.Infrastructure.PluginHost.Cache;
@@ -10,16 +10,16 @@ public class PluginCacheService : IPluginCacheService
     private readonly ConcurrentDictionary<string, HashSet<string>> _keyIndex = new();
     private readonly Lock _indexLock = new();
 
-    public IPluginLoader? Get(string key)
+    public PluginLoader? Get(string key)
     {
-        return _cache.TryGetValue(key, out IPluginLoader? value) ? value : null;
+        return _cache.TryGetValue(key, out PluginLoader? value) ? value : null;
     }
 
-    public bool TryGetValue(string key, out IPluginLoader? value)
+    public bool TryGetValue(string key, out PluginLoader? value)
     {
         if (_cache.TryGetValue(key, out var raw))
         {
-            value = (IPluginLoader?)raw;
+            value = (PluginLoader?)raw;
             return true;
         }
 
@@ -27,7 +27,7 @@ public class PluginCacheService : IPluginCacheService
         return false;
     }
 
-    public void Set(string key, PluginCacheIndex index, IPluginLoader value,
+    public void Set(string key, PluginCacheIndex index, PluginLoader value,
         TimeSpan? absoluteExpiration = null, TimeSpan? slidingExpiration = null)
     {
         var options = new MemoryCacheEntryOptions();
@@ -87,12 +87,12 @@ public class PluginCacheService : IPluginCacheService
     /// </summary>
     private void RegisterEvictionCallback(MemoryCacheEntryOptions options)
     {
-        options.RegisterPostEvictionCallback((_, evictedValue, reason, _) =>
+        options.RegisterPostEvictionCallback(async (_, evictedValue, reason, _) =>
         {
             if ((reason is EvictionReason.Expired or EvictionReason.Removed) &&
-                evictedValue is IPluginLoader pluginHandle)
+                evictedValue is PluginLoader pluginHandle)
             {
-                pluginHandle.Unload();
+                await pluginHandle.UnloadAsync();
             }
         });
     }

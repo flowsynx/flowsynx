@@ -5,7 +5,7 @@ using FlowSynx.Domain;
 using FlowSynx.Domain.Plugin;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Application.Serialization;
-using FlowSynx.Infrastructure.PluginHost.PluginLoaders;
+using FlowSynx.Infrastructure.PluginHost.Loader;
 using FlowSynx.Infrastructure.PluginHost.Cache;
 using FlowSynx.Application.Localizations;
 
@@ -115,38 +115,89 @@ public class PluginTypeService : IPluginTypeService
     }
 
     private async Task<IPlugin> GetOrLoadPlugin(
-        PluginEntity pluginEntity,
-        Dictionary<string, object?>? specification)
+    PluginEntity pluginEntity,
+    Dictionary<string, object?>? specification)
     {
         var userId = pluginEntity.UserId;
         var pluginType = pluginEntity.Type;
         var pluginVersion = pluginEntity.Version;
 
-        var key = _pluginCacheKeyGeneratorService.GenerateKey(userId, pluginType, pluginVersion, specification);
+        var key = _pluginCacheKeyGeneratorService.GenerateKey(
+            userId, pluginType, pluginVersion, specification);
 
+        // Check cache
         var cached = _pluginCacheService.Get(key);
         if (cached != null)
-            return cached.GetPlugin();
+        {
+            var instance = cached.GetPluginInstance();
+            if (instance != null)
+                return instance;
+        }
 
-        var loader = new IsolatedPluginLoader(pluginEntity.PluginLocation);
+        // Create new loader
+        var loader = new PluginLoader(pluginEntity.PluginLocation);
+        PluginLoadResult loadResult;
 
         try
         {
-            loader.Load();
-            var index = new PluginCacheIndex(userId, pluginType, pluginVersion);
-
-            if (specification == null)
-                specification = new Dictionary<string, object?>();
-
-            await loader.GetPlugin().InitializeAsync(new PluginLoggerAdapter(_logger), specification);
-            _pluginCacheService.Set(key, index, loader, TimeSpan.FromHours(2), TimeSpan.FromMinutes(15));
-            return loader.GetPlugin();
+            loadResult = await loader.LoadAsync();
         }
-        catch (Exception)
+        catch
         {
-            loader.Unload();
-            throw new FlowSynxException((int)ErrorCode.PluginCouldNotLoad,
-                _localization.Get("PluginTypeService_PluginCouldNotLoad", pluginEntity.Type, pluginEntity.Version));
+            await loader.UnloadAsync();
+            throw new FlowSynxException(
+                (int)ErrorCode.PluginCouldNotLoad,
+                _localization.Get(
+                    "PluginTypeService_PluginCouldNotLoad",
+                    pluginType,
+                    pluginVersion));
         }
+
+        // LoadAsync succeeded but plugin may be null → fail safely
+        if (!loadResult.Success || loadResult.PluginInstance == null)
+        {
+            await loader.UnloadAsync();
+            throw new FlowSynxException(
+                (int)ErrorCode.PluginCouldNotLoad,
+                _localization.Get(
+                    "PluginTypeService_PluginCouldNotLoad",
+                    pluginType,
+                    pluginVersion));
+        }
+
+        var pluginInstance = loadResult.PluginInstance;
+
+        // Ensure specification exists
+        specification ??= new Dictionary<string, object?>();
+
+        try
+        {
+            // Always initialize after load
+            await pluginInstance.InitializeAsync(
+                new PluginLoggerAdapter(_logger),
+                specification);
+        }
+        catch
+        {
+            await loader.UnloadAsync();
+            throw new FlowSynxException(
+                (int)ErrorCode.PluginCouldNotLoad,
+                _localization.Get(
+                    "PluginTypeService_PluginCouldNotLoad",
+                    pluginType,
+                    pluginVersion));
+        }
+
+        // Cache the loader (so the ALC stays alive)
+        var index = new PluginCacheIndex(userId, pluginType, pluginVersion);
+
+        _pluginCacheService.Set(
+            key,
+            index,
+            loader,
+            TimeSpan.FromHours(2),
+            TimeSpan.FromMinutes(15));
+
+        return pluginInstance;
     }
 }
