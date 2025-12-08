@@ -3,7 +3,7 @@ using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Application.PluginHost.Parser;
 
-public sealed class PluginTypeParser
+public static class PluginTypeParser
 {
     private const char Separator = ':';
     private const string UpdateSeparator = "->";
