@@ -4,6 +4,7 @@
   <p><i>A declarative, source-agnostic orchestration platform with AI-enhanced workflows, human-in-the-loop decision support, 
   and infinite plugin extensibility. Operate securely, reliably, and transparently across any environment.</i></p>
 
+  [![dotnet][dotnet-budge]][dotnet-url]
   [![Codacy Badge][codacy-badge]][codacy-url]
   [![Quality Gate Status][sonarcloud-quality-gate-badge]][sonarcloud-quality-gate-url]
   [![License: MIT][mit-badge]][mit-url]
@@ -249,7 +250,7 @@ Want to contribute or customize FlowSynx?
 You can build it locally in just a few commands.
 
 ### Prerequisites
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) — verify with `dotnet --version` (should report 9.x)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) — verify with `dotnet --version` (should report 10.x)
 - Git
 
 ### Local Build
@@ -424,3 +425,5 @@ See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for deta
 [github-good-first-issue-url]: https://github.com/flowsynx/flowsynx/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 [sonarcloud-quality-gate-badge]: https://sonarcloud.io/api/project_badges/measure?project=flowsynx_flowsynx&metric=alert_status
 [sonarcloud-quality-gate-url]: https://sonarcloud.io/summary/new_code?id=flowsynx_flowsynx
+[dotnet-budge]: https://img.shields.io/badge/.NET-10.0-blue
+[dotnet-url]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
