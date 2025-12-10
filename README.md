@@ -425,5 +425,5 @@ See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for deta
 [github-good-first-issue-url]: https://github.com/flowsynx/flowsynx/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22
 [sonarcloud-quality-gate-badge]: https://sonarcloud.io/api/project_badges/measure?project=flowsynx_flowsynx&metric=alert_status
 [sonarcloud-quality-gate-url]: https://sonarcloud.io/summary/new_code?id=flowsynx_flowsynx
-[dotnet-budge]: https://img.shields.io/badge/.NET-10.0-blue
+[dotnet-budge]: https://img.shields.io/badge/.NET-10.0-green
 [dotnet-url]: https://dotnet.microsoft.com/en-us/download/dotnet/10.0
