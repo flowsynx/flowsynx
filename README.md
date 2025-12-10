@@ -1,8 +1,9 @@
 <div align="center">
   <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
-  <h2>The Open Unified Orchestrator for Intelligent Information Flow</h2>
-  <p><i>A declarative, source-agnostic orchestration platform with AI-enhanced workflows, human-in-the-loop decision support, 
-  and infinite plugin extensibility. Operate securely, reliably, and transparently across any environment.</i></p>
+  <h2>The Open Unified Compositional Substrate for Intelligent Information Flow</h2>
+  <p><i>A declarative, source-agnostic platform providing a composable foundation for AI-driven workflows, 
+  human-in-the-loop decision support, and limitless plugin extensibility. Secure, reliable, and transparent 
+  across any environment.</i></p>
 
   [![dotnet][dotnet-budge]][dotnet-url]
   [![Codacy Badge][codacy-badge]][codacy-url]
@@ -17,7 +18,7 @@
   > Your support helps others discover the project and drives continued innovation.
 </div>
 
-FlowSynx is a **declarative, unified orchestration platform** designed to enable **intelligent information flow** 
+FlowSynx is a **declarative, unified platform** designed to enable **intelligent information flow** 
 across any system, process, or service. With **Source-Agnostic Processing** and a **plugin-driven architecture**, 
 it provides infinite extensibility, letting teams automate operations seamlessly across **on-premises**, **cloud**, 
 and **hybrid** environments.
