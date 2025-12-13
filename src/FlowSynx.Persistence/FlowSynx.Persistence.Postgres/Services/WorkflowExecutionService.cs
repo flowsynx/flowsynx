@@ -39,7 +39,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowsGetExecutionList, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -61,7 +61,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetExecutionItem, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -81,7 +81,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowExecutionCheckExistence, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -102,7 +102,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowExecutionAdd, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -122,7 +122,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowExecutionUpdate, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -143,7 +143,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowExecutionDelete, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -175,7 +175,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message.ToString());
+            _logger.LogError(ex, ex.Message.ToString());
             return 0;
         }
     }
@@ -197,7 +197,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message.ToString());
+            _logger.LogError(ex, ex.Message.ToString());
             return 0;
         }
     }
@@ -216,7 +216,7 @@ public class WorkflowExecutionService : IWorkflowExecutionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex.Message.ToString());
+            _logger.LogError(ex, ex.Message.ToString());
             return 0;
         }
     }
