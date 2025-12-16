@@ -21,8 +21,21 @@ public sealed class ParsedPluginType
         TargetVersion = targetVersion;
     }
 
+    /// <summary>
+    /// Returns a readable representation of the plugin type and version, including updates when applicable.
+    /// </summary>
     public override string ToString()
-        => IsUpdate
-            ? $"{Type}:{CurrentVersion}->{TargetVersion}"
-            : CurrentVersion is null ? Type : $"{Type}:{CurrentVersion}";
+    {
+        if (IsUpdate)
+        {
+            return $"{Type}:{CurrentVersion}->{TargetVersion}";
+        }
+
+        if (CurrentVersion is null)
+        {
+            return Type;
+        }
+
+        return $"{Type}:{CurrentVersion}";
+    }
 }
