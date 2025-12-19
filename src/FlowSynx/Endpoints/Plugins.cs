@@ -47,7 +47,7 @@ public class Plugins : EndpointGroupBase
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "plugins"));
     }
 
-    public async Task<IResult> PluginsList(
+    public static async Task<IResult> PluginsList(
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken,
         [FromQuery] int page = 1,
@@ -57,7 +57,7 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> RegistriesPluginsList(
+    public static async Task<IResult> RegistriesPluginsList(
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken,
         [FromQuery] int page = 1,
@@ -67,14 +67,14 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> PluginDetails(string id, [FromServices] IMediator mediator, 
+    public static async Task<IResult> PluginDetails(string id, [FromServices] IMediator mediator, 
         CancellationToken cancellationToken)
     {
         var result = await mediator.PluginDetails(id, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> InstallPlugin(HttpContext context,
+    public static async Task<IResult> InstallPlugin(HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
@@ -85,7 +85,7 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UpdatePlugin(HttpContext context,
+    public static async Task<IResult> UpdatePlugin(HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
@@ -96,7 +96,7 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UninstallPlugin(HttpContext context,
+    public static async Task<IResult> UninstallPlugin(HttpContext context,
         [FromServices] IMediator mediator, [FromServices] IJsonDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {
