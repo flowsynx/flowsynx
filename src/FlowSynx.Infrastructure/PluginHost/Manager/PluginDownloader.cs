@@ -11,6 +11,8 @@ namespace FlowSynx.Infrastructure.PluginHost.Manager;
 
 public class PluginDownloader : IPluginDownloader
 {
+    private const string PluginRegistryClientName = "PluginRegistry";
+
     private readonly ILogger<PluginDownloader> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IJsonDeserializer _jsonDeserializer;
@@ -38,7 +40,7 @@ public class PluginDownloader : IPluginDownloader
         string pluginVersion, 
         CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient("PluginRegistry");
+        var client = _httpClientFactory.CreateClient(PluginRegistryClientName);
         var mainUrl = new Uri(url);
         var pluginUrl = new Uri(mainUrl, $"api/plugins/{pluginType}/{pluginVersion}/download");
         var response = await client.GetAsync(pluginUrl, cancellationToken);
@@ -56,7 +58,7 @@ public class PluginDownloader : IPluginDownloader
         string pluginVersion, 
         CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient("PluginRegistry");
+        var client = _httpClientFactory.CreateClient(PluginRegistryClientName);
         var mainUrl = new Uri(url);
         var pluginUrl = new Uri(mainUrl, $"api/plugins/{pluginType}/{pluginVersion}");
         var response = await client.GetStringAsync(pluginUrl, cancellationToken);
@@ -82,7 +84,7 @@ public class PluginDownloader : IPluginDownloader
         string pluginType, 
         CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient("PluginRegistry");
+        var client = _httpClientFactory.CreateClient(PluginRegistryClientName);
         var mainUrl = new Uri(url);
         var pluginUrl = new Uri(mainUrl, $"api/plugins/{pluginType}/versions");
         var response = await client.GetStringAsync(pluginUrl, cancellationToken);
@@ -129,7 +131,7 @@ public class PluginDownloader : IPluginDownloader
         string url,
         CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient("PluginRegistry");
+        var client = _httpClientFactory.CreateClient(PluginRegistryClientName);
         var mainUrl = new Uri(url);
         var listUrl = new Uri(mainUrl, "api/plugins");
         var response = await client.GetStringAsync(listUrl, cancellationToken);

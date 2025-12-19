@@ -55,8 +55,8 @@ internal class PluginsListHandler : IRequestHandler<PluginsListRequest, Paginate
         }
         catch (FlowSynxException ex)
         {
-            _logger.LogError(ex.ToString());
-            return await PaginatedResult<PluginsListResponse>.FailureAsync(ex.ToString());
+            _logger.LogError(ex, ex.Message);
+            return await PaginatedResult<PluginsListResponse>.FailureAsync(ex.Message);
         }
     }
 }

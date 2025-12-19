@@ -111,7 +111,7 @@ public class PluginManager : IPluginManager
             ? _pluginRegistryConfiguration.Urls!
             : new List<string> {};
 
-        var (registryUrl, effectiveVersion) = await ResolveRegistryAndVersionAsync(registries, pluginType, currentVersion, cancellationToken);
+        var (_, effectiveVersion) = await ResolveRegistryAndVersionAsync(registries, pluginType, currentVersion, cancellationToken);
 
         if (await PluginAlreadyExists(pluginType, effectiveVersion, cancellationToken))
             return;
@@ -432,7 +432,7 @@ public class PluginManager : IPluginManager
         throw new FlowSynxException((int)ErrorCode.PluginNotFound, errorMsg);
     }
 
-    private async Task<T> GetFromRegistriesAsync<T>(
+    private static async Task<T> GetFromRegistriesAsync<T>(
         IEnumerable<string> registries,
         Func<string, Task<T>> factory,
         Action<Exception>? onFailureLog = null)
