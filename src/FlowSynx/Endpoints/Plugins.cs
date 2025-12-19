@@ -21,6 +21,11 @@ public class Plugins : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "plugins"));
 
+        group.MapGet("/registries", RegistriesPluginsList)
+            .WithName("RegistriesPluginsList")
+            .WithOpenApi()
+            .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "plugins"));
+
         group.MapGet("/{id}", PluginDetails)
             .WithName("PluginDetails")
             .WithOpenApi()
@@ -49,6 +54,16 @@ public class Plugins : EndpointGroupBase
         [FromQuery] int pageSize = 25)
     {
         var result = await mediator.PluginsList(page, pageSize, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public async Task<IResult> RegistriesPluginsList(
+        [FromServices] IMediator mediator,
+        CancellationToken cancellationToken,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        var result = await mediator.PluginsRegistriesList(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 

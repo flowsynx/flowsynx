@@ -125,6 +125,31 @@ public class PluginDownloader : IPluginDownloader
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
     }
 
+    public async Task<IEnumerable<RegistryPluginItem>> GetPluginsListAsync(
+        string url,
+        CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient("PluginRegistry");
+        var mainUrl = new Uri(url);
+        var listUrl = new Uri(mainUrl, "api/plugins");
+        var response = await client.GetStringAsync(listUrl, cancellationToken);
+
+        var result = _jsonDeserializer.Deserialize<Result<IEnumerable<RegistryPluginItem>>>(response);
+        if (result == null)
+        {
+            var message = _localization.Get("Plugin_Download_PluginNotFound", "all", "latest");
+            throw new FlowSynxException((int)ErrorCode.PluginRegistryPluginNotFound, message);
+        }
+
+        if (!result.Succeeded)
+        {
+            throw new FlowSynxException((int)ErrorCode.PluginInstall,
+                string.Join(Environment.NewLine, result.Messages));
+        }
+
+        return result.Data;
+    }
+
     private static string ComputeChecksum(byte[] data)
     {
         using SHA256 sha256 = SHA256.Create();

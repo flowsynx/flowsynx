@@ -10,6 +10,7 @@ using FlowSynx.PluginCore;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using System.IO.Compression;
+using System.Linq;
 
 namespace FlowSynx.Infrastructure.PluginHost.Manager;
 
@@ -48,24 +49,88 @@ public class PluginManager : IPluginManager
         _version = version ?? throw new ArgumentNullException(nameof(version));
     }
 
+    public async Task<(IReadOnlyCollection<RegistryPluginInfo> Items, int TotalCount)> GetRegistryPluginsAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        _currentUserService.ValidateAuthentication();
+
+        var registries = _pluginRegistryConfiguration.Urls?.Count > 0
+            ? _pluginRegistryConfiguration.Urls!
+            : new List<string> {};
+
+        var aggregated = new List<RegistryPluginInfo>();
+
+        foreach (var registry in registries)
+        {
+            try
+            {
+                var items = await _pluginDownloader.GetPluginsListAsync(registry, cancellationToken);
+                aggregated.AddRange(items.Select(i => new RegistryPluginInfo
+                {
+                    Type = i.Type,
+                    CategoryTitle = i.CategoryTitle,
+                    Description = i.Description,
+                    Version = i.Version,
+                    Registry = registry
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug("Failed to list plugins from registry {Registry}: {Message}", registry, ex.Message);
+            }
+        }
+
+        // Distinct by Type + Registry to avoid duplicates across multiple calls to same registry URL
+        var distinct = aggregated
+            .GroupBy<RegistryPluginInfo, (string Type, string Version)>(
+                x => (x.Type, x.Version),
+                new PluginIdRegistryEqualityComparer())
+            .Select(g => g.First())
+            .ToList();
+
+        var totalCount = distinct.Count;
+
+        // Pagination
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 25;
+        var skip = (page - 1) * pageSize;
+
+        var paged = distinct
+            .Skip(skip)
+            .Take(pageSize)
+            .ToList();
+
+        return (paged, totalCount);
+    }
+
     public async Task InstallAsync(string pluginType, string? currentVersion, CancellationToken cancellationToken)
     {
-        var registryUrl = _pluginRegistryConfiguration.Url;
+        var registries = _pluginRegistryConfiguration.Urls?.Count > 0
+            ? _pluginRegistryConfiguration.Urls!
+            : new List<string> {};
 
-        // Resolve latest version if requested
-        var effectiveVersion = await ResolveVersionAsync(registryUrl, pluginType, currentVersion, cancellationToken);
+        var (registryUrl, effectiveVersion) = await ResolveRegistryAndVersionAsync(registries, pluginType, currentVersion, cancellationToken);
 
         if (await PluginAlreadyExists(pluginType, effectiveVersion, cancellationToken))
             return;
 
-        var pluginMetadata = await _pluginDownloader.GetPluginMetadataAsync(registryUrl, pluginType, effectiveVersion, cancellationToken);
-        var pluginPackData = await _pluginDownloader.GetPluginDataAsync(registryUrl, pluginType, effectiveVersion, cancellationToken);
+        var pluginMetadata = await GetFromRegistriesAsync(
+            registries,
+            async (url) => await _pluginDownloader.GetPluginMetadataAsync(url, pluginType, effectiveVersion, cancellationToken),
+            onFailureLog: ex => _logger.LogDebug("Failed to fetch metadata for {PluginType}@{PluginVersion}: {Message}", pluginType, effectiveVersion, ex.Message));
+
+        var pluginPackData = await GetFromRegistriesAsync(
+            registries,
+            async (url) => await _pluginDownloader.GetPluginDataAsync(url, pluginType, effectiveVersion, cancellationToken),
+            onFailureLog: ex => _logger.LogDebug("Failed to fetch package for {PluginType}@{PluginVersion}: {Message}", pluginType, effectiveVersion, ex.Message));
 
         var pluginBytes = ExtractPluginFile(pluginPackData);
         ValidatePluginChecksum(pluginBytes, pluginMetadata.Checksum);
 
         var isPluginCompatible = IsPluginCompatible(pluginMetadata, _version.Version, out var warningMessage);
-        if (!isPluginCompatible) 
+        if (!isPluginCompatible)
             throw new FlowSynxException((int)ErrorCode.PluginCompatibility, warningMessage);
 
         if (!string.IsNullOrEmpty(warningMessage))
@@ -186,7 +251,7 @@ public class PluginManager : IPluginManager
         if (_pluginDownloader.ValidateChecksum(pluginData, checksum))
             return;
 
-        throw new FlowSynxException((int)ErrorCode.PluginChecksumValidationFailed, 
+        throw new FlowSynxException((int)ErrorCode.PluginChecksumValidationFailed,
             _localization.Get("PluginManager_Install_ChecksumValidationFailed"));
     }
 
@@ -332,6 +397,64 @@ public class PluginManager : IPluginManager
         }
     }
 
+    private async Task<(string RegistryUrl, string Version)> ResolveRegistryAndVersionAsync(
+        IEnumerable<string> registries,
+        string pluginType,
+        string? requestedVersion,
+        CancellationToken cancellationToken)
+    {
+        // If version provided and not "latest", we don't need to query registries for versions.
+        if (!string.IsNullOrWhiteSpace(requestedVersion) &&
+            !requestedVersion.Equals("latest", StringComparison.OrdinalIgnoreCase))
+        {
+            var chosenRegistry = registries.FirstOrDefault() ?? string.Empty;
+            return (chosenRegistry, requestedVersion);
+        }
+
+        List<Exception> errors = new();
+
+        foreach (var registry in registries)
+        {
+            try
+            {
+                var resolved = await ResolveVersionAsync(registry, pluginType, requestedVersion, cancellationToken);
+                return (registry, resolved);
+            }
+            catch (Exception ex)
+            {
+                errors.Add(ex);
+                _logger.LogDebug("Version resolution failed on registry {Registry} for {PluginType}: {Message}",
+                    registry, pluginType, ex.Message);
+            }
+        }
+
+        var errorMsg = $"No available versions found for plugin '{pluginType}' across configured registries.";
+        throw new FlowSynxException((int)ErrorCode.PluginNotFound, errorMsg);
+    }
+
+    private async Task<T> GetFromRegistriesAsync<T>(
+        IEnumerable<string> registries,
+        Func<string, Task<T>> factory,
+        Action<Exception>? onFailureLog = null)
+    {
+        List<Exception> errors = new();
+
+        foreach (var registry in registries)
+        {
+            try
+            {
+                return await factory(registry).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                errors.Add(ex);
+                onFailureLog?.Invoke(ex);
+            }
+        }
+
+        throw new FlowSynxException((int)ErrorCode.PluginNotFound, "Could not fetch data from any plugin registry.");
+    }
+
     private async Task<string> ResolveVersionAsync(string registryUrl, string pluginType, string? requestedVersion, CancellationToken cancellationToken)
     {
         // If version is provided and not "latest", use it as-is
@@ -341,7 +464,7 @@ public class PluginManager : IPluginManager
             return requestedVersion;
         }
 
-        // Fetch versions from registry and pick the latest
+        // Fetch versions from a specific registry and pick the latest
         var versions = await _pluginDownloader.GetPluginVersionsAsync(registryUrl, pluginType, cancellationToken);
 
         // Try IsLatest flag first
@@ -367,8 +490,22 @@ public class PluginManager : IPluginManager
         if (string.IsNullOrWhiteSpace(latest))
             throw new FlowSynxException((int)ErrorCode.PluginNotFound, $"No available versions found for plugin '{pluginType}'.");
 
-        _logger.LogInformation("Resolved latest version for plugin {PluginType}: {Version}", pluginType, latest);
+        _logger.LogInformation("Resolved latest version for plugin {PluginType} from {Registry}: {Version}", pluginType, registryUrl, latest);
         return latest!;
+    }
+
+    private sealed class PluginIdRegistryEqualityComparer : IEqualityComparer<(string Type, string Version)>
+    {
+        public bool Equals((string Type, string Version) x, (string Type, string Version) y)
+        {
+            return string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(x.Version, y.Version, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public int GetHashCode((string Type, string Version) obj)
+        {
+            return (obj.Type?.ToLowerInvariant().GetHashCode() ?? 0) ^ (obj.Version?.ToLowerInvariant().GetHashCode() ?? 0);
+        }
     }
     #endregion
 }

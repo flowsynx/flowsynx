@@ -2,5 +2,5 @@
 
 public class PluginRegistryConfiguration
 {
-    public string Url { get; set; } = "https://plugins.flowsynx.io/";
+    public List<string> Urls { get; set; } = new();
 }

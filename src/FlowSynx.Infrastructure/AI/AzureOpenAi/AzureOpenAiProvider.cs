@@ -86,46 +86,65 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
     {
         try
         {
-            var baseUrl = _pluginRegistryConfiguration.Url + "api/plugins?page=";
+            // Support multiple registries (primary first, others as fallback/merge)
+            var registries = (_pluginRegistryConfiguration.Urls?.Count > 0
+                    ? _pluginRegistryConfiguration.Urls
+                    : new List<string> {})
+                .Where(u => !string.IsNullOrWhiteSpace(u))
+                .Select(u => u.TrimEnd('/') + "/")
+                .ToList();
 
             var allPlugins = new JArray();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // key: type@version
 
-            int currentPage = 1;
-            int totalPages = 1; // temporary until we read the first response
-
-            do
+            foreach (var registry in registries)
             {
-                var url = baseUrl + currentPage;
+                var baseUrl = registry + "api/plugins?page=";
 
-                using var req = new HttpRequestMessage(HttpMethod.Get, url);
-                using var res = await _http.SendAsync(req, cancellationToken);
+                int currentPage = 1;
+                int totalPages = 1; // updated after first response
 
-                if (!res.IsSuccessStatusCode)
+                do
                 {
-                    _logger?.LogWarning(
-                        "Failed to fetch plugins from {Url}. Status: {Status}",
-                        url, res.StatusCode);
-                    break;
-                }
+                    var url = baseUrl + currentPage;
 
-                var content = await res.Content.ReadAsStringAsync(cancellationToken);
-                var root = JObject.Parse(content);
+                    using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                    using var res = await _http.SendAsync(req, cancellationToken);
 
-                // Extract paging values
-                currentPage = root["currentPage"]?.Value<int>() ?? currentPage;
-                totalPages = root["totalPages"]?.Value<int>() ?? totalPages;
+                    if (!res.IsSuccessStatusCode)
+                    {
+                        _logger?.LogWarning(
+                            "Failed to fetch plugins from {Url}. Status: {Status}",
+                            url, res.StatusCode);
+                        break; // stop paging this registry; continue with next registry
+                    }
 
-                // Extract plugins in this page
-                var pagePlugins = root["data"] as JArray;
-                if (pagePlugins != null)
-                {
-                    foreach (var p in pagePlugins)
-                        allPlugins.Add(p);
-                }
+                    var content = await res.Content.ReadAsStringAsync(cancellationToken);
+                    var root = JObject.Parse(content);
 
-                currentPage++;
+                    // Extract paging values
+                    currentPage = root["currentPage"]?.Value<int>() ?? currentPage;
+                    totalPages = root["totalPages"]?.Value<int>() ?? totalPages;
 
-            } while (currentPage <= totalPages);
+                    // Extract plugins in this page
+                    var pagePlugins = root["data"] as JArray;
+                    if (pagePlugins != null)
+                    {
+                        foreach (var p in pagePlugins)
+                        {
+                            var type = p?["type"]?.ToString() ?? "";
+                            var version = p?["version"]?.ToString() ?? "";
+                            var key = $"{type}@{version}";
+
+                            if (seen.Add(key))
+                                allPlugins.Add(p);
+                        }
+                    }
+
+                    currentPage++;
+
+                } while (currentPage <= totalPages);
+            }
 
             // Convert to simplified format (optional)
             var formattedPlugins = new JArray();
