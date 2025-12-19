@@ -22,7 +22,7 @@ public class Metrics : EndpointGroupBase
             .WithOpenApi();
     }
 
-    public async Task<IResult> GetWorkflowSummary(
+    public static async Task<IResult> GetWorkflowSummary(
         [FromServices] IMediator mediator, 
         CancellationToken cancellationToken)
     {

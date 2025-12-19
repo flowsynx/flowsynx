@@ -25,7 +25,7 @@ public class Logs : EndpointGroupBase
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "logs"));
     }
 
-    public async Task<IResult> LogsList(HttpContext context,
+    public static async Task<IResult> LogsList(HttpContext context,
         [FromServices] IMediator mediator, 
         [FromServices] IJsonDeserializer jsonDeserializer, 
         CancellationToken cancellationToken,

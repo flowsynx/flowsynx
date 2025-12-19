@@ -144,7 +144,7 @@ public class Workflows : EndpointGroupBase
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "workflows"));
     }
 
-    public async Task<IResult> GetAllWorkflows(
+    public static async Task<IResult> GetAllWorkflows(
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken,
         [FromQuery] int page = 1,
@@ -154,7 +154,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> AddWorkflow(
+    public static async Task<IResult> AddWorkflow(
         HttpContext context,
         [FromServices] IMediator mediator, 
         [FromServices] IJsonDeserializer jsonDeserializer,
@@ -172,7 +172,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetWorkflowById(
+    public static async Task<IResult> GetWorkflowById(
         string workflowId, 
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
@@ -181,7 +181,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UpdateWorkflow(
+    public static async Task<IResult> UpdateWorkflow(
         string workflowId, 
         HttpContext context,
         [FromServices] IMediator mediator, 
@@ -201,7 +201,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeleteWorkflow(
+    public static async Task<IResult> DeleteWorkflow(
         string workflowId, 
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
@@ -243,7 +243,7 @@ public class Workflows : EndpointGroupBase
         }
     }
 
-    public async Task<IResult> GetAllExecutions(
+    public static async Task<IResult> GetAllExecutions(
         string workflowId, 
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken,
@@ -254,7 +254,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> StartWorkflowExecution(
+    public static async Task<IResult> StartWorkflowExecution(
         string workflowId, 
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
@@ -268,7 +268,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionById(
+    public static async Task<IResult> GetExecutionById(
         string workflowId, 
         string executionId,
         [FromServices] IMediator mediator, 
@@ -278,7 +278,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionTasks(
+    public static async Task<IResult> GetExecutionTasks(
         string workflowId, 
         string executionId, 
         [FromServices] IMediator mediator, 
@@ -290,7 +290,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetTaskExecutionById(
+    public static async Task<IResult> GetTaskExecutionById(
         string workflowId, 
         string executionId, 
         string taskId,
@@ -301,7 +301,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> CancelExecution(
+    public static async Task<IResult> CancelExecution(
         string workflowId, 
         string executionId,
         [FromServices] IMediator mediator, 
@@ -311,7 +311,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetExecutionLogs(
+    public static async Task<IResult> GetExecutionLogs(
         string workflowId, 
         string executionId,
         [FromServices] IMediator mediator,
@@ -323,7 +323,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetWorkflowExecutionApprovals(
+    public static async Task<IResult> GetWorkflowExecutionApprovals(
         string workflowId, 
         string executionId,
         [FromServices] IMediator mediator, 
@@ -335,7 +335,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> ApproveWorkflowExecution(
+    public static async Task<IResult> ApproveWorkflowExecution(
         string workflowId, 
         string executionId,
         string approvalId, 
@@ -346,7 +346,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> RejectWorkflowExecution(
+    public static async Task<IResult> RejectWorkflowExecution(
         string workflowId, 
         string executionId,
         string approvalId, 
@@ -357,7 +357,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetTaskExecutionLogs(
+    public static async Task<IResult> GetTaskExecutionLogs(
         string workflowId, 
         string executionId, 
         string taskId,
@@ -370,7 +370,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetAllTriggers(
+    public static async Task<IResult> GetAllTriggers(
         string workflowId,
         [FromServices] IMediator mediator, 
         CancellationToken cancellationToken,
@@ -381,7 +381,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> GetTriggerById(
+    public static async Task<IResult> GetTriggerById(
         string workflowId, 
         string triggerId,
         [FromServices] IMediator mediator, 
@@ -391,7 +391,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> AddTrigger(
+    public static async Task<IResult> AddTrigger(
         HttpContext context, 
         string workflowId,
         [FromServices] IMediator mediator, 
@@ -405,7 +405,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> UpdateTrigger(
+    public static async Task<IResult> UpdateTrigger(
         HttpContext context, 
         string workflowId,
         string triggerId, 
@@ -420,7 +420,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public async Task<IResult> DeleteTrigger(
+    public static async Task<IResult> DeleteTrigger(
         string workflowId, 
         string triggerId,
         [FromServices] IMediator mediator, 
@@ -443,7 +443,7 @@ public class Workflows : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.BadRequest(result);
     }
 
-    public async Task<IResult> OptimizeWorkflow(
+    public static async Task<IResult> OptimizeWorkflow(
         string workflowId,
         HttpContext context,
         [FromServices] IMediator mediator,

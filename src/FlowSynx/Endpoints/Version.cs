@@ -28,7 +28,7 @@ public class Version : EndpointGroupBase
     /// </summary>
     /// <param name="mediator">Mediator instance responsible for executing the version request.</param>
     /// <param name="cancellationToken">Cancellation token propagated from the HTTP request.</param>
-    public async Task<IResult> GetVersion([FromServices] IMediator mediator, 
+    public static async Task<IResult> GetVersion([FromServices] IMediator mediator, 
         CancellationToken cancellationToken)
     {
         var result = await mediator.Version(new VersionRequest(), cancellationToken);
