@@ -56,11 +56,15 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
         {
             messages = new[]
             {
-                new { role = SystemRole, content = "You are a system that outputs only JSON that matches FlowSynx WorkflowDefinition schema. No prose." },
+                new { role = SystemRole, content = "You are FlowSynx-WorkflowGen." +
+                "Generate one valid FlowSynx WorkflowDefinition JSON object." +
+                "Use only provided plugins." +
+                "Do not invent fields." +
+                "Ensure a valid DAG." +
+                "Output JSON only." },
                 new { role = "user", content = await BuildPromptAsync(goal, capabilitiesJson, pluginsInfo) }
             },
-            temperature = 0.2,
-            response_format = new { type = JsonObjectResponseFormat }
+            temperature = 0.2
         };
 
         using var req = new HttpRequestMessage(HttpMethod.Post, $"{_config.Endpoint}/openai/deployments/{_config.Deployment}/chat/completions?api-version=2024-08-01-preview");
@@ -108,41 +112,48 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
                 {
                     var url = baseUrl + currentPage;
 
-                    using var req = new HttpRequestMessage(HttpMethod.Get, url);
-                    using var res = await _http.SendAsync(req, cancellationToken);
-
-                    if (!res.IsSuccessStatusCode)
+                    try
                     {
-                        _logger?.LogWarning(
-                            "Failed to fetch plugins from {Url}. Status: {Status}",
-                            url, res.StatusCode);
-                        break; // stop paging this registry; continue with next registry
-                    }
+                        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+                        using var res = await _http.SendAsync(req, cancellationToken);
 
-                    var content = await res.Content.ReadAsStringAsync(cancellationToken);
-                    var root = JObject.Parse(content);
-
-                    // Extract paging values
-                    currentPage = root["currentPage"]?.Value<int>() ?? currentPage;
-                    totalPages = root["totalPages"]?.Value<int>() ?? totalPages;
-
-                    // Extract plugins in this page
-                    var pagePlugins = root["data"] as JArray;
-                    if (pagePlugins != null)
-                    {
-                        foreach (var p in pagePlugins)
+                        if (!res.IsSuccessStatusCode)
                         {
-                            var type = p?["type"]?.ToString() ?? "";
-                            var version = p?["version"]?.ToString() ?? "";
-                            var key = $"{type}@{version}";
-
-                            if (seen.Add(key))
-                                allPlugins.Add(p);
+                            _logger?.LogWarning(
+                                "Failed to fetch plugins from {Url}. Status: {Status}",
+                                url, res.StatusCode);
+                            break; // stop paging this registry; continue with next registry
                         }
+
+                        var content = await res.Content.ReadAsStringAsync(cancellationToken);
+                        var root = JObject.Parse(content);
+
+                        // Extract paging values
+                        currentPage = root["currentPage"]?.Value<int>() ?? currentPage;
+                        totalPages = root["totalPages"]?.Value<int>() ?? totalPages;
+
+                        // Extract plugins in this page
+                        var pagePlugins = root["data"] as JArray;
+                        if (pagePlugins != null)
+                        {
+                            foreach (var p in pagePlugins)
+                            {
+                                var type = p?["type"]?.ToString() ?? "";
+                                var version = p?["version"]?.ToString() ?? "";
+                                var key = $"{type}:{version}";
+
+                                if (seen.Add(key))
+                                    allPlugins.Add(p);
+                            }
+                        }
+
+                        currentPage++;
                     }
-
-                    currentPage++;
-
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(ex, "Error fetching plugins from {Url}", url);
+                        break;
+                    }
                 } while (currentPage <= totalPages);
             }
 
@@ -150,15 +161,20 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
             var formattedPlugins = new JArray();
             foreach (var plugin in allPlugins)
             {
+                var type = plugin["type"]?.ToString() ?? "";
+                var version = plugin["version"]?.ToString() ?? "";
+                var pluginType = $"{type}:{version}";
+
                 formattedPlugins.Add(new JObject
                 {
-                    ["type"] = plugin["type"]?.ToString() ?? "",
-                    ["version"] = plugin["version"]?.ToString() ?? "",
-                    ["description"] = plugin["description"]?.ToString() ?? ""
+                    ["type"] = pluginType,
+                    ["description"] = plugin["description"]?.ToString() ?? "",
+                    ["specifications"] = plugin["specifications"] ?? new JArray(),
+                    ["operations"] = plugin["operations"] ?? new JArray()
                 });
             }
 
-            return formattedPlugins.ToString(Formatting.Indented);
+            return formattedPlugins.ToString(Formatting.None);
         }
         catch (Exception ex)
         {
@@ -168,70 +184,104 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
     }
 
     private static async Task<string> BuildPromptAsync(
-        string goal,
-        string? capabilitiesJson,
-        string pluginsInfo)
+    string goal,
+    string? capabilitiesJson,
+    string pluginsInfo)
     {
         return $@"
-You are FlowSynx-WorkflowGen, an expert system that generates valid FlowSynx WorkflowDefinition JSON objects.
+=== ROLE ===
+You are FlowSynx-WorkflowGen, an expert system that generates VALID FlowSynx WorkflowDefinition JSON objects.
 
-You MUST follow ALL instructions with zero deviation.
-Be deterministic, accurate, and strict. Do NOT invent any plugins, parameters, properties, or fields.
+You are STRICT, DETERMINISTIC, and PRECISE.
+You MUST follow ALL instructions with ZERO deviation.
+You MUST NOT invent, infer, normalize, rename, or assume any plugins, operations, parameters, or fields.
+
+You are also acting as a STRICT JSON + SCHEMA VALIDATOR.
+Any invalid output is considered a FAILURE.
+
+If you cannot produce a fully valid output that satisfies ALL rules:
+- Restart generation internally
+- Do NOT output partial JSON
+- Do NOT explain
+- Output ONLY the final corrected JSON
 
 ---
-GOAL:
+
+=== INPUT: GOAL ===
 {goal}
 
 ---
-PLUGINS AVAILABLE IN REGISTRY:
-Use ONLY these plugins.
+
+=== INPUT: PLUGINS AVAILABLE IN REGISTRY ===
+Use ONLY these plugins, operations, parameters, and versions.
+Copy names VERBATIM.
 {pluginsInfo}
 
 ---
-OUTPUT FORMAT (IMPORTANT):
-You MUST output ONLY a JSON object (no markdown, no comments, no explanation).
-Your output MUST strictly follow the FlowSynx WorkflowDefinition schema.
 
-Schema to follow:
+=== OUTPUT FORMAT (ABSOLUTELY CRITICAL) ===
+- Output MUST be a SINGLE JSON OBJECT
+- NO markdown
+- NO comments
+- NO explanation
+- NO surrounding text
+- NO trailing commas
+- NO null values anywhere
+- Empty arrays = []
+- Empty objects = {{}}
+
+---
+
+=== AUTHORITATIVE SCHEMA (MUST MATCH EXACTLY) ===
+The schema below is AUTHORITATIVE.
+Field names, casing, structure, and presence MUST match exactly.
 
 {{
-  ""name"": ""string"",                
+  ""name"": ""string"",
   ""description"": ""string"",
   ""variables"": {{ ""key"": ""value"" }},
   ""configuration"": {{
     ""degreeOfParallelism"": 0,
-    ""timeout"": 0,
+    ""timeoutMilliseconds"": 0,
     ""errorHandling"": {{
       ""strategy"": ""Abort"",
       ""triggerPolicy"": {{ ""taskName"": ""string"" }},
-      ""retryPolicy"": {{
-        ""maxRetries"": 3,
-        ""backoffStrategy"": ""Exponential"",
-        ""initialDelay"": 1000,
-        ""maxDelay"": 60000,
-        ""backoffCoefficient"": 2.0
-      }}
+      ""retryPolicy"": {{}}
     }}
   }},
   ""tasks"": [
     {{
       ""name"": ""string"",
       ""description"": ""string"",
-      ""type"": {{
-        ""plugin"": ""string"",
-        ""version"": ""string""
+      ""type"": ""string"",
+      ""execution"": {{
+        ""operation"": ""string"",
+        ""Specification"": {{ ""key"": ""value"" }},
+        ""parameters"": {{ ""key"": ""value"" }},
+        ""timeoutMilliseconds"": 0,
+        ""agent"": {{
+          ""enabled"": true,
+          ""mode"": ""execute"",
+          ""instructions"": ""string"",
+          ""maxIterations"": 1,
+          ""temperature"": 0.0,
+          ""context"": {{}}
+        }}
       }},
-      ""parameters"": {{ ""key"": ""value"" }},
+      ""flowControl"": {{}},
       ""dependencies"": [""string""],
-      ""timeout"": 0,
-      ""agent"": {{
-        ""enabled"": true,
-        ""mode"": ""execute"",
-        ""instructions"": ""string"",
-        ""maxIterations"": 0,
-        ""temperature"": 0.0,
-        ""context"": {{}}
+      ""runOnFailureOf"": [""string""],
+      ""executionCondition"": {{
+        ""expression"": ""string"",
+        ""description"": ""string""
       }},
+      ""conditionalBranches"": [
+        {{
+          ""expression"": ""string"",
+          ""description"": ""string"",
+          ""targetTaskName"": ""string""
+        }}
+      ],
       ""manualApproval"": {{
         ""enabled"": true,
         ""comment"": ""string""
@@ -239,48 +289,95 @@ Schema to follow:
       ""errorHandling"": {{
         ""strategy"": ""Abort"",
         ""triggerPolicy"": {{ ""taskName"": ""string"" }},
-        ""retryPolicy"": {{
-          ""maxRetries"": 3,
-          ""backoffStrategy"": ""Exponential"",
-          ""initialDelay"": 1000,
-          ""maxDelay"": 60000,
-          ""backoffCoefficient"": 2.0
-        }}
+        ""retryPolicy"": {{}}
       }},
-      ""runOnFailureOf"": [""string""]
+      ""position"": {{ ""x"": 0, ""y"": 0 }}
     }}
   ]
 }}
 
 ---
-REQUIREMENTS & RULES (CRITICAL):
 
-1. VALID JSON ONLY — no comments, markdown, or explanation.
-2. Tasks array MUST NOT be empty.
-3. All names MUST be unique and use PascalCase.
-4. Plugin names MUST match: ""FlowSynx.<Category>.<Name>"".
-5. Plugin versions MUST use full semantic versioning: ""X.Y.Z"".
-6. Use ONLY plugins available in:
-   - pluginsInfo
-7. Do NOT invent plugins or capabilities.
+=== HARD RULES (NON-NEGOTIABLE) ===
+
+1. VALID JSON ONLY. No trailing commas. No null values.
+2. tasks MUST NOT be empty.
+3. All names MUST be unique and PascalCase.
+4. Task names SHOULD use verb-noun form (e.g., FetchData).
+5. Use ONLY plugins and operations from pluginsInfo.
+6. Do NOT invent plugins, operations, parameters, or fields.
+7. Plugins with incompatible MAJOR versions MUST NOT be mixed.
 8. Ensure a valid DAG:
-   - No cycles.
-   - All dependencies refer to existing tasks.
-9. Prefer parallel tasks where they are independent.
-10. Variables:
-    - Only define variables that tasks actually use.
-    - When used in parameters, the format MUST be:
-      $[Variables('VariableName')]
-11. Include all fields shown in the schema. Empty arrays = [] and empty objects = {{}}.
+   - No cycles
+   - All dependencies exist
+   - At least one root task
+   - Every task reachable from a root
+9. A task MUST NOT depend on more than 10 tasks.
+10. Prefer parallel execution when tasks are independent.
+11. Variables:
+    - Define ONLY variables that are actually used
+    - Usage format MUST be: $[Variables('VariableName')]
+    - Variables MUST be defined before use
+12. execution.operation MUST exist in the referenced plugin.
+13. All parameters MUST be consumed by the plugin operation.
+14. Specification = static configuration
+15. parameters = runtime or variable-based values
+16. errorHandling.strategy MUST be one of:
+    Retry | Skip | Abort | TriggerTask
+17. retryPolicy:
+    - MUST be populated ONLY when strategy == Retry
+    - MUST be empty {{}} otherwise
+    - maxRetries MUST be between 0 and 10
+    - backoffStrategy MUST be one of:
+      Fixed | Linear | Exponential | Jitter
+18. If strategy == Retry:
+    - execution.timeoutMilliseconds MUST be > 0
+19. If strategy == TriggerTask:
+    - triggerPolicy.taskName MUST match an existing task
+    - MUST NOT create a cycle
+    - Target SHOULD be compensating or notification task
+20. If strategy != TriggerTask:
+    - triggerPolicy MUST be empty {{}}
+21. Task-level errorHandling OVERRIDES workflow-level errorHandling.
+22. After retries exhausted:
+    - Workflow MUST Abort unless TriggerTask is defined
+23. runOnFailureOf MAY reference only direct or transitive dependencies.
+24. conditionalBranches:
+    - expressions MUST be mutually exclusive
+    - targetTaskName MUST exist
+    - MUST NOT reference the current task
+    - One branch SHOULD act as default (e.g., expression == true)
+25. executionCondition expressions:
+    - MUST be deterministic
+    - MUST be side-effect free
+    - MUST handle missing or null variables safely
+26. Manual approval tasks:
+    - MUST be depended upon by at least one task
+27. Agent constraints:
+    - temperature MUST be between 0.0 and 0.5
+    - maxIterations MUST be between 1 and 10
+28. No two tasks SHOULD share the same position (x, y).
+29. description fields MUST clearly describe intent.
+30. Tasks SHOULD be idempotent or explicitly compensatable.
+31. Irreversible tasks SHOULD define a compensating TriggerTask.
+32. Workflow timeout MUST be >= sum of task timeouts.
+33. Order tasks topologically (execution order).
+34. Do NOT rely on implicit defaults — define all behavior explicitly.
+35. The workflow MUST be fully deterministic.
+36. Output EXACTLY ONE JSON OBJECT and NOTHING ELSE.
 
 ---
-Before producing the final JSON, validate in your reasoning:
-- All dependencies exist and no cycles are present.
-- No undefined plugin or attribute is used.
-- Output matches schema exactly.
-- Plugin names + versions match the provided registry.
 
-Finally: OUTPUT ONLY THE JSON OBJECT.
+=== INTERNAL VALIDATION CHECKLIST (DO NOT OUTPUT) ===
+- Schema matches exactly
+- JSON is valid
+- No cycles in DAG
+- All dependencies valid
+- All plugins and operations exist
+- All rules satisfied
+
+FINAL INSTRUCTION:
+OUTPUT ONLY THE JSON OBJECT.
 ";
     }
 
