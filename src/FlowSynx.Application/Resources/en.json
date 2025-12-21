@@ -56,7 +56,10 @@
   "Features_Workflow_Update_WorkflowDefinitionMustHaveValue": "Workflow definition must be not empty!",
   "Features_Workflow_Update_WorkflowNameMustHaveValue": "Workflow name must have value.",
   "Features_Workflow_Validation_Definition_MustHaveValue": "The workflow definition must have value.",
-  "Features_Workflow_Validation_SchemaUrl_Invalid": "The workflow schema URL must be an absolute URL (e.g., https://example.com/schema.json).",
+  "Features_Workflow_Validation_SchemaUrl_Invalid": "The workflow schema URL must be an absolute URL (e.g., https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json).",
+  "Features_WorkflowFromIntent_Goal_MustHaveValue": "The workflow goal must have value.",
+  "Features_WorkflowFromIntent_Validation_SchemaUrl_Invalid": "The workflow schema URL must be an absolute URL (e.g., https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json).",
+  "Feature_Workflow_GenerateFromIntent_Success": "Workflow generated successfully from intent.",
   "SecurityConfiguration_InvalidScheme": "Invalid DefaultScheme '{0}'. Must be one of: {1}",
   "SecretConfiguration_InvalidProvider": "Invalid DefaultProvider '{0}'. Must be one of: {1}"
 }

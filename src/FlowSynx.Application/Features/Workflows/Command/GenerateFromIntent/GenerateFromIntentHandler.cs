@@ -46,18 +46,18 @@ internal class GenerateFromIntentHandler : IRequestHandler<GenerateFromIntentReq
             _currentUserService.ValidateAuthentication();
 
             var (definition, rawJson, plan) = await _intentService.SynthesizeAsync(
-                request.Goal, request.CapabilitiesJson, cancellationToken);
+                request.Goal, request.Capabilities, cancellationToken);
 
             // Optional overrides
-            if (!string.IsNullOrWhiteSpace(request.NameOverride))
-                definition.Name = request.NameOverride;
+            if (!string.IsNullOrWhiteSpace(request.OverrideName))
+                definition.Name = request.OverrideName;
 
             // Guardrails: schema + semantic validation
             await _schemaValidator.ValidateAsync(request.SchemaUrl, rawJson, cancellationToken);
             await _workflowValidator.ValidateAsync(definition, cancellationToken);
 
             Guid? workflowId = null;
-            if (request.AutoCreate)
+            if (request.AutoCreateWorkflow)
             {
                 var entity = new WorkflowEntity
                 {
