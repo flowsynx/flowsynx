@@ -84,7 +84,7 @@ public sealed class AzureOpenAiProviderTests
         });
 
         // Act
-        var result = await provider.GenerateWorkflowJsonAsync("do X", "{}", CancellationToken.None);
+        var result = await provider.GenerateWorkflowJsonAsync("do X", "", CancellationToken.None);
 
         // Assert
         Assert.Equal("{\"ok\":true}", result);
@@ -101,7 +101,7 @@ public sealed class AzureOpenAiProviderTests
         Assert.Equal("user", messages[1].GetProperty("role").GetString());
         var userContent = messages[1].GetProperty("content").GetString();
         Assert.Contains("do X", userContent);
-        Assert.Contains("OUTPUT ONLY THE JSON OBJECT", userContent);
+        Assert.Contains("OUTPUT JSON ONLY", userContent);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public sealed class AzureOpenAiProviderTests
             ["Deployment"] = "dep"
         });
 
-        var result = await provider.GenerateWorkflowJsonAsync("build", "{}", CancellationToken.None);
+        var result = await provider.GenerateWorkflowJsonAsync("build", "", CancellationToken.None);
         Assert.Equal("{\"id\":1}", result);
     }
 }

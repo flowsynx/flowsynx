@@ -49,7 +49,11 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
 
     public async Task<string> GenerateWorkflowJsonAsync(string goal, string? capabilitiesJson, CancellationToken cancellationToken)
     {
-        var pluginsInfo = await FetchPluginsAsync(cancellationToken);
+        var pluginsInfoRaw = await FetchPluginsAsync(cancellationToken);
+        var pluginsInfo = FilterPluginsByTypeOrDescription(
+            pluginsInfoRaw,
+            capabilitiesJson
+        );
 
         // Minimal chat body; expect JSON-only response
         var body = new
@@ -62,7 +66,7 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
                 "Do not invent fields." +
                 "Ensure a valid DAG." +
                 "Output JSON only." },
-                new { role = "user", content = await BuildPromptAsync(goal, capabilitiesJson, pluginsInfo) }
+                new { role = "user", content = await BuildPromptAsync(goal, pluginsInfo) }
             },
             temperature = 0.2
         };
@@ -183,69 +187,79 @@ public sealed class AzureOpenAiProvider : IAiProvider, IConfigurableAi
         }
     }
 
-    private static async Task<string> BuildPromptAsync(
-    string goal,
-    string? capabilitiesJson,
-    string pluginsInfo)
+    private static string FilterPluginsByTypeOrDescription(
+    string pluginsInfoJson,
+    string? capabilitiesJson)
     {
-        return $@"
-=== ROLE ===
-You are FlowSynx-WorkflowGen, an expert system that generates VALID FlowSynx WorkflowDefinition JSON objects.
+        if (string.IsNullOrWhiteSpace(capabilitiesJson))
+            return pluginsInfoJson;
 
-You are STRICT, DETERMINISTIC, and PRECISE.
-You MUST follow ALL instructions with ZERO deviation.
-You MUST NOT invent, infer, normalize, rename, or assume any plugins, operations, parameters, or fields.
+        var required = JArray.Parse(capabilitiesJson)
+            .Select(c => c.ToString())
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .ToArray();
 
-You are also acting as a STRICT JSON + SCHEMA VALIDATOR.
-Any invalid output is considered a FAILURE.
+        if (required.Length == 0)
+            return pluginsInfoJson;
 
-If you cannot produce a fully valid output that satisfies ALL rules:
-- Restart generation internally
-- Do NOT output partial JSON
-- Do NOT explain
-- Output ONLY the final corrected JSON
+        var plugins = JArray.Parse(pluginsInfoJson);
+        var filtered = new JArray();
 
----
+        foreach (JObject plugin in plugins.OfType<JObject>())
+        {
+            var type = plugin["type"]?.ToString() ?? string.Empty;
+            var description = plugin["description"]?.ToString() ?? string.Empty;
 
-=== INPUT: GOAL ===
+            if (required.Any(r =>
+                type.Contains(r, StringComparison.OrdinalIgnoreCase) ||
+                description.Contains(r, StringComparison.OrdinalIgnoreCase)))
+            {
+                filtered.Add(plugin);
+            }
+        }
+
+        return filtered.ToString(Formatting.None);
+    }
+
+    private static Task<string> BuildPromptAsync(
+        string goal,
+        string pluginsInfo)
+    {
+        return Task.FromResult($@"
+GOAL:
 {goal}
 
----
-
-=== INPUT: PLUGINS AVAILABLE IN REGISTRY ===
-Use ONLY these plugins, operations, parameters, and versions.
-Copy names VERBATIM.
+AVAILABLE PLUGINS (AUTHORITATIVE):
 {pluginsInfo}
 
----
+REQUIRED OUTPUT:
+- One valid FlowSynx WorkflowDefinition JSON object
+- No markdown, no comments, no explanation
+- No null values
+- No trailing commas
+- All required fields must be present
+- Use ONLY the plugins above
+- Ensure a valid DAG (no cycles, valid dependencies)
+- errorHandling.strategy MUST be one of:
+    Retry | Skip | Abort | TriggerTask
+- errorHandling.retryPolicy:
+    - MUST be populated ONLY when strategy == Retry
+    - MUST be empty {{}} otherwise
+    - maxRetries MUST be between 0 and 10
+    - backoffStrategy MUST be one of:
+      Fixed | Linear | Exponential | Jitter
 
-=== OUTPUT FORMAT (ABSOLUTELY CRITICAL) ===
-- Output MUST be a SINGLE JSON OBJECT
-- NO markdown
-- NO comments
-- NO explanation
-- NO surrounding text
-- NO trailing commas
-- NO null values anywhere
-- Empty arrays = []
-- Empty objects = {{}}
-
----
-
-=== AUTHORITATIVE SCHEMA (MUST MATCH EXACTLY) ===
-The schema below is AUTHORITATIVE.
-Field names, casing, structure, and presence MUST match exactly.
-
+SCHEMA:
 {{
   ""name"": ""string"",
   ""description"": ""string"",
-  ""variables"": {{ ""key"": ""value"" }},
+  ""variables"": {{}},
   ""configuration"": {{
     ""degreeOfParallelism"": 0,
     ""timeoutMilliseconds"": 0,
     ""errorHandling"": {{
       ""strategy"": ""Abort"",
-      ""triggerPolicy"": {{ ""taskName"": ""string"" }},
+      ""triggerPolicy"": {{}},
       ""retryPolicy"": {{}}
     }}
   }},
@@ -256,8 +270,8 @@ Field names, casing, structure, and presence MUST match exactly.
       ""type"": ""string"",
       ""execution"": {{
         ""operation"": ""string"",
-        ""Specification"": {{ ""key"": ""value"" }},
-        ""parameters"": {{ ""key"": ""value"" }},
+        ""Specification"": {{}},
+        ""parameters"": {{}},
         ""timeoutMilliseconds"": 0,
         ""agent"": {{
           ""enabled"": true,
@@ -269,26 +283,20 @@ Field names, casing, structure, and presence MUST match exactly.
         }}
       }},
       ""flowControl"": {{}},
-      ""dependencies"": [""string""],
-      ""runOnFailureOf"": [""string""],
+      ""dependencies"": [],
+      ""runOnFailureOf"": [],
       ""executionCondition"": {{
         ""expression"": ""string"",
         ""description"": ""string""
       }},
-      ""conditionalBranches"": [
-        {{
-          ""expression"": ""string"",
-          ""description"": ""string"",
-          ""targetTaskName"": ""string""
-        }}
-      ],
+      ""conditionalBranches"": [],
       ""manualApproval"": {{
-        ""enabled"": true,
-        ""comment"": ""string""
+        ""enabled"": false,
+        ""comment"": """"
       }},
       ""errorHandling"": {{
         ""strategy"": ""Abort"",
-        ""triggerPolicy"": {{ ""taskName"": ""string"" }},
+        ""triggerPolicy"": {{}},
         ""retryPolicy"": {{}}
       }},
       ""position"": {{ ""x"": 0, ""y"": 0 }}
@@ -296,90 +304,10 @@ Field names, casing, structure, and presence MUST match exactly.
   ]
 }}
 
----
-
-=== HARD RULES (NON-NEGOTIABLE) ===
-
-1. VALID JSON ONLY. No trailing commas. No null values.
-2. tasks MUST NOT be empty.
-3. All names MUST be unique and PascalCase.
-4. Task names SHOULD use verb-noun form (e.g., FetchData).
-5. Use ONLY plugins and operations from pluginsInfo.
-6. Do NOT invent plugins, operations, parameters, or fields.
-7. Plugins with incompatible MAJOR versions MUST NOT be mixed.
-8. Ensure a valid DAG:
-   - No cycles
-   - All dependencies exist
-   - At least one root task
-   - Every task reachable from a root
-9. A task MUST NOT depend on more than 10 tasks.
-10. Prefer parallel execution when tasks are independent.
-11. Variables:
-    - Define ONLY variables that are actually used
-    - Usage format MUST be: $[Variables('VariableName')]
-    - Variables MUST be defined before use
-12. execution.operation MUST exist in the referenced plugin.
-13. All parameters MUST be consumed by the plugin operation.
-14. Specification = static configuration
-15. parameters = runtime or variable-based values
-16. errorHandling.strategy MUST be one of:
-    Retry | Skip | Abort | TriggerTask
-17. retryPolicy:
-    - MUST be populated ONLY when strategy == Retry
-    - MUST be empty {{}} otherwise
-    - maxRetries MUST be between 0 and 10
-    - backoffStrategy MUST be one of:
-      Fixed | Linear | Exponential | Jitter
-18. If strategy == Retry:
-    - execution.timeoutMilliseconds MUST be > 0
-19. If strategy == TriggerTask:
-    - triggerPolicy.taskName MUST match an existing task
-    - MUST NOT create a cycle
-    - Target SHOULD be compensating or notification task
-20. If strategy != TriggerTask:
-    - triggerPolicy MUST be empty {{}}
-21. Task-level errorHandling OVERRIDES workflow-level errorHandling.
-22. After retries exhausted:
-    - Workflow MUST Abort unless TriggerTask is defined
-23. runOnFailureOf MAY reference only direct or transitive dependencies.
-24. conditionalBranches:
-    - expressions MUST be mutually exclusive
-    - targetTaskName MUST exist
-    - MUST NOT reference the current task
-    - One branch SHOULD act as default (e.g., expression == true)
-25. executionCondition expressions:
-    - MUST be deterministic
-    - MUST be side-effect free
-    - MUST handle missing or null variables safely
-26. Manual approval tasks:
-    - MUST be depended upon by at least one task
-27. Agent constraints:
-    - temperature MUST be between 0.0 and 0.5
-    - maxIterations MUST be between 1 and 10
-28. No two tasks SHOULD share the same position (x, y).
-29. description fields MUST clearly describe intent.
-30. Tasks SHOULD be idempotent or explicitly compensatable.
-31. Irreversible tasks SHOULD define a compensating TriggerTask.
-32. Workflow timeout MUST be >= sum of task timeouts.
-33. Order tasks topologically (execution order).
-34. Do NOT rely on implicit defaults — define all behavior explicitly.
-35. The workflow MUST be fully deterministic.
-36. Output EXACTLY ONE JSON OBJECT and NOTHING ELSE.
-
----
-
-=== INTERNAL VALIDATION CHECKLIST (DO NOT OUTPUT) ===
-- Schema matches exactly
-- JSON is valid
-- No cycles in DAG
-- All dependencies valid
-- All plugins and operations exist
-- All rules satisfied
-
-FINAL INSTRUCTION:
-OUTPUT ONLY THE JSON OBJECT.
-";
+OUTPUT JSON ONLY.
+");
     }
+
 
     public async Task<AgentExecutionResult> ExecuteAgenticTaskAsync(
         AgentExecutionContext context,
