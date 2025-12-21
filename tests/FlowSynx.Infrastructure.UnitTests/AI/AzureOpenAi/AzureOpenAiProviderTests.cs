@@ -101,7 +101,7 @@ public sealed class AzureOpenAiProviderTests
         Assert.Equal("user", messages[1].GetProperty("role").GetString());
         var userContent = messages[1].GetProperty("content").GetString();
         Assert.Contains("do X", userContent);
-        Assert.Contains("You MUST output ONLY a JSON object", userContent);
+        Assert.Contains("OUTPUT ONLY THE JSON OBJECT", userContent);
     }
 
     [Fact]
