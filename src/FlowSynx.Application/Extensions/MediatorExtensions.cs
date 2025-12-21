@@ -24,7 +24,6 @@ using FlowSynx.Application.Features.WorkflowExecutions.Query.WorkflowTaskExecuti
 using FlowSynx.Application.Features.Workflows.Command.AddWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.DeleteWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.GenerateFromIntent;
-using FlowSynx.Application.Features.Workflows.Command.OptimizeWorkflow;
 using FlowSynx.Application.Features.Workflows.Command.UpdateWorkflow;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowDetails;
 using FlowSynx.Application.Features.Workflows.Query.WorkflowsList;
@@ -294,14 +293,6 @@ public static class MediatorExtensions
         CancellationToken cancellationToken)
     {
         return mediator.Send(request,cancellationToken);
-    }
-
-    public static Task<Result<OptimizeWorkflowResponse>> OptimizeWorkflow(
-        this IMediator mediator,
-        OptimizeWorkflowRequest request,
-        CancellationToken cancellationToken)
-    {
-        return mediator.Send(request, cancellationToken);
     }
 
     public static Task<PaginatedResult<WorkflowExecutionApprovalsResponse>> GetWorkflowPendingApprovals(
