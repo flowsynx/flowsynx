@@ -42,7 +42,7 @@ public class AzureKeyVaultSecretProvider : ISecretProvider, IConfigurableSecret
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // Skip disabled or deleted secrets
-                if (secretProperties.Enabled != true)
+                if (secretProperties.Enabled is not true)
                     continue;
 
                 try
