@@ -16,6 +16,5 @@ public interface IPluginDownloader
 
     bool ValidateChecksum(byte[] data, string? expectedChecksum);
 
-    // New: list all plugins from a registry
-    Task<IEnumerable<RegistryPluginItem>> GetPluginsListAsync(string url, CancellationToken cancellationToken);
+    Task<IEnumerable<PluginFullDetailsItem>> GetPluginsFullDetailsListAsync(string url, CancellationToken cancellationToken);
 }

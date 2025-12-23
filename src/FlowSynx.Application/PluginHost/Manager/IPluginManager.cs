@@ -18,7 +18,7 @@ public interface IPluginManager
         string currentVersion, 
         CancellationToken cancellationToken);
 
-    Task<(IReadOnlyCollection<RegistryPluginInfo> Items, int TotalCount)> GetRegistryPluginsAsync(
+    Task<(IReadOnlyCollection<PluginFullDetailsInfo> Items, int TotalCount)> GetPluginsFullDetailsListAsync(
         int page,
         int pageSize,
         CancellationToken cancellationToken);

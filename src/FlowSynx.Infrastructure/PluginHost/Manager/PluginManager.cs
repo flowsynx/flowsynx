@@ -49,7 +49,7 @@ public class PluginManager : IPluginManager
         _version = version ?? throw new ArgumentNullException(nameof(version));
     }
 
-    public async Task<(IReadOnlyCollection<RegistryPluginInfo> Items, int TotalCount)> GetRegistryPluginsAsync(
+    public async Task<(IReadOnlyCollection<PluginFullDetailsInfo> Items, int TotalCount)> GetPluginsFullDetailsListAsync(
         int page,
         int pageSize,
         CancellationToken cancellationToken)
@@ -60,19 +60,20 @@ public class PluginManager : IPluginManager
             ? _pluginRegistryConfiguration.Urls!
             : new List<string> {};
 
-        var aggregated = new List<RegistryPluginInfo>();
+        var aggregated = new List<PluginFullDetailsInfo>();
 
         foreach (var registry in registries)
         {
             try
             {
-                var items = await _pluginDownloader.GetPluginsListAsync(registry, cancellationToken);
-                aggregated.AddRange(items.Select(i => new RegistryPluginInfo
+                var items = await _pluginDownloader.GetPluginsFullDetailsListAsync(registry, cancellationToken);
+                aggregated.AddRange(items.Select(i => new PluginFullDetailsInfo
                 {
                     Type = i.Type,
                     CategoryTitle = i.CategoryTitle,
                     Description = i.Description,
-                    Version = i.Version,
+                    Versions = i.Versions,
+                    LatestVersion = i.LatestVersion,
                     Registry = registry
                 }));
             }
@@ -84,8 +85,8 @@ public class PluginManager : IPluginManager
 
         // Distinct by Type + Registry to avoid duplicates across multiple calls to same registry URL
         var distinct = aggregated
-            .GroupBy<RegistryPluginInfo, (string Type, string Version)>(
-                x => (x.Type, x.Version),
+            .GroupBy<PluginFullDetailsInfo, (string Type, string Registry)>(
+                x => (x.Type, x.Registry),
                 new PluginIdRegistryEqualityComparer())
             .Select(g => g.First())
             .ToList();
@@ -494,17 +495,17 @@ public class PluginManager : IPluginManager
         return latest!;
     }
 
-    private sealed class PluginIdRegistryEqualityComparer : IEqualityComparer<(string Type, string Version)>
+    private sealed class PluginIdRegistryEqualityComparer : IEqualityComparer<(string Type, string Registry)>
     {
-        public bool Equals((string Type, string Version) x, (string Type, string Version) y)
+        public bool Equals((string Type, string Registry) x, (string Type, string Registry) y)
         {
             return string.Equals(x.Type, y.Type, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(x.Version, y.Version, StringComparison.OrdinalIgnoreCase);
+                && string.Equals(x.Registry, y.Registry, StringComparison.OrdinalIgnoreCase);
         }
 
-        public int GetHashCode((string Type, string Version) obj)
+        public int GetHashCode((string Type, string Registry) obj)
         {
-            return (obj.Type?.ToLowerInvariant().GetHashCode() ?? 0) ^ (obj.Version?.ToLowerInvariant().GetHashCode() ?? 0);
+            return (obj.Type?.ToLowerInvariant().GetHashCode() ?? 0) ^ (obj.Registry?.ToLowerInvariant().GetHashCode() ?? 0);
         }
     }
     #endregion

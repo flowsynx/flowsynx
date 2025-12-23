@@ -127,16 +127,16 @@ public class PluginDownloader : IPluginDownloader
         return computedChecksum.Equals(expectedChecksum, StringComparison.OrdinalIgnoreCase);
     }
 
-    public async Task<IEnumerable<RegistryPluginItem>> GetPluginsListAsync(
+    public async Task<IEnumerable<PluginFullDetailsItem>> GetPluginsFullDetailsListAsync(
         string url,
         CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient(PluginRegistryClientName);
         var mainUrl = new Uri(url);
-        var listUrl = new Uri(mainUrl, "api/plugins");
+        var listUrl = new Uri(mainUrl, "api/plugins/full");
         var response = await client.GetStringAsync(listUrl, cancellationToken);
 
-        var result = _jsonDeserializer.Deserialize<Result<IEnumerable<RegistryPluginItem>>>(response);
+        var result = _jsonDeserializer.Deserialize<Result<IEnumerable<PluginFullDetailsItem>>>(response);
         if (result == null)
         {
             var message = _localization.Get("Plugin_Download_PluginNotFound", "all", "latest");

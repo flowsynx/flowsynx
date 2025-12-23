@@ -2,6 +2,7 @@
 using FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UninstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
+using FlowSynx.Application.Features.Plugins.Query.PluginsFullDetailsList;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Extensions;
 using MediatR;
@@ -21,8 +22,8 @@ public class Plugins : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "plugins"));
 
-        group.MapGet("/registries", RegistriesPluginsList)
-            .WithName("RegistriesPluginsList")
+        group.MapGet("/full", PluginsFullDetailsList)
+            .WithName("PluginsFullDetailsList")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "plugins"));
 
@@ -57,13 +58,13 @@ public class Plugins : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public static async Task<IResult> RegistriesPluginsList(
+    public static async Task<IResult> PluginsFullDetailsList(
         [FromServices] IMediator mediator,
         CancellationToken cancellationToken,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25)
     {
-        var result = await mediator.PluginsRegistriesList(page, pageSize, cancellationToken);
+        var result = await mediator.PluginsFullDetailsList(page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 

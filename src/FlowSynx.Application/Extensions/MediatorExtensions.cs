@@ -6,8 +6,8 @@ using FlowSynx.Application.Features.Plugins.Command.InstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UninstallPlugin;
 using FlowSynx.Application.Features.Plugins.Command.UpdatePlugin;
 using FlowSynx.Application.Features.Plugins.Query.PluginDetails;
+using FlowSynx.Application.Features.Plugins.Query.PluginsFullDetailsList;
 using FlowSynx.Application.Features.Plugins.Query.PluginsList;
-using FlowSynx.Application.Features.Plugins.Query.PluginsRegistriesList;
 using FlowSynx.Application.Features.Version.Query;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.ApproveWorkflow;
 using FlowSynx.Application.Features.WorkflowExecutions.Command.CancelWorkflow;
@@ -377,13 +377,13 @@ public static class MediatorExtensions
         }, cancellationToken);
     }
 
-    public static Task<PaginatedResult<PluginsRegistriesListResponse>> PluginsRegistriesList(
+    public static Task<PaginatedResult<PluginsFullDetailsListResponse>> PluginsFullDetailsList(
         this IMediator mediator,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new PluginsRegistriesListRequest
+        return mediator.Send(new PluginsFullDetailsListRequest
         {
             Page = page,
             PageSize = pageSize
