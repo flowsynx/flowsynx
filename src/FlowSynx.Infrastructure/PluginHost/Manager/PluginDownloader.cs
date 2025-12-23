@@ -190,16 +190,20 @@ public class PluginDownloader : IPluginDownloader
         using var memoryStream = new MemoryStream(zipData);
         using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Read, leaveOpen: false);
 
+        Directory.CreateDirectory(outputDirectory);
+
         foreach (var entry in archive.Entries)
         {
-            var destinationPath = Path.Combine(outputDirectory, entry.FullName);
-
-            var directoryPath = Path.GetDirectoryName(destinationPath);
-            if (!string.IsNullOrEmpty(directoryPath))
-                Directory.CreateDirectory(directoryPath);
-
-            if (string.IsNullOrEmpty(entry.Name)) 
+            // Skip directory entries
+            if (string.IsNullOrEmpty(entry.Name))
                 continue;
+
+            // Use only the file name (flat structure)
+            var fileName = Path.GetFileName(entry.Name);
+            var destinationPath = Path.Combine(outputDirectory, fileName);
+
+            // Ensure unique file name to avoid overwriting
+            destinationPath = GetUniqueFilePath(destinationPath);
 
             await using var entryStream = entry.Open();
             await using var outputStream = new FileStream(
@@ -212,5 +216,26 @@ public class PluginDownloader : IPluginDownloader
 
             await entryStream.CopyToAsync(outputStream, cancellationToken);
         }
+    }
+
+    // Helper to generate a unique file path if it already exists
+    private static string GetUniqueFilePath(string path)
+    {
+        if (!File.Exists(path))
+            return path;
+
+        var directory = Path.GetDirectoryName(path)!;
+        var fileNameWithoutExt = Path.GetFileNameWithoutExtension(path);
+        var extension = Path.GetExtension(path);
+        var counter = 1;
+
+        string newPath;
+        do
+        {
+            newPath = Path.Combine(directory, $"{fileNameWithoutExt}({counter}){extension}");
+            counter++;
+        } while (File.Exists(newPath));
+
+        return newPath;
     }
 }
