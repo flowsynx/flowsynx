@@ -71,7 +71,8 @@ jobs:
         id: gitversion
 
       - name: Display GitVersion outputs
-        run: echo "Version: $RELEASE_VERSION"
+        run: |
+          echo "Version: $RELEASE_VERSION"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
