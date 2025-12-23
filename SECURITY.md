@@ -28,14 +28,4 @@ We handle every report with urgency and transparency:
 4. **Coordinated Disclosure**  
    Once a fix is ready, we will coordinate public disclosure with the reporter and include a detailed changelog in the relevant release notes.
 
-## Supported Versions
-
-The table below outlines supported FlowSynx versions and their security update status:
-
-| Version | Supported | Support Window |
-|---------|-----------|----------------|
-| v1.2.x  | ✅ Yes   | Until next minor release (v1.3.x) |
-| v1.1.4  | ⚠️ Yes   | 1 month after next minor release |
-| v1.1.3  | ❌ No    | End-of-life |
-
 We sincerely appreciate your responsible disclosure and your efforts in helping **keep FlowSynx safe for everyone**.
