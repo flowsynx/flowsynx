@@ -11,6 +11,7 @@ on:
 env:
   DOCKER_USER_NAME: ${{ github.repository_owner }}
   DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
+  RELEASE_VERSION: ${{ inputs.rel_version }}
 
 defaults:
   run:
@@ -57,7 +58,7 @@ jobs:
 
       - name: Display GitVersion outputs
         run: |
-            echo "Version: ${{ inputs.rel_version }}"
+            echo "Version: ${{ env.RELEASE_VERSION }}"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -72,16 +73,16 @@ jobs:
             -p:PublishReadyToRun=true \
             --runtime "${{ matrix.kind }}-${{ matrix.os_arch }}" \
             -c Release --self-contained true \
-            -p:Version="${{ inputs.rel_version }}" \
+            -p:Version="${{ env.RELEASE_VERSION }}" \
             -o "${{ github.workspace }}/$release_name"
 
           mkdir -p "${{ github.workspace }}/dist"
           cd "${{ github.workspace }}/$release_name"
 
           if [[ "${{ matrix.kind }}" == "win" ]]; then
-            7z a -tzip "${{ github.workspace }}/dist/${release_name}.zip" *
+            7z a -tzip "${{ github.workspace }}/dist/${release_name}.zip" ./*
           else
-            tar czvf "${{ github.workspace }}/dist/${release_name}.tar.gz" *
+            tar czvf "${{ github.workspace }}/dist/${release_name}.tar.gz" ./*
           fi
 
       - name: Upload binaries
@@ -113,9 +114,9 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ inputs.rel_version }}
-          name: FlowSynx v${{ inputs.rel_version }}
-          body: "This is the v${{ inputs.rel_version }} release of FlowSynx"
+          tag: v${{ env.RELEASE_VERSION }}
+          name: FlowSynx v${{ env.RELEASE_VERSION }}
+          body: "This is the v${{ env.RELEASE_VERSION }} release of FlowSynx"
           artifacts: "**/*.*"
           token: ${{ secrets.GH_TOKEN }}
 
@@ -124,7 +125,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          branch: release-${{ inputs.rel_version }}
+          branch: release-${{ env.RELEASE_VERSION }}
           sha: ${{ github.event.pull_request.head.sha }}
 
   compute:
@@ -165,10 +166,10 @@ jobs:
       - name: Build and Push Image
         run: |
           IMAGE_NAME=${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}
-          TAG="${IMAGE_NAME}:${{ inputs.rel_version }}-${{ matrix.tag_suffix }}"
+          TAG="${IMAGE_NAME}:${{ env.RELEASE_VERSION }}-${{ matrix.tag_suffix }}"
 
           docker build -f ${{ matrix.file }} \
-            --build-arg APP_VERSION=${{ inputs.rel_version }} \
+            --build-arg APP_VERSION=${{ env.RELEASE_VERSION }} \
             -t $TAG .
 
           docker push $TAG
