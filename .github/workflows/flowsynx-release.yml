@@ -11,14 +11,27 @@ on:
 env:
   DOCKER_USER_NAME: ${{ github.repository_owner }}
   DOCKER_IMAGE_NAME: ${{ github.event.repository.name }}
-  RELEASE_VERSION: ${{ inputs.rel_version }}
 
 defaults:
   run:
     shell: bash
 
 jobs:
+  sanitize_inputs:
+    runs-on: ubuntu-latest
+    outputs:
+      RELEASE_VERSION: ${{ steps.set_version.outputs.RELEASE_VERSION }}
+    steps:
+      - name: Sanitize release version
+        id: set_version
+        run: |
+          # Keep only alphanumeric, dots, hyphens, underscores
+          SAFE_VERSION=$(echo "${{ github.event.inputs.rel_version }}" | tr -cd '[:alnum:]._-')
+          echo "RELEASE_VERSION=$SAFE_VERSION" >> $GITHUB_ENV
+          echo "RELEASE_VERSION=$SAFE_VERSION" >> $GITHUB_OUTPUT
+
   build:
+    needs: sanitize_inputs
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -41,6 +54,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       ARCHIVE_OUTDIR: dist/archives
+      RELEASE_VERSION: ${{ needs.sanitize_inputs.outputs.RELEASE_VERSION }}
 
     steps:
       - uses: actions/checkout@v2
@@ -57,8 +71,7 @@ jobs:
         id: gitversion
 
       - name: Display GitVersion outputs
-        run: |
-            echo "Version: ${{ env.RELEASE_VERSION }}"
+        run: echo "Version: $RELEASE_VERSION"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -67,35 +80,36 @@ jobs:
 
       - name: Publish
         run: |
-          release_name="flowsynx-${{ matrix.title }}-${{ matrix.os_arch }}"
+          release_name="flowsynx-${matrix.title}-${matrix.os_arch}"
           dotnet publish src/FlowSynx/FlowSynx.csproj \
             -p:PublishSingleFile=true \
             -p:PublishReadyToRun=true \
-            --runtime "${{ matrix.kind }}-${{ matrix.os_arch }}" \
+            --runtime "${matrix.kind}-${matrix.os_arch}" \
             -c Release --self-contained true \
-            -p:Version="${{ env.RELEASE_VERSION }}" \
-            -o "${{ github.workspace }}/$release_name"
+            -p:Version="$RELEASE_VERSION" \
+            -o "${GITHUB_WORKSPACE}/$release_name"
 
-          mkdir -p "${{ github.workspace }}/dist"
-          cd "${{ github.workspace }}/$release_name"
+          mkdir -p "${GITHUB_WORKSPACE}/dist"
+          cd "${GITHUB_WORKSPACE}/$release_name"
 
-          if [[ "${{ matrix.kind }}" == "win" ]]; then
-            7z a -tzip "${{ github.workspace }}/dist/${release_name}.zip" ./*
+          if [[ "${matrix.kind}" == "win" ]]; then
+            7z a -tzip "${GITHUB_WORKSPACE}/dist/${release_name}.zip" ./*
           else
-            tar czvf "${{ github.workspace }}/dist/${release_name}.tar.gz" ./*
+            tar czvf "${GITHUB_WORKSPACE}/dist/${release_name}.tar.gz" ./*
           fi
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
         with:
-          name: flowsynx-${{ matrix.title }}-${{ matrix.os_arch }}
-          path: "${{ github.workspace }}/dist"
+          name: flowsynx-${matrix.title}-${matrix.os_arch}
+          path: "${GITHUB_WORKSPACE}/dist"
 
   release:
+    needs: [sanitize_inputs, build]
     runs-on: ubuntu-latest
-    needs: build
     if: github.ref == 'refs/heads/master'
     env:
+      RELEASE_VERSION: ${{ needs.sanitize_inputs.outputs.RELEASE_VERSION }}
       ARTIFACT_DIR: ./release
 
     steps:
@@ -108,15 +122,17 @@ jobs:
 
       - name: Generate checksums
         run: |
-          cd ${ARTIFACT_DIR}
-          for i in *; do sha256sum -b "$i" > "$i.sha256"; done
+          cd "${ARTIFACT_DIR}"
+          for file in *; do
+            sha256sum -b "$file" > "$file.sha256"
+          done
 
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: v${{ env.RELEASE_VERSION }}
-          name: FlowSynx v${{ env.RELEASE_VERSION }}
-          body: "This is the v${{ env.RELEASE_VERSION }} release of FlowSynx"
+          tag: v${RELEASE_VERSION}
+          name: FlowSynx v${RELEASE_VERSION}
+          body: "This is the v${RELEASE_VERSION} release of FlowSynx"
           artifacts: "**/*.*"
           token: ${{ secrets.GH_TOKEN }}
 
@@ -125,10 +141,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
-          branch: release-${{ env.RELEASE_VERSION }}
-          sha: ${{ github.event.pull_request.head.sha }}
+          branch: release-${RELEASE_VERSION}
+          sha: ${{ github.event.pull_request.head.sha || github.sha }}
 
   compute:
+    needs: sanitize_inputs
     runs-on: ubuntu-latest
     outputs:
       docker_user_name: ${{ env.DOCKER_USER_NAME }}
@@ -137,10 +154,11 @@ jobs:
     steps:
       - name: Compute Outputs
         run: |
-          echo "docker_user_name=${{ env.DOCKER_USER_NAME }}" >> $GITHUB_OUTPUT
-          echo "docker_image_name=${{ env.DOCKER_IMAGE_NAME }}" >> $GITHUB_OUTPUT
+          echo "docker_user_name=${DOCKER_USER_NAME}" >> $GITHUB_OUTPUT
+          echo "docker_image_name=${DOCKER_IMAGE_NAME}" >> $GITHUB_OUTPUT
 
   docker:
+    needs: [sanitize_inputs, compute, build, release]
     strategy:
       matrix:
         os: [ubuntu-latest, windows-2022]
@@ -152,7 +170,6 @@ jobs:
             file: docker/Dockerfile.Windows
             tag_suffix: windows-ltsc2022-amd64
     runs-on: ${{ matrix.os }}
-    needs: [compute, build, release]
 
     steps:
       - uses: actions/checkout@v4
@@ -165,11 +182,11 @@ jobs:
 
       - name: Build and Push Image
         run: |
-          IMAGE_NAME=${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}
-          TAG="${IMAGE_NAME}:${{ env.RELEASE_VERSION }}-${{ matrix.tag_suffix }}"
+          IMAGE_NAME="${{ needs.compute.outputs.docker_user_name }}/${{ needs.compute.outputs.docker_image_name }}"
+          TAG="${IMAGE_NAME}:${{ needs.sanitize_inputs.outputs.RELEASE_VERSION }}-${{ matrix.tag_suffix }}"
 
-          docker build -f ${{ matrix.file }} \
-            --build-arg APP_VERSION=${{ env.RELEASE_VERSION }} \
-            -t $TAG .
+          docker build -f "${matrix.file}" \
+            --build-arg APP_VERSION="${{ needs.sanitize_inputs.outputs.RELEASE_VERSION }}" \
+            -t "$TAG" .
 
-          docker push $TAG
+          docker push "$TAG"
