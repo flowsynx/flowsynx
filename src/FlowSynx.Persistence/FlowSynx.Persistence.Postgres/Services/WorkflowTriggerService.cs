@@ -28,7 +28,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTriggeres
-                .Where(x => x.IsDeleted == false)
+                .Where(x => !x.IsDeleted)
                 .ToListAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -50,7 +50,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTriggeres
-                .Where(x => x.IsDeleted == false && x.WorkflowId == workflowId)
+                .Where(x => !x.IsDeleted && x.WorkflowId == workflowId)
                 .ToListAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -72,7 +72,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.WorkflowTriggeres
-                .Where(x => x.Type == type && x.Status == WorkflowTriggerStatus.Active && x.IsDeleted == false)
+                .Where(x => x.Type == type && x.Status == WorkflowTriggerStatus.Active && !x.IsDeleted)
                 .ToListAsync(cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -95,7 +95,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.WorkflowTriggeres
-                .FirstOrDefaultAsync(x => x.Id == triggerId && x.WorkflowId == workflowId && x.IsDeleted == false, cancellationToken)
+                .FirstOrDefaultAsync(x => x.Id == triggerId && x.WorkflowId == workflowId && !x.IsDeleted, cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
