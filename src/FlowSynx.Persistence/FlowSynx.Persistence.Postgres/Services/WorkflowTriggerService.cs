@@ -37,7 +37,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersList, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -59,7 +59,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersList, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -81,7 +81,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowActiveTriggersList, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -101,7 +101,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowGetTriggerItem, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -124,7 +124,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersAdd, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -146,7 +146,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersUpdate, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
@@ -169,7 +169,7 @@ public class WorkflowTriggerService : IWorkflowTriggerService
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowTriggersDelete, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
