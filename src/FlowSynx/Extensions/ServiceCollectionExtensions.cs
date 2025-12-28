@@ -10,7 +10,7 @@ using FlowSynx.Application.Configuration.System.Workflow.Execution;
 using FlowSynx.Application.Configuration.System.Workflow.Queue;
 using FlowSynx.Application.Localizations;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.HealthCheck;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;

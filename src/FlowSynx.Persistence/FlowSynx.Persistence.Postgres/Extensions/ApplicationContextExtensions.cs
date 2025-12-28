@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain;
+﻿using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Shared.Entities;
 using FlowSynx.Persistence.Postgres.Contexts;
 
 namespace FlowSynx.Persistence.Postgres.Extensions;

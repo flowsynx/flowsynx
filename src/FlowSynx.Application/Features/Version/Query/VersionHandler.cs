@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Services;
-using FlowSynx.Domain.Wrapper;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;

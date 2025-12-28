@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Log;
+﻿using FlowSynx.Domain.Repositories;
 using FlowSynx.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,12 +22,12 @@ public sealed class SerilogDatabaseProviderBuilder : ILogProviderBuilder
         Application.Configuration.System.Logger.LoggerProviderConfiguration? config)
     {
         var level = config?.LogLevel.ToSerilogLevel() ?? Serilog.Events.LogEventLevel.Information;
-        var loggerService = _serviceProvider.GetRequiredService<ILoggerService>();
+        var logEntryRepository = _serviceProvider.GetRequiredService<ILogEntryRepository>();
         var accessor = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
 
         var logger = new LoggerConfiguration()
             .MinimumLevel.Is(level)
-            .WriteTo.SqliteLogs(loggerService, accessor)
+            .WriteTo.SqliteLogs(logEntryRepository, accessor)
             .CreateLogger();
 
         return new SerilogLoggerProvider(logger, dispose: true);

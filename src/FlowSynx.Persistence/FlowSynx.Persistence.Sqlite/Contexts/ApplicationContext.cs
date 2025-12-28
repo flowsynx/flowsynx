@@ -8,10 +8,11 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
 using FlowSynx.Domain.Plugin;
-using FlowSynx.Domain;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Persistence.Core.Common.Contexts;
 using FlowSynx.Application.Configuration.Core.Security;
+using FlowSynx.Domain.Shared.Entities;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Persistence.Sqlite.Contexts;
 

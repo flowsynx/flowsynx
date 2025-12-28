@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Log;
+﻿using FlowSynx.Domain.Entities;
 using FlowSynx.Persistence.Logging.Sqlite.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;

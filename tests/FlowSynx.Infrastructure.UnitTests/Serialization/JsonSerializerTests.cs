@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
-using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging.Testing;
 using FlowSynx.Application.Serialization;
-using FlowSynx.Infrastructure.Serialization;
 using FlowSynx.Application.Localizations;
 using Moq;
+using FlowSynx.Domain.Primitives;
+using FlowSynx.Infrastructure.Serializations.NewtonsoftJson;
 
 namespace FlowSynx.Infrastructure.UnitTests.Serialization;
 

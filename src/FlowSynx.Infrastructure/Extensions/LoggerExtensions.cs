@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Log;
+﻿using FlowSynx.Domain.Repositories;
 using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -28,12 +28,12 @@ public static class LoggerExtensions
 
     public static LoggerConfiguration SqliteLogs(
             this LoggerSinkConfiguration config,
-            ILoggerService loggerService,
+            ILogEntryRepository logEntryRepository,
             IHttpContextAccessor? accessor)
     {
         return config.Sink(
             new SqliteLoggerSink(
-                loggerService: loggerService,
+                logEntryRepository: logEntryRepository,
                 httpContextAccessor: accessor));
     }
 }

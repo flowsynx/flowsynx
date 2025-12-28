@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Log;
+﻿using FlowSynx.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

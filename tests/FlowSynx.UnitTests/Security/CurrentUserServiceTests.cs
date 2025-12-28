@@ -1,5 +1,5 @@
 using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Services;
 using Microsoft.AspNetCore.Http;

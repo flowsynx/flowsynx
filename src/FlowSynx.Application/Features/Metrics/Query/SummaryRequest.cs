@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Wrapper;
+﻿using FlowSynx.Domain.Primitives;
 using MediatR;
 
 namespace FlowSynx.Application.Features.Metrics.Query;

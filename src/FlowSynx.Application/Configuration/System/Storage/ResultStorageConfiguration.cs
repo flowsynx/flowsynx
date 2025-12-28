@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain;
+﻿using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 

@@ -3,7 +3,6 @@ using FlowSynx.Application.Configuration.System.HealthCheck;
 using FlowSynx.Application.Configuration.System.OpenApi;
 using FlowSynx.Application.Configuration.System.Server;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Application.Services;
 using FlowSynx.HealthCheck;
@@ -12,6 +11,7 @@ using FlowSynx.Models;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Extensions;
 

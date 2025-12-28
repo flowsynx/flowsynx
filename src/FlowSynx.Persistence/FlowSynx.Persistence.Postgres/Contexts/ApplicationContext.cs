@@ -4,7 +4,6 @@ using FlowSynx.Persistence.Postgres.Configurations;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Trigger;
 using FlowSynx.Domain.Workflow;
@@ -12,6 +11,8 @@ using FlowSynx.Domain.Plugin;
 using FlowSynx.Application.Serialization;
 using FlowSynx.Persistence.Core.Common.Contexts;
 using FlowSynx.Application.Configuration.Core.Security;
+using FlowSynx.Domain.Shared.Entities;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Persistence.Postgres.Contexts;
 

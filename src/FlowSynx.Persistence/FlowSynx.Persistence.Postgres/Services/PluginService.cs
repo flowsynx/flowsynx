@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain;
 using FlowSynx.Persistence.Postgres.Contexts;
 using Microsoft.EntityFrameworkCore;
 using FlowSynx.Persistence.Postgres.Extensions;
 using FlowSynx.Domain.Plugin;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Persistence.Postgres.Services;
 

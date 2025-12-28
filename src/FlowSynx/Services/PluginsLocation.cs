@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.Infrastructure.PluginHost;
 using FlowSynx.PluginCore.Exceptions;
 namespace FlowSynx.Services;

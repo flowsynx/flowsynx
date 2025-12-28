@@ -1,7 +1,7 @@
-﻿using FlowSynx.Domain;
-using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using System.Reflection;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Services;
 

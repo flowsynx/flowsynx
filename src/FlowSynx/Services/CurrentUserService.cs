@@ -1,8 +1,8 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
 using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using System.Security.Claims;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Services;
 

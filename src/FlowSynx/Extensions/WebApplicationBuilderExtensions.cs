@@ -1,10 +1,10 @@
 ﻿using FlowSynx.Application.Configuration.System.Logger;
 using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Domain;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using FlowSynx.Persistence.Logging.Sqlite.Extensions;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Extensions;
 

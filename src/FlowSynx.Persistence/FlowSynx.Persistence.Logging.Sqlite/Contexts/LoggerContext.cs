@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Persistence.Logging.Sqlite.Configurations;
-using FlowSynx.Domain.Log;
+using FlowSynx.Domain.Entities;
 
 namespace FlowSynx.Persistence.Logging.Sqlite.Contexts;
 

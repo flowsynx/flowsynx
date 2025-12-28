@@ -1,8 +1,0 @@
-﻿namespace FlowSynx.Application.Features.WorkflowExecutions.Command.ExecuteWorkflow;
-
-public class WorkflowConfiguration
-{
-    public int? DegreeOfParallelism { get; set; } = 3;
-    public ErrorHandling? ErrorHandling { get; set; } = new ErrorHandling();
-    public int? TimeoutMilliseconds { get; set; }
-}

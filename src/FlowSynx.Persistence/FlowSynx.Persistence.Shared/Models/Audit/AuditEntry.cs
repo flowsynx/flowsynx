@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
-using FlowSynx.Domain.Audit;
+using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Enums;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace FlowSynx.Persistence.Core.Common.Models.Audit;

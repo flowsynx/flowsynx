@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Audit;
+﻿using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Enums;
 using FlowSynx.Persistence.Core.Common.Models.Audit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;

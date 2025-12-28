@@ -1,6 +1,6 @@
-﻿using FlowSynx.Domain;
-using FlowSynx.Application.Workflow;
+﻿using FlowSynx.Application.Workflow;
 using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Services;
 

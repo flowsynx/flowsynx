@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain;
+﻿using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Shared.Entities;
 using FlowSynx.Persistence.Sqlite.Contexts;
 
 namespace FlowSynx.Persistence.Sqlite.Extensions;

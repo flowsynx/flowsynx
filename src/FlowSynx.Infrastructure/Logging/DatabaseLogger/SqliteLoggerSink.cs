@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Log;
+﻿using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Repositories;
 using Microsoft.AspNetCore.Http;
 using Serilog.Core;
 using Serilog.Events;
@@ -8,18 +9,18 @@ namespace FlowSynx.Infrastructure.Logging.DatabaseLogger;
 
 internal class SqliteLoggerSink : ILogEventSink
 {
-    private readonly ILoggerService _loggerService;
+    private readonly ILogEntryRepository _logEntryRepository;
     private readonly IHttpContextAccessor? _httpContextAccessor;
     private readonly IFormatProvider? _formatProvider;
 
     public SqliteLoggerSink(
-        ILoggerService loggerService,
+        ILogEntryRepository logEntryRepository,
         IHttpContextAccessor? httpContextAccessor,
         IFormatProvider? formatProvider = null)
     {
-        _loggerService = loggerService;
-        _httpContextAccessor = httpContextAccessor;
-        _formatProvider = formatProvider;
+        _logEntryRepository = logEntryRepository ?? throw new ArgumentNullException(nameof(logEntryRepository));
+        _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _formatProvider = formatProvider ?? throw new ArgumentNullException(nameof(formatProvider));
     }
 
     public void Emit(LogEvent logEvent)
@@ -39,7 +40,7 @@ internal class SqliteLoggerSink : ILogEventSink
 
             string? scopeInfo = TryGetSerilogScope(logEvent);
 
-            var entity = new LogEntity
+            var entity = new LogEntry
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
@@ -52,7 +53,7 @@ internal class SqliteLoggerSink : ILogEventSink
             };
 
             // Fire & forget, but safe
-            _ = _loggerService.Add(entity, CancellationToken.None);
+            _ = _logEntryRepository.Add(entity, CancellationToken.None);
         }
         catch
         {

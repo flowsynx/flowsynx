@@ -1,9 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Persistence.Sqlite.Contexts;
-using FlowSynx.Domain;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Trigger;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Persistence.Sqlite.Services;
 

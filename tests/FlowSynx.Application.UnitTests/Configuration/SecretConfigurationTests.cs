@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Configuration.Core.Secrets;
 using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using Moq;

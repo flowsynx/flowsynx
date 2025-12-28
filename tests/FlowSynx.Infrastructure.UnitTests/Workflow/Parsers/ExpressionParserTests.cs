@@ -1,6 +1,6 @@
 using System.Reflection;
 using FlowSynx.Application.Secrets;
-using FlowSynx.Domain;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.Infrastructure.Secrets;
 using FlowSynx.Infrastructure.Workflow.Expressions;
 using FlowSynx.PluginCore.Exceptions;

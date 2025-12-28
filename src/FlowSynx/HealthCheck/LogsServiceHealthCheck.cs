@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
-using FlowSynx.Domain.Log;
+using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Repositories;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
