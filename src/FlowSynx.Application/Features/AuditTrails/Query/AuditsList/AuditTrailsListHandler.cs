@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Domain.Repositories;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailsList;
 

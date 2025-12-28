@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using FlowSynx.Application.Serialization;
-using FlowSynx.Domain.Wrapper;
+using FlowSynx.Application.Serializations;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 
 namespace FlowSynx.Middleware;
@@ -9,9 +9,9 @@ public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
-    private readonly IJsonSerializer _serializer;
+    private readonly ISerializer _serializer;
 
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IJsonSerializer serializer)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, ISerializer serializer)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(serializer);

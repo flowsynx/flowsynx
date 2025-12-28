@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.Core.Security;
+﻿using FlowSynx.Infrastructure.Encryption;
 using System.Security.Cryptography;
 
 namespace FlowSynx.Security;

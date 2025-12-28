@@ -2,7 +2,6 @@
 using FlowSynx.Application.Services;
 using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Domain.Repositories;
 using FlowSynx.PluginCore.Exceptions;
 using MediatR;
 using Microsoft.Extensions.Logging;

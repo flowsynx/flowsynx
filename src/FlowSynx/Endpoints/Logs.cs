@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Features.Logs.Query.LogsList;
-using FlowSynx.Application.Serialization;
+using FlowSynx.Application.Features.LogEntries.Query.LogEntriesList;
+using FlowSynx.Application.Serializations;
 using FlowSynx.Extensions;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -27,13 +27,13 @@ public class Logs : EndpointGroupBase
 
     public static async Task<IResult> LogsList(HttpContext context,
         [FromServices] IMediator mediator, 
-        [FromServices] IJsonDeserializer jsonDeserializer, 
+        [FromServices] IDeserializer jsonDeserializer, 
         CancellationToken cancellationToken,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 25)
     {
         var jsonString = await new StreamReader(context.Request.Body).ReadToEndAsync(cancellationToken);
-        var request = jsonDeserializer.Deserialize<LogsListRequestTdo>(jsonString);
+        var request = jsonDeserializer.Deserialize<LogEntriesListRequestTdo>(jsonString);
 
         var result = await mediator.Logs(page, pageSize, request, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);

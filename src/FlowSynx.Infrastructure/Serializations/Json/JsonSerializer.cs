@@ -2,23 +2,20 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Application.Localizations;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Application.Serializations;
+using FlowSynx.Infrastructure.Localization;
 
 namespace FlowSynx.Infrastructure.Serializations.Json;
 
 public class JsonSerializer : ISerializer
 {
     private readonly ILogger<JsonSerializer> _logger;
-    private readonly ILocalization _localization;
 
     public JsonSerializer(
-        ILogger<JsonSerializer> logger,
-        ILocalization localization)
+        ILogger<JsonSerializer> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _localization = localization ?? throw new ArgumentNullException(nameof(localization));
     }
 
     public string ContentMineType => "application/json";
@@ -35,7 +32,7 @@ public class JsonSerializer : ISerializer
             if (input is null)
             {
                 var errorMessage = new ErrorMessage((int)ErrorCode.SerializerEmptyValue,
-                                    _localization.Get("JsonSerializer_InputValueCanNotBeEmpty"));
+                                    InfrastructureResources.JsonSerializer_InputValueCanNotBeEmpty);
                 _logger.LogError(errorMessage.ToString());
                 throw new FlowSynxException(errorMessage);
             }

@@ -1,22 +1,17 @@
-﻿using FlowSynx.Application.Configuration.Core.Database;
-using FlowSynx.Application.Configuration.Core.Security;
-using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
-using FlowSynx.Application.Configuration.System.Cors;
-using FlowSynx.Application.Configuration.System.HealthCheck;
-using FlowSynx.Application.Configuration.System.OpenApi;
-using FlowSynx.Application.Configuration.System.RateLimiting;
-using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Application.Configuration.System.Workflow.Execution;
-using FlowSynx.Application.Configuration.System.Workflow.Queue;
-using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Services;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.HealthCheck;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Infrastructure.PluginHost;
-using FlowSynx.Persistence.Logging.Sqlite.Contexts;
-using FlowSynx.Persistence.Postgres.Extensions;
+using FlowSynx.Infrastructure.Configuration.Core.Database;
+using FlowSynx.Infrastructure.Configuration.Core.Security;
+using FlowSynx.Infrastructure.Configuration.Integrations.PluginRegistry;
+using FlowSynx.Infrastructure.Configuration.System.Cors;
+using FlowSynx.Infrastructure.Configuration.System.HealthCheck;
+using FlowSynx.Infrastructure.Configuration.System.OpenApi;
+using FlowSynx.Infrastructure.Configuration.System.RateLimiting;
+using FlowSynx.Infrastructure.Configuration.System.Server;
+using FlowSynx.Infrastructure.Encryption;
+using FlowSynx.Localization;
 using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
@@ -45,13 +40,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCancellationTokenSource(this IServiceCollection services)
     {
         services.AddSingleton(new CancellationTokenSource());
-        return services;
-    }
-
-    /// <summary>Register plugin location provider.</summary>
-    public static IServiceCollection AddPluginsPath(this IServiceCollection services)
-    {
-        services.AddSingleton<IPluginsLocation, PluginsLocation>();
         return services;
     }
 
@@ -94,21 +82,6 @@ public static class ServiceCollectionExtensions
     {
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
     }
-
-    public static void EnsureLogDatabaseCreated(this IServiceCollection services)
-    {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LoggerContext>();
-
-        try
-        {
-            context.Database.EnsureCreated();
-        }
-        catch (Exception ex)
-        {
-            throw new FlowSynxException((int)ErrorCode.LoggerCreation, $"Error occurred while creating the logger: {ex.Message}");
-        }
-    }
     #endregion
 
     #region Health checks
@@ -123,12 +96,9 @@ public static class ServiceCollectionExtensions
             return services;
 
         using var scope = services.BuildServiceProvider().CreateScope();
-        var localization = scope.ServiceProvider.GetRequiredService<ILocalization>();
-
         services
             .AddHealthChecks()
-            .AddCheck<PluginsServiceHealthCheck>(name: localization.Get("AddHealthCheckerPluginService"))
-            .AddCheck<LogsServiceHealthCheck>(name: localization.Get("AddHealthCheckerLoggerService"));
+            .AddCheck<LogsServiceHealthCheck>(name: FlowSynxResources.AddHealthCheckerLoggerService);
 
         return services;
     }
@@ -223,7 +193,6 @@ public static class ServiceCollectionExtensions
     {
         var pluginRegistryConfiguration = configuration.BindSection<PluginRegistryConfiguration>("Integrations:PluginRegistry");
         services.AddSingleton(pluginRegistryConfiguration);
-        services.AddPluginManager();
 
         return services;
     }
@@ -231,6 +200,17 @@ public static class ServiceCollectionExtensions
     #endregion
 
     #region Security
+
+    public static IServiceCollection AddEncryptionService(this IServiceCollection services, IConfiguration configuration)
+    {
+        var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
+        services.AddSingleton<IEncryptionService>(provider =>
+        {
+            return new EncryptionService(securityConfiguration.Encryption.Key);
+        });
+
+        return services;
+    }
 
     /// <summary>Configures authentication providers, authorization policies, and encryption service.</summary>
     public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
@@ -285,11 +265,6 @@ public static class ServiceCollectionExtensions
                 AddRolePolicy("triggers", "triggers");
 
                 logger.LogInformation("Authorization initialized.");
-            });
-
-            services.AddSingleton<IEncryptionService>(provider =>
-            {
-                return new EncryptionService(securityConfiguration.Encryption.Key);
             });
 
             return services;
@@ -439,7 +414,7 @@ public static class ServiceCollectionExtensions
         switch (activeConnection.Provider.ToLowerInvariant())
         {
             case "postgres":
-                services.AddPostgresPersistenceLayer(activeConnection);
+                //services.AddPostgresPersistenceLayer(activeConnection);
                 break;
 
             case "sqlite":
@@ -502,92 +477,6 @@ public static class ServiceCollectionExtensions
         Provider = DefaultSqliteProvider,
         FilePath = "flowsynx.db"
     };
-
-    #endregion
-
-    #region Workflow Queue
-
-    public static IServiceCollection AddWorkflowQueueService(this IServiceCollection services, IConfiguration configuration)
-    {
-        try
-        {
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var provider = scope.ServiceProvider;
-
-            var logger = provider.GetRequiredService<ILogger<Program>>();
-            var localization = provider.GetRequiredService<ILocalization>();
-            var dbProvider = provider.GetRequiredService<IDatabaseProvider>();
-
-            var config = configuration.BindSection<WorkflowQueueConfiguration>(WorkflowQueueSectionName);
-            services.AddSingleton(config);
-
-            var providerName = config.Provider?.Trim().ToLowerInvariant();
-
-            if (string.IsNullOrEmpty(providerName))
-                return RegisterInMemoryQueue(services, logger);
-
-            return providerName switch
-            {
-                "durable" => RegisterDurableQueue(services, logger, dbProvider, localization, config),
-                "inmemory" => RegisterInMemoryQueue(services, logger),
-                _ => ThrowQueueProviderNotSupported(config, localization)
-            };
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    public static IServiceCollection AddEnsureWorkflowPluginsService(
-        this IServiceCollection services, 
-        IConfiguration configuration)
-    {
-        try
-        {
-            var config = configuration.BindSection<EnsureWorkflowPluginsConfiguration>(EnsureWorkflowPluginsConfiguration);
-            services.AddSingleton(config);
-
-            return services;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    private static IServiceCollection RegisterInMemoryQueue(IServiceCollection services, ILogger logger)
-    {
-        logger.LogInformation("Initializing In-Memory Workflow Queue...");
-        return services.AddInMemoryWorkflowQueueService();
-    }
-
-    private static IServiceCollection RegisterDurableQueue(
-        IServiceCollection services,
-        ILogger logger,
-        IDatabaseProvider dbProvider,
-        ILocalization localization,
-        WorkflowQueueConfiguration config)
-    {
-        var dbName = dbProvider.Name?.ToLowerInvariant();
-        logger.LogInformation("Initializing Durable Workflow Queue (Database: {Database})", dbName);
-
-        return dbName switch
-        {
-            "postgres" => services.AddPostgreDurableWorkflowQueueService(),
-            "sqlite" => services.AddSqliteDurableWorkflowQueueService(),
-            _ => ThrowQueueProviderNotSupported(config, localization)
-        };
-    }
-
-    private static IServiceCollection ThrowQueueProviderNotSupported(WorkflowQueueConfiguration config, ILocalization localization)
-    {
-        throw new FlowSynxException(
-            (int)ErrorCode.WorkflowQueueProviderNotSupported,
-            localization.Get("WorkflowQueueProvider_NotSupported", config.Provider));
-    }
 
     #endregion
 }

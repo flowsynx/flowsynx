@@ -1,10 +1,9 @@
-﻿using FlowSynx.Application.Configuration.System.Logger;
-using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Infrastructure.Logging;
+﻿using FlowSynx.Infrastructure.Logging;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using FlowSynx.Persistence.Logging.Sqlite.Extensions;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Infrastructure.Configuration.System.Logger;
+using FlowSynx.Infrastructure.Configuration.System.Server;
 
 namespace FlowSynx.Extensions;
 
@@ -17,10 +16,6 @@ public static class WebApplicationBuilderExtensions
     {
         var config = builder.Configuration.BindSection<LoggerConfiguration>("System:Logger");
         builder.Services.AddSingleton(config);
-
-        // Always ensure the sqlite logging layer and database exist (database logger must always be available)
-        builder.Services.AddSqLiteLoggerLayer();
-        builder.Services.EnsureLogDatabaseCreated();
 
         // Register a composite provider that always includes Console and Database providers.
         // If the user provided configuration entries for those providers, their settings are used.

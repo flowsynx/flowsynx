@@ -1,6 +1,8 @@
-﻿using FlowSynx.Infrastructure.Extensions;
+﻿using FlowSynx.Infrastructure.Configuration.System.Logger;
+using FlowSynx.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SerilogLoggerConfiguration = Serilog.LoggerConfiguration;
 
 namespace FlowSynx.Infrastructure.Logging.FileLogger;
 
@@ -8,7 +10,7 @@ public sealed class SerilogFileProviderBuilder : ILogProviderBuilder
 {
     public ILoggerProvider? Build(
         string name, 
-        Application.Configuration.System.Logger.LoggerProviderConfiguration? config)
+        LoggerProviderConfiguration? config)
     {
         ArgumentNullException.ThrowIfNull(config);
 
@@ -22,7 +24,7 @@ public sealed class SerilogFileProviderBuilder : ILogProviderBuilder
             "{Message:lj}{NewLine}{Exception}";
 
         return new Serilog.Extensions.Logging.SerilogLoggerProvider(
-            new LoggerConfiguration()
+            new SerilogLoggerConfiguration()
                 .MinimumLevel.Is(level)
                 .WriteTo.File(
                     path: filePath,

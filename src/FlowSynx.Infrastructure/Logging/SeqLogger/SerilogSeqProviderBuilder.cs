@@ -1,6 +1,8 @@
-﻿using FlowSynx.Infrastructure.Extensions;
+﻿using FlowSynx.Infrastructure.Configuration.System.Logger;
+using FlowSynx.Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using SerilogLoggerConfiguration = Serilog.LoggerConfiguration;
 
 namespace FlowSynx.Infrastructure.Logging.SeqLogger;
 
@@ -8,7 +10,7 @@ public sealed class SerilogSeqProviderBuilder : ILogProviderBuilder
 {
     public ILoggerProvider? Build(
         string name, 
-        Application.Configuration.System.Logger.LoggerProviderConfiguration? config)
+        LoggerProviderConfiguration? config)
     {
         ArgumentNullException.ThrowIfNull(config);
 
@@ -21,7 +23,7 @@ public sealed class SerilogSeqProviderBuilder : ILogProviderBuilder
             ?? throw new ArgumentNullException(nameof(config), "System:Logger:Providers:Seq:ApiKey cannot be null.");
 
         return new Serilog.Extensions.Logging.SerilogLoggerProvider(
-            new LoggerConfiguration()
+            new SerilogLoggerConfiguration()
                 .MinimumLevel.Is(level)
                 .WriteTo.Seq(serverUrl: serverUrl, apiKey: apiKey).CreateLogger()
         );

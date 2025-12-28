@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.System.Logger;
+﻿using FlowSynx.Infrastructure.Configuration.System.Logger;
 using FlowSynx.Infrastructure.Logging.ConsoleLogger;
 using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using FlowSynx.Infrastructure.Logging.FileLogger;

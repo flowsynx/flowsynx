@@ -1,7 +1,5 @@
-using FlowSynx.Application.Configuration.Core.Security;
+using FlowSynx.Infrastructure.Configuration.Core.Security;
 using Microsoft.AspNetCore.Authentication;
-using System;
-using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 

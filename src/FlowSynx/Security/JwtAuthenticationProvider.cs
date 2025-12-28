@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.Core.Security;
+﻿using FlowSynx.Infrastructure.Configuration.Core.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;

@@ -1,8 +1,8 @@
-﻿using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using System.Security.Claims;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Localization;
 
 namespace FlowSynx.Services;
 
@@ -13,17 +13,13 @@ public class CurrentUserService : ICurrentUserService
 {
     private readonly HttpContext? _httpContext;
     private readonly ILogger<CurrentUserService> _logger;
-    private readonly ILocalization _localization;
 
     public CurrentUserService(
         IHttpContextAccessor httpContextAccessor, 
-        ILogger<CurrentUserService> logger,
-        ILocalization localization)
+        ILogger<CurrentUserService> logger)
     {
-        ArgumentNullException.ThrowIfNull(httpContextAccessor);
-        _httpContext = httpContextAccessor.HttpContext;
-        _logger = logger;
-        _localization = localization;
+        _httpContext = httpContextAccessor.HttpContext ?? throw new ArgumentNullException(nameof(httpContextAccessor));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <inheritdoc />
@@ -94,7 +90,7 @@ public class CurrentUserService : ICurrentUserService
         if (string.IsNullOrEmpty(UserId()))
         {
             throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired,
-                _localization.Get("Authentication_Access_Denied"));
+                FlowSynxResources.Authentication_Access_Denied);
         }
     }
 

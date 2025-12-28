@@ -1,19 +1,19 @@
 ﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Localizations;
+using FlowSynx.Application.Localization;
 using FluentValidation;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
 
 public class AuditTrailDetailsValidator : AbstractValidator<AuditTrailDetailsRequest>
 {
-    public AuditTrailDetailsValidator(ILocalization localization)
+    public AuditTrailDetailsValidator()
     {
         RuleFor(x => x.AuditId)
             .NotNull()
             .NotEmpty()
-            .WithMessage(localization.Get("Features_Validation_AuditId_MustHaveValue"));
+            .WithMessage(ApplicationResources.Features_Validation_AuditId_MustHaveValue);
 
         RuleFor(x => x.AuditId)
-            .MustBeValidGuid(localization.Get("Features_Validation_AuditId_InvalidGuidFormat"));
+            .MustBeValidGuid(ApplicationResources.Features_Validation_AuditId_InvalidGuidFormat);
     }
 }

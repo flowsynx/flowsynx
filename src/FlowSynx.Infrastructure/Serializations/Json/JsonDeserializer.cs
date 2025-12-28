@@ -2,9 +2,9 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Application.Localizations;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Application.Serializations;
+using FlowSynx.Infrastructure.Localization;
 
 namespace FlowSynx.Infrastructure.Serializations.Json;
 
@@ -12,16 +12,13 @@ public class JsonDeserializer : IDeserializer
 {
     private readonly ILogger<JsonDeserializer> _logger;
     private readonly INormalizer _normalizer;
-    private readonly ILocalization _localization;
 
     public JsonDeserializer(
         ILogger<JsonDeserializer> logger,
-        INormalizer normalizer,
-        ILocalization localization)
+        INormalizer normalizer)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _normalizer = normalizer ?? throw new ArgumentNullException(nameof(normalizer));
-        _localization = localization ?? throw new ArgumentNullException(nameof(localization));
     }
 
     public T Deserialize<T>(string? input)
@@ -36,7 +33,7 @@ public class JsonDeserializer : IDeserializer
             if (string.IsNullOrWhiteSpace(input))
             {
                 var errorMessage = new ErrorMessage((int)ErrorCode.DeserializerEmptyValue,
-                    _localization.Get("JsonDeserializer_InputValueCanNotBeEmpty"));
+                    InfrastructureResources.JsonDeserializer_InputValueCanNotBeEmpty);
                 _logger.LogError(errorMessage.ToString());
                 throw new FlowSynxException(errorMessage);
             }

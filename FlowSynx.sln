@@ -13,27 +13,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Domain", "src\Flow
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure", "src\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj", "{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Persistence.Postgres", "src\FlowSynx.Persistence\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj", "{C9ABAD15-0A7A-4861-8055-027A0461BDAC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Logging.Sqlite", "src\FlowSynx.Persistence\FlowSynx.Persistence.Logging.Sqlite\FlowSynx.Persistence.Logging.Sqlite.csproj", "{6CF87669-59CF-4CBF-94F4-0EE562E661D0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure.Persistence.Postgres", "src\FlowSynx.Infrastructure.Persistence.Postgres\FlowSynx.Infrastructure.Persistence.Postgres.csproj", "{C9ABAD15-0A7A-4861-8055-027A0461BDAC}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{B9F284CE-47D5-48BB-BC36-0A3682328699}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Application.UnitTests", "tests\FlowSynx.Application.UnitTests\FlowSynx.Application.UnitTests.csproj", "{92A681E5-A2B1-444E-8FE2-30757DF828A0}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.UnitTests", "tests\FlowSynx.Infrastructure.UnitTests\FlowSynx.Infrastructure.UnitTests.csproj", "{55F6401D-828D-4C24-8083-359759C71D23}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Logging.Sqlite.UnitTests", "tests\FlowSynx.Persistence.Logging.Sqlite.UnitTests\FlowSynx.Persistence.Logging.Sqlite.UnitTests.csproj", "{576F88AE-5AE6-41BD-920B-7E248CF4B573}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.UnitTests", "tests\FlowSynx.UnitTests\FlowSynx.UnitTests.csproj", "{FFCDA942-678A-4D98-A67F-1308D1F89D15}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Sqlite", "src\FlowSynx.Persistence\FlowSynx.Persistence.Sqlite\FlowSynx.Persistence.Sqlite.csproj", "{9CA701F0-B455-BC9F-1E20-5552E2842019}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Persistence.Shared", "src\FlowSynx.Persistence\FlowSynx.Persistence.Shared\FlowSynx.Persistence.Shared.csproj", "{85AEAD00-E803-F74D-63A0-302A94CAAA59}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FlowSynx.Persistence", "FlowSynx.Persistence", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Domain.UnitTests", "tests\FlowSynx.Domain.UnitTests\FlowSynx.Domain.UnitTests.csproj", "{E72E9E0F-7D35-4BE5-AE29-08F9F5C49CEC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Persistence.Sqlite", "src\FlowSynx.Infrastructure.Persistence.Sqlite\FlowSynx.Infrastructure.Persistence.Sqlite.csproj", "{9CA701F0-B455-BC9F-1E20-5552E2842019}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,22 +47,6 @@ Global
 		{C9ABAD15-0A7A-4861-8055-027A0461BDAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C9ABAD15-0A7A-4861-8055-027A0461BDAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9ABAD15-0A7A-4861-8055-027A0461BDAC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6CF87669-59CF-4CBF-94F4-0EE562E661D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6CF87669-59CF-4CBF-94F4-0EE562E661D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6CF87669-59CF-4CBF-94F4-0EE562E661D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6CF87669-59CF-4CBF-94F4-0EE562E661D0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{92A681E5-A2B1-444E-8FE2-30757DF828A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{92A681E5-A2B1-444E-8FE2-30757DF828A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{92A681E5-A2B1-444E-8FE2-30757DF828A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{92A681E5-A2B1-444E-8FE2-30757DF828A0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{55F6401D-828D-4C24-8083-359759C71D23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{55F6401D-828D-4C24-8083-359759C71D23}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{55F6401D-828D-4C24-8083-359759C71D23}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{55F6401D-828D-4C24-8083-359759C71D23}.Release|Any CPU.Build.0 = Release|Any CPU
-		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{576F88AE-5AE6-41BD-920B-7E248CF4B573}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FFCDA942-678A-4D98-A67F-1308D1F89D15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FFCDA942-678A-4D98-A67F-1308D1F89D15}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FFCDA942-678A-4D98-A67F-1308D1F89D15}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -85,14 +55,6 @@ Global
 		{9CA701F0-B455-BC9F-1E20-5552E2842019}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CA701F0-B455-BC9F-1E20-5552E2842019}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CA701F0-B455-BC9F-1E20-5552E2842019}.Release|Any CPU.Build.0 = Release|Any CPU
-		{85AEAD00-E803-F74D-63A0-302A94CAAA59}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{85AEAD00-E803-F74D-63A0-302A94CAAA59}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{85AEAD00-E803-F74D-63A0-302A94CAAA59}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{85AEAD00-E803-F74D-63A0-302A94CAAA59}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E72E9E0F-7D35-4BE5-AE29-08F9F5C49CEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E72E9E0F-7D35-4BE5-AE29-08F9F5C49CEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E72E9E0F-7D35-4BE5-AE29-08F9F5C49CEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E72E9E0F-7D35-4BE5-AE29-08F9F5C49CEC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,16 +64,9 @@ Global
 		{DCFE2169-84FC-4A1E-84A1-CA9B1ABCC5D4} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 		{445387B6-23EC-4C33-8423-AA5B669779DC} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 		{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
-		{C9ABAD15-0A7A-4861-8055-027A0461BDAC} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{6CF87669-59CF-4CBF-94F4-0EE562E661D0} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{92A681E5-A2B1-444E-8FE2-30757DF828A0} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
-		{55F6401D-828D-4C24-8083-359759C71D23} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
-		{576F88AE-5AE6-41BD-920B-7E248CF4B573} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
+		{C9ABAD15-0A7A-4861-8055-027A0461BDAC} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 		{FFCDA942-678A-4D98-A67F-1308D1F89D15} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
-		{9CA701F0-B455-BC9F-1E20-5552E2842019} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{85AEAD00-E803-F74D-63A0-302A94CAAA59} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
-		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
-		{E72E9E0F-7D35-4BE5-AE29-08F9F5C49CEC} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
+		{9CA701F0-B455-BC9F-1E20-5552E2842019} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}

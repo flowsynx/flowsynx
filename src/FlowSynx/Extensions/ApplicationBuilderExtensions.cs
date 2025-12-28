@@ -1,10 +1,4 @@
-﻿using FlowSynx.Application.Configuration.System.Cors;
-using FlowSynx.Application.Configuration.System.HealthCheck;
-using FlowSynx.Application.Configuration.System.OpenApi;
-using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Serialization;
-using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Services;
 using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
 using FlowSynx.Models;
@@ -12,6 +6,13 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Localization;
+using FlowSynx.Application.Serializations;
+using FlowSynx.Infrastructure.Configuration.System.HealthCheck;
+using FlowSynx.Infrastructure.Configuration.System.OpenApi;
+using FlowSynx.Infrastructure.Persistence;
+using FlowSynx.Infrastructure.Configuration.System.Server;
+using FlowSynx.Infrastructure.Configuration.System.Cors;
 
 namespace FlowSynx.Extensions;
 
@@ -28,7 +29,7 @@ public static class ApplicationBuilderExtensions
         var serviceProvider = app.ApplicationServices;
         var versionService = serviceProvider.GetService<IVersion>();
         if (versionService == null)
-            throw new ArgumentException(Localization.Get("UseCustomHeadersVersionServiceCouldNotBeInitialized"));
+            throw new ArgumentException(FlowSynxResources.UseCustomHeadersVersionServiceCouldNotBeInitialized);
 
         var headers = new CustomHeadersToAddAndRemove();
         headers.HeadersToAdd.Add("flowsynx-version", versionService.Version.ToString());
@@ -40,7 +41,7 @@ public static class ApplicationBuilderExtensions
     public static IApplicationBuilder UseHealthCheck(this IApplicationBuilder app)
     {
         var serviceProvider = app.ApplicationServices;
-        var serializer = serviceProvider.GetRequiredService<IJsonSerializer>();
+        var serializer = serviceProvider.GetRequiredService<ISerializer>();
         var healthCheckConfiguration = serviceProvider.GetRequiredService<HealthCheckConfiguration>();
 
         if (!healthCheckConfiguration.Enabled)
@@ -48,8 +49,8 @@ public static class ApplicationBuilderExtensions
 
         app.UseEndpoints(endpoints => {
             if (serializer == null)
-                throw new ArgumentException(Localization.Get("UseHealthCheckSerializerServiceCouldNotBeInitialized"));
-                
+                throw new ArgumentException(FlowSynxResources.UseHealthCheckSerializerServiceCouldNotBeInitialized);
+
             endpoints.MapHealthChecks("/health", new HealthCheckOptions
             {
                 ResultStatusCodes =

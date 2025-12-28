@@ -1,9 +1,9 @@
-﻿using FlowSynx.Domain.Repositories;
+﻿using FlowSynx.Application;
 using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Configuration;
+using System.Globalization;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -34,6 +34,7 @@ public static class LoggerExtensions
         return config.Sink(
             new SqliteLoggerSink(
                 logEntryRepository: logEntryRepository,
-                httpContextAccessor: accessor));
+                httpContextAccessor: accessor,
+                CultureInfo.InvariantCulture));
     }
 }

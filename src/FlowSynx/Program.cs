@@ -3,8 +3,6 @@ using FlowSynx.Extensions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.Secrets;
-using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
-using FlowSynx.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,31 +75,24 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddHttpContextAccessor()
         .AddSystemClock()
         .AddJsonSerialization()
-        .AddJsonLocalization(config)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
-        .AddSecurity(config)
+        .AddEncryptionService(config)
         .AddPersistence(config)
-        .AddWorkflowQueueService(config)
-        .AddEnsureWorkflowPluginsService(config)
+        .AddSecurity(config)
         .AddServer(config)
-        .AddPluginsPath()
         .AddVersion()
         .AddApplication()
-        .AddInfrastructure()
         .AddInfrastructurePluginManager(config)
         .AddUserService()
         .AddRateLimiting(config)
-        .AddResultStorageService(config)
         .AddEventPublisher()
         .AddHealthChecker(config)
         .AddOpenApi(config)
-        .AddHostedService<WorkflowExecutionWorker>()
-        .AddHostedService<TriggerProcessingService>()
-        .AddConfiguredCors(config)
-        .AddAiService(config)
-        .AddNotificationsService(config);
+        //.AddHostedService<WorkflowExecutionWorker>()
+        //.AddHostedService<TriggerProcessingService>()
+        .AddConfiguredCors(config);
 
     if (!env.IsDevelopment())
         builder.Services.ParseArguments(args);
@@ -143,8 +134,8 @@ static void ConfigureApplication(WebApplication app)
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
     app.MapEndpoints("Fixed");
 
-    var listener = app.Services.GetRequiredService<IWorkflowHttpListener>();
-    app.MapHttpTriggersWorkflowRoutes(listener);
+    //var listener = app.Services.GetRequiredService<IWorkflowHttpListener>();
+    //app.MapHttpTriggersWorkflowRoutes(listener);
 }
 
 static async Task HandleStartupExceptionAsync(WebApplicationBuilder builder, Exception ex)

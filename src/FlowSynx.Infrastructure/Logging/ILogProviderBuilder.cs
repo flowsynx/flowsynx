@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Configuration.System.Logger;
+﻿using FlowSynx.Infrastructure.Configuration.System.Logger;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Logging;

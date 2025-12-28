@@ -4,7 +4,7 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Text;
-using FlowSynx.Application.Configuration.Core.Security;
+using FlowSynx.Infrastructure.Configuration.Core.Security;
 
 namespace FlowSynx.Security;
 

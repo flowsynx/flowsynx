@@ -1,33 +1,39 @@
-﻿using FlowSynx.Domain.Repositories;
+﻿using FlowSynx.Application;
+using FlowSynx.Infrastructure.Configuration.System.Logger;
 using FlowSynx.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Serilog;
 using Serilog.Extensions.Logging;
+using SerilogLoggerConfiguration = Serilog.LoggerConfiguration;
 
 namespace FlowSynx.Infrastructure.Logging.DatabaseLogger;
 
 public sealed class SerilogDatabaseProviderBuilder : ILogProviderBuilder
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public SerilogDatabaseProviderBuilder(IServiceProvider serviceProvider)
     {
-        _serviceProvider = serviceProvider;
+        _scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
     }
 
     public ILoggerProvider? Build(
         string name, 
-        Application.Configuration.System.Logger.LoggerProviderConfiguration? config)
+        LoggerProviderConfiguration? config)
     {
         var level = config?.LogLevel.ToSerilogLevel() ?? Serilog.Events.LogEventLevel.Information;
-        var logEntryRepository = _serviceProvider.GetRequiredService<ILogEntryRepository>();
-        var accessor = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
 
-        var logger = new LoggerConfiguration()
+        // Resolve scoped services inside a scope
+        using var scope = _scopeFactory.CreateScope();
+        var logEntryRepository = scope.ServiceProvider.GetRequiredService<ILogEntryRepository>();
+        var accessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+
+        var logger = new SerilogLoggerConfiguration()
             .MinimumLevel.Is(level)
-            .WriteTo.SqliteLogs(logEntryRepository, accessor)
+            // Better: pass factories to sink so it creates scopes per write
+            .WriteTo.SqliteLogs(logEntryRepository,
+                                accessor)
             .CreateLogger();
 
         return new SerilogLoggerProvider(logger, dispose: true);

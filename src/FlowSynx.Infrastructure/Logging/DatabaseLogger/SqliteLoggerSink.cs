@@ -1,8 +1,9 @@
-﻿using FlowSynx.Domain.Entities;
-using FlowSynx.Domain.Repositories;
+﻿using FlowSynx.Application;
+using FlowSynx.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Serilog.Core;
 using Serilog.Events;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace FlowSynx.Infrastructure.Logging.DatabaseLogger;
@@ -20,7 +21,7 @@ internal class SqliteLoggerSink : ILogEventSink
     {
         _logEntryRepository = logEntryRepository ?? throw new ArgumentNullException(nameof(logEntryRepository));
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
-        _formatProvider = formatProvider ?? throw new ArgumentNullException(nameof(formatProvider));
+        _formatProvider = formatProvider ??CultureInfo.InvariantCulture;
     }
 
     public void Emit(LogEvent logEvent)

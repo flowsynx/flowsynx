@@ -1,8 +1,8 @@
 ﻿namespace FlowSynx.Domain.ValueObjects;
 
-public record ValidationResult
+public class ValidationResult
 {
-    public bool IsValid { get; }
+    public bool IsValid { get; set; }
     public List<string> Errors { get; }
     public List<string> Warnings { get; }
 
