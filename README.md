@@ -1,9 +1,3 @@
-> ⚠️ **Work in Progress:** The `master` branch remains stable and production-ready.  
-The `refactor` branch contains ongoing changes and should **not be used** until it is fully merged back into `master`.  
-Builds on `refactor` may be unstable and are intended for development only.
-
----
-
 <div align="center">
   <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
   <h2>The Open Unified Compositional Substrate for Intelligent Information Flow</h2>
