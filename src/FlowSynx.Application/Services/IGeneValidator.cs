@@ -1,6 +1,8 @@
-﻿using FlowSynx.Domain.Aggregates;
-using FlowSynx.Domain.Entities;
-using FlowSynx.Domain.ValueObjects;
+﻿using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.GeneInstances;
+using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Application.Services;
 

@@ -1,5 +1,8 @@
 ﻿using FlowSynx.Application.Serializations;
-using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.GeneInstances;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -28,7 +31,12 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
                 id => id.Value,
                 value => new GeneInstanceId(value));
 
-        builder.Property(gi => gi.TenantId).IsRequired();
+        builder.Property(c => c.TenantId)
+            .HasConversion(
+                id => id.Value,
+                value => TenantId.Create(value))
+            .IsRequired();
+
         builder.Property(gi => gi.UserId).IsRequired();
 
         // Foreign key for GeneBlueprint

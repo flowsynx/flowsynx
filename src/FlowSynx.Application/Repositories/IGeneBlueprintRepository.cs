@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Aggregates;
+﻿using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Application;

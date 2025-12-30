@@ -1,6 +1,4 @@
-﻿using FlowSynx.Domain.DomainEvents;
-
-namespace FlowSynx.Domain.Primitives;
+﻿namespace FlowSynx.Domain.Primitives;
 
 public abstract class Entity : Entity<Guid>
 {

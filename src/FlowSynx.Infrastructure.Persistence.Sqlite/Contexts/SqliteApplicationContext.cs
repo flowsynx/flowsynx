@@ -1,8 +1,12 @@
 ﻿using FlowSynx.Application.Serializations;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Aggregates;
-using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.GeneInstances;
+using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.TenantContacts;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Infrastructure.Encryption;
 using FlowSynx.Infrastructure.Persistence;
 using FlowSynx.Persistence.Sqlite.Configurations;
@@ -47,7 +51,7 @@ public class SqliteApplicationContext : AuditableContext
     }
 
     public DbSet<Tenant> Tenants { get; set; } = null!;
-    public DbSet<TenantSetting> TenantSettings { get; set; } = null!;
+    public DbSet<TenantContact> TenantContacts { get; set; } = null!;
     public DbSet<GeneBlueprint> GeneBlueprints { get; set; } = null!;
     public DbSet<Chromosome> Chromosomes { get; set; } = null!;
     public DbSet<Genome> Genomes { get; set; } = null!;
@@ -58,7 +62,7 @@ public class SqliteApplicationContext : AuditableContext
         try
         {
             await SetCurrentUserAndTenantAsync();
-            ApplyTenantScope();
+            //ApplyTenantScope();
             ApplyAuditing();
 
             return string.IsNullOrEmpty(_userId)
@@ -103,16 +107,16 @@ public class SqliteApplicationContext : AuditableContext
         }
     }
 
-    private void ApplyTenantScope()
-    {
-        foreach (var entry in ChangeTracker.Entries<ITenantScoped>())
-        {
-            if (entry.State == EntityState.Added)
-            {
-                entry.Entity.TenantId = _tenantId.GetValueOrDefault();
-            }
-        }
-    }
+    //private void ApplyTenantScope()
+    //{
+    //    foreach (var entry in ChangeTracker.Entries<ITenantScoped>())
+    //    {
+    //        if (entry.State == EntityState.Added)
+    //        {
+    //            entry.Entity.TenantId = _tenantId.GetValueOrDefault();
+    //        }
+    //    }
+    //}
 
     private void ApplyAuditing()
     {
@@ -184,7 +188,7 @@ public class SqliteApplicationContext : AuditableContext
         modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new ChromosomeConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new GenomeConfiguration(_serializer, _deserializer));
-        modelBuilder.ApplyConfiguration(new TenantConfiguration());
-        modelBuilder.ApplyConfiguration(new TenantSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantContactEntityConfiguration());
     }
 }

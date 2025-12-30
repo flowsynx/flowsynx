@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Services;
 using System;
 
-namespace FlowSynx.Tenancy;
+namespace FlowSynx.Middleware;
 
 public class TenantMiddleware
 {
@@ -25,7 +25,7 @@ public class TenantMiddleware
             return;
         }
 
-        var isTenant = await tenantService.SetCurrentTenantAsync(tenantId.Value);
+        var isTenant = await tenantService.SetCurrentTenantAsync(tenantId);
         if (!isTenant)
         {
             context.Response.StatusCode = 404;

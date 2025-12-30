@@ -1,13 +1,15 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Exceptions;
+using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 
-namespace FlowSynx.Domain.Aggregates;
+namespace FlowSynx.Domain.Genomes;
 
 public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, IUserScoped
 {
-    public Guid TenantId { get; set; }
+    public TenantId TenantId { get; set; }
     public string UserId { get; set; }
     public string Name { get; private set; }
     public List<Chromosome> Chromosomes { get; private set; }

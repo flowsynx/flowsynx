@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Domain.Aggregates;
+using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.ValueObjects;
 using FlowSynx.Persistence.Sqlite.Contexts;

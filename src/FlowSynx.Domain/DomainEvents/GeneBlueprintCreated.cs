@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Aggregates;
+﻿using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Domain.DomainEvents;
 

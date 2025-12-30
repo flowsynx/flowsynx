@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Domain.DomainEvents;

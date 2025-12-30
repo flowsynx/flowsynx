@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Domain.DomainEvents;
+﻿namespace FlowSynx.Domain.Primitives;
 
 public abstract record DomainEvent: IDomainEvent
 {

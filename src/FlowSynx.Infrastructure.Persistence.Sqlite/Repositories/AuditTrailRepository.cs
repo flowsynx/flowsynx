@@ -3,8 +3,8 @@ using FlowSynx.Persistence.Sqlite.Contexts;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Domain.Entities;
 using FlowSynx.Application;
+using FlowSynx.Domain.AuditTrails;
 
 namespace FlowSynx.Persistence.Sqlite.Repositories;
 

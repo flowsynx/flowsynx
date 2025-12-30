@@ -1,13 +1,16 @@
 ﻿using FlowSynx.Domain.DomainEvents;
 using FlowSynx.Domain.Exceptions;
+using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 
-namespace FlowSynx.Domain.Entities;
+namespace FlowSynx.Domain.Chromosomes;
 
 public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserScoped
 {
-    public Guid TenantId { get; set; }
+    public TenantId TenantId { get; set; }
     public string UserId { get; set; }
     public string Name { get; private set; }
     public List<GeneInstance> Genes { get; private set; }

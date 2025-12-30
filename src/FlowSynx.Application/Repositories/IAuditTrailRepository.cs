@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain.AuditTrails;
 
 namespace FlowSynx.Application;
 

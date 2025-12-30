@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Domain.Enums;
+using FlowSynx.Domain.GeneInstances;
 
 namespace FlowSynx.Domain.ValueObjects;
 

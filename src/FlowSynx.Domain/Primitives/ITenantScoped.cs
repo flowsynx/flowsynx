@@ -1,6 +1,8 @@
-﻿namespace FlowSynx.Domain.Primitives;
+﻿using FlowSynx.Domain.Tenants;
+
+namespace FlowSynx.Domain.Primitives;
 
 public interface ITenantScoped
 {
-    Guid TenantId { get; set; }
+    TenantId TenantId { get; set; }
 }

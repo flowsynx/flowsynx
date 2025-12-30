@@ -1,11 +1,10 @@
 ﻿using FlowSynx.Application.Services;
-using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
-using Polly;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 
@@ -29,22 +28,22 @@ public class TenantService : ITenantService
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
     }
 
-    public Guid? GetCurrentTenantId() => GetTenantId();
+    public TenantId? GetCurrentTenantId() => GetTenantId();
 
-    private Guid? GetTenantId()
+    private TenantId? GetTenantId()
     {
         var httpContext = _httpContextAccessor.HttpContext;
         if (httpContext?.User?.Identity?.IsAuthenticated == true)
         {
             var tenantClaim = httpContext.User.FindFirst("tenant_id");
             if (Guid.TryParse(tenantClaim?.Value, out var tenantId))
-                return tenantId;
+                return TenantId.Create(tenantId);
         }
 
         // Fallback to header for service-to-service calls
         var tenantHeader = httpContext?.Request.Headers["X-Tenant-Id"].FirstOrDefault();
         if (Guid.TryParse(tenantHeader, out var headerTenantId))
-            return headerTenantId;
+            return TenantId.Create(headerTenantId);
 
         return null;
     }
@@ -55,7 +54,7 @@ public class TenantService : ITenantService
             return _currentTenant;
 
         var tenantId = GetCurrentTenantId();
-        if (!tenantId.HasValue)
+        if (tenantId is null)
             throw new UnauthorizedAccessException("Tenant not identified");
 
         var cacheKey = $"tenant_{tenantId}";
@@ -66,9 +65,9 @@ public class TenantService : ITenantService
 
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var tenant = await context.Tenants
-                .FirstOrDefaultAsync(t => t.Id == tenantId.Value);
+                .FirstOrDefaultAsync(t => t.Id == tenantId);
 
-            if (tenant == null || !tenant.IsActive)
+            if (tenant == null || tenant.Status != TenantStatus.Active)
                 throw new UnauthorizedAccessException("Tenant not found or inactive");
 
             return tenant;
@@ -77,12 +76,12 @@ public class TenantService : ITenantService
         return _currentTenant!;
     }
 
-    public async Task<bool> SetCurrentTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    public async Task<bool> SetCurrentTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         var tenant = await context.Tenants
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == tenantId && t.IsActive);
+            .FirstOrDefaultAsync(t => t.Id == tenantId && t.Status == TenantStatus.Active);
 
         if (tenant == null)
             return false;

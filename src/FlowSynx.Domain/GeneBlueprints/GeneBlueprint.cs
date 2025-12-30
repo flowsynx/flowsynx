@@ -1,14 +1,14 @@
 ﻿using FlowSynx.Domain.DomainEvents;
-using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 
-namespace FlowSynx.Domain.Aggregates;
+namespace FlowSynx.Domain.GeneBlueprints;
 
 public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, ITenantScoped, IUserScoped
 {
-    public Guid TenantId { get; set; }
+    public TenantId TenantId { get; set; }
     public string UserId { get; set; }
     public string Version { get; private set; }
     public string GeneticBlueprint { get; private set; }

@@ -1,0 +1,228 @@
+using FlowSynx.Domain.Exceptions;
+using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.TenantContacts;
+using FlowSynx.Domain.Tenants.Events;
+using System.Text.RegularExpressions;
+
+namespace FlowSynx.Domain.Tenants;
+
+public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
+{
+    public string Name { get; private set; } = string.Empty;
+    public string Slug { get; private set; } = string.Empty;
+    public string? Description { get; private set; }
+    public TenantStatus Status { get; private set; }
+
+    public TenantConfiguration Configuration { get; private set; }
+    public List<TenantContact> Contacts { get; private set; } = new();
+
+    // Private constructor for EF Core
+    private Tenant() { }
+
+    public static Tenant Create(
+        string name,
+        string? description = null)
+    {
+        ValidateName(name);
+
+        var tenantId = TenantId.CreateUnique();
+        var slug = GenerateSlug(name);
+
+        var tenant = new Tenant()
+        {
+            Id = tenantId,
+            Name = name.Trim(),
+            Slug = slug,
+            Description = description?.Trim(),
+            Status = TenantStatus.Active,
+            Configuration = TenantConfiguration.Default()
+        };
+
+        tenant.AddDomainEvent(new TenantCreatedEvent(tenant.Id, tenant.Name, tenant.Slug));
+
+        return tenant;
+    }
+
+    public void UpdateName(string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+            throw new DomainException("Tenant name cannot be empty");
+
+        var oldName = Name;
+        Name = newName.Trim();
+        Slug = GenerateSlug(newName);
+
+        AddDomainEvent(new TenantRenamedEvent(Id, oldName, Name));
+    }
+
+    public void UpdateDescription(string? description)
+    {
+        Description = description?.Trim();
+
+        AddDomainEvent(new TenantDescriptionUpdatedEvent(Id));
+    }
+
+    public void Activate()
+    {
+        if (Status == TenantStatus.Active)
+            return;
+
+        Status = TenantStatus.Active;
+
+        AddDomainEvent(new TenantActivatedEvent(Id));
+    }
+
+    public void Suspend(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Suspension reason is required");
+
+        Status = TenantStatus.Suspended;
+
+        AddDomainEvent(new TenantSuspendedEvent(Id, reason));
+    }
+
+    public void Terminate(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Termination reason is required");
+
+        Status = TenantStatus.Terminated;
+
+        AddDomainEvent(new TenantTerminatedEvent(Id, reason));
+    }
+
+    public void AddContact(string email, string name, bool isPrimary)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            throw new DomainException("Contact email cannot be empty");
+
+        if (Contacts.Any(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase)))
+            throw new DomainException($"Contact with email {email} already exists");
+
+        var contact = new TenantContact(Id, email, name, isPrimary);
+        Contacts.Add(contact);
+
+        if (isPrimary)
+        {
+            // Ensure only one primary contact
+            foreach (var c in Contacts.Where(c => c != contact && c.IsPrimary))
+            {
+                c.SetPrimary(false);
+            }
+        }
+
+        AddDomainEvent(new TenantContactAddedEvent(Id, email, name, isPrimary));
+    }
+
+    // Private helper
+    private static string GenerateSlug(string name)
+    {
+        var slug = name
+            .ToLowerInvariant()
+            .Replace(" & ", "-and-")
+            .Replace(" and ", "-and-")
+            .Replace(' ', '-')
+            .Replace('_', '-')
+            .Replace('.', '-');
+
+        // Remove all non-alphanumeric characters except hyphens
+        slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
+
+        // Collapse multiple hyphens
+        slug = Regex.Replace(slug, @"-+", "-");
+
+        return slug.Trim('-');
+    }
+
+    public void ChangeName(string newName)
+    {
+        ValidateName(newName);
+
+        var oldName = Name;
+        Name = newName.Trim();
+
+        AddDomainEvent(new TenantRenamedEvent(Id, oldName, Name));
+    }
+
+    private static void ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("Tenant name cannot be empty");
+
+        if (name.Length < 2)
+            throw new DomainException("Tenant name must be at least 2 characters long");
+
+        if (name.Length > 100)
+            throw new DomainException("Tenant name cannot exceed 100 characters");
+    }
+
+    public TenantConfiguration FallBackToDefaultConfiguration()
+    {
+        Configuration = TenantConfiguration.Default();
+
+        AddDomainEvent(new TenantConfigurationCreatedEvent(Id));
+
+        return Configuration;
+    }
+
+    public void UpdateSettings(TenantConfiguration newSettings, string changeReason)
+    {
+        // Validate new settings
+        var validation = newSettings.Validate();
+        if (!validation.IsValid)
+            throw new DomainException($"Invalid configuration: {string.Join(", ", validation.Messages)}");
+
+        Configuration = newSettings;
+
+        AddDomainEvent(new TenantConfigurationUpdatedEvent(Id, changeReason));
+    }
+
+    public void UpdateSetting(string key, object value, string changeReason)
+    {
+        var newSettings = Configuration.SetValue(key, value);
+        UpdateSettings(newSettings, changeReason);
+    }
+
+    public void UpdateMultipleSettings(Dictionary<string, object> updates, string changeReason)
+    {
+        var newSettings = Configuration;
+        foreach (var (key, value) in updates)
+        {
+            newSettings = newSettings.SetValue(key, value);
+        }
+
+        UpdateSettings(newSettings, changeReason);
+    }
+
+    public T GetValue<T>(string key, T defaultValue = default)
+    {
+        return Configuration.GetValue(key, defaultValue);
+    }
+
+    public string GetLanguage()
+    {
+        return GetValue("Localization.Language", "en");
+    }
+
+    public int GetRateLimit()
+    {
+        return GetValue("RateLimiting.PermitLimit", 100);
+    }
+
+    public long GetStorageLimit()
+    {
+        return GetValue("Storage.MaxSizeLimit", 209715200L);
+    }
+
+    public TenantConfiguration GetSection(string key)
+    {
+        return Configuration.GetSection(key);
+    }
+
+    // Validation
+    public ValidationResult ValidateConfiguration()
+    {
+        return Configuration.Validate();
+    }
+}

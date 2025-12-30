@@ -1,10 +1,11 @@
 ﻿using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Tenants;
 
-namespace FlowSynx.Domain.Entities;
+namespace FlowSynx.Domain.AuditTrails;
 
-public class AuditTrail : Entity<long>, ITenantScoped
+public class AuditTrail : Entity<long>, IAggregateRoot//, ITenantScoped
 {
-    public Guid TenantId { get; set; }
+    //public TenantId TenantId { get; set; }
     public string? UserId { get; set; }
     public string? Action { get; set; }
     public string? EntityName { get; set; }

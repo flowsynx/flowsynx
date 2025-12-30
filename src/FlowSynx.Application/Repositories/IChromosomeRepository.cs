@@ -1,6 +1,5 @@
-﻿using FlowSynx.Domain.Aggregates;
-using FlowSynx.Domain.Entities;
-using FlowSynx.Domain.ValueObjects;
+﻿using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Genomes;
 
 namespace FlowSynx.Application;
 

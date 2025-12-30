@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Services;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Infrastructure.Configuration.Core.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -59,7 +60,7 @@ public class JwtAuthenticationProvider : IAuthenticationProvider
 
                     if (!string.IsNullOrEmpty(tenantId) && Guid.TryParse(tenantId, out var tenantGuid))
                     {
-                        await tenantService.SetCurrentTenantAsync(tenantGuid);
+                        await tenantService.SetCurrentTenantAsync(TenantId.Create(tenantGuid));
                     }
                 }
             };

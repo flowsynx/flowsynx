@@ -1,10 +1,10 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Application.Services;
 
 public interface ITenantService
 {
-    Guid? GetCurrentTenantId();
+    TenantId? GetCurrentTenantId();
     Task<Tenant?> GetCurrentTenantAsync(CancellationToken cancellationToken = default);
-    Task<bool> SetCurrentTenantAsync(Guid tenantId, CancellationToken cancellationToken = default);
+    Task<bool> SetCurrentTenantAsync(TenantId tenantId, CancellationToken cancellationToken = default);
 }

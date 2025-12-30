@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Serializations;
-using FlowSynx.Domain.Aggregates;
-using FlowSynx.Domain.ValueObjects;
+using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -28,7 +28,12 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
                 id => id.Value,
                 value => new GenomeId(value));
 
-        builder.Property(g => g.TenantId).IsRequired();
+        builder.Property(c => c.TenantId)
+            .HasConversion(
+                id => id.Value,
+                value => TenantId.Create(value))
+            .IsRequired();
+
         builder.Property(g => g.UserId).IsRequired();
         builder.Property(g => g.Name).IsRequired().HasMaxLength(200);
 

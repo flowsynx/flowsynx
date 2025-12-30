@@ -1,8 +1,10 @@
 ﻿using FlowSynx.Application;
 using FlowSynx.Application.Services;
-using FlowSynx.Domain.Aggregates;
-using FlowSynx.Domain.Entities;
-using FlowSynx.Domain.ValueObjects;
+using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.GeneInstances;
+using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Infrastructure.Services;
 
@@ -20,13 +22,11 @@ public class GeneValidator : IGeneValidator
         GeneBlueprint blueprint, 
         CancellationToken cancellationToken)
     {
-        var result = new ValidationResult(true);
+        var errors = new List<string>();
 
         if (blueprint == null)
         {
-            result.IsValid = false;
-            result.AddError($"Gene blueprint not found for gene ID: {instance.GeneBlueprintId}");
-            return result;
+            return await ValidationResult.FailAsync($"Gene blueprint not found for gene ID: {instance.GeneBlueprintId}");
         }
 
         // Validate parameters against blueprint
@@ -34,16 +34,14 @@ public class GeneValidator : IGeneValidator
         {
             if (paramDef.Required && !instance.Parameters.ContainsKey(paramDef.Name))
             {
-                result.IsValid = false;
-                result.AddError($"Required parameter '{paramDef.Name}' is missing");
+                errors.Add($"Required parameter '{paramDef.Name}' is missing");
             }
 
             if (instance.Parameters.TryGetValue(paramDef.Name, out var value))
             {
                 if (!IsTypeCompatible(value, paramDef.Type))
                 {
-                    result.IsValid = false;
-                    result.AddError($"Parameter '{paramDef.Name}' has incompatible type. Expected: {paramDef.Type}");
+                    errors.Add($"Parameter '{paramDef.Name}' has incompatible type. Expected: {paramDef.Type}");
                 }
             }
         }
@@ -53,18 +51,18 @@ public class GeneValidator : IGeneValidator
         {
             if (!blueprint.GeneticParameters.Any(p => p.Name == param))
             {
-                result.AddWarning($"Parameter '{param}' is not defined in the gene blueprint");
+                errors.Add($"Parameter '{param}' is not defined in the gene blueprint");
             }
         }
 
-        return result;
+        return errors.Count > 0 ? ValidationResult.Fail(errors) : ValidationResult.Success();
     }
 
     public async Task<ValidationResult> ValidateChromosomeAsync(
         Chromosome chromosome, 
         CancellationToken cancellationToken)
     {
-        var result = new ValidationResult(true);
+        var errors = new List<string>();
 
         // Load blueprints for all genes
         var blueprintTasks = chromosome.Genes
@@ -82,10 +80,8 @@ public class GeneValidator : IGeneValidator
 
             if (!geneResult.IsValid)
             {
-                result.IsValid = false;
-                result.Errors.AddRange(geneResult.Errors.Select(e => $"[{gene.Id}] {e}"));
+                errors.AddRange(geneResult.Messages.Select(e => $"[{gene.Id}] {e}"));
             }
-            result.Warnings.AddRange(geneResult.Warnings.Select(w => $"[{gene.Id}] {w}"));
 
             // Store blueprint reference
             gene.Blueprint = blueprint;
@@ -99,8 +95,7 @@ public class GeneValidator : IGeneValidator
             {
                 if (!geneIds.Contains(dep.Value))
                 {
-                    result.IsValid = false;
-                    result.AddError($"Gene '{gene.Id}' depends on non-existent gene '{dep}'");
+                    errors.Add($"Gene '{gene.Id}' depends on non-existent gene '{dep}'");
                 }
             }
         }
@@ -108,8 +103,7 @@ public class GeneValidator : IGeneValidator
         // Check for circular dependencies
         if (HasCircularDependencies(chromosome))
         {
-            result.IsValid = false;
-            result.AddError("Circular dependencies detected in chromosome");
+            errors.Add("Circular dependencies detected in chromosome");
         }
 
         // Check compatibility matrix conflicts
@@ -125,33 +119,30 @@ public class GeneValidator : IGeneValidator
                 if (blueprint1?.CompatibilityMatrix?.IncompatibleGenes?.Contains(gene2.GeneBlueprintId.Value) == true ||
                     blueprint2?.CompatibilityMatrix?.IncompatibleGenes?.Contains(gene1.GeneBlueprintId.Value) == true)
                 {
-                    result.IsValid = false;
-                    result.AddError($"Incompatible genes: {gene1.GeneBlueprintId} and {gene2.GeneBlueprintId}");
+                    errors.Add($"Incompatible genes: {gene1.GeneBlueprintId} and {gene2.GeneBlueprintId}");
                 }
             }
         }
 
-        return result;
+        return errors.Count > 0 ? ValidationResult.Fail(errors) : ValidationResult.Success();
     }
 
     public async Task<ValidationResult> ValidateGenomeAsync(
         Genome genome, 
         CancellationToken cancellationToken)
     {
-        var result = new ValidationResult(true);
+        var errors = new List<string>();
 
         foreach (var chromosome in genome.Chromosomes)
         {
             var chromosomeResult = await ValidateChromosomeAsync(chromosome, cancellationToken);
             if (!chromosomeResult.IsValid)
             {
-                result.IsValid = false;
-                result.Errors.AddRange(chromosomeResult.Errors.Select(e => $"[Chromosome {chromosome.Id}] {e}"));
+                errors.AddRange(chromosomeResult.Messages.Select(e => $"[Chromosome {chromosome.Id}] {e}"));
             }
-            result.Warnings.AddRange(chromosomeResult.Warnings.Select(w => $"[Chromosome {chromosome.Id}] {w}"));
         }
 
-        return result;
+        return errors.Count > 0 ? ValidationResult.Fail(errors) : ValidationResult.Success();
     }
 
     private bool IsTypeCompatible(object value, string expectedType)

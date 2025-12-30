@@ -75,7 +75,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddTenantService(this IServiceCollection services)
     {
         services.AddScoped<ITenantService, TenantService>();
-        services.AddScoped<IConfigurationService, TenantConfigurationService>();
         return services;
     }
 

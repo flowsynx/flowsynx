@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Serializations;
-using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -28,7 +29,12 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
                 id => id.Value,
                 value => new ChromosomeId(value));
 
-        builder.Property(c => c.TenantId).IsRequired();
+        builder.Property(c => c.TenantId)
+            .HasConversion(
+                id => id.Value,
+                value => TenantId.Create(value))
+            .IsRequired();
+
         builder.Property(c => c.UserId).IsRequired();
         builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
 

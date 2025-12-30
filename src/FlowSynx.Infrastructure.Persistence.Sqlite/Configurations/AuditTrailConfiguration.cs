@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain.AuditTrails;
+using FlowSynx.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -11,7 +12,12 @@ public class AuditTrailConfiguration : IEntityTypeConfiguration<AuditTrail>
         builder.ToTable("AuditTrails");
 
         builder.HasKey(c => c.Id);
-        builder.Property(c => c.TenantId).IsRequired();
+
+        //builder.Property(c => c.TenantId)
+        //    .HasConversion(
+        //        id => id.Value,
+        //        value => TenantId.Create(value));
+
         builder.Property(c => c.UserId).IsRequired();
     }
 }

@@ -3,7 +3,6 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Infrastructure.Persistence;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 
@@ -34,13 +33,7 @@ public class SqliteDatabaseInitializer : IDatabaseInitializer
 
             if (!await context.Tenants.AnyAsync(cancellationToken))
             {
-                context.Tenants.Add(new Domain.Entities.Tenant
-                {
-                    Name = "FlowSynx Genome Platform",
-                    Timezone = "UTC",
-                    IsActive = true,
-                    CreatedOn = DateTime.UtcNow
-                });
+                context.Tenants.Add(Domain.Tenants.Tenant.Create("FlowSynx Genome Platform", "FlowSynx Genome Platform"));
                 await context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Default tenant created successfully.");
 

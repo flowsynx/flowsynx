@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.Entities;
+﻿using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;

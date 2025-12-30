@@ -1,12 +1,13 @@
-﻿using FlowSynx.Domain.Aggregates;
+﻿using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 
-namespace FlowSynx.Domain.Entities;
+namespace FlowSynx.Domain.GeneInstances;
 
 public class GeneInstance : AuditableEntity<GeneInstanceId>, ITenantScoped, IUserScoped
 {
-    public Guid TenantId { get; set; }
+    public TenantId TenantId { get; set; }
     public string UserId { get; set; }
     public GeneBlueprintId GeneBlueprintId { get; private set; }
     public Dictionary<string, object> Parameters { get; private set; }

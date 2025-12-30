@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Serializations;
-using FlowSynx.Domain.Aggregates;
+using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -28,7 +29,12 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
                 id => id.Value,
                 value => new GeneBlueprintId(value));
 
-        builder.Property(gb => gb.TenantId).IsRequired();
+        builder.Property(c => c.TenantId)
+            .HasConversion(
+                id => id.Value,
+                value => TenantId.Create(value))
+            .IsRequired();
+
         builder.Property(gb => gb.UserId).IsRequired();
         builder.Property(gb => gb.Version).IsRequired().HasMaxLength(50);
         builder.Property(gb => gb.GeneticBlueprint).HasMaxLength(255);

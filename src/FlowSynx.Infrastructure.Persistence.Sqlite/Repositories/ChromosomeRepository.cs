@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Domain.Entities;
+using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Domain.ValueObjects;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.EntityFrameworkCore;
