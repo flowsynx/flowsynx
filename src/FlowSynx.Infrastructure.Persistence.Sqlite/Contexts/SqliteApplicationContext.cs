@@ -22,15 +22,20 @@ public class SqliteApplicationContext : AuditableContext
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
     private readonly IEncryptionService _encryptionService;
+    //private readonly ITenantService _tenantService;
+    private Guid? _tenantId;
+    private string? _userId;
 
     public SqliteApplicationContext(
         DbContextOptions<SqliteApplicationContext> contextOptions,
-        ILogger<SqliteApplicationContext> logger, 
-        IHttpContextAccessor httpContextAccessor, 
-        ISystemClock systemClock, 
-        ISerializer serializer, 
+        ILogger<SqliteApplicationContext> logger,
+        IHttpContextAccessor httpContextAccessor,
+        ISystemClock systemClock,
+        ISerializer serializer,
         IDeserializer deserializer,
-        IEncryptionService encryptionService) : base(contextOptions)
+        IEncryptionService encryptionService)
+        //ITenantService tenantService)
+        : base(contextOptions)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
@@ -38,51 +43,74 @@ public class SqliteApplicationContext : AuditableContext
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
         _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+        //_tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
     }
 
-    public DbSet<GeneBlueprint> GeneBlueprints { get; set; }
-    public DbSet<Chromosome> Chromosomes { get; set; }
-    public DbSet<Genome> Genomes { get; set; }
-    public DbSet<GeneInstance> GeneInstances { get; set; }
-    public DbSet<LogEntry> LogEntries { get; set; }
+    public DbSet<Tenant> Tenants { get; set; } = null!;
+    public DbSet<TenantConfiguration> TenantConfigurations { get; set; } = null!;
+    public DbSet<GeneBlueprint> GeneBlueprints { get; set; } = null!;
+    public DbSet<Chromosome> Chromosomes { get; set; } = null!;
+    public DbSet<Genome> Genomes { get; set; } = null!;
+    public DbSet<GeneInstance> GeneInstances { get; set; } = null!;
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new())
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            HandleSoftDelete();
+            await SetCurrentUserAndTenantAsync();
+            ApplyTenantScope();
             ApplyAuditing();
 
-            var userId = GetUserId();
-            if (string.IsNullOrEmpty(userId))
-                return await base.SaveChangesAsync(cancellationToken);
-
-            return await base.SaveChangesAsync(userId, cancellationToken);
+            return string.IsNullOrEmpty(_userId)
+                ? await base.SaveChangesAsync(cancellationToken)
+                : await base.SaveChangesAsync(_userId, cancellationToken);
         }
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseSaveData, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
 
-    private void HandleSoftDelete()
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         try
         {
-            var entries = ChangeTracker.Entries().Where(e => e.State == EntityState.Deleted && e.Entity is ISoftDeletable);
-            foreach (var entry in entries)
-            {
-                entry.State = EntityState.Modified;
-                ((ISoftDeletable)entry.Entity).IsDeleted = true;
-            }
+            base.OnModelCreating(modelBuilder);
+
+            //SetTenantFilters(modelBuilder);
+            ApplyEntityConfigurations(modelBuilder);
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseDeleteData, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseModelCreating, ex.Message);
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    private async Task SetCurrentUserAndTenantAsync()
+    {
+        //if (_tenantId == null)
+        //{
+        //    _tenantId = _tenantService.GetCurrentTenantId();
+        //}
+
+        if (_userId == null)
+        {
+            _userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+        }
+    }
+
+    private void ApplyTenantScope()
+    {
+        foreach (var entry in ChangeTracker.Entries<ITenantScoped>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                entry.Entity.TenantId = _tenantId.GetValueOrDefault();
+            }
         }
     }
 
@@ -90,53 +118,70 @@ public class SqliteApplicationContext : AuditableContext
     {
         try
         {
-            var entries = ChangeTracker.Entries()
-            .Where(e => e.Entity is AuditableEntity &&
-                (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted)
-            );
+            var entries = ChangeTracker.Entries<AuditableEntity>()
+                .Where(e => e.State == EntityState.Added ||
+                           e.State == EntityState.Modified ||
+                           e.State == EntityState.Deleted);
 
             foreach (var entry in entries)
             {
-                var auditable = (AuditableEntity)entry.Entity;
+                var auditable = entry.Entity;
 
-                if (entry.State == EntityState.Added)
+                switch (entry.State)
                 {
-                    auditable.CreatedOn = _systemClock.UtcNow;
-                    auditable.CreatedBy = GetUserId();
-                }
+                    case EntityState.Added:
+                        auditable.CreatedOn = _systemClock.UtcNow;
+                        auditable.CreatedBy = _userId;
+                        break;
 
-                if (entry.State == EntityState.Modified)
-                {
-                    auditable.LastModifiedOn = _systemClock.UtcNow;
-                    auditable.LastModifiedBy = GetUserId();
+                    case EntityState.Modified:
+                        auditable.LastModifiedOn = _systemClock.UtcNow;
+                        auditable.LastModifiedBy = _userId;
+                        break;
                 }
             }
         }
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.AuditsApplying, ex.Message);
-            _logger.LogError(errorMessage.ToString());
+            _logger.LogError(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
 
-    private string GetUserId() => _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "System";
+    //private void SetTenantFilters(ModelBuilder modelBuilder)
+    //{
+    //    var tenantScopedTypes = modelBuilder.Model.GetEntityTypes()
+    //        .Where(t => typeof(ITenantScoped).IsAssignableFrom(t.ClrType))
+    //        .Select(t => t.ClrType)
+    //        .ToList();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    //    foreach (var entityType in tenantScopedTypes)
+    //    {
+    //        var method = typeof(SqliteApplicationContext)
+    //            .GetMethod(nameof(SetTenantFilter),
+    //                BindingFlags.NonPublic | BindingFlags.Static,
+    //                new[] { typeof(ModelBuilder) })!
+    //            .MakeGenericMethod(entityType);
+
+    //        method.Invoke(null, new object[] { modelBuilder });
+    //    }
+    //}
+
+    //private static void SetTenantFilter<TEntity>(ModelBuilder builder)
+    //    where TEntity : class, ITenantScoped
+    //{
+    //    builder.Entity<TEntity>()
+    //        .HasQueryFilter(e => EF.Property<Guid>(e, "TenantId") == Guid.Empty);
+    //    // Note: Actual tenant ID should be dynamically applied at query time
+    //    // Consider using a query filter service for runtime tenant filtering
+    //}
+
+    private void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
-        try
-        {
-            base.OnModelCreating(modelBuilder);
-            modelBuilder.ApplyConfiguration(new GeneBlueprintConfiguration(_serializer, _deserializer));
-            modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration(_serializer, _deserializer));
-            modelBuilder.ApplyConfiguration(new ChromosomeConfiguration(_serializer, _deserializer));
-            modelBuilder.ApplyConfiguration(new GenomeConfiguration(_serializer, _deserializer));
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseModelCreating, ex.Message);
-            _logger.LogError(errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
-        }
+        modelBuilder.ApplyConfiguration(new GeneBlueprintConfiguration(_serializer, _deserializer));
+        modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration(_serializer, _deserializer));
+        modelBuilder.ApplyConfiguration(new ChromosomeConfiguration(_serializer, _deserializer));
+        modelBuilder.ApplyConfiguration(new GenomeConfiguration(_serializer, _deserializer));
     }
 }

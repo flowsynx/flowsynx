@@ -1,6 +1,5 @@
 using FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Query.AuditTrailsList;
-using FlowSynx.Application.Features.LogEntries.Query.LogEntriesList;
 using FlowSynx.Application.Features.Version.Query;
 using FlowSynx.Domain.Primitives;
 using MediatR;
@@ -16,26 +15,6 @@ public static class MediatorExtensions
         CancellationToken cancellationToken)
     {
         return mediator.Send(request, cancellationToken);
-    }
-    #endregion
-
-    #region LogsEntries
-    public static Task<PaginatedResult<LogEntriesListResponse>> Logs(
-        this IMediator mediator,
-        int page,
-        int pageSize,
-        LogEntriesListRequestTdo request,
-        CancellationToken cancellationToken)
-    {
-        return mediator.Send(new LogEntriesListRequest
-        {
-            Level = request.Level,
-            FromDate = request.FromDate,
-            ToDate = request.ToDate,
-            Message = request.Message,
-            Page = page,
-            PageSize = pageSize
-        }, cancellationToken);
     }
     #endregion
 

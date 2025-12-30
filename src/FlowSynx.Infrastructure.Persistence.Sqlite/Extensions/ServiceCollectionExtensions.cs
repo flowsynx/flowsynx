@@ -17,7 +17,6 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddScoped<IAuditTrailRepository, AuditTrailRepository>()
-            .AddScoped<ILogEntryRepository, LogEntryRepository>()
             .AddScoped<IChromosomeRepository, ChromosomeRepository>()
             .AddScoped<IGeneBlueprintRepository, GeneBlueprintRepository>()
             .AddScoped<IGenomeRepository, GenomeRepository>()
@@ -27,13 +26,13 @@ public static class ServiceCollectionExtensions
                 options.UseSqlite(databaseConnection.ConnectionString);
             });
 
-        // Ensure database is created
-        using (var scope = services.BuildServiceProvider().CreateScope())
-        {
-            var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SqliteApplicationContext>>();
-            using var context = dbFactory.CreateDbContext();
-            context.Database.EnsureCreated();
-        }
+        //// Ensure database is created
+        //using (var scope = services.BuildServiceProvider().CreateScope())
+        //{
+        //    var dbFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<SqliteApplicationContext>>();
+        //    using var context = dbFactory.CreateDbContext();
+        //    context.Database.EnsureCreated();
+        //}
 
         return services;
     }

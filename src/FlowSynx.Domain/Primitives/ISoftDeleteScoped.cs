@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.Primitives;
 
-public interface ISoftDeletable
+public interface ISoftDeleteScoped
 {
     bool IsDeleted { get; set; }
 }

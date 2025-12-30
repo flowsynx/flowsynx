@@ -13,12 +13,9 @@ public class ExceptionMiddleware
 
     public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, ISerializer serializer)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(serializer);
-        ArgumentNullException.ThrowIfNull(next);
-        _next = next;
-        _logger = logger;
-        _serializer = serializer;
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
     public async Task Invoke(HttpContext context)

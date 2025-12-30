@@ -24,13 +24,26 @@ public class SqliteDatabaseInitializer : IDatabaseInitializer
     {
         try
         {
-            await using var context = _contextFactory.CreateDbContext();
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
             var result = await context.Database.EnsureCreatedAsync(cancellationToken);
 
             if (result)
                 _logger.LogInformation("Application database created successfully (SQLite).");
             else
                 _logger.LogInformation("Application database already exists (SQLite).");
+
+            if (!await context.Tenants.AnyAsync(cancellationToken))
+            {
+                context.Tenants.Add(new Domain.Entities.Tenant
+                {
+                    Name = "FlowSynx Genome Platform",
+                    Code = "FSX",
+                    IsActive = true
+                });
+                await context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Default tenant created successfully.");
+
+            }
         }
         catch (Exception ex)
         {

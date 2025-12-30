@@ -1,8 +1,8 @@
 ﻿using FlowSynx.Application.Services;
-using FlowSynx.PluginCore.Exceptions;
-using System.Security.Claims;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Localization;
+using FlowSynx.PluginCore.Exceptions;
+using System.Security.Claims;
 
 namespace FlowSynx.Services;
 
@@ -20,6 +20,18 @@ public class CurrentUserService : ICurrentUserService
     {
         _httpContext = httpContextAccessor.HttpContext ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    public string TenantId()
+    {
+        try
+        {
+            return _httpContext?.User.FindFirst("tenant_id")?.Value ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            throw CreateFlowSynxException(ErrorCode.SecurityGetUserId, ex);
+        }
     }
 
     /// <inheritdoc />

@@ -1,32 +1,27 @@
 ﻿using FlowSynx.Application.Services;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.HealthCheck;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Configuration.Core.Database;
 using FlowSynx.Infrastructure.Configuration.Core.Security;
 using FlowSynx.Infrastructure.Configuration.Integrations.PluginRegistry;
 using FlowSynx.Infrastructure.Configuration.System.Cors;
-using FlowSynx.Infrastructure.Configuration.System.HealthCheck;
 using FlowSynx.Infrastructure.Configuration.System.OpenApi;
 using FlowSynx.Infrastructure.Configuration.System.RateLimiting;
 using FlowSynx.Infrastructure.Configuration.System.Server;
 using FlowSynx.Infrastructure.Encryption;
-using FlowSynx.Localization;
+using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 
 namespace FlowSynx.Extensions;
 
-/// <summary>
-/// Extension methods for configuring services used across the FlowSynx application.
-/// Focused on clarity, consistency and small helper extraction to reduce duplication.
-/// </summary>
 public static class ServiceCollectionExtensions
 {
     private const string DefaultSqliteProvider = "SQLite";
@@ -58,11 +53,15 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Bind and register server configuration.</summary>
-    public static IServiceCollection AddServer(this IServiceCollection services, IConfiguration configuration)
+    /// <summary>Bind and register server configuration (tenant-aware).</summary>
+    public static IServiceCollection AddServer(this IServiceCollection services)
     {
-        var serverConfiguration = configuration.BindSection<ServerConfiguration>("System:Server");
-        services.AddSingleton(serverConfiguration);
+        services.AddScoped(provider =>
+        {
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            return tenantConfig.BindSection<ServerConfiguration>("System:Server");
+        });
+
         return services;
     }
 
@@ -70,6 +69,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddUserService(this IServiceCollection services)
     {
         services.AddTransient<ICurrentUserService, CurrentUserService>();
+        return services;
+    }
+
+    public static IServiceCollection AddTenantService(this IServiceCollection services)
+    {
+        services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<IConfigurationService, TenantConfigurationService>();
         return services;
     }
 
@@ -87,19 +93,9 @@ public static class ServiceCollectionExtensions
     #region Health checks
 
     /// <summary>Register health check configuration and checks if enabled.</summary>
-    public static IServiceCollection AddHealthChecker(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddHealthChecker(this IServiceCollection services)
     {
-        var healthCheckConfiguration = configuration.BindSection<HealthCheckConfiguration>("System:HealthCheck");
-        services.AddSingleton(healthCheckConfiguration);
-
-        if (!healthCheckConfiguration.Enabled)
-            return services;
-
-        using var scope = services.BuildServiceProvider().CreateScope();
-        services
-            .AddHealthChecks()
-            .AddCheck<LogsServiceHealthCheck>(name: FlowSynxResources.AddHealthCheckerLoggerService);
-
+        services.AddHealthChecks();
         return services;
     }
 
@@ -108,16 +104,18 @@ public static class ServiceCollectionExtensions
     #region OpenAPI (Swagger)
 
     /// <summary>Configure OpenAPI/Swagger when enabled in configuration.</summary>
-    public static IServiceCollection AddOpenApi(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddApiDocumentation(this IServiceCollection services)
     {
         try
         {
-            var openApiConfiguration = configuration.BindSection<OpenApiConfiguration>("System:OpenApi");
-            services.AddSingleton(openApiConfiguration);
+            // Resolve OpenAPI configuration per-request/DI scope
+            services.AddScoped(provider =>
+            {
+                var tenantConfig = provider.GetRequiredService<IConfiguration>();
+                return tenantConfig.BindSection<OpenApiConfiguration>("System:OpenApi");
+            });
 
-            if (!openApiConfiguration.Enabled)
-                return services;
-
+            // Swagger generator itself can be added once; the document contents read configuration at runtime
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("flowsynx", new OpenApiInfo
@@ -131,6 +129,7 @@ public static class ServiceCollectionExtensions
                         Url = new Uri("https://opensource.org/licenses/MIT")
                     }
                 });
+                c.OperationFilter<TenantHeaderOperationFilter>();
 
                 c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
                 {
@@ -170,6 +169,25 @@ public static class ServiceCollectionExtensions
         }
     }
 
+    internal class TenantHeaderOperationFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            if (operation.Parameters == null)
+            {
+                operation.Parameters = new List<IOpenApiParameter>();
+            }
+
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "X-Tenant-Id",
+                In = ParameterLocation.Header,
+                Required = false,
+                Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+            });
+        }
+    }
+
     #endregion
 
     #region JSON options
@@ -189,10 +207,13 @@ public static class ServiceCollectionExtensions
 
     #region Plugin manager
 
-    public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services)
     {
-        var pluginRegistryConfiguration = configuration.BindSection<PluginRegistryConfiguration>("Integrations:PluginRegistry");
-        services.AddSingleton(pluginRegistryConfiguration);
+        services.AddScoped(provider =>
+        {
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            return tenantConfig.BindSection<PluginRegistryConfiguration>("Integrations:PluginRegistry");
+        });
 
         return services;
     }
@@ -201,27 +222,31 @@ public static class ServiceCollectionExtensions
 
     #region Security
 
-    public static IServiceCollection AddEncryptionService(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddEncryptionService(this IServiceCollection services)
     {
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
         var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
-        services.AddSingleton<IEncryptionService>(provider =>
+        services.AddSingleton(securityConfiguration);
+        var encryptionKey = securityConfiguration.Encryption.Key;
+
+        services.AddScoped<IEncryptionService>(provider =>
         {
-            return new EncryptionService(securityConfiguration.Encryption.Key);
+            return new EncryptionService(encryptionKey);
         });
 
         return services;
     }
 
     /// <summary>Configures authentication providers, authorization policies, and encryption service.</summary>
-    public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddSecurity(this IServiceCollection services)
     {
         try
         {
             using var scope = services.BuildServiceProvider().CreateScope();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-            var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
-            services.AddSingleton(securityConfiguration);
+            var securityConfiguration = scope.ServiceProvider.GetRequiredService<SecurityConfiguration>();
 
             securityConfiguration.Authentication.ValidateDefaultScheme(logger);
 
@@ -251,7 +276,7 @@ public static class ServiceCollectionExtensions
             services.AddAuthorization(options =>
             {
                 // keep authorization roles explicit and grouped for readability
-                void AddRolePolicy(string name, string role) => 
+                void AddRolePolicy(string name, string role) =>
                     options.AddPolicy(name, policy => policy.RequireRole(role));
 
                 AddRolePolicy("admin", "admin");
@@ -267,6 +292,11 @@ public static class ServiceCollectionExtensions
                 logger.LogInformation("Authorization initialized.");
             });
 
+            services.AddSingleton<IEncryptionService>(provider =>
+            {
+                return new EncryptionService(securityConfiguration.Encryption.Key);
+            });
+
             return services;
         }
         catch (Exception ex)
@@ -280,7 +310,6 @@ public static class ServiceCollectionExtensions
 
     #region Arguments / Version helpers
 
-    /// <summary>Parse required startup arguments and exit the process with an error when missing.</summary>
     public static IServiceCollection ParseArguments(this IServiceCollection services, string[] args)
     {
         using var scope = services.BuildServiceProvider().CreateScope();
@@ -291,17 +320,13 @@ public static class ServiceCollectionExtensions
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, "The '--start' argument is required.");
             logger.LogError(errorMessage.ToString());
-
-            // short delay to help ensure message appears in console before exit
             Task.Delay(500).Wait();
-
             Environment.Exit(1);
         }
 
         return services;
     }
 
-    /// <summary>Check for version flags and print the application version.</summary>
     public static bool HandleVersionFlag(this string[] args)
     {
         if (args.Any(arg => arg.Equals("--version", StringComparison.OrdinalIgnoreCase) ||
@@ -320,20 +345,26 @@ public static class ServiceCollectionExtensions
     #region Rate limiting
 
     /// <summary>Add rate limiting services.</summary>
-    public static IServiceCollection AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
     {
-        var rateLimitingConfiguration = new RateLimitingConfiguration();
-        configuration.GetSection("System:RateLimiting").Bind(rateLimitingConfiguration);
-        services.AddSingleton(rateLimitingConfiguration);
+        services.AddScoped(provider =>
+        {
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            var cfg = new RateLimitingConfiguration();
+            tenantConfig.GetSection("System:RateLimiting").Bind(cfg);
+            return cfg;
+        });
 
         services.AddRateLimiter(options =>
         {
+            // Policy registration remains global; limits can read from scoped config in endpoint mapping if needed
             options.AddFixedWindowLimiter("Fixed", limiterOptions =>
             {
-                limiterOptions.Window = TimeSpan.FromSeconds(rateLimitingConfiguration.WindowSeconds);
-                limiterOptions.PermitLimit = rateLimitingConfiguration.PermitLimit;
+                // Defaults; actual values can be inspected per-request if you wire a custom limiter middleware using scoped services
+                limiterOptions.Window = TimeSpan.FromSeconds(60);
+                limiterOptions.PermitLimit = 100;
                 limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = rateLimitingConfiguration.QueueLimit;
+                limiterOptions.QueueLimit = 0;
             });
         });
 
@@ -344,48 +375,22 @@ public static class ServiceCollectionExtensions
 
     #region CORS
 
-    public static IServiceCollection AddConfiguredCors(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddConfiguredCors(this IServiceCollection services)
     {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-        var corsConfiguration = configuration.BindSection<CorsConfiguration>("System:Cors");
-        services.AddSingleton(corsConfiguration);
-
-        var allowedOrigins = corsConfiguration.AllowedOrigins?.ToArray() ?? Array.Empty<string>();
-        var allowCredentials = corsConfiguration.AllowCredentials;
-        var policyName = corsConfiguration.PolicyName ?? "DefaultCorsPolicy";
+        services.AddScoped(provider =>
+        {
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            return tenantConfig.BindSection<CorsConfiguration>("System:Cors");
+        });
 
         services.AddCors(options =>
         {
-            options.AddPolicy(policyName, policyBuilder =>
+            // Policy name can be tenant-specific at runtime using scoped CorsConfiguration
+            options.AddPolicy("DefaultCorsPolicy", policyBuilder =>
             {
-                if (allowedOrigins.Contains("*"))
-                {
-                    if (allowCredentials)
-                    {
-                        throw new InvalidOperationException("CORS configuration error: AllowCredentials cannot be used with wildcard origin '*'.");
-                    }
-
-                    policyBuilder.AllowAnyOrigin()
-                                 .AllowAnyHeader()
-                                 .AllowAnyMethod();
-                }
-                else
-                {
-                    policyBuilder.WithOrigins(allowedOrigins)
-                                 .AllowAnyHeader()
-                                 .AllowAnyMethod();
-
-                    if (allowCredentials)
-                    {
-                        policyBuilder.AllowCredentials();
-                    }
-                }
+                policyBuilder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
             });
         });
-
-        logger.LogInformation("Cors Initialized.");
 
         return services;
     }
@@ -395,9 +400,12 @@ public static class ServiceCollectionExtensions
     #region Persistence
 
     /// <summary>Setup persistence configuration and register provider-specific persistence layers.</summary>
-    public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddPersistence(this IServiceCollection services)
     {
-        var dbConfig = LoadDatabaseConfiguration(configuration);
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var tenantConfig = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+        var dbConfig = LoadDatabaseConfiguration(tenantConfig);
         var activeConnection = dbConfig.GetActiveConnection();
 
         services.AddSingleton(dbConfig);
@@ -426,8 +434,9 @@ public static class ServiceCollectionExtensions
         }
     }
 
-    private static DatabaseConfiguration LoadDatabaseConfiguration(IConfiguration configuration)
+    private static DatabaseConfiguration LoadDatabaseConfiguration(IConfiguration tenantConfig)
     {
+        var configuration = tenantConfig;
         var databasesSection = configuration.GetSection(DatabaseSectionName);
 
         if (!databasesSection.Exists() || !databasesSection.GetChildren().Any())

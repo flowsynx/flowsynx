@@ -6,6 +6,11 @@ namespace FlowSynx.Application.Services;
 public interface ICurrentUserService
 {
     /// <summary>
+    /// Retrieves the unique identifier of the current tenant.
+    /// </summary>
+    string TenantId();
+
+    /// <summary>
     /// Retrieves the unique identifier of the current user, or an empty string when not available.
     /// </summary>
     string UserId();

@@ -1,12 +1,15 @@
 ﻿using FlowSynx.Domain.DomainEvents;
+using FlowSynx.Domain.Entities;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Domain.Aggregates;
 
-public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot
+public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, ITenantScoped, IUserScoped
 {
+    public string UserId { get; set; }
+    public Guid TenantId { get; set; }
     public string Version { get; private set; }
     public string GeneticBlueprint { get; private set; }
     public string Name { get; private set; }
@@ -17,6 +20,7 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot
     public ImmuneResponse ImmuneResponse { get; private set; }
     public ExecutableComponent ExecutableComponent { get; private set; }
     public Dictionary<string, object> Metadata { get; private set; }
+    public Tenant? Tenant { get; set; }
 
     // Domain invariants
     private GeneBlueprint() { } // For EF Core

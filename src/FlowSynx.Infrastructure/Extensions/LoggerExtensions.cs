@@ -1,9 +1,4 @@
-﻿using FlowSynx.Application;
-using FlowSynx.Infrastructure.Logging.DatabaseLogger;
-using Microsoft.AspNetCore.Http;
-using Serilog;
-using Serilog.Configuration;
-using System.Globalization;
+﻿using Serilog;
 
 namespace FlowSynx.Infrastructure.Extensions;
 
@@ -24,17 +19,5 @@ public static class LoggerExtensions
         return Enum.TryParse<RollingInterval>(value, true, out var interval)
             ? interval
             : RollingInterval.Day;
-    }
-
-    public static LoggerConfiguration SqliteLogs(
-            this LoggerSinkConfiguration config,
-            ILogEntryRepository logEntryRepository,
-            IHttpContextAccessor? accessor)
-    {
-        return config.Sink(
-            new SqliteLoggerSink(
-                logEntryRepository: logEntryRepository,
-                httpContextAccessor: accessor,
-                CultureInfo.InvariantCulture));
     }
 }

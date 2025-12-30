@@ -1,4 +1,5 @@
-﻿using FlowSynx.Infrastructure.Configuration.Core.Security;
+﻿using FlowSynx.Application.Services;
+using FlowSynx.Infrastructure.Configuration.Core.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -50,6 +51,16 @@ public class JwtAuthenticationProvider : IAuthenticationProvider
                     }
 
                     return Task.CompletedTask;
+                },
+                OnTokenValidated = async context =>
+                {
+                    var tenantService = context.HttpContext.RequestServices.GetRequiredService<ITenantService>();
+                    var tenantId = context.Principal?.FindFirst("tenantId")?.Value;
+
+                    if (!string.IsNullOrEmpty(tenantId) && Guid.TryParse(tenantId, out var tenantGuid))
+                    {
+                        await tenantService.SetCurrentTenantAsync(tenantGuid);
+                    }
                 }
             };
         });

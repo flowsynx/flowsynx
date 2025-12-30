@@ -4,14 +4,17 @@ using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Domain.Entities;
 
-public class GeneInstance : AuditableEntity<GeneInstanceId>
+public class GeneInstance : AuditableEntity<GeneInstanceId>, ITenantScoped, IUserScoped
 {
+    public string UserId { get; set; }
+    public Guid TenantId { get; set; }
     public GeneBlueprintId GeneBlueprintId { get; private set; }
     public Dictionary<string, object> Parameters { get; private set; }
     public ExpressionConfiguration ExpressionConfiguration { get; private set; }
     public List<GeneInstanceId> Dependencies { get; private set; }
     public Dictionary<string, object> Metadata { get; private set; }
     public GeneBlueprint Blueprint { get; set; }
+    public Tenant? Tenant { get; set; }
 
     private GeneInstance() { }
 

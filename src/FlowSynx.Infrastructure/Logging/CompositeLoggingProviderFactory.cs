@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Infrastructure.Configuration.System.Logger;
 using FlowSynx.Infrastructure.Logging.ConsoleLogger;
-using FlowSynx.Infrastructure.Logging.DatabaseLogger;
 using FlowSynx.Infrastructure.Logging.FileLogger;
 using FlowSynx.Infrastructure.Logging.SeqLogger;
 using Microsoft.Extensions.Logging;
@@ -16,7 +15,6 @@ public class CompositeLoggingProviderFactory : ILoggingProviderFactory
         _builders = new Dictionary<string, ILogProviderBuilder>(StringComparer.OrdinalIgnoreCase)
         {
             { "console",  new SerilogConsoleProviderBuilder() },
-            { "database", new SerilogDatabaseProviderBuilder(serviceProvider) },
             { "file",     new SerilogFileProviderBuilder() },
             { "seq",      new SerilogSeqProviderBuilder() }
         };
