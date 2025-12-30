@@ -28,6 +28,8 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
                 id => id.Value,
                 value => new GeneBlueprintId(value));
 
+        builder.Property(gb => gb.TenantId).IsRequired();
+        builder.Property(gb => gb.UserId).IsRequired();
         builder.Property(gb => gb.Version).IsRequired().HasMaxLength(50);
         builder.Property(gb => gb.GeneticBlueprint).HasMaxLength(255);
         builder.Property(gb => gb.Name).IsRequired().HasMaxLength(200);

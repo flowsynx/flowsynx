@@ -28,6 +28,8 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
                 id => id.Value,
                 value => new ChromosomeId(value));
 
+        builder.Property(c => c.TenantId).IsRequired();
+        builder.Property(c => c.UserId).IsRequired();
         builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
 
         builder.Property(c => c.CellularEnvironment)

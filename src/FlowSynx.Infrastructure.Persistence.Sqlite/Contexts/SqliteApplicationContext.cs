@@ -47,7 +47,7 @@ public class SqliteApplicationContext : AuditableContext
     }
 
     public DbSet<Tenant> Tenants { get; set; } = null!;
-    public DbSet<TenantConfiguration> TenantConfigurations { get; set; } = null!;
+    public DbSet<TenantSetting> TenantSettings { get; set; } = null!;
     public DbSet<GeneBlueprint> GeneBlueprints { get; set; } = null!;
     public DbSet<Chromosome> Chromosomes { get; set; } = null!;
     public DbSet<Genome> Genomes { get; set; } = null!;
@@ -179,9 +179,12 @@ public class SqliteApplicationContext : AuditableContext
 
     private void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new AuditTrailConfiguration());
         modelBuilder.ApplyConfiguration(new GeneBlueprintConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new ChromosomeConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new GenomeConfiguration(_serializer, _deserializer));
+        modelBuilder.ApplyConfiguration(new TenantConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantSettingsConfiguration());
     }
 }

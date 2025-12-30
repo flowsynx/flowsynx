@@ -2,7 +2,7 @@ using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Domain.Entities;
 
-public class TenantConfiguration : AuditableEntity<Guid>, ITenantScoped
+public class TenantSetting : AuditableEntity<Guid>, ITenantScoped
 {
     public Guid TenantId { get; set; }
     public string Key { get; set; } = string.Empty;

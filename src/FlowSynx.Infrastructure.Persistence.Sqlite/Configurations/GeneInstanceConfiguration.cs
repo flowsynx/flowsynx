@@ -28,6 +28,9 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
                 id => id.Value,
                 value => new GeneInstanceId(value));
 
+        builder.Property(gi => gi.TenantId).IsRequired();
+        builder.Property(gi => gi.UserId).IsRequired();
+
         // Foreign key for GeneBlueprint
         builder.Property(gi => gi.GeneBlueprintId)
             .HasConversion(

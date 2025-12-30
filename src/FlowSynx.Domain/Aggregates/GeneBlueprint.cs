@@ -8,8 +8,8 @@ namespace FlowSynx.Domain.Aggregates;
 
 public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, ITenantScoped, IUserScoped
 {
-    public string UserId { get; set; }
     public Guid TenantId { get; set; }
+    public string UserId { get; set; }
     public string Version { get; private set; }
     public string GeneticBlueprint { get; private set; }
     public string Name { get; private set; }

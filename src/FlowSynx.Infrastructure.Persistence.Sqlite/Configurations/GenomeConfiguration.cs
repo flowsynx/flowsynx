@@ -28,6 +28,8 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
                 id => id.Value,
                 value => new GenomeId(value));
 
+        builder.Property(g => g.TenantId).IsRequired();
+        builder.Property(g => g.UserId).IsRequired();
         builder.Property(g => g.Name).IsRequired().HasMaxLength(200);
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(

@@ -2,8 +2,9 @@
 
 namespace FlowSynx.Domain.Entities;
 
-public class AuditTrail : Entity<long>
+public class AuditTrail : Entity<long>, ITenantScoped
 {
+    public Guid TenantId { get; set; }
     public string? UserId { get; set; }
     public string? Action { get; set; }
     public string? EntityName { get; set; }

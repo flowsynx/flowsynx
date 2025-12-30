@@ -7,7 +7,7 @@ namespace FlowSynx.Infrastructure.Persistence;
 
 public abstract class AuditableContext(DbContextOptions options) : DbContext(options)
 {
-    public DbSet<AuditTrail> Audits { get; set; }
+    public DbSet<AuditTrail> AuditTrails { get; set; }
 
     public virtual async Task<int> SaveChangesAsync(
         string userId, 
@@ -119,7 +119,7 @@ public abstract class AuditableContext(DbContextOptions options) : DbContext(opt
     {
         foreach (var auditEntry in auditEntries.Where(e => !e.HasTemporaryProperties))
         {
-            Audits.Add(auditEntry.ToAudit());
+            AuditTrails.Add(auditEntry.ToAudit());
         }
     }
 
@@ -143,7 +143,7 @@ public abstract class AuditableContext(DbContextOptions options) : DbContext(opt
                     auditEntry.NewValues[prop.Metadata.Name] = prop.CurrentValue!;
                 }
             }
-            Audits.Add(auditEntry.ToAudit());
+            AuditTrails.Add(auditEntry.ToAudit());
         }
         return SaveChangesAsync(cancellationToken);
     }

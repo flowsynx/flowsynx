@@ -6,8 +6,8 @@ namespace FlowSynx.Domain.Entities;
 
 public class GeneInstance : AuditableEntity<GeneInstanceId>, ITenantScoped, IUserScoped
 {
-    public string UserId { get; set; }
     public Guid TenantId { get; set; }
+    public string UserId { get; set; }
     public GeneBlueprintId GeneBlueprintId { get; private set; }
     public Dictionary<string, object> Parameters { get; private set; }
     public ExpressionConfiguration ExpressionConfiguration { get; private set; }

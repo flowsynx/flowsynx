@@ -7,8 +7,8 @@ namespace FlowSynx.Domain.Aggregates;
 
 public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, IUserScoped
 {
-    public string UserId { get; set; }
     public Guid TenantId { get; set; }
+    public string UserId { get; set; }
     public string Name { get; private set; }
     public List<Chromosome> Chromosomes { get; private set; }
     public Dictionary<string, object> Metadata { get; private set; }

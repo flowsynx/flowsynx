@@ -37,7 +37,7 @@ public class SqliteDatabaseInitializer : IDatabaseInitializer
                 context.Tenants.Add(new Domain.Entities.Tenant
                 {
                     Name = "FlowSynx Genome Platform",
-                    Code = "FSX",
+                    Timezone = "UTC",
                     IsActive = true,
                     CreatedOn = DateTime.UtcNow
                 });

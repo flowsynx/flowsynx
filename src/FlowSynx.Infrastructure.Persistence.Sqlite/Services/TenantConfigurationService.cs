@@ -61,7 +61,7 @@ public class TenantConfigurationService : IConfigurationService
             }
 
             // 2. Load tenant settings from database
-            var settings = await context.TenantConfigurations
+            var settings = await context.TenantSettings
                 .AsNoTracking()
                 .Where(s => s.TenantId == tenantId)
                 .ToListAsync();
@@ -153,17 +153,17 @@ public class TenantConfigurationService : IConfigurationService
             throw new InvalidOperationException("No tenant context");
 
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-        var setting = await context.TenantConfigurations
+        var setting = await context.TenantSettings
             .FirstOrDefaultAsync(s => s.TenantId == tenant.Id && s.Key == key);
 
         if (setting == null)
         {
-            setting = new TenantConfiguration
+            setting = new TenantSetting
             {
                 TenantId = tenant.Id,
                 Key = key
             };
-            context.TenantConfigurations.Add(setting);
+            context.TenantSettings.Add(setting);
         }
 
         setting.Value = value.ToString();

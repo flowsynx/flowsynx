@@ -7,8 +7,8 @@ namespace FlowSynx.Domain.Entities;
 
 public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserScoped
 {
-    public string UserId { get; set; }
     public Guid TenantId { get; set; }
+    public string UserId { get; set; }
     public string Name { get; private set; }
     public List<GeneInstance> Genes { get; private set; }
     public CellularEnvironment CellularEnvironment { get; private set; }
