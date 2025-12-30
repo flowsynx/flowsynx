@@ -20,6 +20,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IChromosomeRepository, ChromosomeRepository>()
             .AddScoped<IGeneBlueprintRepository, GeneBlueprintRepository>()
             .AddScoped<IGenomeRepository, GenomeRepository>()
+            .AddScoped<ITenantRepository, TenantRepository>()
             .AddScoped<IDatabaseInitializer, SqliteDatabaseInitializer>()
             .AddDbContextFactory<SqliteApplicationContext>(options =>
             {

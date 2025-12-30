@@ -117,12 +117,14 @@ static void ConfigureMiddleware(WebApplication app)
 
     app.UseHttps();
     app.UseCustomHeaders();
-    app.UseConfiguredCors();
-    app.UseRateLimiter();
     app.UseRouting();
 
     app.UseAuthentication();
     app.UseAuthorization();
+
+    app.UseTenants();
+    app.UseTenantCors();
+    app.UseTenantRateLimiting();
 
     app.UseOpenApi();
     app.UseCustomException();

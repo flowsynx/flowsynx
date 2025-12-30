@@ -107,16 +107,17 @@ public class TenantRepository : ITenantRepository
             entry.AbsoluteExpirationRelativeToNow = CACHE_DURATION;
 
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-            var tenant = await context.Tenants
-                                    .Include(t => t.Configuration)
-                                    .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken: cancellationToken)
-                                    .ConfigureAwait(false);
 
-            var configuration = tenant?.Configuration;
+            var configuration = await context.Tenants
+                .Where(t => t.Id == tenantId)
+                .Select(t => t.Configuration)
+                .FirstOrDefaultAsync(cancellationToken)
+                .ConfigureAwait(false);
+
             if (configuration == null)
             {
-                // Create default configuration if none exists
                 _logger.LogWarning("No active configuration found for tenant {TenantId}, creating default", tenantId);
+                var tenant = await context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
                 var defaultConfig = tenant.FallBackToDefaultConfiguration();
                 await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
                 configuration = defaultConfig;

@@ -24,15 +24,15 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<Tenant>
 
         // Properties
         builder.Property(t => t.Name)
-            .HasMaxLength(256)
+            .HasMaxLength(64)
             .IsRequired();
 
         builder.Property(t => t.Slug)
-            .HasMaxLength(256)
+            .HasMaxLength(64)
             .IsRequired();
 
         builder.Property(t => t.Description)
-            .HasMaxLength(1000);
+            .HasMaxLength(1024);
 
         builder.Property(t => t.Status)
                .HasColumnType("TEXT")

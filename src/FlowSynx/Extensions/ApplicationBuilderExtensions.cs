@@ -20,6 +20,25 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    public static IApplicationBuilder UseTenantCors(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<TenantCorsMiddleware>();
+        return app;
+    }
+
+    public static IApplicationBuilder UseTenants(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<TenantMiddleware>();
+        return app;
+    }
+
+    public static IApplicationBuilder UseTenantRateLimiting(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<TenantRateLimitingMiddleware>();
+        return app;
+    }
+
+
     public static IApplicationBuilder UseCustomHeaders(this IApplicationBuilder app)
     {
         // Inject IVersion via middleware instead of locating from ApplicationServices

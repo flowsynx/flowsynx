@@ -122,17 +122,28 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             .ToLowerInvariant()
             .Replace(" & ", "-and-")
             .Replace(" and ", "-and-")
+            .Replace("+", "-plus-")
+            .Replace("@", "-at-")
             .Replace(' ', '-')
             .Replace('_', '-')
             .Replace('.', '-');
 
         // Remove all non-alphanumeric characters except hyphens
         slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-
-        // Collapse multiple hyphens
         slug = Regex.Replace(slug, @"-+", "-");
+        slug = slug.Trim('-');
 
-        return slug.Trim('-');
+        if (slug.Length > 64)
+        {
+            slug = slug[..64].Trim('-');
+        }
+
+        if (slug.Length < 3)
+        {
+            slug = $"{slug}-{Random.Shared.Next(1000):000}";
+        }
+
+        return slug;
     }
 
     public void ChangeName(string newName)
