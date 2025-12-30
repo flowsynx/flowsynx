@@ -300,4 +300,7 @@
   <data name="Feature_Workflow_GenerateFromIntent_Success" xml:space="preserve">
     <value>Workflow generated successfully from intent.</value>
   </data>
+  <data name="Features_Validation_AuditId_MustBePositive" xml:space="preserve">
+    <value>Audit Id Must Be Positive.</value>
+  </data>
 </root>

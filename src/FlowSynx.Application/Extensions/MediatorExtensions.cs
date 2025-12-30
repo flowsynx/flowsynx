@@ -34,7 +34,7 @@ public static class MediatorExtensions
 
     public static Task<Result<AuditTrailDetailsResponse>> AuditDetails(
         this IMediator mediator,
-        string auditId,
+        long auditId,
         CancellationToken cancellationToken)
     {
         return mediator.Send(new AuditTrailDetailsRequest { AuditId = auditId }, cancellationToken);

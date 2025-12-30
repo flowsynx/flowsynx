@@ -5,5 +5,5 @@ namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
 
 public class AuditTrailDetailsRequest : IRequest<Result<AuditTrailDetailsResponse>>
 {
-    public required string AuditId { get; set; }
+    public required long AuditId { get; set; }
 }

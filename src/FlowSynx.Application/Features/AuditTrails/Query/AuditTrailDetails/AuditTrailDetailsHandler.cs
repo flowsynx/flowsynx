@@ -28,8 +28,7 @@ internal class AuditTrailDetailsHandler : IRequestHandler<AuditTrailDetailsReque
         {
             _currentUserService.ValidateAuthentication();
 
-            var auditId = Guid.Parse(request.AuditId);
-            var audit = await _auditTrailRepository.Get(auditId, cancellationToken);
+            var audit = await _auditTrailRepository.Get(request.AuditId, cancellationToken);
             //if (audit is null)
             //{
             //    var message = _localization.Get("Feature_Audit_DetailsNotFound", auditId);
@@ -40,15 +39,15 @@ internal class AuditTrailDetailsHandler : IRequestHandler<AuditTrailDetailsReque
             {
                 Id = audit.Id,
                 UserId = audit.UserId,
-                TableName = audit.TableName,
-                Type = audit.Type,
-                AffectedColumns = audit.AffectedColumns,
+                EntityName = audit.EntityName,
+                Action = audit.Action,
+                ChangedColumns = audit.ChangedColumns,
                 PrimaryKey = audit.PrimaryKey,
                 OldValues = audit.OldValues,
                 NewValues = audit.NewValues,
-                DateTime = audit.DateTime
+                OccurredAtUtc = audit.OccurredAtUtc
             };
-            _logger.LogInformation("Audit details for '{AuditId}' has been retrieved successfully.", auditId);
+            _logger.LogInformation("Audit details for '{AuditId}' has been retrieved successfully.", request.AuditId);
             return await Result<AuditTrailDetailsResponse>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)

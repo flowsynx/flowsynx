@@ -430,6 +430,15 @@ namespace FlowSynx.Application.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Audit Id Must Be Positive..
+        /// </summary>
+        internal static string Features_Validation_AuditId_MustBePositive {
+            get {
+                return ResourceManager.GetString("Features_Validation_AuditId_MustBePositive", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The id value must have value..
         /// </summary>
         internal static string Features_Validation_AuditId_MustHaveValue {

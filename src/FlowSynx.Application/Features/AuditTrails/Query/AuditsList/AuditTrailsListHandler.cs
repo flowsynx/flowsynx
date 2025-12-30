@@ -32,13 +32,13 @@ internal class AuditTrailsListHandler : IRequestHandler<AuditTrailsListRequest, 
             {
                 Id = audit.Id,
                 UserId = audit.UserId,
-                TableName = audit.TableName,
-                Type = audit.Type,
-                AffectedColumns = audit.AffectedColumns,
+                EntityName = audit.EntityName,
+                Action = audit.Action,
+                ChangedColumns = audit.ChangedColumns,
                 PrimaryKey = audit.PrimaryKey,
                 OldValues = audit.OldValues,
                 NewValues = audit.NewValues,
-                DateTime = audit.DateTime
+                OccurredAtUtc = audit.OccurredAtUtc
             });
             var pagedItems = response.ToPaginatedList(
                 request.Page,

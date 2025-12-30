@@ -27,7 +27,7 @@ public class AuditTrailRepository : IAuditTrailRepository
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             var trails = await context.Audits
-                .OrderByDescending(a => a.DateTime)
+                .OrderByDescending(a => a.OccurredAtUtc)
                 .Take(250)
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
@@ -42,7 +42,7 @@ public class AuditTrailRepository : IAuditTrailRepository
         }
     }
 
-    public async Task<AuditTrail?> Get(Guid id, CancellationToken cancellationToken)
+    public async Task<AuditTrail?> Get(long id, CancellationToken cancellationToken)
     {
         try
         {

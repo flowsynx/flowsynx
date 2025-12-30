@@ -18,7 +18,7 @@ public class Audits : EndpointGroupBase
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "audits"));
 
-        group.MapGet("/{id}", AuditDetails)
+        group.MapGet("/{id:long}", AuditDetails)
             .WithName("AuditDetails")
             .WithOpenApi()
             .RequireAuthorization(policy => policy.RequireRoleIgnoreCase("admin", "audits"));
@@ -34,7 +34,7 @@ public class Audits : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public static async Task<IResult> AuditDetails(string id,
+    public static async Task<IResult> AuditDetails(long id,
         [FromServices] IMediator mediator, [FromServices] IDeserializer jsonDeserializer,
         CancellationToken cancellationToken)
     {

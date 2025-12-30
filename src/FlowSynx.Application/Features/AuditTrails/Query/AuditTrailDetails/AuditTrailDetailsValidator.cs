@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Extensions;
-using FlowSynx.Application.Localization;
+﻿using FlowSynx.Application.Localization;
 using FluentValidation;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
@@ -14,6 +13,7 @@ public class AuditTrailDetailsValidator : AbstractValidator<AuditTrailDetailsReq
             .WithMessage(ApplicationResources.Features_Validation_AuditId_MustHaveValue);
 
         RuleFor(x => x.AuditId)
-            .MustBeValidGuid(ApplicationResources.Features_Validation_AuditId_InvalidGuidFormat);
+            .GreaterThan(0)
+            .WithMessage(ApplicationResources.Features_Validation_AuditId_MustBePositive);
     }
 }

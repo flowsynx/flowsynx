@@ -38,7 +38,8 @@ public class SqliteDatabaseInitializer : IDatabaseInitializer
                 {
                     Name = "FlowSynx Genome Platform",
                     Code = "FSX",
-                    IsActive = true
+                    IsActive = true,
+                    CreatedOn = DateTime.UtcNow
                 });
                 await context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Default tenant created successfully.");
