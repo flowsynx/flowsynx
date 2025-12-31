@@ -99,7 +99,7 @@ public sealed class TenantConfiguration
         if (string.IsNullOrWhiteSpace(key))
             return defaultValue;
 
-        var keys = key.Split('.');
+        var keys = key.Split(':');
         JsonNode currentNode = _settings;
 
         foreach (var k in keys)
@@ -141,7 +141,7 @@ public sealed class TenantConfiguration
         if (string.IsNullOrWhiteSpace(key))
             throw new DomainException("Configuration key cannot be empty");
 
-        var keys = key.Split('.');
+        var keys = key.Split(':');
         var clone = Clone();
         JsonNode currentNode = clone._settings;
 

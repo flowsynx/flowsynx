@@ -18,7 +18,7 @@ try
 
     var app = builder.Build();
     ConfigureMiddleware(app);
-    ConfigureApplication(app);
+    await ConfigureApplication(app);
 
     await app.RunAsync();
 }
@@ -86,15 +86,11 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddServer()
         .AddVersion()
         .AddApplication()
-        .AddInfrastructurePluginManager()
         .AddUserService()
         .AddRateLimiting()
         .AddEventPublisher()
         .AddHealthChecker()
-        .AddApiDocumentation()
-        //.AddHostedService<WorkflowExecutionWorker>()
-        //.AddHostedService<TriggerProcessingService>()
-        .AddConfiguredCors();
+        .AddApiDocumentation();
 
     if (!env.IsDevelopment())
         builder.Services.ParseArguments(args);
@@ -119,11 +115,12 @@ static void ConfigureMiddleware(WebApplication app)
     app.UseCustomHeaders();
     app.UseRouting();
 
+    app.UseTenantCors();
+
     app.UseAuthentication();
     app.UseAuthorization();
 
     app.UseTenants();
-    app.UseTenantCors();
     app.UseTenantRateLimiting();
 
     app.UseOpenApi();
@@ -131,9 +128,9 @@ static void ConfigureMiddleware(WebApplication app)
     app.UseHealthCheck();
 }
 
-static void ConfigureApplication(WebApplication app)
+static async Task ConfigureApplication(WebApplication app)
 {
-    app.EnsureApplicationDatabaseCreated();
+    await app.EnsureApplicationDatabaseCreated();
 
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
     app.MapEndpoints("Fixed");

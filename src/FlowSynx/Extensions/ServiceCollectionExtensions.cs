@@ -75,6 +75,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddTenantService(this IServiceCollection services)
     {
         services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<ITenantRateLimitPolicyProvider, TenantRateLimitPolicyProvider>();
         return services;
     }
 
@@ -197,21 +198,6 @@ public static class ServiceCollectionExtensions
         services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        });
-
-        return services;
-    }
-
-    #endregion
-
-    #region Plugin manager
-
-    public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services)
-    {
-        services.AddScoped(provider =>
-        {
-            var tenantConfig = provider.GetRequiredService<IConfiguration>();
-            return tenantConfig.BindSection<PluginRegistryConfiguration>("Integrations:PluginRegistry");
         });
 
         return services;
@@ -364,30 +350,6 @@ public static class ServiceCollectionExtensions
                 limiterOptions.PermitLimit = 100;
                 limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 limiterOptions.QueueLimit = 0;
-            });
-        });
-
-        return services;
-    }
-
-    #endregion
-
-    #region CORS
-
-    public static IServiceCollection AddConfiguredCors(this IServiceCollection services)
-    {
-        services.AddScoped(provider =>
-        {
-            var tenantConfig = provider.GetRequiredService<IConfiguration>();
-            return tenantConfig.BindSection<CorsConfiguration>("System:Cors");
-        });
-
-        services.AddCors(options =>
-        {
-            // Policy name can be tenant-specific at runtime using scoped CorsConfiguration
-            options.AddPolicy("DefaultCorsPolicy", policyBuilder =>
-            {
-                policyBuilder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
             });
         });
 
