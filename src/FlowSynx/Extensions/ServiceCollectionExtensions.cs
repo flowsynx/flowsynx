@@ -3,10 +3,7 @@ using FlowSynx.Domain.Primitives;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Configuration.Core.Database;
 using FlowSynx.Infrastructure.Configuration.Core.Security;
-using FlowSynx.Infrastructure.Configuration.Integrations.PluginRegistry;
-using FlowSynx.Infrastructure.Configuration.System.Cors;
 using FlowSynx.Infrastructure.Configuration.System.OpenApi;
-using FlowSynx.Infrastructure.Configuration.System.RateLimiting;
 using FlowSynx.Infrastructure.Configuration.System.Server;
 using FlowSynx.Infrastructure.Encryption;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
@@ -14,20 +11,16 @@ using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 
 namespace FlowSynx.Extensions;
 
 public static class ServiceCollectionExtensions
 {
     private const string DefaultSqliteProvider = "SQLite";
-    private const string DatabaseSectionName = "Core:Databases";
-    private const string WorkflowQueueSectionName = "System:Workflow:Queue";
-    private const string EnsureWorkflowPluginsConfiguration = "System:Workflow:Execution:EnsureWorkflowPlugins";
+    private const string DatabaseSectionName = "Databases";
 
     #region Simple registrations
 
@@ -323,37 +316,6 @@ public static class ServiceCollectionExtensions
         }
 
         return false;
-    }
-
-    #endregion
-
-    #region Rate limiting
-
-    /// <summary>Add rate limiting services.</summary>
-    public static IServiceCollection AddRateLimiting(this IServiceCollection services)
-    {
-        services.AddScoped(provider =>
-        {
-            var tenantConfig = provider.GetRequiredService<IConfiguration>();
-            var cfg = new RateLimitingConfiguration();
-            tenantConfig.GetSection("System:RateLimiting").Bind(cfg);
-            return cfg;
-        });
-
-        services.AddRateLimiter(options =>
-        {
-            // Policy registration remains global; limits can read from scoped config in endpoint mapping if needed
-            options.AddFixedWindowLimiter("Fixed", limiterOptions =>
-            {
-                // Defaults; actual values can be inspected per-request if you wire a custom limiter middleware using scoped services
-                limiterOptions.Window = TimeSpan.FromSeconds(60);
-                limiterOptions.PermitLimit = 100;
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = 0;
-            });
-        });
-
-        return services;
     }
 
     #endregion

@@ -2,7 +2,10 @@ using FlowSynx.Application.Extensions;
 using FlowSynx.Extensions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Secrets;
+using Microsoft.Extensions.Logging;
+using Serilog.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,7 +67,7 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
 
 static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 {
-    builder.AddLoggers();
+    //builder.AddLoggers();
 
     var services = builder.Services;
     var config = builder.Configuration;
@@ -80,14 +83,22 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddHttpClient()
         .AddHttpJsonOptions()
         .AddEncryptionService()
-        .AddTenantService()
-        .AddPersistence()
+        .AddTenantService();
+
+    builder.Services.AddScoped<ITenantLoggerFactory, SerilogTenantLoggerFactory>();
+    builder.Services.AddScoped<ILoggerProvider, TenantLoggerProvider>();
+
+    builder.Services.AddLogging(logging =>
+    {
+        logging.ClearProviders();
+    });
+
+    services.AddPersistence()
         .AddSecurity()
         .AddServer()
         .AddVersion()
         .AddApplication()
         .AddUserService()
-        .AddRateLimiting()
         .AddEventPublisher()
         .AddHealthChecker()
         .AddApiDocumentation();
@@ -100,6 +111,8 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 
 static void ConfigureMiddleware(WebApplication app)
 {
+    app.UseTenantLogging();
+
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
@@ -120,10 +133,9 @@ static void ConfigureMiddleware(WebApplication app)
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.UseTenants();
     app.UseTenantRateLimiting();
 
-    app.UseOpenApi();
+    app.UseApiDocumentation();
     app.UseCustomException();
     app.UseHealthCheck();
 }
@@ -134,9 +146,6 @@ static async Task ConfigureApplication(WebApplication app)
 
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
     app.MapEndpoints("Fixed");
-
-    //var listener = app.Services.GetRequiredService<IWorkflowHttpListener>();
-    //app.MapHttpTriggersWorkflowRoutes(listener);
 }
 
 static async Task HandleStartupExceptionAsync(WebApplicationBuilder builder, Exception ex)

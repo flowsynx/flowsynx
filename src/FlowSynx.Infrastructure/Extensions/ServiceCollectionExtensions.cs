@@ -1,7 +1,8 @@
-﻿using FlowSynx.Infrastructure.Configuration.Core.Secrets;
-using FlowSynx.Application.Secrets;
+﻿using FlowSynx.Application.Secrets;
 using FlowSynx.Application.Serializations;
 using FlowSynx.Application.Services;
+using FlowSynx.Infrastructure.Configuration.Core.Secrets;
+using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Secrets;
 using FlowSynx.Infrastructure.Secrets.AwsSecretsManager;
 using FlowSynx.Infrastructure.Secrets.AzureKeyVault;
@@ -21,6 +22,7 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services)
     {
         services.AddSingleton<ISystemClock, SystemClock>();
+        //services.AddScoped(typeof(ILogger<>), typeof(TenantAwareLogger<>));
         return services;
     }
 

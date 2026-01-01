@@ -13,11 +13,12 @@ public sealed class SerilogConsoleProviderBuilder : ILogProviderBuilder
         LoggerProviderConfiguration? config)
     {
         var level = config?.LogLevel.ToSerilogLevel() ?? Serilog.Events.LogEventLevel.Information;
-        var outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] " +
+        var outputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{TenantId}] [{SourceContext}] " +
             "{Message:lj}{NewLine}{Exception}";
 
         return new Serilog.Extensions.Logging.SerilogLoggerProvider(
             new SerilogLoggerConfiguration()
+                .Enrich.FromLogContext()
                 .MinimumLevel.Is(level)
                 .WriteTo.Console(outputTemplate: outputTemplate)
                 .CreateLogger()

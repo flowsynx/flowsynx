@@ -20,6 +20,11 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    public static IApplicationBuilder UseTenantLogging(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<TenantLoggingMiddleware>();
+    }
+
     public static IApplicationBuilder UseTenantCors(this IApplicationBuilder app)
     {
         app.UseMiddleware<TenantCorsMiddleware>();
@@ -77,7 +82,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder UseOpenApi(this IApplicationBuilder app)
+    public static IApplicationBuilder UseApiDocumentation(this IApplicationBuilder app)
     {
         using var serviceScope = app.ApplicationServices.CreateScope();
         var openApiConfiguration = serviceScope.ServiceProvider.GetRequiredService<OpenApiConfiguration>();
@@ -93,7 +98,13 @@ public static class ApplicationBuilderExtensions
         app.UseSwaggerUI(options =>
         {
             options.RoutePrefix = "open-api";
-            options.SwaggerEndpoint($"flowsynx/specifications.json", $"flowsynx");
+            options.SwaggerEndpoint($"flowsynx/specifications.json", $"FlowSynx API");
+        });
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapSwagger()
+                .RequireAuthorization("admin");
         });
 
         return app;
