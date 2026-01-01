@@ -1,72 +1,77 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
+﻿using FlowSynx.Application;
+using FlowSynx.Application.Services;
+using FlowSynx.Domain.Tenants.ValueObjects;
+using Microsoft.AspNetCore.Authentication;
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text.Encodings.Web;
 using System.Text;
-using FlowSynx.Infrastructure.Configuration.Core.Security;
 
 namespace FlowSynx.Security;
 
-public class BasicAuthenticationProvider : IAuthenticationProvider
+public sealed class BasicAuthenticationProvider : IAuthenticationProvider
 {
-    public string SchemeName => "Basic";
-    
-    public void Configure(AuthenticationBuilder builder)
+    private readonly ITenantService _tenantService;
+    private readonly ITenantRepository _tenantRepository;
+
+    public AuthenticationMode AuthenticationMode => AuthenticationMode.Basic;
+
+    public BasicAuthenticationProvider(
+        ITenantService tenantService,
+        ITenantRepository tenantRepository)
     {
-        builder.AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(SchemeName, null);
+        _tenantService = tenantService;
+        _tenantRepository = tenantRepository;
     }
 
-    public class BasicAuthenticationHandler(
-        IOptionsMonitor<AuthenticationSchemeOptions> options,
-        ILoggerFactory logger,
-        UrlEncoder encoder,
-        SecurityConfiguration securityConfiguration)
-        : AuthenticationHandler<AuthenticationSchemeOptions>(options, logger, encoder)
+    public async Task<AuthenticateResult> AuthenticateAsync(
+        HttpContext context,
+        AuthenticationScheme scheme)
     {
-        protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+        if (!context.Request.Headers.ContainsKey("Authorization"))
         {
-            if (!Request.Headers.ContainsKey("Authorization"))
-            {
-                return Task.FromResult(AuthenticateResult.Fail("Missing Authorization Header"));
-            }
+            return AuthenticateResult.Fail("Missing Authorization Header");
+        }
 
-            try
-            {
-                var authHeader = AuthenticationHeaderValue.Parse(Request.Headers.Authorization!);
-                if (authHeader.Scheme != "Basic")
-                    return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Scheme"));
+        try
+        {
+            var authHeader = AuthenticationHeaderValue.Parse(context.Request.Headers.Authorization!);
+            if (authHeader.Scheme != "Basic")
+                return AuthenticateResult.Fail("Invalid Authorization Scheme");
 
-                var credentialBytes = Convert.FromBase64String(authHeader.Parameter);
-                var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
-                if (credentials.Length != 2)
-                    return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Header"));
+            var credentialBytes = Convert.FromBase64String(authHeader.Parameter);
+            var credentials = Encoding.UTF8.GetString(credentialBytes).Split(':', 2);
+            if (credentials.Length != 2)
+                return AuthenticateResult.Fail("Invalid Authorization Header");
 
-                var username = credentials[0];
-                var password = credentials[1];
+            var username = credentials[0];
+            var password = credentials[1];
 
-                var users = securityConfiguration.Authentication.Basic.Users;
-                var user = users.FirstOrDefault(u => u.Name == username && u.Password == password);
-                if (user == null)
-                    return Task.FromResult(AuthenticateResult.Fail("Invalid Username or Password"));
+            var tenantId = _tenantService.GetCurrentTenantId();
+            var config = await _tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
+            var securityConfiguration = config.Configuration.Security.Authentication;
 
-                var claims = new List<Claim>
+            var users = securityConfiguration.Basic.Users;
+            var user = users.FirstOrDefault(u => u.Name == username && u.Password == password);
+            if (user == null)
+                return AuthenticateResult.Fail("Invalid Username or Password");
+
+            var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id),
-                    new Claim(ClaimTypes.Name, user.Name)
+                    new Claim(ClaimTypes.Name, user.Name),
+                    new Claim("TenantId", tenantId.ToString())
                 };
-                claims.AddRange(user.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.AddRange(user.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-                var identity = new ClaimsIdentity(claims, Scheme.Name);
-                var principal = new ClaimsPrincipal(identity);
-                var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            var identity = new ClaimsIdentity(claims, scheme.Name);
+            var principal = new ClaimsPrincipal(identity);
+            var ticket = new AuthenticationTicket(principal, scheme.Name);
 
-                return Task.FromResult(AuthenticateResult.Success(ticket));
-            }
-            catch
-            {
-                return Task.FromResult(AuthenticateResult.Fail("Invalid Authorization Header"));
-            }
+            return AuthenticateResult.Success(ticket);
+        }
+        catch
+        {
+            return AuthenticateResult.Fail("Invalid Authorization Header");
         }
     }
 }

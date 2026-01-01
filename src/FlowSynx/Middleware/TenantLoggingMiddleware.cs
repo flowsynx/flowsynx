@@ -18,6 +18,12 @@ public class TenantLoggingMiddleware
     {
         var tenantId = tenantService.GetCurrentTenantId();
 
+        if (tenantId == null)
+        {
+            await _next(context);
+            return;
+        }
+
         // Make TenantId available to loggers without resolving ITenantService
         context.Items["TenantId"] = tenantId;
         await tenantService.SetCurrentTenantAsync(tenantId);

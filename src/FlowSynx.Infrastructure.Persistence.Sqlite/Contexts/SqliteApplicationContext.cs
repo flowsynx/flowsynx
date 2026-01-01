@@ -25,7 +25,7 @@ public class SqliteApplicationContext : AuditableContext
     private readonly ISystemClock _systemClock;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
-    private readonly IEncryptionService _encryptionService;
+    //private readonly IEncryptionService _encryptionService;
     //private readonly ITenantService _tenantService;
     private Guid? _tenantId;
     private string? _userId;
@@ -36,8 +36,8 @@ public class SqliteApplicationContext : AuditableContext
         IHttpContextAccessor httpContextAccessor,
         ISystemClock systemClock,
         ISerializer serializer,
-        IDeserializer deserializer,
-        IEncryptionService encryptionService)
+        IDeserializer deserializer)
+        //IEncryptionService encryptionService)
         //ITenantService tenantService)
         : base(contextOptions)
     {
@@ -46,7 +46,7 @@ public class SqliteApplicationContext : AuditableContext
         _systemClock = systemClock ?? throw new ArgumentNullException(nameof(systemClock));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
-        _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+        //_encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
         //_tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
     }
 
@@ -188,7 +188,7 @@ public class SqliteApplicationContext : AuditableContext
         modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new ChromosomeConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new GenomeConfiguration(_serializer, _deserializer));
-        modelBuilder.ApplyConfiguration(new TenantEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantEntityConfiguration(_serializer, _deserializer));
         modelBuilder.ApplyConfiguration(new TenantContactEntityConfiguration());
     }
 }

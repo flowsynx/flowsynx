@@ -1,9 +1,9 @@
-﻿using FlowSynx.Infrastructure.Configuration.System.Logger;
-using Microsoft.Extensions.Logging;
+﻿//using FlowSynx.Infrastructure.Configuration.System.Logger;
+//using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Infrastructure.Logging;
+//namespace FlowSynx.Infrastructure.Logging;
 
-public interface ILoggingProviderFactory
-{
-    ILoggerProvider? Create(string name, LoggerProviderConfiguration? config);
-}
+//public interface ILoggingProviderFactory
+//{
+//    ILoggerProvider? Create(string name, LoggerProviderConfiguration? config);
+//}

@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Infrastructure.Configuration.System.RateLimiting;
+using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace FlowSynx.Services;
@@ -33,11 +33,9 @@ public sealed class TenantRateLimitPolicyProvider : ITenantRateLimitPolicyProvid
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
 
-                var windowSeconds = await _repository.GetConfigurationValueAsync<int>(
-                    tenantId, "RateLimiting:WindowSeconds", 60);
-
-                var permitLimit = await _repository.GetConfigurationValueAsync<int>(
-                    tenantId, "RateLimiting:PermitLimit", 100);
+                var config = await _repository.GetByIdAsync(tenantId, ct);
+                var windowSeconds = config.Configuration.RateLimiting.WindowSeconds;
+                var permitLimit = config.Configuration.RateLimiting.PermitLimit;
 
                 return new RateLimitingConfiguration
                 {

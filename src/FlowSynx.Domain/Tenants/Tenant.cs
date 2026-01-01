@@ -35,7 +35,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             Slug = slug,
             Description = description?.Trim(),
             Status = TenantStatus.Active,
-            Configuration = TenantConfiguration.Default()
+            Configuration = TenantConfigurationDefaults.Create()
         };
 
         tenant.AddDomainEvent(new TenantCreatedEvent(tenant.Id, tenant.Name, tenant.Slug));
@@ -170,7 +170,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
 
     public TenantConfiguration FallBackToDefaultConfiguration()
     {
-        Configuration = TenantConfiguration.Default();
+        Configuration = TenantConfigurationDefaults.Create();
 
         AddDomainEvent(new TenantConfigurationCreatedEvent(Id));
 
@@ -179,61 +179,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
 
     public void UpdateSettings(TenantConfiguration newSettings, string changeReason)
     {
-        // Validate new settings
-        var validation = newSettings.Validate();
-        if (!validation.IsValid)
-            throw new DomainException($"Invalid configuration: {string.Join(", ", validation.Messages)}");
-
         Configuration = newSettings;
-
         AddDomainEvent(new TenantConfigurationUpdatedEvent(Id, changeReason));
-    }
-
-    public void UpdateSetting(string key, object value, string changeReason)
-    {
-        var newSettings = Configuration.SetValue(key, value);
-        UpdateSettings(newSettings, changeReason);
-    }
-
-    public void UpdateMultipleSettings(Dictionary<string, object> updates, string changeReason)
-    {
-        var newSettings = Configuration;
-        foreach (var (key, value) in updates)
-        {
-            newSettings = newSettings.SetValue(key, value);
-        }
-
-        UpdateSettings(newSettings, changeReason);
-    }
-
-    public T GetValue<T>(string key, T defaultValue = default)
-    {
-        return Configuration.GetValue(key, defaultValue);
-    }
-
-    public string GetLanguage()
-    {
-        return GetValue("Localization.Language", "en");
-    }
-
-    public int GetRateLimit()
-    {
-        return GetValue("RateLimiting.PermitLimit", 100);
-    }
-
-    public long GetStorageLimit()
-    {
-        return GetValue("Storage.MaxSizeLimit", 209715200L);
-    }
-
-    public TenantConfiguration GetSection(string key)
-    {
-        return Configuration.GetSection(key);
-    }
-
-    // Validation
-    public ValidationResult ValidateConfiguration()
-    {
-        return Configuration.Validate();
     }
 }

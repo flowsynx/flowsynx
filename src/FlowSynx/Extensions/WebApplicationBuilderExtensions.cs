@@ -1,11 +1,9 @@
-﻿using FlowSynx.Infrastructure.Logging;
-using FlowSynx.PluginCore.Exceptions;
+﻿using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Infrastructure.Configuration.System.Logger;
-using FlowSynx.Infrastructure.Configuration.System.Server;
 using Serilog;
 using SerilogLoggerConfiguration = Serilog.LoggerConfiguration;
+using FlowSynx.Infrastructure.Configuration.Server;
 
 namespace FlowSynx.Extensions;
 

@@ -56,13 +56,13 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
         builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
     }
 
-    builder.Services.AddSecretService(builder.Configuration);
+    //builder.Services.AddSecretService(builder.Configuration);
 
-    using var scope = builder.Services.BuildServiceProvider().CreateScope();
-    var secretFactory = scope.ServiceProvider.GetRequiredService<ISecretFactory>();
-    var secretProvider = secretFactory.GetDefaultProvider();
+    //using var scope = builder.Services.BuildServiceProvider().CreateScope();
+    //var secretFactory = scope.ServiceProvider.GetRequiredService<ISecretFactory>();
+    //var secretProvider = secretFactory.GetDefaultProvider();
 
-    builder.Configuration.AddSecrets(secretProvider);
+    //builder.Configuration.AddSecrets(secretProvider);
 }
 
 static void ConfigureServices(WebApplicationBuilder builder, string[] args)
@@ -82,7 +82,7 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
-        .AddEncryptionService()
+        //.AddEncryptionService()
         .AddTenantService();
 
     builder.Services.AddScoped<ITenantLoggerFactory, SerilogTenantLoggerFactory>();

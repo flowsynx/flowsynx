@@ -1,71 +1,77 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application;
+using FlowSynx.Application.Services;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Infrastructure.Configuration.Core.Security;
+using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
 namespace FlowSynx.Security;
 
-public class JwtAuthenticationProvider : IAuthenticationProvider
+public sealed class JwtAuthenticationProvider : IAuthenticationProvider
 {
-    private readonly JwtAuthenticationsConfiguration _config;
-    public string SchemeName => _config.Name;
+    private readonly ITenantService _tenantService;
+    private readonly ITenantRepository _tenantRepository;
 
-    public JwtAuthenticationProvider(JwtAuthenticationsConfiguration config)
+    public AuthenticationMode AuthenticationMode => AuthenticationMode.Jwt;
+
+    public JwtAuthenticationProvider(
+        ITenantService tenantService,
+        ITenantRepository tenantRepository)
     {
-        _config = config;
+        _tenantService = tenantService;
+        _tenantRepository = tenantRepository;
     }
 
-    public void Configure(AuthenticationBuilder builder)
+    public async Task<AuthenticateResult> AuthenticateAsync(
+        HttpContext context,
+        AuthenticationScheme scheme)
     {
-        builder.AddJwtBearer(SchemeName, options =>
+        if (!context.Request.Headers.TryGetValue("Authorization", out var header))
+            return AuthenticateResult.Fail("Missing Authorization header");
+
+        if (!header.ToString().StartsWith("Bearer "))
+            return AuthenticateResult.Fail("Invalid authentication scheme");
+
+        var token = header.ToString()["Bearer ".Length..];
+
+        var tenantId = _tenantService.GetCurrentTenantId();
+        var config = await _tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
+        var securityConfiguration = config.Configuration.Security.Authentication;
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var validationParams = new TokenValidationParameters
         {
-            options.Authority = _config.Authority;
-            options.Audience = _config.Audience;
-            options.RequireHttpsMetadata = _config.RequireHttps;
-            options.TokenValidationParameters = new TokenValidationParameters
+            ValidateIssuerSigningKey = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidIssuer = securityConfiguration.Jwt.Issuer,
+            ValidAudience = securityConfiguration.Jwt.Audience,
+            RoleClaimType = ClaimTypes.Role,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(securityConfiguration.Jwt.Secret))
+        };
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(token, validationParams, out var validatedToken);
+            context.User = principal;
+
+            // Set tenant context if token contains tenantId
+            var tenantIdClaim = principal.FindFirst("tenantId")?.Value;
+            if (!string.IsNullOrEmpty(tenantIdClaim) && Guid.TryParse(tenantIdClaim, out var tenantGuid))
             {
-                ValidateIssuerSigningKey = true,
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidIssuer = _config.Issuer,
-                ValidAudience = _config.Audience,
-                RoleClaimType = ClaimTypes.Role,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config.Secret))
-            };
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"];
+                var tenantService = context.RequestServices.GetRequiredService<ITenantService>();
+                await tenantService.SetCurrentTenantAsync(TenantId.Create(tenantGuid));
+            }
 
-                    // If the request is for the SignalR hub
-                    var path = context.HttpContext.Request.Path;
-                    if (!string.IsNullOrEmpty(accessToken) &&
-                        path.StartsWithSegments("/hubs/workflowExecutions"))
-                    {
-                        context.Token = accessToken;
-                    }
-
-                    return Task.CompletedTask;
-                },
-                OnTokenValidated = async context =>
-                {
-                    var tenantService = context.HttpContext.RequestServices.GetRequiredService<ITenantService>();
-                    var tenantId = context.Principal?.FindFirst("tenantId")?.Value;
-
-                    if (!string.IsNullOrEmpty(tenantId) && Guid.TryParse(tenantId, out var tenantGuid))
-                    {
-                        await tenantService.SetCurrentTenantAsync(TenantId.Create(tenantGuid));
-                    }
-                }
-            };
-        });
-
-        builder.Services.AddScoped<IClaimsTransformation>(sp => new RoleClaimsTransformation(_config));
+            return AuthenticateResult.Success(new AuthenticationTicket(principal, scheme.Name));
+        }
+        catch (Exception)
+        {
+            throw new UnauthorizedAccessException("Invalid JWT token");
+        }
     }
 }

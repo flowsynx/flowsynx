@@ -1,13 +1,21 @@
-﻿using FlowSynx.Domain.Tenants;
+﻿using FlowSynx.Application.Serializations;
+using FlowSynx.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace FlowSynx.Persistence.Sqlite.Configurations;
 
 public class TenantEntityConfiguration : IEntityTypeConfiguration<Tenant>
 {
+    private readonly ISerializer _serializer;
+    private readonly IDeserializer _deserializer;
+
+    public TenantEntityConfiguration(ISerializer jsonSerializer, IDeserializer jsonDeserializer)
+    {
+        _serializer = jsonSerializer ?? throw new ArgumentNullException(nameof(jsonSerializer));
+        _deserializer = jsonDeserializer ?? throw new ArgumentNullException(nameof(jsonDeserializer));
+    }
+
     public void Configure(EntityTypeBuilder<Tenant> builder)
     {
         builder.ToTable("Tenants");
@@ -43,11 +51,10 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<Tenant>
                 );
 
         // Configuration reference
-        builder.Property(tc => tc.Configuration)
+        builder.Property(gb => gb.Configuration)
             .HasConversion(
-                settings => settings.ToJson(),
-                json => new TenantConfiguration(JsonSerializer.Deserialize<JsonObject>(json)!)
-            )
+                v => _serializer.Serialize(v),
+                v => _deserializer.Deserialize<TenantConfiguration>(v))
             .HasColumnType("TEXT");
 
         // Indexes

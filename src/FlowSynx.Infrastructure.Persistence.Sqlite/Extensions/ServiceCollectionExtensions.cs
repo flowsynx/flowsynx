@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Infrastructure.Configuration.Core.Database;
+using FlowSynx.Infrastructure.Configuration.Database;
 using FlowSynx.Infrastructure.Persistence;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Repositories;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;

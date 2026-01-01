@@ -24,13 +24,10 @@ public sealed class TenantCorsMiddleware
             return;
         }
 
-        var origins = await tenantRepository.GetConfigurationValueAsync<string[]>(
-                tenantId,
-                "Cors:AllowedOrigins", ["*"]);
-
-        var allowCredentials = await tenantRepository.GetConfigurationValueAsync<bool>(
-            tenantId,
-            "Cors:AllowCredentials", false);
+        var config = await tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
+        var corsConfig = config?.Configuration.Cors;
+        var origins = corsConfig?.AllowedOrigins;
+        var allowCredentials = corsConfig?.AllowCredentials ?? false;
 
         var origin = context.Request.Headers.Origin.ToString();
         if (origins.Contains("*") || (origin != null && origins.Contains(origin)))

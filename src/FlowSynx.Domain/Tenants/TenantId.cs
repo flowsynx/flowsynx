@@ -24,6 +24,13 @@ public record TenantId
         return new TenantId(value);
     }
 
+    public static bool IsValid(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+        return Guid.TryParse(value, out var guid) && guid != Guid.Empty;
+    }
+
     public static TenantId FromString(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

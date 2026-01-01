@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Domain.Tenants;
-using FlowSynx.Infrastructure.Configuration.System.RateLimiting;
+using FlowSynx.Domain.Tenants.ValueObjects;
 
 namespace FlowSynx.Services;
 

@@ -1,11 +1,7 @@
 ﻿using FlowSynx.Application;
 using FlowSynx.Domain.Tenants;
-using Microsoft.Extensions.Options;
 using Serilog;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
 
 namespace FlowSynx.Infrastructure.Logging;
 
@@ -29,8 +25,7 @@ public sealed class SerilogTenantLoggerFactory : ITenantLoggerFactory
 
     private async Task<CachedLogger> CreateLogger(TenantId tenantId)
     {
-        var filePath = await _configProvider.GetConfigurationValueAsync<string>(tenantId, "Logger:FilePath");
-        var minimumLevel = await _configProvider.GetConfigurationValueAsync<string>(tenantId, "Logger:MinimumLevel");
+        var config = await _configProvider.GetByIdAsync(tenantId, CancellationToken.None);
 
         var loggerConfig = new LoggerConfiguration()
             //.MinimumLevel.Is(minimumLevel)
@@ -38,7 +33,8 @@ public sealed class SerilogTenantLoggerFactory : ITenantLoggerFactory
 
         //if (!string.IsNullOrWhiteSpace(filePath))
         //{
-            var logPath = Path.Combine("logs", $"tenant-{tenantId}", "log-.txt");
+            var filePath = config.Configuration.Logging.File.LogPath; // e.g., "logs/tenant-{tenantId}/log-.txt"
+            var logPath = Path.Combine(filePath, $"tenant-{tenantId}", "log-.txt");
 
             loggerConfig = loggerConfig.WriteTo.File(
                 logPath,

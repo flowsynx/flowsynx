@@ -1,16 +1,16 @@
 ﻿using FlowSynx.Application.Services;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Configuration.Core.Database;
-using FlowSynx.Infrastructure.Configuration.Core.Security;
-using FlowSynx.Infrastructure.Configuration.System.OpenApi;
-using FlowSynx.Infrastructure.Configuration.System.Server;
+using FlowSynx.Infrastructure.Configuration.Database;
+using FlowSynx.Infrastructure.Configuration.OpenApi;
+using FlowSynx.Infrastructure.Configuration.Server;
 using FlowSynx.Infrastructure.Encryption;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json.Serialization;
@@ -200,80 +200,90 @@ public static class ServiceCollectionExtensions
 
     #region Security
 
-    public static IServiceCollection AddEncryptionService(this IServiceCollection services)
-    {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-        var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
-        services.AddSingleton(securityConfiguration);
-        var encryptionKey = securityConfiguration.Encryption.Key;
+    //public static IServiceCollection AddEncryptionService(this IServiceCollection services)
+    //{
+    //    using var scope = services.BuildServiceProvider().CreateScope();
+    //    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    //    var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
+    //    services.AddSingleton(securityConfiguration);
+    //    var encryptionKey = securityConfiguration.Encryption.Key;
 
-        services.AddScoped<IEncryptionService>(provider =>
-        {
-            return new EncryptionService(encryptionKey);
-        });
+    //    services.AddScoped<IEncryptionService>(provider =>
+    //    {
+    //        return new EncryptionService(encryptionKey);
+    //    });
 
-        return services;
-    }
+    //    return services;
+    //}
 
     /// <summary>Configures authentication providers, authorization policies, and encryption service.</summary>
     public static IServiceCollection AddSecurity(this IServiceCollection services)
     {
         try
         {
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            services.AddScoped<IAuthenticationProvider, NoneAuthenticationProvider>();
+            services.AddScoped<IAuthenticationProvider, BasicAuthenticationProvider>();
+            services.AddScoped<IAuthenticationProvider, JwtAuthenticationProvider>();
 
-            var securityConfiguration = scope.ServiceProvider.GetRequiredService<SecurityConfiguration>();
+            services.AddAuthentication("Dynamic")
+                .AddScheme<AuthenticationSchemeOptions, DynamicAuthHandler>(
+                    "Dynamic", null);
 
-            securityConfiguration.Authentication.ValidateDefaultScheme(logger);
 
-            var providers = new List<IAuthenticationProvider>();
 
-            if (!securityConfiguration.Authentication.Enabled)
-            {
-                providers.Add(new DisabledAuthenticationProvider());
-            }
-            else
-            {
-                if (securityConfiguration.Authentication.Basic.Enabled && securityConfiguration.Authentication.Basic.Users != null)
-                    providers.Add(new BasicAuthenticationProvider());
+            //using var scope = services.BuildServiceProvider().CreateScope();
+            //var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-                foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
-                    providers.Add(new JwtAuthenticationProvider(jwt));
-            }
+            //var securityConfiguration = scope.ServiceProvider.GetRequiredService<SecurityConfiguration>();
 
-            var authBuilder = services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = securityConfiguration.Authentication.DefaultScheme ?? "Basic";
-            });
+            //securityConfiguration.Authentication.ValidateDefaultScheme(logger);
 
-            foreach (var provider in providers)
-                provider.Configure(authBuilder);
+            //var providers = new List<IAuthenticationProvider>();
 
-            services.AddAuthorization(options =>
-            {
-                // keep authorization roles explicit and grouped for readability
-                void AddRolePolicy(string name, string role) =>
-                    options.AddPolicy(name, policy => policy.RequireRole(role));
+            //if (!securityConfiguration.Authentication.Enabled)
+            //{
+            //    providers.Add(new DisabledAuthenticationProvider());
+            //}
+            //else
+            //{
+            //    if (securityConfiguration.Authentication.Basic.Enabled && securityConfiguration.Authentication.Basic.Users != null)
+            //        providers.Add(new BasicAuthenticationProvider());
 
-                AddRolePolicy("admin", "admin");
-                AddRolePolicy("user", "user");
-                AddRolePolicy("audits", "audits");
-                AddRolePolicy("config", "config");
-                AddRolePolicy("logs", "logs");
-                AddRolePolicy("plugins", "plugins");
-                AddRolePolicy("workflows", "workflows");
-                AddRolePolicy("executions", "executions");
-                AddRolePolicy("triggers", "triggers");
+            //    foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
+            //        providers.Add(new JwtAuthenticationProvider(jwt));
+            //}
 
-                logger.LogInformation("Authorization initialized.");
-            });
+            //var authBuilder = services.AddAuthentication(options =>
+            //{
+            //    options.DefaultScheme = securityConfiguration.Authentication.DefaultScheme ?? "Basic";
+            //});
 
-            services.AddSingleton<IEncryptionService>(provider =>
-            {
-                return new EncryptionService(securityConfiguration.Encryption.Key);
-            });
+            //foreach (var provider in providers)
+            //    provider.Configure(authBuilder);
+
+            //services.AddAuthorization(options =>
+            //{
+            //    // keep authorization roles explicit and grouped for readability
+            //    void AddRolePolicy(string name, string role) =>
+            //        options.AddPolicy(name, policy => policy.RequireRole(role));
+
+            //    AddRolePolicy("admin", "admin");
+            //    AddRolePolicy("user", "user");
+            //    AddRolePolicy("audits", "audits");
+            //    AddRolePolicy("config", "config");
+            //    AddRolePolicy("logs", "logs");
+            //    AddRolePolicy("plugins", "plugins");
+            //    AddRolePolicy("workflows", "workflows");
+            //    AddRolePolicy("executions", "executions");
+            //    AddRolePolicy("triggers", "triggers");
+
+            //    logger.LogInformation("Authorization initialized.");
+            //});
+
+            //services.AddSingleton<IEncryptionService>(provider =>
+            //{
+            //    return new EncryptionService(securityConfiguration.Encryption.Key);
+            //});
 
             return services;
         }
