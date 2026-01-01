@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Tenancy;
+using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Middleware;
 
@@ -13,28 +14,34 @@ public class TenantMiddleware
 
     public async Task InvokeAsync(
         HttpContext context,
-        ITenantService tenantService)
+        ITenantResolver tenantResolver,
+        ITenantContext tenantContext,
+        ILogger<TenantMiddleware> logger)
     {
-        var tenantId = tenantService.GetCurrentTenantId();
+        var result = await tenantResolver.ResolveAsync();
 
-        if (tenantId is null)
+        if (result is null || !result.IsValid)
         {
-            context.Response.StatusCode = 400;
+            logger.LogError("Tenant resolution failed. Invalid Tenant ID.");
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsync("Invalid Tenant ID");
             return;
         }
 
-        var isTenant = await tenantService.SetCurrentTenantAsync(tenantId);
-        if (!isTenant)
+        if (result.Status != TenantStatus.Active)
         {
-            context.Response.StatusCode = 404;
-            await context.Response.WriteAsync("Tenant not found or inactive");
+            logger.LogWarning("Tenant {TenantId} is not active. Status: {Status}", result.TenantId, result.Status);
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            await context.Response.WriteAsync("Tenant is not active.");
             return;
         }
 
-        // Set tenant context for this request
-        var tenant = await tenantService.GetCurrentTenantAsync();
-        context.Items["Tenant"] = tenant;
+        tenantContext.TenantId = result.TenantId;
+        tenantContext.AuthenticationMode = result.AuthenticationMode;
+        tenantContext.Status = result.Status;
+        tenantContext.IsValid = result.IsValid;
+
+        logger.LogInformation("Tenant {TenantId} resolved successfully.", result.TenantId);
 
         await _next(context);
     }

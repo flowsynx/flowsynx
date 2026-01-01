@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Application.Services;
-using FlowSynx.Domain.Tenants;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.IdentityModel.Tokens;
@@ -12,16 +11,16 @@ namespace FlowSynx.Security;
 
 public sealed class JwtAuthenticationProvider : IAuthenticationProvider
 {
-    private readonly ITenantService _tenantService;
+    private readonly ITenantContext _tenantContext;
     private readonly ITenantRepository _tenantRepository;
 
     public AuthenticationMode AuthenticationMode => AuthenticationMode.Jwt;
 
     public JwtAuthenticationProvider(
-        ITenantService tenantService,
+        ITenantContext tenantContext,
         ITenantRepository tenantRepository)
     {
-        _tenantService = tenantService;
+        _tenantContext = tenantContext;
         _tenantRepository = tenantRepository;
     }
 
@@ -37,7 +36,7 @@ public sealed class JwtAuthenticationProvider : IAuthenticationProvider
 
         var token = header.ToString()["Bearer ".Length..];
 
-        var tenantId = _tenantService.GetCurrentTenantId();
+        var tenantId = _tenantContext.TenantId;
         var config = await _tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
         var securityConfiguration = config.Configuration.Security.Authentication;
 
@@ -58,14 +57,6 @@ public sealed class JwtAuthenticationProvider : IAuthenticationProvider
         {
             var principal = tokenHandler.ValidateToken(token, validationParams, out var validatedToken);
             context.User = principal;
-
-            // Set tenant context if token contains tenantId
-            var tenantIdClaim = principal.FindFirst("tenantId")?.Value;
-            if (!string.IsNullOrEmpty(tenantIdClaim) && Guid.TryParse(tenantIdClaim, out var tenantGuid))
-            {
-                var tenantService = context.RequestServices.GetRequiredService<ITenantService>();
-                await tenantService.SetCurrentTenantAsync(TenantId.Create(tenantGuid));
-            }
 
             return AuthenticateResult.Success(new AuthenticationTicket(principal, scheme.Name));
         }

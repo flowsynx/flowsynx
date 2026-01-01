@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Domain.Enums;
+﻿namespace FlowSynx.Domain.AuditTrails;
 
 public enum AuditTrailType : byte
 {

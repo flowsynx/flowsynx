@@ -7,25 +7,25 @@ using FlowSynx.Infrastructure.Configuration.Server;
 
 namespace FlowSynx.Extensions;
 
-public static class TenantLogging
-{
-    public static Serilog.ILogger CreateTenantLogger(string tenantId)
-    {
-        var logPath = Path.Combine("logs", $"tenant-{tenantId}", "log-.txt");
+//public static class TenantLogging
+//{
+//    public static Serilog.ILogger CreateTenantLogger(string tenantId)
+//    {
+//        var logPath = Path.Combine("logs", $"tenant-{tenantId}", "log-.txt");
 
-        return new SerilogLoggerConfiguration()
-            .MinimumLevel.Information()
-            .Enrich.WithProperty("TenantId", tenantId)
-            .Enrich.FromLogContext()
-            .WriteTo.Console(
-                outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {TenantId} {Message}{NewLine}{Exception}")
-            .WriteTo.File(
-                logPath,
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 7)
-            .CreateLogger();
-    }
-}
+//        return new SerilogLoggerConfiguration()
+//            .MinimumLevel.Information()
+//            .Enrich.WithProperty("TenantId", tenantId)
+//            .Enrich.FromLogContext()
+//            .WriteTo.Console(
+//                outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {TenantId} {Message}{NewLine}{Exception}")
+//            .WriteTo.File(
+//                logPath,
+//                rollingInterval: RollingInterval.Day,
+//                retainedFileCountLimit: 7)
+//            .CreateLogger();
+//    }
+//}
 
 public static class WebApplicationBuilderExtensions
 {

@@ -9,7 +9,7 @@ public static class TenantConfigurationDefaults
         {
             Cors = CorsConfiguration.Create(),
             Localization = LocalizationConfiguration.Create(),
-            Logging = LoggerConfiguration.Create(),
+            Logging = LoggingConfiguration.Create(),
             RateLimiting = RateLimitingConfiguration.Create(),
             Secret = SecretConfiguration.Create(),
             Security = SecurityConfiguration.Create()

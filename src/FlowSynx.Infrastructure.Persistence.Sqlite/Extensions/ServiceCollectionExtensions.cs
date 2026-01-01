@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Infrastructure.Configuration.Database;
 using FlowSynx.Infrastructure.Persistence;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Repositories;

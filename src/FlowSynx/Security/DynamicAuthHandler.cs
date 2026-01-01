@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.AspNetCore.Authentication;
@@ -11,7 +11,7 @@ namespace FlowSynx.Security;
 public class DynamicAuthHandler
     : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    private readonly ITenantService _tenantService;
+    private readonly ITenantContext _tenantContext;
     private readonly ITenantRepository _tenantRepository;
 
     private readonly IEnumerable<IAuthenticationProvider> _authenticationProviders;
@@ -20,19 +20,19 @@ public class DynamicAuthHandler
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ITenantService tenant,
+        ITenantContext tenantContext,
         IEnumerable<IAuthenticationProvider> authenticationProviders,
         ITenantRepository tenantRepository)
         : base(options, logger, encoder)
     {
-        _tenantService = tenant;
+        _tenantContext = tenantContext;
         _authenticationProviders = authenticationProviders;
         _tenantRepository = tenantRepository;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var tenantId = _tenantService.GetCurrentTenantId();
+        var tenantId = _tenantContext.TenantId;
         if (tenantId is null)
             return AuthenticateResult.Fail("Tenant not identified");
 

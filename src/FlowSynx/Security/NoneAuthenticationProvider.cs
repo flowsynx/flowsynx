@@ -16,7 +16,8 @@ public sealed class NoneAuthenticationProvider : IAuthenticationProvider
             {
                 new Claim(ClaimTypes.NameIdentifier, "00000000-0000-0000-0000-000000000001"),
                 new Claim(ClaimTypes.Name, "admin"),
-                new Claim(ClaimTypes.Role, "admin")
+                new Claim(ClaimTypes.Role, "admin"),
+                new Claim("auth_mode", "none")
             };
 
         var identity = new ClaimsIdentity(claims, scheme.Name);

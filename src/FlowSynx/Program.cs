@@ -3,9 +3,6 @@ using FlowSynx.Extensions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
 using FlowSynx.Infrastructure.Logging;
-using FlowSynx.Infrastructure.Secrets;
-using Microsoft.Extensions.Logging;
-using Serilog.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +12,6 @@ try
     if (args.HandleVersionFlag())
         return;
 
-    FilterLogging(builder);
     ConfigureConfiguration(builder);
     ConfigureServices(builder, args);
 
@@ -31,13 +27,6 @@ catch (Exception ex)
 }
 
 #region helpers
-static void FilterLogging(WebApplicationBuilder builder)
-{
-    // Clear built-in/default logging providers so only configured providers remain
-    builder.Logging.ClearProviders();
-    builder.Logging.AddLoggingFilter();
-}
-
 static void ConfigureConfiguration(WebApplicationBuilder builder)
 {
     var env = builder.Environment;
@@ -111,8 +100,7 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 
 static void ConfigureMiddleware(WebApplication app)
 {
-    app.UseTenantLogging();
-
+    // Exception handling must be first
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
@@ -124,20 +112,32 @@ static void ConfigureMiddleware(WebApplication app)
                 await Results.Problem().ExecuteAsync(context)));
     }
 
+    // Security basics
     app.UseHttps();
     app.UseCustomHeaders();
+
+    // Resolve tenant as early as possible
+    app.UseTenants();
+    app.UseTenantLogging();
+
+    // Routing (needed before auth)
     app.UseRouting();
 
+    // Tenant-specific cross-cutting concerns
     app.UseTenantCors();
+    app.UseTenantRateLimiting();
 
+    // Authentication & Authorization
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.UseTenantRateLimiting();
-
+    // Observability & platform concerns
     app.UseApiDocumentation();
-    app.UseCustomException();
     app.UseHealthCheck();
+
+    // Global exception mapping (domain -> HTTP)
+    app.UseCustomException();
+
 }
 
 static async Task ConfigureApplication(WebApplication app)

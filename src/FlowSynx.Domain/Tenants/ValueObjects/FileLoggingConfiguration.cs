@@ -1,15 +1,15 @@
 ﻿namespace FlowSynx.Domain.Tenants.ValueObjects;
 
-public sealed record FileLoggerConfiguration
+public sealed record FileLoggingConfiguration
 {
     public string LogLevel { get; init; }
     public string? LogPath { get; init; }
     public string? RollingInterval { get; init; }
     public int? RetainedFileCountLimit { get; init; }
 
-    public static FileLoggerConfiguration Create()
+    public static FileLoggingConfiguration Create()
     {
-        return new FileLoggerConfiguration
+        return new FileLoggingConfiguration
         {
             LogLevel = "Information",
             LogPath = "logs/",

@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.AspNetCore.Authentication;
 using System.Net.Http.Headers;
@@ -10,16 +10,16 @@ namespace FlowSynx.Security;
 
 public sealed class BasicAuthenticationProvider : IAuthenticationProvider
 {
-    private readonly ITenantService _tenantService;
+    private readonly ITenantContext _tenantContext;
     private readonly ITenantRepository _tenantRepository;
 
     public AuthenticationMode AuthenticationMode => AuthenticationMode.Basic;
 
     public BasicAuthenticationProvider(
-        ITenantService tenantService,
+        ITenantContext tenantContext,
         ITenantRepository tenantRepository)
     {
-        _tenantService = tenantService;
+        _tenantContext = tenantContext;
         _tenantRepository = tenantRepository;
     }
 
@@ -46,7 +46,7 @@ public sealed class BasicAuthenticationProvider : IAuthenticationProvider
             var username = credentials[0];
             var password = credentials[1];
 
-            var tenantId = _tenantService.GetCurrentTenantId();
+            var tenantId = _tenantContext.TenantId;
             var config = await _tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
             var securityConfiguration = config.Configuration.Security.Authentication;
 

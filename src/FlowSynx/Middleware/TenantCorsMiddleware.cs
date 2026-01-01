@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application;
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Tenancy;
 
 namespace FlowSynx.Middleware;
 
@@ -14,10 +14,10 @@ public sealed class TenantCorsMiddleware
 
     public async Task InvokeAsync(
         HttpContext context,
-        ITenantService tenantService,
+        ITenantContext tenantContext,
         ITenantRepository tenantRepository)
     {
-        var tenantId = tenantService.GetCurrentTenantId();
+        var tenantId = tenantContext.TenantId;
         if (tenantId == null)
         {
             await _next(context);

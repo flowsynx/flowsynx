@@ -1,10 +1,10 @@
 ﻿using FlowSynx.Application.Services;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Configuration.Database;
 using FlowSynx.Infrastructure.Configuration.OpenApi;
 using FlowSynx.Infrastructure.Configuration.Server;
-using FlowSynx.Infrastructure.Encryption;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
@@ -67,7 +67,8 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddTenantService(this IServiceCollection services)
     {
-        services.AddScoped<ITenantService, TenantService>();
+        services.AddScoped<ITenantResolver, TenantResolver>();
+        services.AddScoped<ITenantContext, TenantContext>();
         services.AddScoped<ITenantRateLimitPolicyProvider, TenantRateLimitPolicyProvider>();
         return services;
     }

@@ -1,6 +1,5 @@
-﻿using FlowSynx.Application.Services;
-using FlowSynx.Extensions;
-using Microsoft.AspNetCore.Http.Extensions;
+﻿using FlowSynx.Application.Tenancy;
+using FlowSynx.Infrastructure.Logging;
 using Serilog.Context;
 
 namespace FlowSynx.Middleware;
@@ -14,9 +13,12 @@ public class TenantLoggingMiddleware
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, ITenantService tenantService)
+    public async Task InvokeAsync(
+        HttpContext context, 
+        ITenantContext tenantContext, 
+        ITenantLoggerFactory tenantLoggerFactory)
     {
-        var tenantId = tenantService.GetCurrentTenantId();
+        var tenantId = tenantContext.TenantId;
 
         if (tenantId == null)
         {
@@ -24,18 +26,10 @@ public class TenantLoggingMiddleware
             return;
         }
 
-        // Make TenantId available to loggers without resolving ITenantService
-        context.Items["TenantId"] = tenantId;
-        await tenantService.SetCurrentTenantAsync(tenantId);
-
         // Create tenant-specific logger
-        var tenantLogger = TenantLogging.CreateTenantLogger(tenantId.ToString());
-        var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
+        var tenantLogger = tenantLoggerFactory.GetLogger(tenantId);
 
-        // Add tenant logger to context
-        context.Items["TenantLogger"] = tenantLogger;
-
-        using (LogContext.PushProperty("TenantId", tenantId))
+        using (LogContext.PushProperty("TenantId", tenantId.ToString()))
         using (LogContext.PushProperty("RequestPath", context.Request.Path))
         using (LogContext.PushProperty("User", context.User.Identity?.Name ?? "anonymous"))
         {
