@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Tenancy;
 using FlowSynx.Infrastructure.Logging;
+using Serilog;
 using Serilog.Context;
 
 namespace FlowSynx.Middleware;
@@ -20,16 +21,15 @@ public class TenantLoggingMiddleware
     {
         var tenantId = tenantContext.TenantId;
 
-        if (tenantId == null)
-        {
-            await _next(context);
-            return;
-        }
+        // Choose logger:
+        // - Valid tenant: tenant-specific logger (console + file + seq per factory config)
+        // - No/invalid tenant: global logger (console-only)
+        var requestLogger = tenantId is not null
+            ? tenantLoggerFactory.GetLogger(tenantId)
+            : Log.Logger;
 
-        // Create tenant-specific logger
-        var tenantLogger = tenantLoggerFactory.GetLogger(tenantId);
-
-        using (LogContext.PushProperty("TenantId", tenantId.ToString()))
+        // Enrich log context. Only include TenantId when available.
+        using (tenantId is not null ? LogContext.PushProperty("TenantId", tenantId.ToString()) : default)
         using (LogContext.PushProperty("RequestPath", context.Request.Path))
         using (LogContext.PushProperty("User", context.User.Identity?.Name ?? "anonymous"))
         {
@@ -41,16 +41,35 @@ public class TenantLoggingMiddleware
             }
             catch (Exception ex)
             {
-                tenantLogger.Error(ex, "Request failed for tenant {TenantId}", tenantId);
+                if (tenantId is not null)
+                {
+                    requestLogger.Error(ex, "Request failed for tenant {TenantId}", tenantId);
+                }
+                else
+                {
+                    requestLogger.Error(ex, "Request failed");
+                }
                 throw;
             }
             finally
             {
                 sw.Stop();
-                tenantLogger.Information(
-                    "Request completed in {ElapsedMilliseconds}ms with status {StatusCode}",
-                    sw.ElapsedMilliseconds,
-                    context.Response.StatusCode);
+
+                if (tenantId is not null)
+                {
+                    requestLogger.Information(
+                        "Request completed in {ElapsedMilliseconds}ms with status {StatusCode} for tenant {TenantId}",
+                        sw.ElapsedMilliseconds,
+                        context.Response.StatusCode,
+                        tenantId);
+                }
+                else
+                {
+                    requestLogger.Information(
+                        "Request completed in {ElapsedMilliseconds}ms with status {StatusCode}",
+                        sw.ElapsedMilliseconds,
+                        context.Response.StatusCode);
+                }
             }
         }
     }

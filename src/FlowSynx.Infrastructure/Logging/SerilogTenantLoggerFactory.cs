@@ -41,7 +41,26 @@ public sealed class SerilogTenantLoggerFactory : ITenantLoggerFactory
     private async Task<CachedLogger> CreateLoggerAsync(TenantId tenantId)
     {
         var tenant = await _tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
-        var loggerConfig = _loggerConfigurationBuilder.Build(tenantId, tenant.Configuration.Logging);
+
+        // Always allow console logging. Enable file/seq only when tenant is valid.
+        ILoggerConfigurationBuilder builderToUse;
+
+        if (tenant is not null)
+        {
+            // Valid tenant: use the full builder (console + file + seq) with tenant's logging config.
+            builderToUse = _loggerConfigurationBuilder;
+        }
+        else
+        {
+            // No tenant: build a console-only configuration.
+            builderToUse = new TenantLoggerConfigurationBuilder(
+                new ILoggingSinkConfigurator[]
+                {
+                    new ConsoleSinkConfigurator()
+                });
+        }
+
+        var loggerConfig = builderToUse.Build(tenantId, tenant?.Configuration.Logging);
 
         return new CachedLogger(
             loggerConfig.CreateLogger(),

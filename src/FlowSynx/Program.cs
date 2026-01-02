@@ -2,9 +2,24 @@ using FlowSynx.Application.Extensions;
 using FlowSynx.Extensions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Infrastructure.Logging;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Logging.AddLoggingFilter();
+
+// Initialize Serilog early for global console logging
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+    .CreateLogger();
+
+// Use Serilog as the host logger (routes Microsoft.Extensions.Logging to Serilog)
+builder.Host.UseSerilog(Log.Logger);
 
 try
 {
@@ -25,6 +40,11 @@ catch (Exception ex)
 {
     await HandleStartupExceptionAsync(builder, ex);
 }
+finally
+{
+    // Ensure Serilog flushes
+    Log.CloseAndFlush();
+}
 
 #region helpers
 static void ConfigureConfiguration(WebApplicationBuilder builder)
@@ -44,20 +64,10 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
     {
         builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
     }
-
-    //builder.Services.AddSecretService(builder.Configuration);
-
-    //using var scope = builder.Services.BuildServiceProvider().CreateScope();
-    //var secretFactory = scope.ServiceProvider.GetRequiredService<ISecretFactory>();
-    //var secretProvider = secretFactory.GetDefaultProvider();
-
-    //builder.Configuration.AddSecrets(secretProvider);
 }
 
 static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 {
-    //builder.AddLoggers();
-
     var services = builder.Services;
     var config = builder.Configuration;
     var env = builder.Environment;
@@ -71,18 +81,9 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
-        //.AddEncryptionService()
-        .AddTenantService();
-
-    builder.Services.AddScoped<ITenantLoggerFactory, SerilogTenantLoggerFactory>();
-    builder.Services.AddScoped<ILoggerProvider, TenantLoggerProvider>();
-
-    builder.Services.AddLogging(logging =>
-    {
-        logging.ClearProviders();
-    });
-
-    services.AddPersistence()
+        .AddTenantService()
+        .AddLoggingServices()
+        .AddPersistence()
         .AddSecurity()
         .AddServer()
         .AddVersion()

@@ -5,6 +5,7 @@ using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Configuration.Database;
 using FlowSynx.Infrastructure.Configuration.OpenApi;
 using FlowSynx.Infrastructure.Configuration.Server;
+using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
@@ -81,6 +82,20 @@ public static class ServiceCollectionExtensions
     public static void AddLoggingFilter(this ILoggingBuilder builder)
     {
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
+    }
+
+    public static IServiceCollection AddLoggingServices(this IServiceCollection services)
+    {
+        services.AddScoped<ITenantLoggerFactory, SerilogTenantLoggerFactory>();
+        services.AddScoped<ILoggerProvider, TenantLoggerProvider>();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddConsole();
+            logging.AddLoggingFilter();
+        });
+        return services;
     }
     #endregion
 
