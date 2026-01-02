@@ -1,5 +1,5 @@
-﻿using FlowSynx.Domain.Tenants.ValueObjects;
-using Microsoft.AspNetCore.Authentication;
+﻿using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.Tenants.ValueObjects;
 using System.Security.Claims;
 
 namespace FlowSynx.Security;
@@ -8,22 +8,22 @@ public sealed class NoneAuthenticationProvider : IAuthenticationProvider
 {
     public AuthenticationMode AuthenticationMode => AuthenticationMode.None;
 
-    public Task<AuthenticateResult> AuthenticateAsync(
+    public Task<AuthenticationProviderResult> AuthenticateAsync(
         HttpContext context,
-        AuthenticationScheme scheme)
+        Tenant tenant)
     {
         var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, "00000000-0000-0000-0000-000000000001"),
-                new Claim(ClaimTypes.Name, "admin"),
-                new Claim(ClaimTypes.Role, "admin"),
-                new Claim("auth_mode", "none")
-            };
+        {
+            new(ClaimTypes.NameIdentifier, "00000000-0000-0000-0000-000000000001"),
+            new(ClaimTypes.Name, "admin"),
+            new(CustomClaimTypes.TenantId, tenant.Id.ToString()),
+            new(CustomClaimTypes.AuthMode, AuthenticationMode.None.ToString()),
+            new(CustomClaimTypes.Permissions, Permissions.Admin)
+        };
 
-        var identity = new ClaimsIdentity(claims, scheme.Name);
+        var identity = new ClaimsIdentity(claims, authenticationType: "None");
         var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, scheme.Name);
 
-        return Task.FromResult(AuthenticateResult.Success(ticket));
+        return Task.FromResult(AuthenticationProviderResult.Success(principal));
     }
 }

@@ -17,8 +17,8 @@ public sealed record SecurityConfiguration
                     {
                         new BasicAuthenticationConfiguration
                         {
-                            Id = "admin",
-                            Name = "Administrator",
+                            Id = "0960a93d-e42b-4987-bc07-7bda806a21c7",
+                            Name = "admin",
                             Password = "admin",
                             Roles = new List<string> { "admin" }
                         }

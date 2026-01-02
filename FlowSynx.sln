@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Domain", "src\FlowSynx.Domain\FlowSynx.Domain.csproj", "{445387B6-23EC-4C33-8423-AA5B669779DC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure", "src\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj", "{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure.Abstractions", "src\FlowSynx.Infrastructure\FlowSynx.Infrastructure.Abstractions.csproj", "{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure.Persistence.Postgres", "src\FlowSynx.Infrastructure.Persistence.Postgres\FlowSynx.Infrastructure.Persistence.Postgres.csproj", "{C9ABAD15-0A7A-4861-8055-027A0461BDAC}"
 EndProject
@@ -20,6 +20,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.UnitTests", "tests\FlowSynx.UnitTests\FlowSynx.UnitTests.csproj", "{FFCDA942-678A-4D98-A67F-1308D1F89D15}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Persistence.Sqlite", "src\FlowSynx.Infrastructure.Persistence.Sqlite\FlowSynx.Infrastructure.Persistence.Sqlite.csproj", "{9CA701F0-B455-BC9F-1E20-5552E2842019}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Logging", "src\FlowSynx.Infrastructure.Logging\FlowSynx.Infrastructure.Logging.csproj", "{019369D7-ECE9-4297-93EF-48EA5A1BEE5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Common", "src\FlowSynx.Infrastructure.Common\FlowSynx.Infrastructure.Common.csproj", "{592D2AFE-1895-448A-A3C2-AC1FDE6C3DC0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Serializations.Json", "src\FlowSynx.Infrastructure.Serializations.Json\FlowSynx.Infrastructure.Serializations.Json.csproj", "{0D82799B-E551-4167-BCBA-DF8A9F89A82A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,6 +61,18 @@ Global
 		{9CA701F0-B455-BC9F-1E20-5552E2842019}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9CA701F0-B455-BC9F-1E20-5552E2842019}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9CA701F0-B455-BC9F-1E20-5552E2842019}.Release|Any CPU.Build.0 = Release|Any CPU
+		{019369D7-ECE9-4297-93EF-48EA5A1BEE5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{019369D7-ECE9-4297-93EF-48EA5A1BEE5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{019369D7-ECE9-4297-93EF-48EA5A1BEE5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{019369D7-ECE9-4297-93EF-48EA5A1BEE5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{592D2AFE-1895-448A-A3C2-AC1FDE6C3DC0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{592D2AFE-1895-448A-A3C2-AC1FDE6C3DC0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{592D2AFE-1895-448A-A3C2-AC1FDE6C3DC0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{592D2AFE-1895-448A-A3C2-AC1FDE6C3DC0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D82799B-E551-4167-BCBA-DF8A9F89A82A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D82799B-E551-4167-BCBA-DF8A9F89A82A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D82799B-E551-4167-BCBA-DF8A9F89A82A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D82799B-E551-4167-BCBA-DF8A9F89A82A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,6 +85,9 @@ Global
 		{C9ABAD15-0A7A-4861-8055-027A0461BDAC} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 		{FFCDA942-678A-4D98-A67F-1308D1F89D15} = {B9F284CE-47D5-48BB-BC36-0A3682328699}
 		{9CA701F0-B455-BC9F-1E20-5552E2842019} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
+		{019369D7-ECE9-4297-93EF-48EA5A1BEE5B} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
+		{592D2AFE-1895-448A-A3C2-AC1FDE6C3DC0} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
+		{0D82799B-E551-4167-BCBA-DF8A9F89A82A} = {49A29FCE-FFE3-4780-9B97-FFC76E73B354}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1CCEBB2F-1B56-4191-B548-856F5DF10553}

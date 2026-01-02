@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Services;
-using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Core.Tenancy;
 using FlowSynx.Services;
 using Microsoft.Extensions.Caching.Memory;
 

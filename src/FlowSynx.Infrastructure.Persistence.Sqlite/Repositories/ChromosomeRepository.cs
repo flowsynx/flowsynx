@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application;
+﻿using FlowSynx.Application.Core.Interfaces;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;

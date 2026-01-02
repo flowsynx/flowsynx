@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application;
+﻿using FlowSynx.Application.Core.Interfaces;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;

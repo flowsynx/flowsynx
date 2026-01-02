@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Tenants.ValueObjects;
+﻿using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.AspNetCore.Authentication;
 
 namespace FlowSynx.Security;
@@ -7,7 +8,7 @@ public interface IAuthenticationProvider
 {
     AuthenticationMode AuthenticationMode { get; }
 
-    Task<AuthenticateResult> AuthenticateAsync(
+    Task<AuthenticationProviderResult> AuthenticateAsync(
         HttpContext context,
-        AuthenticationScheme scheme);
+        Tenant tenant);
 }

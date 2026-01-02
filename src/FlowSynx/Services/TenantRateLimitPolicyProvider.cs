@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application;
+﻿using FlowSynx.Application.Core.Interfaces;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.Extensions.Caching.Memory;

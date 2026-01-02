@@ -1,7 +1,6 @@
-﻿using FlowSynx.Application;
-using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Core.Interfaces;
+using FlowSynx.Application.Core.Tenancy;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
@@ -40,14 +39,19 @@ public class DynamicAuthHandler
         if (tenant is null || tenant.Status != TenantStatus.Active)
             return AuthenticateResult.Fail("Tenant not found or inactive");
 
-        var securityConfig = tenant.Configuration?.Security ?? SecurityConfiguration.Create();
-
         var provider = _authenticationProviders
-            .FirstOrDefault(s => s.AuthenticationMode == securityConfig.Authentication.Mode);
+            .FirstOrDefault(p =>
+                p.AuthenticationMode == tenant.Configuration.Security.Authentication.Mode);
 
         if (provider is null)
-            return AuthenticateResult.Fail($"Unsupported auth mode: {securityConfig.Authentication.Mode}");
+            return AuthenticateResult.Fail("Unsupported authentication mode");
 
-        return await provider.AuthenticateAsync(Context, Scheme);
+        var result = await provider.AuthenticateAsync(Context, tenant);
+
+        if (!result.Succeeded)
+            return AuthenticateResult.Fail(result.FailureReason!);
+
+        return AuthenticateResult.Success(
+            new AuthenticationTicket(result.Principal!, Scheme.Name));
     }
 }

@@ -1,9 +1,10 @@
-﻿using FlowSynx.Application.Extensions;
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Application.Services;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Application.Core.Services;
+using FlowSynx.Application.Core.Extensions;
+using FlowSynx.Application.Core.Interfaces;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailsList;
 

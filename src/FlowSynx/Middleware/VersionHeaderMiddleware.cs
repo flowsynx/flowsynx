@@ -1,4 +1,4 @@
-using FlowSynx.Application.Services;
+using FlowSynx.Application.Core.Services;
 
 namespace FlowSynx.Middleware;
 
@@ -9,10 +9,8 @@ public sealed class VersionHeaderMiddleware
 
     public VersionHeaderMiddleware(RequestDelegate next, IVersion version)
     {
-        ArgumentNullException.ThrowIfNull(next);
-        ArgumentNullException.ThrowIfNull(version);
-        _next = next;
-        _version = version;
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _version = version ?? throw new ArgumentNullException(nameof(version));
     }
 
     public Task Invoke(HttpContext context)

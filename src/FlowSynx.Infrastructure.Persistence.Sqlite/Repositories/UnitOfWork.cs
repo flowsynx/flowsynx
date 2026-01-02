@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Repositories;
+﻿using FlowSynx.Application.Core.Interfaces;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;

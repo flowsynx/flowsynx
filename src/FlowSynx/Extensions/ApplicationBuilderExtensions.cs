@@ -4,10 +4,10 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Application.Serializations;
 using FlowSynx.Infrastructure.Persistence;
-using FlowSynx.Infrastructure.Configuration.Server;
-using FlowSynx.Infrastructure.Configuration.OpenApi;
+using FlowSynx.Application.Core.Serializations;
+using FlowSynx.Configuration.OpenApi;
+using FlowSynx.Configuration.Server;
 
 namespace FlowSynx.Extensions;
 
@@ -138,17 +138,4 @@ public static class ApplicationBuilderExtensions
             app.UseHttpsRedirection();
         return app;
     }
-
-    //public static IApplicationBuilder UseConfiguredCors(this IApplicationBuilder app)
-    //{
-    //    using var scope = app.ApplicationServices.CreateScope();
-    //    var corsConfiguration = scope.ServiceProvider.GetRequiredService<CorsConfiguration>();
-    //    if (corsConfiguration == null)
-    //        throw new ArgumentException("Cors is not configured correctly.");
-
-    //    var policyName = corsConfiguration.PolicyName ?? "DefaultCorsPolicy";
-    //    app.UseCors(policyName);
-
-    //    return app;
-    //}
 }

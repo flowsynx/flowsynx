@@ -1,116 +1,33 @@
-﻿using FlowSynx.PluginCore.Exceptions;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
+﻿using FlowSynx.Configuration.Server;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.PluginCore.Exceptions;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Serilog;
-using SerilogLoggerConfiguration = Serilog.LoggerConfiguration;
-using FlowSynx.Infrastructure.Configuration.Server;
+using Serilog.Events;
 
 namespace FlowSynx.Extensions;
-
-//public static class TenantLogging
-//{
-//    public static Serilog.ILogger CreateTenantLogger(string tenantId)
-//    {
-//        var logPath = Path.Combine("logs", $"tenant-{tenantId}", "log-.txt");
-
-//        return new SerilogLoggerConfiguration()
-//            .MinimumLevel.Information()
-//            .Enrich.WithProperty("TenantId", tenantId)
-//            .Enrich.FromLogContext()
-//            .WriteTo.Console(
-//                outputTemplate: "{Timestamp:HH:mm:ss} [{Level}] {TenantId} {Message}{NewLine}{Exception}")
-//            .WriteTo.File(
-//                logPath,
-//                rollingInterval: RollingInterval.Day,
-//                retainedFileCountLimit: 7)
-//            .CreateLogger();
-//    }
-//}
 
 public static class WebApplicationBuilderExtensions
 {
     private const int DefaultHttpPort = 6262;
     private const int DefaultHttpsPort = 6263;
 
-    public static WebApplicationBuilder AddLoggers(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddSerilogLogging(this WebApplicationBuilder builder)
     {
-        Log.Logger = new SerilogLoggerConfiguration()
+        builder.Logging.AddLoggingFilter();
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
             .Enrich.FromLogContext()
-            .Enrich.WithProperty("Application", "MultiTenantApp")
-            .WriteTo.Console(outputTemplate:
-                "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level}] {TenantId} {Message}{NewLine}{Exception}")
-            .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+            .WriteTo.Console(
+                restrictedToMinimumLevel: LogEventLevel.Information,
+                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
             .CreateLogger();
 
-        builder.Host.UseSerilog();
-
-
-
-        //var config = builder.Configuration.BindSection<LoggerConfiguration>("Logger");
-        //builder.Services.AddSingleton(config);
-
-        //// Register a composite provider that always includes Console and Database providers.
-        //// If the user provided configuration entries for those providers, their settings are used.
-        //builder.Services.AddSingleton<ILoggerProvider>(sp =>
-        //{
-        //    var factory = new CompositeLoggingProviderFactory(sp);
-        //    var loggingProviders = new List<ILoggerProvider>();
-
-        //    // 1) Ensure Console provider is present
-        //    var consoleProvider = CreateProviderWithFallback(factory, config, "console");
-        //    if (consoleProvider != null)
-        //        loggingProviders.Add(consoleProvider);
-
-        //    // 3) If configuration enables other providers and specifies a default order, add them
-        //    if (config != null && config.Enabled && config.DefaultProviders != null && config.Providers != null)
-        //    {
-        //        foreach (var entry in config.DefaultProviders)
-        //        {
-        //            // Skip console because we already added it
-        //            if (string.Equals(entry, "console", StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                continue;
-        //            }
-
-        //            var match = config.Providers
-        //                .FirstOrDefault(p => string.Equals(p.Key, entry, StringComparison.OrdinalIgnoreCase));
-
-        //            if (string.IsNullOrEmpty(match.Key))
-        //                continue;
-
-        //            var provider = factory.Create(match.Key, match.Value);
-        //            if (provider != null)
-        //                loggingProviders.Add(provider);
-        //        }
-        //    }
-
-        //    return new CompositeLoggerProvider(loggingProviders);
-        //});
+        builder.Host.UseSerilog(Log.Logger);
 
         return builder;
     }
-
-    //private static ILoggerProvider? CreateProviderWithFallback(
-    //    CompositeLoggingProviderFactory factory,
-    //    LoggerConfiguration? config,
-    //    string providerKey)
-    //{
-    //    if (factory == null)
-    //        throw new ArgumentNullException(nameof(factory));
-
-    //    // Try to find a matching configured provider entry
-    //    if (config?.Providers != null)
-    //    {
-    //        var match = config.Providers.FirstOrDefault(p => string.Equals(p.Key, providerKey, StringComparison.OrdinalIgnoreCase));
-    //        if (!string.IsNullOrEmpty(match.Key))
-    //        {
-    //            return factory.Create(match.Key, match.Value);
-    //        }
-    //    }
-
-    //    // No configuration entry: create provider with default key and no settings
-    //    return factory.Create(providerKey, null);
-    //}
 
     public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)
     {

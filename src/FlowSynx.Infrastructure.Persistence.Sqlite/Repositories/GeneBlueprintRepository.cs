@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application;
+﻿using FlowSynx.Application.Core.Interfaces;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.ValueObjects;

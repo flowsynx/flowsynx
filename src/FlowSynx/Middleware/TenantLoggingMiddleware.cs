@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Core.Tenancy;
 using FlowSynx.Infrastructure.Logging;
 using Serilog;
 using Serilog.Context;

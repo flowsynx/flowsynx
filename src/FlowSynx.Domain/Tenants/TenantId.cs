@@ -19,6 +19,11 @@ public record TenantId
         return new TenantId(Guid.NewGuid());
     }
 
+    public static TenantId Empty()
+    {
+        return new TenantId(Guid.Empty);
+    }
+
     public static TenantId Create(Guid value)
     {
         return new TenantId(value);

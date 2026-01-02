@@ -37,8 +37,12 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Common\FlowSynx.Infrastructure.Common.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Logging\FlowSynx.Infrastructure.Logging.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Postgres\FlowSynx.Infrastructure.Persistence.Postgres.csproj" />
 		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Sqlite\FlowSynx.Infrastructure.Persistence.Sqlite.csproj" />
-		<ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Serializations.Json\FlowSynx.Infrastructure.Serializations.Json.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.Abstractions.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

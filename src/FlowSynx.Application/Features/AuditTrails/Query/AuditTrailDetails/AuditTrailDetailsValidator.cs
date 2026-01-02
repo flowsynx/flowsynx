@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Localization;
-using FluentValidation;
+﻿using FluentValidation;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
 

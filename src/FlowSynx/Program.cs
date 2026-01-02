@@ -1,25 +1,13 @@
-using FlowSynx.Application.Extensions;
+using FlowSynx.Application;
 using FlowSynx.Extensions;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Extensions;
+using FlowSynx.Infrastructure.Common;
+using FlowSynx.Infrastructure.Serializations.Json;
 using Serilog;
-using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Logging.AddLoggingFilter();
-
-// Initialize Serilog early for global console logging
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(
-        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
-        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-    .CreateLogger();
-
-// Use Serilog as the host logger (routes Microsoft.Extensions.Logging to Serilog)
-builder.Host.UseSerilog(Log.Logger);
+builder.AddSerilogLogging();
 
 try
 {
@@ -76,6 +64,7 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddMemoryCache()
         .AddCancellationTokenSource()
         .AddHttpContextAccessor()
+        .AddUserService()
         .AddSystemClock()
         .AddJsonSerialization()
         .AddEndpointsApiExplorer()
@@ -88,7 +77,6 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddServer()
         .AddVersion()
         .AddApplication()
-        .AddUserService()
         .AddEventPublisher()
         .AddHealthChecker()
         .AddApiDocumentation();
@@ -146,7 +134,7 @@ static async Task ConfigureApplication(WebApplication app)
     await app.EnsureApplicationDatabaseCreated();
 
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
-    app.MapEndpoints("Fixed");
+    app.MapEndpoints();
 }
 
 static async Task HandleStartupExceptionAsync(WebApplicationBuilder builder, Exception ex)

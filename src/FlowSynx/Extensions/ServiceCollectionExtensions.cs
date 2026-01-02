@@ -1,17 +1,22 @@
-﻿using FlowSynx.Application.Services;
-using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Core.Services;
+using FlowSynx.Application.Core.Tenancy;
+using FlowSynx.Configuration.Database;
+using FlowSynx.Configuration.OpenApi;
+using FlowSynx.Configuration.Server;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Configuration.Database;
-using FlowSynx.Infrastructure.Configuration.OpenApi;
-using FlowSynx.Infrastructure.Configuration.Server;
+using FlowSynx.Infrastructure.Abstractions.Persistence;
 using FlowSynx.Infrastructure.Logging;
+using FlowSynx.Infrastructure.Persistence;
+using FlowSynx.Infrastructure.Persistence.Postgres.Configuration;
+using FlowSynx.Infrastructure.Persistence.Sqlite;
+using FlowSynx.Infrastructure.Persistence.Sqlite.Configuration;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
-using FlowSynx.Persistence.Sqlite.Extensions;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json.Serialization;
@@ -25,21 +30,18 @@ public static class ServiceCollectionExtensions
 
     #region Simple registrations
 
-    /// <summary>Registers a single CancellationTokenSource as a singleton.</summary>
     public static IServiceCollection AddCancellationTokenSource(this IServiceCollection services)
     {
         services.AddSingleton(new CancellationTokenSource());
         return services;
     }
 
-    /// <summary>Register application version provider.</summary>
     public static IServiceCollection AddVersion(this IServiceCollection services)
     {
         services.AddSingleton<IVersion, FlowSynxVersion>();
         return services;
     }
 
-    /// <summary>Register SignalR and the event publisher implementation.</summary>
     public static IServiceCollection AddEventPublisher(this IServiceCollection services)
     {
         services.AddSignalR();
@@ -47,7 +49,6 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Bind and register server configuration (tenant-aware).</summary>
     public static IServiceCollection AddServer(this IServiceCollection services)
     {
         services.AddScoped(provider =>
@@ -59,10 +60,9 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Register current user service (transient).</summary>
     public static IServiceCollection AddUserService(this IServiceCollection services)
     {
-        services.AddTransient<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
         return services;
     }
 
@@ -78,7 +78,6 @@ public static class ServiceCollectionExtensions
 
     #region Logging
 
-    /// <summary>Filter EF Core database command logs to warning or above.</summary>
     public static void AddLoggingFilter(this ILoggingBuilder builder)
     {
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
@@ -101,7 +100,6 @@ public static class ServiceCollectionExtensions
 
     #region Health checks
 
-    /// <summary>Register health check configuration and checks if enabled.</summary>
     public static IServiceCollection AddHealthChecker(this IServiceCollection services)
     {
         services.AddHealthChecks();
@@ -112,19 +110,16 @@ public static class ServiceCollectionExtensions
 
     #region OpenAPI (Swagger)
 
-    /// <summary>Configure OpenAPI/Swagger when enabled in configuration.</summary>
     public static IServiceCollection AddApiDocumentation(this IServiceCollection services)
     {
         try
         {
-            // Resolve OpenAPI configuration per-request/DI scope
             services.AddScoped(provider =>
             {
                 var tenantConfig = provider.GetRequiredService<IConfiguration>();
-                return tenantConfig.BindSection<OpenApiConfiguration>("System:OpenApi");
+                return tenantConfig.BindSection<OpenApiConfiguration>("OpenApi");
             });
 
-            // Swagger generator itself can be added once; the document contents read configuration at runtime
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("flowsynx", new OpenApiInfo
@@ -201,7 +196,6 @@ public static class ServiceCollectionExtensions
 
     #region JSON options
 
-    /// <summary>Configure default HTTP JSON serialization options.</summary>
     public static IServiceCollection AddHttpJsonOptions(this IServiceCollection services)
     {
         services.ConfigureHttpJsonOptions(options =>
@@ -216,90 +210,23 @@ public static class ServiceCollectionExtensions
 
     #region Security
 
-    //public static IServiceCollection AddEncryptionService(this IServiceCollection services)
-    //{
-    //    using var scope = services.BuildServiceProvider().CreateScope();
-    //    var configuration = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    //    var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
-    //    services.AddSingleton(securityConfiguration);
-    //    var encryptionKey = securityConfiguration.Encryption.Key;
-
-    //    services.AddScoped<IEncryptionService>(provider =>
-    //    {
-    //        return new EncryptionService(encryptionKey);
-    //    });
-
-    //    return services;
-    //}
-
-    /// <summary>Configures authentication providers, authorization policies, and encryption service.</summary>
     public static IServiceCollection AddSecurity(this IServiceCollection services)
     {
         try
         {
             services.AddScoped<IAuthenticationProvider, NoneAuthenticationProvider>();
             services.AddScoped<IAuthenticationProvider, BasicAuthenticationProvider>();
-            services.AddScoped<IAuthenticationProvider, JwtAuthenticationProvider>();
+            services.AddScoped<IAuthenticationProvider, JwtTokenAuthenticationProvider>();
+            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
             services.AddAuthentication("Dynamic")
                 .AddScheme<AuthenticationSchemeOptions, DynamicAuthHandler>(
                     "Dynamic", null);
 
-
-
-            //using var scope = services.BuildServiceProvider().CreateScope();
-            //var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            //var securityConfiguration = scope.ServiceProvider.GetRequiredService<SecurityConfiguration>();
-
-            //securityConfiguration.Authentication.ValidateDefaultScheme(logger);
-
-            //var providers = new List<IAuthenticationProvider>();
-
-            //if (!securityConfiguration.Authentication.Enabled)
-            //{
-            //    providers.Add(new DisabledAuthenticationProvider());
-            //}
-            //else
-            //{
-            //    if (securityConfiguration.Authentication.Basic.Enabled && securityConfiguration.Authentication.Basic.Users != null)
-            //        providers.Add(new BasicAuthenticationProvider());
-
-            //    foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
-            //        providers.Add(new JwtAuthenticationProvider(jwt));
-            //}
-
-            //var authBuilder = services.AddAuthentication(options =>
-            //{
-            //    options.DefaultScheme = securityConfiguration.Authentication.DefaultScheme ?? "Basic";
-            //});
-
-            //foreach (var provider in providers)
-            //    provider.Configure(authBuilder);
-
-            //services.AddAuthorization(options =>
-            //{
-            //    // keep authorization roles explicit and grouped for readability
-            //    void AddRolePolicy(string name, string role) =>
-            //        options.AddPolicy(name, policy => policy.RequireRole(role));
-
-            //    AddRolePolicy("admin", "admin");
-            //    AddRolePolicy("user", "user");
-            //    AddRolePolicy("audits", "audits");
-            //    AddRolePolicy("config", "config");
-            //    AddRolePolicy("logs", "logs");
-            //    AddRolePolicy("plugins", "plugins");
-            //    AddRolePolicy("workflows", "workflows");
-            //    AddRolePolicy("executions", "executions");
-            //    AddRolePolicy("triggers", "triggers");
-
-            //    logger.LogInformation("Authorization initialized.");
-            //});
-
-            //services.AddSingleton<IEncryptionService>(provider =>
-            //{
-            //    return new EncryptionService(securityConfiguration.Encryption.Key);
-            //});
+            services.AddAuthorization(options =>
+            {
+                options.AddPermissionPolicies();
+            });
 
             return services;
         }
@@ -348,7 +275,6 @@ public static class ServiceCollectionExtensions
 
     #region Persistence
 
-    /// <summary>Setup persistence configuration and register provider-specific persistence layers.</summary>
     public static IServiceCollection AddPersistence(this IServiceCollection services)
     {
         using var scope = services.BuildServiceProvider().CreateScope();

@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application;
-using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Core.Interfaces;
+using FlowSynx.Application.Core.Tenancy;
 
 namespace FlowSynx.Middleware;
 

@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Services;
+﻿using FlowSynx.Application.Core.Services;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Localization;
 using FlowSynx.PluginCore.Exceptions;
