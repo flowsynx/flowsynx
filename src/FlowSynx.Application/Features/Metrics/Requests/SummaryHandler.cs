@@ -1,12 +1,11 @@
-﻿//using FlowSynx.Application.Services;
-//using FlowSynx.PluginCore.Exceptions;
-//using MediatR;
+﻿//using FlowSynx.PluginCore.Exceptions;
 //using Microsoft.Extensions.Logging;
 //using FlowSynx.Domain.Primitives;
+//using FlowSynx.Application.Core.Dispatcher;
 
-//namespace FlowSynx.Application.Features.Metrics.Query;
+//namespace FlowSynx.Application.Features.Metrics.Requests;
 
-//internal class SummaryHandler : IRequestHandler<SummaryRequest, Result<SummaryResponse>>
+//internal class SummaryHandler : IActionHandler<SummaryRequest, Result<SummaryResult>>
 //{
 //    private readonly ILogger<SummaryHandler> _logger;
 //    private readonly IWorkflowService _workflowService;
@@ -29,14 +28,14 @@
 //        _currentUserService = currentUserService;
 //    }
 
-//    public async Task<Result<SummaryResponse>> Handle(SummaryRequest request, CancellationToken cancellationToken)
+//    public async Task<Result<SummaryResult>> Handle(SummaryRequest request, CancellationToken cancellationToken)
 //    {
 //        try
 //        {
 //            _currentUserService.ValidateAuthentication();
 //            var userId = _currentUserService.UserId();
 
-//            var response = new SummaryResponse()
+//            var response = new SummaryResult()
 //            {
 //                ActiveWorkflows = await _workflowService.GetActiveWorkflowsCountAsync(userId, cancellationToken),
 //                RunningTasks = await _workflowExecutionService.GetRunningWorkflowCountAsync(userId, cancellationToken),
@@ -44,12 +43,12 @@
 //                FailedWorkflows = await _workflowExecutionService.GetFailedWorkflowsCountAsync(userId, cancellationToken)
 //            };
 
-//            return await Result<SummaryResponse>.SuccessAsync(response);
+//            return await Result<SummaryResult>.SuccessAsync(response);
 //        }
 //        catch (FlowSynxException ex)
 //        {
 //            _logger.LogError(ex, "FlowSynx exception caught in SummaryHandler.");
-//            return await Result<SummaryResponse>.FailAsync(ex.Message);
+//            return await Result<SummaryResult>.FailAsync(ex.Message);
 //        }
 //    }
 //}

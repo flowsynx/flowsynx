@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Application.Features.Metrics.Query;
+﻿namespace FlowSynx.Application.Features.Metrics.Requests;
 
-public class SummaryResponse
+public class SummaryResult
 {
     public int ActiveWorkflows { get; set; }
     public int RunningTasks { get; set; }
