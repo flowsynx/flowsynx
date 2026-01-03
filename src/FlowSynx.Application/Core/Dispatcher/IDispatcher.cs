@@ -2,7 +2,5 @@
 
 public interface IDispatcher
 {
-    Task<TAction> Dispatch<TAction>(
-        IAction<TAction> action, 
-        CancellationToken cancellationToken = default);
+    Task<TResult> Dispatch<TResult>(IAction<TResult> request, CancellationToken cancellationToken = default);
 }

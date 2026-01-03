@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Application.Features.Version.Inquiry;
+﻿namespace FlowSynx.Application.Features.Version.VersionRequest;
 
 public class VersionResult
 {

@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Core.Extensions;
-using FlowSynx.Application.Features.Version.Inquiry;
+using FlowSynx.Application.Features.Version.VersionRequest;
 using FlowSynx.Extensions;
 using FlowSynx.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -22,7 +22,7 @@ public class Version : EndpointGroupBase
         [FromServices] IDispatcher dispatcher, 
         CancellationToken cancellationToken)
     {
-        var result = await dispatcher.Version(new VersionInquiry(), cancellationToken);
+        var result = await dispatcher.Version(new VersionRequest(), cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

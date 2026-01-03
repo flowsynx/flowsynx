@@ -5,9 +5,9 @@ using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
+namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 
-internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsRequest, Result<AuditTrailDetailsResponse>>
+internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsRequest, Result<AuditTrailDetailsResult>>
 {
     private readonly ILogger<AuditTrailDetailsHandler> _logger;
     private readonly IAuditTrailRepository _auditTrailRepository;
@@ -23,7 +23,7 @@ internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsReques
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    public async Task<Result<AuditTrailDetailsResponse>> Handle(AuditTrailDetailsRequest request, CancellationToken cancellationToken)
+    public async Task<Result<AuditTrailDetailsResult>> Handle(AuditTrailDetailsRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -36,7 +36,7 @@ internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsReques
             //    throw new FlowSynxException((int)ErrorCode.AuditNotFound, message);
             //}
 
-            var response = new AuditTrailDetailsResponse
+            var response = new AuditTrailDetailsResult
             {
                 Id = audit.Id,
                 UserId = audit.UserId,
@@ -49,12 +49,12 @@ internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsReques
                 OccurredAtUtc = audit.OccurredAtUtc
             };
             _logger.LogInformation("Audit details for '{AuditId}' has been retrieved successfully.", request.AuditId);
-            return await Result<AuditTrailDetailsResponse>.SuccessAsync(response);
+            return await Result<AuditTrailDetailsResult>.SuccessAsync(response);
         }
         catch (FlowSynxException ex)
         {
             _logger.LogError(ex, "FlowSynx exception caught in AuditTrailDetailsHandler for audit '{AuditId}'.", request.AuditId);
-            return await Result<AuditTrailDetailsResponse>.FailAsync(ex.ToString());
+            return await Result<AuditTrailDetailsResult>.FailAsync(ex.ToString());
         }
     }
 }

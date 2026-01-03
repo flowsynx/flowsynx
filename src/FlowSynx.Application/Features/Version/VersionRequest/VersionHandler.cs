@@ -4,9 +4,9 @@ using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Version.Inquiry;
+namespace FlowSynx.Application.Features.Version.VersionRequest;
 
-internal class VersionHandler : IActionHandler<VersionInquiry, Result<VersionResult>>
+internal class VersionHandler : IActionHandler<VersionRequest, Result<VersionResult>>
 {
     private readonly ILogger<VersionHandler> _logger;
     private readonly IVersion _version;
@@ -17,7 +17,7 @@ internal class VersionHandler : IActionHandler<VersionInquiry, Result<VersionRes
         _version = version ?? throw new ArgumentNullException(nameof(version));
     }
 
-    public async Task<Result<VersionResult>> Handle(VersionInquiry request, CancellationToken cancellationToken)
+    public async Task<Result<VersionResult>> Handle(VersionRequest request, CancellationToken cancellationToken)
     {
         try
         {

@@ -6,9 +6,9 @@ using FlowSynx.Application.Core.Extensions;
 using FlowSynx.Application.Core.Interfaces;
 using FlowSynx.Application.Core.Dispatcher;
 
-namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailsList;
+namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 
-internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, PaginatedResult<AuditTrailsListResponse>>
+internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, PaginatedResult<AuditTrailsListResult>>
 {
     private readonly ILogger<AuditTrailsListHandler> _logger;
     private readonly IAuditTrailRepository _auditTrailRepository;
@@ -22,14 +22,14 @@ internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, P
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    public async Task<PaginatedResult<AuditTrailsListResponse>> Handle(AuditTrailsListRequest request, CancellationToken cancellationToken)
+    public async Task<PaginatedResult<AuditTrailsListResult>> Handle(AuditTrailsListRequest request, CancellationToken cancellationToken)
     {
         try
         {
             _currentUserService.ValidateAuthentication();
 
             var audits = await _auditTrailRepository.All(cancellationToken);
-            var response = audits.Select(audit => new AuditTrailsListResponse
+            var response = audits.Select(audit => new AuditTrailsListResult
             {
                 Id = audit.Id,
                 UserId = audit.UserId,
@@ -51,7 +51,7 @@ internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, P
                 "Audit list retrieved successfully for page {Page} with size {PageSize}.",
                 page,
                 pageSize);
-            return await PaginatedResult<AuditTrailsListResponse>.SuccessAsync(
+            return await PaginatedResult<AuditTrailsListResult>.SuccessAsync(
                 pagedItems,
                 totalCount,
                 page,
@@ -64,7 +64,7 @@ internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, P
                 "FlowSynx exception caught in AuditsListHandler for page {Page} with size {PageSize}.",
                 request.Page,
                 request.PageSize);
-            return await PaginatedResult<AuditTrailsListResponse>.FailureAsync(ex.ToString());
+            return await PaginatedResult<AuditTrailsListResult>.FailureAsync(ex.ToString());
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
+﻿namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 
-public class AuditTrailDetailsResponse
+public class AuditTrailsListResult
 {
     public long Id { get; set; }
     public string? UserId { get; set; }
