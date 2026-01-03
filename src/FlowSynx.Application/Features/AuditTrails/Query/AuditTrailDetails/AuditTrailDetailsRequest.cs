@@ -1,9 +1,9 @@
-﻿using FlowSynx.Domain.Primitives;
-using MediatR;
+﻿using FlowSynx.Application.Core.Dispatcher;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
 
-public class AuditTrailDetailsRequest : IRequest<Result<AuditTrailDetailsResponse>>
+public class AuditTrailDetailsRequest : IAction<Result<AuditTrailDetailsResponse>>
 {
     public required long AuditId { get; set; }
 }

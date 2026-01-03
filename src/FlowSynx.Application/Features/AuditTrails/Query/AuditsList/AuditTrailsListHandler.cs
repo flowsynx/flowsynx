@@ -1,14 +1,14 @@
-﻿using MediatR;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Core.Extensions;
 using FlowSynx.Application.Core.Interfaces;
+using FlowSynx.Application.Core.Dispatcher;
 
 namespace FlowSynx.Application.Features.AuditTrails.Query.AuditTrailsList;
 
-internal class AuditTrailsListHandler : IRequestHandler<AuditTrailsListRequest, PaginatedResult<AuditTrailsListResponse>>
+internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, PaginatedResult<AuditTrailsListResponse>>
 {
     private readonly ILogger<AuditTrailsListHandler> _logger;
     private readonly IAuditTrailRepository _auditTrailRepository;

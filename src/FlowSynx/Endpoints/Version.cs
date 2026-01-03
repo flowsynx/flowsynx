@@ -1,8 +1,8 @@
-﻿using FlowSynx.Application.Core.Extensions;
-using FlowSynx.Application.Features.Version.Query;
+﻿using FlowSynx.Application.Core.Dispatcher;
+using FlowSynx.Application.Core.Extensions;
+using FlowSynx.Application.Features.Version.Inquiry;
 using FlowSynx.Extensions;
 using FlowSynx.Security;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FlowSynx.Endpoints;
@@ -19,10 +19,10 @@ public class Version : EndpointGroupBase
     }
 
     public static async Task<IResult> GetVersion(
-        [FromServices] IMediator mediator, 
+        [FromServices] IDispatcher dispatcher, 
         CancellationToken cancellationToken)
     {
-        var result = await mediator.Version(new VersionRequest(), cancellationToken);
+        var result = await dispatcher.Version(new VersionInquiry(), cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

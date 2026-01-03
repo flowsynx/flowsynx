@@ -1,31 +1,31 @@
+using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Features.AuditTrails.Query.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Query.AuditTrailsList;
-using FlowSynx.Application.Features.Version.Query;
+using FlowSynx.Application.Features.Version.Inquiry;
 using FlowSynx.Domain.Primitives;
-using MediatR;
 
 namespace FlowSynx.Application.Core.Extensions;
 
 public static class MediatorExtensions
 {
     #region Version
-    public static Task<Result<VersionResponse>> Version(
-        this IMediator mediator,
-        VersionRequest request,
+    public static Task<Result<VersionResult>> Version(
+        this IDispatcher dispatcher,
+        VersionInquiry inquiry,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(request, cancellationToken);
+        return dispatcher.Dispatch(inquiry, cancellationToken);
     }
     #endregion
 
     #region AuditTrails
     public static Task<PaginatedResult<AuditTrailsListResponse>> AuditTrails(
-        this IMediator mediator,
+        this IDispatcher dispatcher,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new AuditTrailsListRequest
+        return dispatcher.Dispatch(new AuditTrailsListRequest
         {
             Page = page,
             PageSize = pageSize
@@ -33,11 +33,11 @@ public static class MediatorExtensions
     }
 
     public static Task<Result<AuditTrailDetailsResponse>> AuditDetails(
-        this IMediator mediator,
+        this IDispatcher dispatcher,
         long auditId,
         CancellationToken cancellationToken)
     {
-        return mediator.Send(new AuditTrailDetailsRequest { AuditId = auditId }, cancellationToken);
+        return dispatcher.Dispatch(new AuditTrailDetailsRequest { AuditId = auditId }, cancellationToken);
     }
     #endregion
 }

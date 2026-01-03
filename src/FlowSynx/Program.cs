@@ -4,6 +4,7 @@ using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Common;
 using FlowSynx.Infrastructure.Serializations.Json;
 using Serilog;
+using FlowSynx.Infrastructure.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,6 +71,7 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
+        .AddDispatcher()
         .AddTenantService()
         .AddLoggingServices()
         .AddPersistence()
