@@ -1,16 +1,17 @@
-﻿using FlowSynx.Domain.Exceptions;
+﻿using FlowSynx.Application.Abstractions.Persistence;
+using FlowSynx.Application.Abstractions.Services;
+using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
-using FlowSynx.Persistence.Sqlite.Contexts;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
+namespace FlowSynx.Infrastructure.Secrets.Providers.BuildIn;
 
 public class BuiltInSecretProvider : BaseSecretProvider
 {
-    private readonly SqliteApplicationContext _context;
+    private readonly ITenantRepository _tenantRepository;
+    private readonly IValidateDatabaseConnection _validateDatabaseConnection;
     //private readonly IDataProtector _dataProtector;
 
     public BuiltInSecretProvider(
@@ -18,18 +19,17 @@ public class BuiltInSecretProvider : BaseSecretProvider
         IServiceProvider serviceProvider)
         : base(tenantId, ProviderConfiguration.Create(new Dictionary<string, string>()), serviceProvider)
     {
-        _context = serviceProvider.GetRequiredService<SqliteApplicationContext>();
+        _tenantRepository = serviceProvider.GetRequiredService<ITenantRepository>();
+        _validateDatabaseConnection = serviceProvider.GetRequiredService<IValidateDatabaseConnection>();
         //_dataProtector = serviceProvider.GetRequiredService<IDataProtectionProvider>()
-            //.CreateProtector($"TenantSecrets.{tenantId}");
+        //.CreateProtector($"TenantSecrets.{tenantId}");
     }
 
     public override SecretProviderType ProviderType => SecretProviderType.BuiltIn;
 
-    protected override async Task<string?> GetSecretInternalAsync(SecretKey secretKey, CancellationToken ct = default)
+    protected override async Task<string?> GetSecretInternalAsync(SecretKey secretKey, CancellationToken cancellationToken = default)
     {
-        var tenant = await _context.Tenants
-            .Include(t => t.Secrets)
-            .FirstOrDefaultAsync(t => t.Id == _tenantId, ct);
+        var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
         if (tenant == null)
             throw new DomainException($"Tenant {_tenantId} not found");
@@ -45,11 +45,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
         //    : secret.Value.Value;
     }
 
-    public override async Task<Dictionary<string, string?>> GetSecretsAsync(string? prefix = null, CancellationToken ct = default)
+    public override async Task<Dictionary<string, string?>> GetSecretsAsync(string? prefix = null, CancellationToken cancellationToken = default)
     {
-        var tenant = await _context.Tenants
-            .Include(t => t.Secrets)
-            .FirstOrDefaultAsync(t => t.Id == _tenantId, ct);
+        var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
         if (tenant == null)
             throw new DomainException($"Tenant {_tenantId} not found");
@@ -64,11 +62,11 @@ public class BuiltInSecretProvider : BaseSecretProvider
         return secrets;
     }
 
-    public override async Task<bool> ValidateConnectionAsync(CancellationToken ct = default)
+    public override async Task<bool> ValidateConnectionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            await _context.Database.CanConnectAsync(ct);
+            await _validateDatabaseConnection.ValidateConnection(cancellationToken);
             return true;
         }
         catch
@@ -77,11 +75,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
         }
     }
 
-    public override async Task SetSecretAsync(SecretKey secretKey, SecretValue secretValue, CancellationToken ct = default)
+    public override async Task SetSecretAsync(SecretKey secretKey, SecretValue secretValue, CancellationToken cancellationToken = default)
     {
-        var tenant = await _context.Tenants
-            .Include(t => t.Secrets)
-            .FirstOrDefaultAsync(t => t.Id == _tenantId, ct);
+        var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
         if (tenant == null)
             throw new DomainException($"Tenant {_tenantId} not found");
@@ -104,6 +100,6 @@ public class BuiltInSecretProvider : BaseSecretProvider
             tenant.AddSecret(secretKey, newSecretValue);
         }
 
-        await _context.SaveChangesAsync(ct);
+        await _tenantRepository.UpdateAsync(tenant, cancellationToken);
     }
 }

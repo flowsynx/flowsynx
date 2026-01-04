@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Services;
-using FlowSynx.Domain.Tenants;
+﻿using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 
 namespace FlowSynx.Application.Abstractions.Services;

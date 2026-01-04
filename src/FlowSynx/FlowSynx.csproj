@@ -42,6 +42,7 @@
 		<ProjectReference Include="..\FlowSynx.Infrastructure.Messaging\FlowSynx.Infrastructure.Messaging.csproj" />
 		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Postgres\FlowSynx.Infrastructure.Persistence.Postgres.csproj" />
 		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Sqlite\FlowSynx.Infrastructure.Persistence.Sqlite.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Secrets\FlowSynx.Infrastructure.Secrets.csproj" />
 		<ProjectReference Include="..\FlowSynx.Infrastructure.Serializations.Json\FlowSynx.Infrastructure.Serializations.Json.csproj" />
 		<ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.Abstractions.csproj" />
 	</ItemGroup>

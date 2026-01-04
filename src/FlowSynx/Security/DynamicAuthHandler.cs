@@ -68,18 +68,7 @@ public class DynamicAuthHandler
             Mode = Enum.TryParse<TenantAuthenticationMode>(secrets.GetValueOrDefault("security:authentication:mode"), out var mode) ? mode : TenantAuthenticationMode.None,
             Basic = new TenantBasicPolicy
             {
-                Users = new List<TenantBasicAuthenticationPolicy>
-                {
-                    new TenantBasicAuthenticationPolicy
-                    {
-                        Id = secrets.GetValueOrDefault("security:authentication:basic:id") ?? string.Empty,
-                        UserName = secrets.GetValueOrDefault("security:authentication:basic:username") ?? string.Empty,
-                        Password = secrets.GetValueOrDefault("security:authentication:basic:password") ?? string.Empty,
-                        Roles = (secrets.GetValueOrDefault("security:authentication:basic:roles") ?? string.Empty)
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                            .ToList()
-                    }
-                }
+                Users = ParseBasicUsers(secrets)
             },
             Jwt = new TenantJwtAuthenticationPolicy
             {
@@ -95,4 +84,34 @@ public class DynamicAuthHandler
             }
         };
     }
+
+    private static List<TenantBasicAuthenticationPolicy> ParseBasicUsers(
+    Dictionary<string, string?> secrets)
+    {
+        var users = new List<TenantBasicAuthenticationPolicy>();
+        var index = 0;
+
+        while (true)
+        {
+            var prefix = $"security:authentication:basic:users[{index}]";
+
+            if (!secrets.ContainsKey($"{prefix}:username"))
+                break;
+
+            users.Add(new TenantBasicAuthenticationPolicy
+            {
+                Id = secrets.GetValueOrDefault($"{prefix}:id") ?? string.Empty,
+                UserName = secrets.GetValueOrDefault($"{prefix}:username") ?? string.Empty,
+                Password = secrets.GetValueOrDefault($"{prefix}:password") ?? string.Empty,
+                Roles = (secrets.GetValueOrDefault($"{prefix}:roles") ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToList()
+            });
+
+            index++;
+        }
+
+        return users;
+    }
+
 }

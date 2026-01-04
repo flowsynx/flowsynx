@@ -71,7 +71,6 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ITenantResolver, TenantResolver>();
         services.AddScoped<ITenantContext, TenantContext>();
-        //services.AddScoped<ITenantRateLimitPolicyProvider, TenantRateLimitPolicyProvider>();
         return services;
     }
 
@@ -86,15 +85,13 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddLoggingServices(this IServiceCollection services)
     {
-        services.AddScoped<ITenantLoggerFactory, SerilogTenantLoggerFactory>();
-        services.AddScoped<ILoggerProvider, TenantLoggerProvider>();
-
-        services.AddLogging(logging =>
-        {
-            logging.ClearProviders();
-            logging.AddConsole();
-            logging.AddLoggingFilter();
-        });
+        services.AddLoggers()
+                .AddLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    logging.AddConsole();
+                    logging.AddLoggingFilter();
+                });
         return services;
     }
     #endregion

@@ -5,6 +5,7 @@ using FlowSynx.Infrastructure.Common;
 using FlowSynx.Infrastructure.Serializations.Json;
 using Serilog;
 using FlowSynx.Infrastructure.Messaging;
+using FlowSynx.Infrastructure.Secrets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +76,7 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddTenantService()
         .AddLoggingServices()
         .AddPersistence()
+        .AddSecrets()
         .AddSecurity()
         .AddServer()
         .AddVersion()

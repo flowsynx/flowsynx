@@ -3,11 +3,12 @@ using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
+using FlowSynx.Infrastructure.Secrets.Providers.BuildIn;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
-namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
+namespace FlowSynx.Infrastructure.Secrets.Providers;
 
 public class SecretProviderFactory : ISecretProviderFactory
 {
@@ -39,7 +40,7 @@ public class SecretProviderFactory : ISecretProviderFactory
         var config = await _configRepository.GetByTenantIdAsync(tenantId, ct);
 
         if (config == null)
-            throw new DomainException($"No secret provider configured for tenant {tenantId}");
+            throw new SecretException($"No secret provider configured for tenant {tenantId}");
 
         provider = CreateProvider(tenantId, config.ProviderType, config.Configuration);
         _providers[cacheKey] = provider;

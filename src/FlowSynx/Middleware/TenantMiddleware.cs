@@ -38,9 +38,7 @@ public class TenantMiddleware
             return;
         }
 
-        // Valid and active tenant: populate context and push enrichment so downstream logging uses tenant-specific sinks.
         tenantContext.TenantId = result.TenantId;
-        //tenantContext.AuthenticationMode = result.AuthenticationMode;
         tenantContext.CorsPolicy = result.CorsPolicy;
         tenantContext.RateLimitingPolicy = result.RateLimitingPolicy;
         tenantContext.Status = result.Status;

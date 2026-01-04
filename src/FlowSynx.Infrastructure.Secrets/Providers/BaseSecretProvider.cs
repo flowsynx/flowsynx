@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
+namespace FlowSynx.Infrastructure.Secrets.Providers;
 
 public abstract class BaseSecretProvider : ISecretProvider
 {
@@ -42,7 +42,6 @@ public abstract class BaseSecretProvider : ISecretProvider
     }
 
     protected abstract Task<string?> GetSecretInternalAsync(SecretKey secretKey, CancellationToken cancellationToken = default);
-
     public abstract Task<Dictionary<string, string?>> GetSecretsAsync(string? prefix = null, CancellationToken cancellationToken = default);
     public abstract Task<bool> ValidateConnectionAsync(CancellationToken cancellationToken = default);
     public abstract Task SetSecretAsync(SecretKey secretKey, SecretValue secretValue, CancellationToken cancellationToken = default);

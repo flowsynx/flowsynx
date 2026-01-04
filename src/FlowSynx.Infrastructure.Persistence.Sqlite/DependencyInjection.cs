@@ -20,10 +20,9 @@ public static class DependencyInjection
             .AddScoped<IGeneBlueprintRepository, GeneBlueprintRepository>()
             .AddScoped<IGenomeRepository, GenomeRepository>()
             .AddScoped<ITenantRepository, TenantRepository>()
+            .AddScoped<IValidateDatabaseConnection, ValidateDatabaseConnection>()
             .AddScoped<IDatabaseInitializer, SqliteDatabaseInitializer>()
             .AddScoped<ITenantSecretConfigRepository, TenantSecretConfigRepository>()
-            .AddScoped<ISecretProviderFactory, SecretProviderFactory>()
-            //.AddTransient<BuiltInSecretProvider>()
             .AddDbContextFactory<SqliteApplicationContext>(options =>
             {
                 options.UseSqlite(databaseConnection.ConnectionString);
