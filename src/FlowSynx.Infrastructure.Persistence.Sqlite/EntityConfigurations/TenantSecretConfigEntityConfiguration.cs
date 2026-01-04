@@ -43,8 +43,8 @@ public class TenantSecretConfigEntityConfiguration : IEntityTypeConfiguration<Te
 
         // Relationships
         builder.HasOne(t => t.Tenant)
-               .WithOne(w => w.SecretConfig)
-               .HasForeignKey<TenantSecretConfig>(c => c.TenantId)
+               .WithMany(w => w.SecretConfigs)
+               .HasForeignKey(t => t.TenantId)
                .OnDelete(DeleteBehavior.Cascade);
     }
 }

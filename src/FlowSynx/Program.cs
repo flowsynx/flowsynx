@@ -98,44 +98,39 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 
 static void ConfigureMiddleware(WebApplication app)
 {
-    // Exception handling must be first
+    // GLOBAL EXCEPTION HANDLING — MUST BE FIRST
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
     }
     else
     {
-        app.UseExceptionHandler(handlerApp =>
-            handlerApp.Run(async context =>
-                await Results.Problem().ExecuteAsync(context)));
+        // Centralized exception -> HTTP mapping
+        app.UseFlowSynxCustomException();
     }
 
-    // Security basics
+    // Security
     app.UseFlowSynxHttps();
     app.UseFlowSynxCustomHeaders();
 
-    // Resolve tenant as early as possible
+    // Tenant resolution (early)
     app.UseFlowSynxTenants();
     app.UseFlowSynxTenantLogging();
 
     // Routing (needed before auth)
     app.UseRouting();
 
-    // Tenant-specific cross-cutting concerns
+    // Cross-cutting tenant concerns
     app.UseFlowSynxTenantCors();
     app.UseFlowSynxTenantRateLimiting();
 
-    // Authentication & Authorization
+    // Auth
     app.UseAuthentication();
     app.UseAuthorization();
 
-    // Observability & platform concerns
+    // Observability
     app.UseFlowSynxApiDocumentation();
     app.UseFlowSynxHealthCheck();
-
-    // Global exception mapping (domain -> HTTP)
-    app.UseFlowSynxCustomException();
-
 }
 
 static async Task ConfigureFlowSynxApplication(WebApplication app)

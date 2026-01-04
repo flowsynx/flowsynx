@@ -37,7 +37,7 @@ public class TenantSecretConfig : AuditableEntity<Guid>, IAggregateRoot
         ProviderType = providerType;
         Configuration = configuration;
 
-        AddDomainEvent(new SecretConfigUpdatedEvent(TenantId, Id));
+        AddDomainEvent(new SecretConfigUpdatedEvent(TenantId.Value, Id));
     }
 
     public void Enable()
@@ -45,7 +45,7 @@ public class TenantSecretConfig : AuditableEntity<Guid>, IAggregateRoot
         if (IsEnabled) return;
 
         IsEnabled = true;
-        AddDomainEvent(new SecretConfigEnabledEvent(TenantId, Id));
+        AddDomainEvent(new SecretConfigEnabledEvent(TenantId.Value, Id));
     }
 
     public void Disable()
@@ -53,7 +53,7 @@ public class TenantSecretConfig : AuditableEntity<Guid>, IAggregateRoot
         if (!IsEnabled) return;
 
         IsEnabled = false;
-        AddDomainEvent(new SecretConfigDisabledEvent(TenantId, Id));
+        AddDomainEvent(new SecretConfigDisabledEvent(TenantId.Value, Id));
     }
 
     public void UpdateCacheDuration(int minutes)

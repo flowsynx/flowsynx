@@ -3,6 +3,7 @@ using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants.Events;
 using FlowSynx.Domain.TenantSecretConfigs;
+using FlowSynx.Domain.TenantSecretConfigs.Events;
 using FlowSynx.Domain.TenantSecrets;
 using System.Text.RegularExpressions;
 
@@ -15,16 +16,14 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     public string? Description { get; private set; }
     public TenantStatus Status { get; private set; }
 
-    public TenantSecretConfig SecretConfig { get; private set; }
-    public List<TenantContact> Contacts { get; private set; } = new();
+    public List<TenantSecretConfig> SecretConfigs { get; private set; } = new();
     public List<TenantSecret> Secrets { get; private set; } = new();
+    public List<TenantContact> Contacts { get; private set; } = new();
 
     // Private constructor for EF Core
     private Tenant() { }
 
-    public static Tenant Create(
-        string name,
-        string? description = null)
+    public static Tenant Create(string name, string? description = null)
     {
         ValidateName(name);
 
@@ -37,10 +36,22 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             Name = name.Trim(),
             Slug = slug,
             Description = description?.Trim(),
-            Status = TenantStatus.Active,
-            //SecretConfig = TenantSecretConfig.Create(tenantId, SecretProviderType.BuiltIn, ProviderConfiguration.Default)
+            Status = TenantStatus.Active
         };
 
+        // Add default SecretConfig
+        var defaultConfig = TenantSecretConfig.Create(
+            tenantId,
+            SecretProviderType.BuiltIn,
+            ProviderConfigurationDefaults.Default
+        );
+        tenant.SecretConfigs.Add(defaultConfig);
+
+        // Add default Secret
+        var secrets = TenantSecretDefaults.Default(tenantId);
+        tenant.Secrets.AddRange(secrets);
+
+        // Domain events
         tenant.AddDomainEvent(new TenantCreatedEvent(tenant.Id, tenant.Name, tenant.Slug));
 
         return tenant;
@@ -55,14 +66,14 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
         Name = newName.Trim();
         Slug = GenerateSlug(newName);
 
-        AddDomainEvent(new TenantRenamedEvent(Id, oldName, Name));
+        AddDomainEvent(new TenantRenamedEvent(Id.Value, oldName, Name));
     }
 
     public void UpdateDescription(string? description)
     {
         Description = description?.Trim();
 
-        AddDomainEvent(new TenantDescriptionUpdatedEvent(Id));
+        AddDomainEvent(new TenantDescriptionUpdatedEvent(Id.Value));
     }
 
     public void Activate()
@@ -72,7 +83,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
 
         Status = TenantStatus.Active;
 
-        AddDomainEvent(new TenantActivatedEvent(Id));
+        AddDomainEvent(new TenantActivatedEvent(Id.Value));
     }
 
     public void Suspend(string reason)
@@ -82,7 +93,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
 
         Status = TenantStatus.Suspended;
 
-        AddDomainEvent(new TenantSuspendedEvent(Id, reason));
+        AddDomainEvent(new TenantSuspendedEvent(Id.Value, reason));
     }
 
     public void Terminate(string reason)
@@ -92,7 +103,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
 
         Status = TenantStatus.Terminated;
 
-        AddDomainEvent(new TenantTerminatedEvent(Id, reason));
+        AddDomainEvent(new TenantTerminatedEvent(Id.Value, reason));
     }
 
     public TenantSecret AddSecret(SecretKey key, SecretValue value)
@@ -104,7 +115,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
         var secret = TenantSecret.Create(Id, key, value);
         Secrets.Add(secret);
 
-        AddDomainEvent(new SecretAddedEvent(Id, key));
+        AddDomainEvent(new SecretAddedEvent(Id.Value, key.Name));
         return secret;
     }
 
@@ -114,7 +125,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
         if (secret == null) return;
 
         Secrets.Remove(secret);
-        AddDomainEvent(new SecretRemovedEvent(Id, key));
+        AddDomainEvent(new SecretRemovedEvent(Id.Value, key));
     }
 
     public TenantSecret? GetSecret(SecretKey key) => Secrets.FirstOrDefault(s => s.Key == key);
@@ -139,7 +150,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             }
         }
 
-        AddDomainEvent(new TenantContactAddedEvent(Id, email, name, isPrimary));
+        AddDomainEvent(new TenantContactAddedEvent(Id.Value, email, name, isPrimary));
     }
 
     // Private helper
@@ -180,7 +191,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
         var oldName = Name;
         Name = newName.Trim();
 
-        AddDomainEvent(new TenantRenamedEvent(Id, oldName, Name));
+        AddDomainEvent(new TenantRenamedEvent(Id.Value, oldName, Name));
     }
 
     private static void ValidateName(string name)
@@ -194,19 +205,4 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
         if (name.Length > 100)
             throw new DomainException("Tenant name cannot exceed 100 characters");
     }
-
-    //public TenantConfiguration FallBackToDefaultConfiguration()
-    //{
-    //    Configuration = TenantConfigurationDefaults.Create();
-
-    //    AddDomainEvent(new TenantConfigurationCreatedEvent(Id));
-
-    //    return Configuration;
-    //}
-
-    //public void UpdateSettings(TenantConfiguration newSettings, string changeReason)
-    //{
-    //    Configuration = newSettings;
-    //    AddDomainEvent(new TenantConfigurationUpdatedEvent(Id, changeReason));
-    //}
 }

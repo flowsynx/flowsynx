@@ -211,7 +211,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFlowSynxDataProtection(this IServiceCollection services)
     {
         services.AddScoped<IDataProtectionFactory, DataProtectionFactory>();
-        services.AddScoped<IDataProtectionService, DataProtectionService>();
         return services;
     }
 

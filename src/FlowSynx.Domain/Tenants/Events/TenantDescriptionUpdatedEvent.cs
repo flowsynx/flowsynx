@@ -2,4 +2,4 @@
 
 namespace FlowSynx.Domain.Tenants.Events;
 
-public record TenantDescriptionUpdatedEvent(TenantId TenantId) : DomainEvent;
+public record TenantDescriptionUpdatedEvent(Guid TenantId) : DomainEvent;

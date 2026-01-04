@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Infrastructure.Security.Secrets;
+﻿namespace FlowSynx.Domain.TenantSecrets;
 
-public static class SecretKeys
+public static class TenantSecretKeys
 {
     public static class Logging
     {

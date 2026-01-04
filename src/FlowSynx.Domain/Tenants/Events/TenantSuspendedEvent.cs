@@ -2,4 +2,4 @@
 
 namespace FlowSynx.Domain.Tenants.Events;
 
-public record TenantSuspendedEvent(TenantId TenantId, string Reason) : DomainEvent;
+public record TenantSuspendedEvent(Guid TenantId, string Reason) : DomainEvent;

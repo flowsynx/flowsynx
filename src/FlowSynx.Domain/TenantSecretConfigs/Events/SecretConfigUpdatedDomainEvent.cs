@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Domain.Primitives;
-using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Domain.TenantSecretConfigs.Events;
 
-public record SecretConfigUpdatedEvent(TenantId TenantId, Guid ConfigId) : DomainEvent;
+public record SecretConfigUpdatedEvent(Guid TenantId, Guid ConfigId) : DomainEvent;

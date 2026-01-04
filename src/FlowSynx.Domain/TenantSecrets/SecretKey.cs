@@ -17,7 +17,7 @@ public record SecretKey
         Value = value;
 
         // Parse prefix and name
-        var parts = value.Split('.');
+        var parts = value.Split(':');
         Prefix = parts.Length > 1 ? parts[0] : string.Empty;
         Name = parts.Length > 1 ? parts[1] : parts[0];
     }

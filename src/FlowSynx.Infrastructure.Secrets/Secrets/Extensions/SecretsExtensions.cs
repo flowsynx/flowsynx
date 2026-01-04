@@ -2,6 +2,7 @@
 using FlowSynx.Domain.TenantSecretConfigs.Logging;
 using FlowSynx.Domain.TenantSecretConfigs.Networking;
 using FlowSynx.Domain.TenantSecretConfigs.Security;
+using FlowSynx.Domain.TenantSecrets;
 
 namespace FlowSynx.Infrastructure.Security.Secrets.Extensions;
 
@@ -12,17 +13,17 @@ public static class SecretsExtensions
         return new TenantCorsPolicy
         {
             PolicyName =
-                secrets.GetValueOrDefault(SecretKeys.Cors.PolicyName)
+                secrets.GetValueOrDefault(TenantSecretKeys.Cors.PolicyName)
                 ?? $"DefaultCorsPolicy.{tenantId}",
 
             AllowedOrigins =
-                secrets.GetValueOrDefault(SecretKeys.Cors.AllowedOrigins)
+                secrets.GetValueOrDefault(TenantSecretKeys.Cors.AllowedOrigins)
                     ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 ?? Array.Empty<string>(),
 
             AllowCredentials =
                 bool.TryParse(
-                    secrets.GetValueOrDefault(SecretKeys.Cors.AllowCredentials),
+                    secrets.GetValueOrDefault(TenantSecretKeys.Cors.AllowCredentials),
                     out var allowCredentials)
                 && allowCredentials
         };
@@ -32,9 +33,9 @@ public static class SecretsExtensions
     {
         return new TenantRateLimitingPolicy
         {
-            WindowSeconds = int.TryParse(secrets.GetValueOrDefault(SecretKeys.RateLimiting.WindowSeconds), out var windowSeconds) ? windowSeconds : 60,
-            PermitLimit = int.TryParse(secrets.GetValueOrDefault(SecretKeys.RateLimiting.PermitLimit), out var permitLimit) ? permitLimit : 100,
-            QueueLimit = int.TryParse(secrets.GetValueOrDefault(SecretKeys.RateLimiting.QueueLimit), out var queueLimit) ? queueLimit : 0
+            WindowSeconds = int.TryParse(secrets.GetValueOrDefault(TenantSecretKeys.RateLimiting.WindowSeconds), out var windowSeconds) ? windowSeconds : 60,
+            PermitLimit = int.TryParse(secrets.GetValueOrDefault(TenantSecretKeys.RateLimiting.PermitLimit), out var permitLimit) ? permitLimit : 100,
+            QueueLimit = int.TryParse(secrets.GetValueOrDefault(TenantSecretKeys.RateLimiting.QueueLimit), out var queueLimit) ? queueLimit : 0
         };
     }
 
@@ -42,20 +43,20 @@ public static class SecretsExtensions
     {
         return new TenantAuthenticationPolicy
         {
-            Mode = Enum.TryParse<TenantAuthenticationMode>(secrets.GetValueOrDefault(SecretKeys.Authentication.Mode), out var mode) ? mode : TenantAuthenticationMode.None,
+            Mode = Enum.TryParse<TenantAuthenticationMode>(secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Mode), out var mode) ? mode : TenantAuthenticationMode.None,
             Basic = new TenantBasicPolicy
             {
                 Users = ParseBasicUsers(secrets)
             },
             Jwt = new TenantJwtAuthenticationPolicy
             {
-                Issuer = secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.Issuer) ?? string.Empty,
-                Audience = secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.Audience) ?? string.Empty,
-                Authority = secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.Authority) ?? string.Empty,
-                Name = secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.Name) ?? string.Empty,
-                Secret = secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.Secret) ?? string.Empty,
-                RequireHttps = bool.TryParse(secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.RequireHttps), out var requireHttps) && requireHttps,
-                RoleClaimNames = (secrets.GetValueOrDefault(SecretKeys.Authentication.Jwt.RoleClaimNames) ?? string.Empty)
+                Issuer = secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.Issuer) ?? string.Empty,
+                Audience = secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.Audience) ?? string.Empty,
+                Authority = secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.Authority) ?? string.Empty,
+                Name = secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.Name) ?? string.Empty,
+                Secret = secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.Secret) ?? string.Empty,
+                RequireHttps = bool.TryParse(secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.RequireHttps), out var requireHttps) && requireHttps,
+                RoleClaimNames = (secrets.GetValueOrDefault(TenantSecretKeys.Authentication.Jwt.RoleClaimNames) ?? string.Empty)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToList()
             }
@@ -69,17 +70,17 @@ public static class SecretsExtensions
 
         while (true)
         {
-            var prefix = $"{SecretKeys.Authentication.Basic.Users}[{index}]";
+            var prefix = $"{TenantSecretKeys.Authentication.Basic.Users}[{index}]";
 
-            if (!secrets.ContainsKey($"{prefix}:{SecretKeys.Authentication.Basic.Username}"))
+            if (!secrets.ContainsKey($"{prefix}:{TenantSecretKeys.Authentication.Basic.Username}"))
                 break;
 
             users.Add(new TenantBasicAuthenticationPolicy
             {
-                Id = secrets.GetValueOrDefault($"{prefix}:{SecretKeys.Authentication.Basic.Id}") ?? string.Empty,
-                UserName = secrets.GetValueOrDefault($"{prefix}:{SecretKeys.Authentication.Basic.Username}") ?? string.Empty,
-                Password = secrets.GetValueOrDefault($"{prefix}:{SecretKeys.Authentication.Basic.Password}") ?? string.Empty,
-                Roles = (secrets.GetValueOrDefault($"{prefix}:{SecretKeys.Authentication.Basic.Roles}") ?? string.Empty)
+                Id = secrets.GetValueOrDefault($"{prefix}:{TenantSecretKeys.Authentication.Basic.Id}") ?? string.Empty,
+                UserName = secrets.GetValueOrDefault($"{prefix}:{TenantSecretKeys.Authentication.Basic.Username}") ?? string.Empty,
+                Password = secrets.GetValueOrDefault($"{prefix}:{TenantSecretKeys.Authentication.Basic.Password}") ?? string.Empty,
+                Roles = (secrets.GetValueOrDefault($"{prefix}:{TenantSecretKeys.Authentication.Basic.Roles}") ?? string.Empty)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                     .ToList()
             });
@@ -98,7 +99,7 @@ public static class SecretsExtensions
             File = new TenantFileLoggingPolicy
             {
                 LogLevel = secrets.GetValueOrDefault("logging:File:logLevel") ?? "Information",
-                LogPath = secrets.GetValueOrDefault("logging:File:logPath") ?? "logs/tenant.log",
+                LogPath = secrets.GetValueOrDefault("logging:File:logPath") ?? "logs/",
                 RollingInterval = secrets.GetValueOrDefault("logging:File:rollingInterval") ?? "Day",
                 RetainedFileCountLimit = int.TryParse(secrets.GetValueOrDefault("logging:File:retainedFileCountLimit"), out var retainedLimit) ? retainedLimit : 7
             },

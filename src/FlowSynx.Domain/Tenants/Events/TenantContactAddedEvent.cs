@@ -2,4 +2,4 @@
 
 namespace FlowSynx.Domain.Tenants.Events;
 
-public record TenantContactAddedEvent(TenantId TenantId, string Email, string Name, bool IsPrimary) : DomainEvent;
+public record TenantContactAddedEvent(Guid TenantId, string Email, string Name, bool IsPrimary) : DomainEvent;

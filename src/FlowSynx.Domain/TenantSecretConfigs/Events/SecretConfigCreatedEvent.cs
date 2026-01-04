@@ -3,4 +3,4 @@ using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Domain.TenantSecretConfigs.Events;
 
-public record SecretConfigEnabledEvent(Guid TenantId, Guid ConfigId) : DomainEvent;
+public record SecretConfigCreatedEvent(Guid TenantId, Guid ConfigId) : DomainEvent;

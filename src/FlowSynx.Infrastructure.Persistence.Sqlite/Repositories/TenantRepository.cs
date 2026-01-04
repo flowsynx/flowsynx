@@ -85,7 +85,7 @@ public class TenantRepository : ITenantRepository
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Tenants
-                .Include(t => t.SecretConfig)
+                .Include(t => t.SecretConfigs)
                 .FirstOrDefaultAsync(t => t.Id == id, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }
