@@ -1,14 +1,14 @@
 ﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
-using FlowSynx.Infrastructure.Secrets.Providers.BuildIn;
+using FlowSynx.Infrastructure.Security.Secrets.Exceptions;
+using FlowSynx.Infrastructure.Security.Secrets.Providers.BuildIn;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
-namespace FlowSynx.Infrastructure.Secrets.Providers;
+namespace FlowSynx.Infrastructure.Security.Secrets.Providers;
 
 public class SecretProviderFactory : ISecretProviderFactory
 {

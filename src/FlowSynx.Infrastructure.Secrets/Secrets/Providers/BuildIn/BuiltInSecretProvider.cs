@@ -4,25 +4,30 @@ using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
+using FlowSynx.Infrastructure.Security.Cryptography;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FlowSynx.Infrastructure.Secrets.Providers.BuildIn;
+namespace FlowSynx.Infrastructure.Security.Secrets.Providers.BuildIn;
 
 public class BuiltInSecretProvider : BaseSecretProvider
 {
     private readonly ITenantRepository _tenantRepository;
     private readonly IValidateDatabaseConnection _validateDatabaseConnection;
-    //private readonly IDataProtector _dataProtector;
+    private readonly IDataProtectionService _dataProtectionService;
 
     public BuiltInSecretProvider(
-        TenantId tenantId,
-        IServiceProvider serviceProvider)
-        : base(tenantId, ProviderConfiguration.Create(new Dictionary<string, string>()), serviceProvider)
+    TenantId tenantId,
+    IServiceProvider serviceProvider)
+    : base(tenantId, ProviderConfiguration.Create(new Dictionary<string, string>()), serviceProvider)
     {
-        _tenantRepository = serviceProvider.GetRequiredService<ITenantRepository>();
-        _validateDatabaseConnection = serviceProvider.GetRequiredService<IValidateDatabaseConnection>();
-        //_dataProtector = serviceProvider.GetRequiredService<IDataProtectionProvider>()
-        //.CreateProtector($"TenantSecrets.{tenantId}");
+        _tenantRepository = serviceProvider.GetRequiredService<ITenantRepository>() 
+            ?? throw new ArgumentNullException(nameof(ITenantRepository));
+
+        _validateDatabaseConnection = serviceProvider.GetRequiredService<IValidateDatabaseConnection>() 
+            ?? throw new ArgumentNullException(nameof(IValidateDatabaseConnection));
+
+        _dataProtectionService = serviceProvider.GetRequiredService<IDataProtectionFactory>()?.CreateTenantSecretsService(tenantId)
+            ?? throw new ArgumentNullException(nameof(IDataProtectionFactory));
     }
 
     public override SecretProviderType ProviderType => SecretProviderType.BuiltIn;
@@ -38,11 +43,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
         if (secret == null || secret.IsExpired)
             return null;
 
-        return secret.Value.Value;
-
-        //return secret.Value.IsEncrypted
-        //    ? _dataProtector.Unprotect(secret.Value.Value)
-        //    : secret.Value.Value;
+        return secret.Value.IsEncrypted
+            ? _dataProtectionService.Unprotect(secret.Value.Value)
+            : secret.Value.Value;
     }
 
     public override async Task<Dictionary<string, string?>> GetSecretsAsync(string? prefix = null, CancellationToken cancellationToken = default)
@@ -57,7 +60,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
             .Where(s => !s.IsExpired)
             .ToDictionary(
                 s => s.Key.Value,
-                s => s.Value.Value);
+                s => s.Value.IsEncrypted
+                    ? _dataProtectionService.Unprotect(s.Value.Value)
+                    : s.Value.Value);
 
         return secrets;
     }
@@ -82,11 +87,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
         if (tenant == null)
             throw new DomainException($"Tenant {_tenantId} not found");
 
-        var protectedValue = secretValue.Value;
-
-        //var protectedValue = secretValue.IsEncrypted
-        //    ? _dataProtector.Protect(secretValue.Value)
-        //    : secretValue.Value;
+        var protectedValue = secretValue.IsEncrypted
+            ? _dataProtectionService.Protect(secretValue.Value)
+            : secretValue.Value;
 
         var newSecretValue = SecretValue.Create(protectedValue, secretValue.IsEncrypted, secretValue.ExpiresAt);
 

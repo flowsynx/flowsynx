@@ -1,12 +1,11 @@
-﻿using FlowSynx.Application.Abstractions.Services;
-using FlowSynx.Domain.Tenants;
+﻿using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Infrastructure.Secrets.Providers;
+namespace FlowSynx.Infrastructure.Security.Secrets.Providers;
 
 public abstract class BaseSecretProvider : ISecretProvider
 {

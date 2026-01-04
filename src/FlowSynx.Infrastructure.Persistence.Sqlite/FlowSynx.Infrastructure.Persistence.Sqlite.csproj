@@ -17,7 +17,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.Abstractions.csproj" />
+	  <ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Abstractions\FlowSynx.Infrastructure.Persistence.Abstractions.csproj" />
 	</ItemGroup>
 
 </Project>

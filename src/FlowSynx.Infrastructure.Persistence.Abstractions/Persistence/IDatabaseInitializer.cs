@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Infrastructure.Persistence;
+﻿namespace FlowSynx.Infrastructure.Persistence.Abstractions;
 
 public interface IDatabaseInitializer
 {

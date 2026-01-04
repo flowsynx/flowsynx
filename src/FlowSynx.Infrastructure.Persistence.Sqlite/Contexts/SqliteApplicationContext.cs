@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Infrastructure.Persistence;
+using FlowSynx.Infrastructure.Persistence.Abstractions;
 using FlowSynx.Persistence.Sqlite.EntityConfigurations;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Http;

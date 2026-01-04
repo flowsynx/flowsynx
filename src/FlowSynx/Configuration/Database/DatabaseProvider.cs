@@ -1,4 +1,4 @@
-﻿using FlowSynx.Infrastructure.Abstractions.Persistence;
+﻿using FlowSynx.Infrastructure.Persistence.Abstractions;
 
 namespace FlowSynx.Configuration.Database;
 

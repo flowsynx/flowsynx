@@ -1,12 +1,11 @@
-﻿using FlowSynx.Application.Abstractions.Services;
-using FlowSynx.Infrastructure.Secrets.Providers;
+﻿using FlowSynx.Infrastructure.Security.Secrets.Providers;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FlowSynx.Infrastructure.Secrets;
+namespace FlowSynx.Infrastructure.Security;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddSecrets(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxSecretManagement(this IServiceCollection services)
     {
         services.AddScoped<ISecretProviderFactory, SecretProviderFactory>();
         return services;

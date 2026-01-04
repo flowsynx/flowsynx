@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 
-namespace FlowSynx.Application.Abstractions.Services;
+namespace FlowSynx.Infrastructure.Security.Secrets.Providers;
 
 public interface ISecretProviderFactory
 {

@@ -5,7 +5,7 @@ namespace FlowSynx.Infrastructure.Messaging;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddDispatcher(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxDispatcher(this IServiceCollection services)
     {
         services.AddScoped<IDispatcher, Dispatcher>();
         return services;

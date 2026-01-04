@@ -11,8 +11,7 @@ public class FlowSynxVersion : IVersion
 
     public FlowSynxVersion(ILogger<FlowSynxVersion> logger)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        _logger = logger;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public Version Version => GetApplicationVersion(_logger);

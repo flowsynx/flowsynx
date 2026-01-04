@@ -1,10 +1,10 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
-using FlowSynx.Domain.Tenants;
+﻿using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs.Logging;
 using FlowSynx.Infrastructure.Logging.ConsoleLogger;
 using FlowSynx.Infrastructure.Logging.FileLogger;
 using FlowSynx.Infrastructure.Logging.SeqLogger;
+using FlowSynx.Infrastructure.Security.Secrets.Extensions;
+using FlowSynx.Infrastructure.Security.Secrets.Providers;
 using Serilog;
 using System.Collections.Concurrent;
 
@@ -45,7 +45,7 @@ public sealed class SerilogTenantLoggerFactory : ITenantLoggerFactory
     {
         var provider = await _secretProviderFactory.GetProviderForTenantAsync(tenantId);
         var secrets = await provider.GetSecretsAsync();
-        TenantLoggingPolicy parsedLoggingPolicy = ParseLoggingPolicy(secrets);
+        TenantLoggingPolicy parsedLoggingPolicy = secrets.GetLoggingPolicy();
 
         // Always allow console logging. Enable file/seq only when tenant is valid.
         ILoggerConfigurationBuilder builderToUse;
@@ -71,29 +71,4 @@ public sealed class SerilogTenantLoggerFactory : ITenantLoggerFactory
             loggerConfig.CreateLogger(),
             DateTime.UtcNow);
     }
-
-    private TenantLoggingPolicy ParseLoggingPolicy(Dictionary<string, string?> secrets)
-    {
-        return new TenantLoggingPolicy
-        {
-            Enabled = bool.TryParse(secrets.GetValueOrDefault("logging:enabled"), out var enabled) && enabled,
-            File = new TenantFileLoggingPolicy
-            {
-                LogLevel = secrets.GetValueOrDefault("logging:File:logLevel") ?? "Information",
-                LogPath = secrets.GetValueOrDefault("logging:File:logPath") ?? "logs/tenant.log",
-                RollingInterval = secrets.GetValueOrDefault("logging:File:rollingInterval") ?? "Day",
-                RetainedFileCountLimit = int.TryParse(secrets.GetValueOrDefault("logging:File:retainedFileCountLimit"), out var retainedLimit) ? retainedLimit : 7
-            },
-            Seq = new TenantSeqLoggingPolicy
-            {
-                LogLevel = secrets.GetValueOrDefault("logging:seq:logLevel") ?? "Information",
-                Url = secrets.GetValueOrDefault("logging:seq:url") ?? string.Empty,
-                ApiKey = secrets.GetValueOrDefault("logging:seq:apiKey") ?? string.Empty
-            }
-        };
-    }
-
-    private sealed record CachedLogger(
-        ILogger Logger,
-        DateTime CreatedAt);
 }

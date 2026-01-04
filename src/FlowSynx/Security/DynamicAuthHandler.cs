@@ -1,9 +1,7 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
-using FlowSynx.Application.Tenancy;
-using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.TenantSecretConfigs.Logging;
+﻿using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.TenantSecretConfigs.Security;
+using FlowSynx.Infrastructure.Security.Secrets.Extensions;
+using FlowSynx.Infrastructure.Security.Secrets.Providers;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using System.Text.Encodings.Web;
@@ -40,10 +38,7 @@ public class DynamicAuthHandler
 
         var secretProvider = await _secretProviderFactory.GetProviderForTenantAsync(tenantId);
         var secrets = await secretProvider.GetSecretsAsync();
-        TenantAuthenticationPolicy parsedAuthenticationPolicy = ParseAuthenticationPolicy(secrets);
-
-        //if (tenant is null || tenant.Status != TenantStatus.Active)
-        //    return AuthenticateResult.Fail("Tenant not found or inactive");
+        TenantAuthenticationPolicy parsedAuthenticationPolicy = secrets.GetAuthenticationPolicy();
 
         var authenticationProvider = _authenticationProviders
             .FirstOrDefault(p =>
@@ -60,58 +55,4 @@ public class DynamicAuthHandler
         return AuthenticateResult.Success(
             new AuthenticationTicket(result.Principal!, Scheme.Name));
     }
-
-    private TenantAuthenticationPolicy ParseAuthenticationPolicy(Dictionary<string, string?> secrets)
-    {
-        return new TenantAuthenticationPolicy
-        {
-            Mode = Enum.TryParse<TenantAuthenticationMode>(secrets.GetValueOrDefault("security:authentication:mode"), out var mode) ? mode : TenantAuthenticationMode.None,
-            Basic = new TenantBasicPolicy
-            {
-                Users = ParseBasicUsers(secrets)
-            },
-            Jwt = new TenantJwtAuthenticationPolicy
-            {
-                Issuer = secrets.GetValueOrDefault("security:authentication:jwt:issuer") ?? string.Empty,
-                Audience = secrets.GetValueOrDefault("security:authentication:jwt:audience") ?? string.Empty,
-                Authority = secrets.GetValueOrDefault("security:authentication:jwt:authority") ?? string.Empty,
-                Name = secrets.GetValueOrDefault("security:authentication:jwt:name") ?? string.Empty,
-                Secret = secrets.GetValueOrDefault("security:authentication:jwt:secret") ?? string.Empty,
-                RequireHttps = bool.TryParse(secrets.GetValueOrDefault("security:authentication:jwt:requireHttps"), out var requireHttps) && requireHttps,
-                RoleClaimNames = (secrets.GetValueOrDefault("security:authentication:jwt:roleClaimNames") ?? string.Empty)
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .ToList()
-            }
-        };
-    }
-
-    private static List<TenantBasicAuthenticationPolicy> ParseBasicUsers(
-    Dictionary<string, string?> secrets)
-    {
-        var users = new List<TenantBasicAuthenticationPolicy>();
-        var index = 0;
-
-        while (true)
-        {
-            var prefix = $"security:authentication:basic:users[{index}]";
-
-            if (!secrets.ContainsKey($"{prefix}:username"))
-                break;
-
-            users.Add(new TenantBasicAuthenticationPolicy
-            {
-                Id = secrets.GetValueOrDefault($"{prefix}:id") ?? string.Empty,
-                UserName = secrets.GetValueOrDefault($"{prefix}:username") ?? string.Empty,
-                Password = secrets.GetValueOrDefault($"{prefix}:password") ?? string.Empty,
-                Roles = (secrets.GetValueOrDefault($"{prefix}:roles") ?? string.Empty)
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .ToList()
-            });
-
-            index++;
-        }
-
-        return users;
-    }
-
 }

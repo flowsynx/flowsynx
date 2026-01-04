@@ -5,7 +5,8 @@ using FlowSynx.Infrastructure.Common;
 using FlowSynx.Infrastructure.Serializations.Json;
 using Serilog;
 using FlowSynx.Infrastructure.Messaging;
-using FlowSynx.Infrastructure.Secrets;
+using FlowSynx.Infrastructure.Security;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,7 +23,7 @@ try
 
     var app = builder.Build();
     ConfigureMiddleware(app);
-    await ConfigureApplication(app);
+    await ConfigureFlowSynxApplication(app);
 
     await app.RunAsync();
 }
@@ -62,33 +63,37 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
     var config = builder.Configuration;
     var env = builder.Environment;
 
+    services.AddDataProtection()
+            .SetApplicationName("FlowSynx");
+
     services
         .AddMemoryCache()
-        .AddCancellationTokenSource()
+        .AddFlowSynxCancellationTokenSource()
         .AddHttpContextAccessor()
-        .AddUserService()
-        .AddSystemClock()
+        .AddFlowSynxUserService()
+        .AddFlowSynxSystemClock()
         .AddJsonSerialization()
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
-        .AddDispatcher()
-        .AddTenantService()
-        .AddLoggingServices()
-        .AddPersistence()
-        .AddSecrets()
-        .AddSecurity()
-        .AddServer()
-        .AddVersion()
-        .AddApplication()
-        .AddEventPublisher()
-        .AddHealthChecker()
-        .AddApiDocumentation();
+        .AddFlowSynxDispatcher()
+        .AddFlowSynxTenantService()
+        .AddFlowSynxLoggingServices()
+        .AddFlowSynxPersistence()
+        .AddFlowSynxDataProtection()
+        .AddFlowSynxSecretManagement()
+        .AddFlowSynxSecurity()
+        .AddFlowSynxServer()
+        .AddFlowSynxVersion()
+        .AddFlowSynxApplication()
+        .AddFlowSynxEventPublisher()
+        .AddFlowSynxHealthChecker()
+        .AddFlowSynxApiDocumentation();
 
     if (!env.IsDevelopment())
-        builder.Services.ParseArguments(args);
+        builder.Services.ParseFlowSynxArguments(args);
 
-    builder.ConfigureHttpServer();
+    builder.ConfigureFlowSynxHttpServer();
 }
 
 static void ConfigureMiddleware(WebApplication app)
@@ -106,34 +111,34 @@ static void ConfigureMiddleware(WebApplication app)
     }
 
     // Security basics
-    app.UseHttps();
-    app.UseCustomHeaders();
+    app.UseFlowSynxHttps();
+    app.UseFlowSynxCustomHeaders();
 
     // Resolve tenant as early as possible
-    app.UseTenants();
-    app.UseTenantLogging();
+    app.UseFlowSynxTenants();
+    app.UseFlowSynxTenantLogging();
 
     // Routing (needed before auth)
     app.UseRouting();
 
     // Tenant-specific cross-cutting concerns
-    app.UseTenantCors();
-    app.UseTenantRateLimiting();
+    app.UseFlowSynxTenantCors();
+    app.UseFlowSynxTenantRateLimiting();
 
     // Authentication & Authorization
     app.UseAuthentication();
     app.UseAuthorization();
 
     // Observability & platform concerns
-    app.UseApiDocumentation();
-    app.UseHealthCheck();
+    app.UseFlowSynxApiDocumentation();
+    app.UseFlowSynxHealthCheck();
 
     // Global exception mapping (domain -> HTTP)
-    app.UseCustomException();
+    app.UseFlowSynxCustomException();
 
 }
 
-static async Task ConfigureApplication(WebApplication app)
+static async Task ConfigureFlowSynxApplication(WebApplication app)
 {
     await app.EnsureApplicationDatabaseCreated();
 

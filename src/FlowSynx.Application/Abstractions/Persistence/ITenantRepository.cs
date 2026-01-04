@@ -4,6 +4,7 @@ namespace FlowSynx.Application.Abstractions.Persistence;
 
 public interface ITenantRepository
 {
+    Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken = default);
     Task<Tenant?> GetWithSecretsAsync(TenantId id, CancellationToken cancellationToken = default);
     Task<Tenant?> GetWithConfigAsync(TenantId id, CancellationToken cancellationToken = default);
     Task<Tenant?> GetWithContactAsync(TenantId id, CancellationToken cancellationToken = default);

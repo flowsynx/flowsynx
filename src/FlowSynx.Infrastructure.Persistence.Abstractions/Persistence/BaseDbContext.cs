@@ -9,7 +9,6 @@ using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
-using FlowSynx.Infrastructure.Abstractions.Persistence;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +16,7 @@ using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Logging;
 using System.Security.Claims;
 
-namespace FlowSynx.Infrastructure.Persistence;
+namespace FlowSynx.Infrastructure.Persistence.Abstractions;
 
 public abstract class BaseDbContext : DbContext, IDatabaseContext
 {

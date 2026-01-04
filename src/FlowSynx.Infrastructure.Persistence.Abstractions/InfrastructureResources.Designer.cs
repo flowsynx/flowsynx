@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace FlowSynx.Infrastructure.Abstractions {
+namespace FlowSynx.Infrastructure.Persistence.Abstractions {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace FlowSynx.Infrastructure.Abstractions {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FlowSynx.Infrastructure.Abstractions.InfrastructureResources", typeof(InfrastructureResources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("FlowSynx.Infrastructure.Persistence.Abstractions.InfrastructureResources", typeof(InfrastructureResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

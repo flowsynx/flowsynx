@@ -8,49 +8,50 @@ using FlowSynx.Infrastructure.Persistence;
 using FlowSynx.Application.Core.Serializations;
 using FlowSynx.Configuration.OpenApi;
 using FlowSynx.Configuration.Server;
+using FlowSynx.Infrastructure.Persistence.Abstractions;
 
 namespace FlowSynx.Extensions;
 
 public static class ApplicationBuilderExtensions
 {
-    public static IApplicationBuilder UseCustomException(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxCustomException(this IApplicationBuilder app)
     {
         app.UseMiddleware<ExceptionMiddleware>();
         return app;
     }
 
-    public static IApplicationBuilder UseTenantLogging(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxTenantLogging(this IApplicationBuilder app)
     {
         return app.UseMiddleware<TenantLoggingMiddleware>();
     }
 
-    public static IApplicationBuilder UseTenantCors(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxTenantCors(this IApplicationBuilder app)
     {
         app.UseMiddleware<TenantCorsMiddleware>();
         return app;
     }
 
-    public static IApplicationBuilder UseTenants(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxTenants(this IApplicationBuilder app)
     {
         app.UseMiddleware<TenantMiddleware>();
         return app;
     }
 
-    public static IApplicationBuilder UseTenantRateLimiting(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxTenantRateLimiting(this IApplicationBuilder app)
     {
         app.UseMiddleware<TenantRateLimitingMiddleware>();
         return app;
     }
 
 
-    public static IApplicationBuilder UseCustomHeaders(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxCustomHeaders(this IApplicationBuilder app)
     {
         // Inject IVersion via middleware instead of locating from ApplicationServices
         app.UseMiddleware<VersionHeaderMiddleware>();
         return app;
     }
 
-    public static IApplicationBuilder UseHealthCheck(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxHealthCheck(this IApplicationBuilder app)
     {
         app.UseEndpoints(endpoints =>
         {
@@ -81,7 +82,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder UseApiDocumentation(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxApiDocumentation(this IApplicationBuilder app)
     {
         using var serviceScope = app.ApplicationServices.CreateScope();
         var openApiConfiguration = serviceScope.ServiceProvider.GetRequiredService<OpenApiConfiguration>();
@@ -130,7 +131,7 @@ public static class ApplicationBuilderExtensions
         }
     }
 
-    public static IApplicationBuilder UseHttps(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxHttps(this IApplicationBuilder app)
     {
         using var scope = app.ApplicationServices.CreateScope();
         var serverConfiguration = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();

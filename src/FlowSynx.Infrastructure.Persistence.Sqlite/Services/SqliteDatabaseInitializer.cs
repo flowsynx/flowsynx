@@ -3,6 +3,7 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Primitives;
+using FlowSynx.Infrastructure.Persistence.Abstractions;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 

@@ -6,13 +6,13 @@ using FlowSynx.Configuration.OpenApi;
 using FlowSynx.Configuration.Server;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Abstractions.Persistence;
 using FlowSynx.Infrastructure.Logging;
-using FlowSynx.Infrastructure.Persistence;
+using FlowSynx.Infrastructure.Persistence.Abstractions;
 using FlowSynx.Infrastructure.Persistence.Postgres.Configuration;
 using FlowSynx.Infrastructure.Persistence.Sqlite;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Configuration;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
+using FlowSynx.Infrastructure.Security.Cryptography;
 using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
@@ -31,26 +31,26 @@ public static class ServiceCollectionExtensions
 
     #region Simple registrations
 
-    public static IServiceCollection AddCancellationTokenSource(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxCancellationTokenSource(this IServiceCollection services)
     {
         services.AddSingleton(new CancellationTokenSource());
         return services;
     }
 
-    public static IServiceCollection AddVersion(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxVersion(this IServiceCollection services)
     {
         services.AddSingleton<IVersion, FlowSynxVersion>();
         return services;
     }
 
-    public static IServiceCollection AddEventPublisher(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxEventPublisher(this IServiceCollection services)
     {
         services.AddSignalR();
         services.AddScoped<IEventPublisher, SignalREventPublisher<WorkflowsHub>>();
         return services;
     }
 
-    public static IServiceCollection AddServer(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxServer(this IServiceCollection services)
     {
         services.AddScoped(provider =>
         {
@@ -61,13 +61,13 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddUserService(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxUserService(this IServiceCollection services)
     {
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         return services;
     }
 
-    public static IServiceCollection AddTenantService(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxTenantService(this IServiceCollection services)
     {
         services.AddScoped<ITenantResolver, TenantResolver>();
         services.AddScoped<ITenantContext, TenantContext>();
@@ -78,19 +78,19 @@ public static class ServiceCollectionExtensions
 
     #region Logging
 
-    public static void AddLoggingFilter(this ILoggingBuilder builder)
+    public static void AddFlowSynxLoggingFilter(this ILoggingBuilder builder)
     {
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
     }
 
-    public static IServiceCollection AddLoggingServices(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxLoggingServices(this IServiceCollection services)
     {
         services.AddLoggers()
                 .AddLogging(logging =>
                 {
                     logging.ClearProviders();
                     logging.AddConsole();
-                    logging.AddLoggingFilter();
+                    logging.AddFlowSynxLoggingFilter();
                 });
         return services;
     }
@@ -98,7 +98,7 @@ public static class ServiceCollectionExtensions
 
     #region Health checks
 
-    public static IServiceCollection AddHealthChecker(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxHealthChecker(this IServiceCollection services)
     {
         services.AddHealthChecks();
         return services;
@@ -108,7 +108,7 @@ public static class ServiceCollectionExtensions
 
     #region OpenAPI (Swagger)
 
-    public static IServiceCollection AddApiDocumentation(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxApiDocumentation(this IServiceCollection services)
     {
         try
         {
@@ -208,7 +208,14 @@ public static class ServiceCollectionExtensions
 
     #region Security
 
-    public static IServiceCollection AddSecurity(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxDataProtection(this IServiceCollection services)
+    {
+        services.AddScoped<IDataProtectionFactory, DataProtectionFactory>();
+        services.AddScoped<IDataProtectionService, DataProtectionService>();
+        return services;
+    }
+
+    public static IServiceCollection AddFlowSynxSecurity(this IServiceCollection services)
     {
         try
         {
@@ -239,7 +246,7 @@ public static class ServiceCollectionExtensions
 
     #region Arguments / Version helpers
 
-    public static IServiceCollection ParseArguments(this IServiceCollection services, string[] args)
+    public static IServiceCollection ParseFlowSynxArguments(this IServiceCollection services, string[] args)
     {
         using var scope = services.BuildServiceProvider().CreateScope();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
@@ -273,7 +280,7 @@ public static class ServiceCollectionExtensions
 
     #region Persistence
 
-    public static IServiceCollection AddPersistence(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxPersistence(this IServiceCollection services)
     {
         using var scope = services.BuildServiceProvider().CreateScope();
         var tenantConfig = scope.ServiceProvider.GetRequiredService<IConfiguration>();

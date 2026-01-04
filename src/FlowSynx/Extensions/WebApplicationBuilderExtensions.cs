@@ -14,7 +14,7 @@ public static class WebApplicationBuilderExtensions
 
     public static WebApplicationBuilder AddSerilogLogging(this WebApplicationBuilder builder)
     {
-        builder.Logging.AddLoggingFilter();
+        builder.Logging.AddFlowSynxLoggingFilter();
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
@@ -29,7 +29,7 @@ public static class WebApplicationBuilderExtensions
         return builder;
     }
 
-    public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder ConfigureFlowSynxHttpServer(this WebApplicationBuilder builder)
     {
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
         var serverConfig = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();

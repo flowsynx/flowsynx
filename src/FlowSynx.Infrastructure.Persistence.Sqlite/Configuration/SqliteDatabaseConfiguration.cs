@@ -1,4 +1,4 @@
-﻿using FlowSynx.Infrastructure.Persistence;
+﻿using FlowSynx.Infrastructure.Persistence.Abstractions;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Configuration;
 

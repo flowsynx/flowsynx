@@ -1,4 +1,4 @@
-﻿namespace FlowSynx.Domain.Exceptions;
+﻿namespace FlowSynx.Infrastructure.Security.Secrets.Exceptions;
 
 public class SecretException : Exception
 {

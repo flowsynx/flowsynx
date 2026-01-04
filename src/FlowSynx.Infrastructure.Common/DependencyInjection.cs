@@ -5,7 +5,7 @@ namespace FlowSynx.Infrastructure.Common;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddSystemClock(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxSystemClock(this IServiceCollection services)
     {
         services.AddSingleton<ISystemClock, SystemClock>();
         return services;

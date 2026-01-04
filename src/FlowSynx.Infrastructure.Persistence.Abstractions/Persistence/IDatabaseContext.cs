@@ -9,7 +9,7 @@ using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
 using Microsoft.EntityFrameworkCore;
 
-namespace FlowSynx.Infrastructure.Abstractions.Persistence;
+namespace FlowSynx.Infrastructure.Persistence.Abstractions;
 
 public interface IDatabaseContext
 {

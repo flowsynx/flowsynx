@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{49A29FCE-FFE
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Domain", "src\FlowSynx.Domain\FlowSynx.Domain.csproj", "{445387B6-23EC-4C33-8423-AA5B669779DC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure.Abstractions", "src\FlowSynx.Infrastructure\FlowSynx.Infrastructure.Abstractions.csproj", "{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure.Persistence.Abstractions", "src\FlowSynx.Infrastructure.Persistence.Abstractions\FlowSynx.Infrastructure.Persistence.Abstractions.csproj", "{9F8F07B8-6A18-441A-AEAD-CFE09BDD46ED}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlowSynx.Infrastructure.Persistence.Postgres", "src\FlowSynx.Infrastructure.Persistence.Postgres\FlowSynx.Infrastructure.Persistence.Postgres.csproj", "{C9ABAD15-0A7A-4861-8055-027A0461BDAC}"
 EndProject
@@ -29,7 +29,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Ser
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Messaging", "src\FlowSynx.Infrastructure.Messaging\FlowSynx.Infrastructure.Messaging.csproj", "{55E3DFD9-2075-42D6-BC4F-D7D62CEAF217}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Secrets", "src\FlowSynx.Infrastructure.Secrets\FlowSynx.Infrastructure.Secrets.csproj", "{DE3513C8-D20E-4562-A025-1A5B05396220}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlowSynx.Infrastructure.Security", "src\FlowSynx.Infrastructure.Secrets\FlowSynx.Infrastructure.Security.csproj", "{DE3513C8-D20E-4562-A025-1A5B05396220}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

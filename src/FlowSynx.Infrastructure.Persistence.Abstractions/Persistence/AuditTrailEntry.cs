@@ -3,7 +3,7 @@ using FlowSynx.Domain.Tenants;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Text.Json;
 
-namespace FlowSynx.Infrastructure.Persistence;
+namespace FlowSynx.Infrastructure.Persistence.Abstractions;
 
 public class AuditTrailEntry(EntityEntry entry, string userId, TenantId tenantId, string entityName)
 {

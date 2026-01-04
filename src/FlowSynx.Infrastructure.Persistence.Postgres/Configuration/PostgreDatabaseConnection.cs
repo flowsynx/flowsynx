@@ -1,4 +1,6 @@
-﻿namespace FlowSynx.Infrastructure.Persistence.Postgres.Configuration;
+﻿using FlowSynx.Infrastructure.Persistence.Abstractions;
+
+namespace FlowSynx.Infrastructure.Persistence.Postgres.Configuration;
 
 public class PostgreDatabaseConnection : DatabaseConnection
 {
