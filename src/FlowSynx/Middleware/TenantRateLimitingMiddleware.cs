@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Tenancy;
+﻿using FlowSynx.Application.Tenancy;
 using FlowSynx.Services;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -19,8 +19,7 @@ public sealed class TenantRateLimitingMiddleware
 
     public async Task InvokeAsync(
         HttpContext context,
-        ITenantContext tenantContext,
-        ITenantRateLimitPolicyProvider policyProvider)
+        ITenantContext tenantContext)
     {
         var tenantId = tenantContext.TenantId;
         if (!Guid.TryParse(tenantId?.ToString(), out var parsedTenantId))
@@ -29,7 +28,7 @@ public sealed class TenantRateLimitingMiddleware
             return;
         }
 
-        var policy = await policyProvider.GetPolicyAsync(tenantId, context.RequestAborted);
+        var policy = tenantContext.RateLimitingPolicy;
         if (policy is null)
         {
             await _next(context);

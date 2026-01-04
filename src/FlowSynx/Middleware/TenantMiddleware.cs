@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application.Core.Services;
-using FlowSynx.Application.Core.Tenancy;
+﻿using FlowSynx.Application.Abstractions.Services;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
 using Serilog.Context;
 
@@ -21,7 +21,7 @@ public class TenantMiddleware
         ITenantContext tenantContext,
         ILogger<TenantMiddleware> logger)
     {
-        var result = await tenantResolver.ResolveAsync();
+        var result = await tenantResolver.ResolveAsync(context.RequestAborted);
         if (result is null || !result.IsValid)
         {
             logger.LogError("Tenant resolution failed. Invalid Tenant ID.");
@@ -40,7 +40,9 @@ public class TenantMiddleware
 
         // Valid and active tenant: populate context and push enrichment so downstream logging uses tenant-specific sinks.
         tenantContext.TenantId = result.TenantId;
-        tenantContext.AuthenticationMode = result.AuthenticationMode;
+        //tenantContext.AuthenticationMode = result.AuthenticationMode;
+        tenantContext.CorsPolicy = result.CorsPolicy;
+        tenantContext.RateLimitingPolicy = result.RateLimitingPolicy;
         tenantContext.Status = result.Status;
         tenantContext.IsValid = result.IsValid;
         tenantContext.UserId = currentUserService.UserId();

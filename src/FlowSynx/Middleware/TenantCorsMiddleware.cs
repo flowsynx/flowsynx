@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application.Core.Interfaces;
-using FlowSynx.Application.Core.Tenancy;
+﻿using FlowSynx.Application.Abstractions.Persistence;
+using FlowSynx.Application.Tenancy;
 
 namespace FlowSynx.Middleware;
 
@@ -14,8 +14,7 @@ public sealed class TenantCorsMiddleware
 
     public async Task InvokeAsync(
         HttpContext context,
-        ITenantContext tenantContext,
-        ITenantRepository tenantRepository)
+        ITenantContext tenantContext)
     {
         var tenantId = tenantContext.TenantId;
         if (tenantId == null)
@@ -24,8 +23,7 @@ public sealed class TenantCorsMiddleware
             return;
         }
 
-        var config = await tenantRepository.GetByIdAsync(tenantId, CancellationToken.None);
-        var corsConfig = config?.Configuration.Cors;
+        var corsConfig = tenantContext.CorsPolicy;
         var origins = corsConfig?.AllowedOrigins;
         var allowCredentials = corsConfig?.AllowCredentials ?? false;
 

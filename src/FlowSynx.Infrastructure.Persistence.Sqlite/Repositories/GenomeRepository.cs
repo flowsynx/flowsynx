@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Interfaces;
+﻿using FlowSynx.Application.Abstractions.Persistence;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.ValueObjects;

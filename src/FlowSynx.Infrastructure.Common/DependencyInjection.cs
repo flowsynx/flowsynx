@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Services;
+﻿using FlowSynx.Application.Abstractions.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FlowSynx.Infrastructure.Common;

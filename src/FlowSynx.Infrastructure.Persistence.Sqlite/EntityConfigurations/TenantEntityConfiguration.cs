@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Core.Serializations;
 using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.TenantSecretConfigs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Text.Json;
@@ -42,12 +43,12 @@ public class TenantEntityConfiguration : IEntityTypeConfiguration<Tenant>
                     value => (TenantStatus)Enum.Parse(typeof(TenantStatus), value, true)
                 );
 
-        // Configuration reference
-        builder.Property(gb => gb.Configuration)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<TenantConfiguration>(v))
-            .HasColumnType("TEXT");
+        //// Configuration reference
+        //builder.Property(gb => gb.SecretConfig)
+        //    .HasConversion(
+        //        v => JsonSerializer.Serialize(v),
+        //        v => JsonSerializer.Deserialize<TenantSecretConfig>(v))
+        //    .HasColumnType("TEXT");
 
         // Indexes
         builder.HasIndex(t => t.Slug).IsUnique();

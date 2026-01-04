@@ -5,6 +5,8 @@ using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.TenantSecretConfigs;
+using FlowSynx.Domain.TenantSecrets;
 using Microsoft.EntityFrameworkCore;
 
 namespace FlowSynx.Infrastructure.Abstractions.Persistence;
@@ -12,6 +14,8 @@ namespace FlowSynx.Infrastructure.Abstractions.Persistence;
 public interface IDatabaseContext
 {
     DbSet<Tenant> Tenants { get; }
+    DbSet<TenantSecret> TenantSecrets { get; }
+    DbSet<TenantSecretConfig> TenantSecretConfigs { get; }
     DbSet<TenantContact> TenantContacts { get; }
     DbSet<GeneBlueprint> GeneBlueprints { get; }
     DbSet<Chromosome> Chromosomes { get; }

@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
+using FlowSynx.Domain.TenantSecretConfigs.Security;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
@@ -10,11 +10,12 @@ namespace FlowSynx.Security;
 
 public sealed class JwtTokenAuthenticationProvider : IAuthenticationProvider
 {
-    public AuthenticationMode AuthenticationMode => AuthenticationMode.Jwt;
+    public TenantAuthenticationMode AuthenticationMode => TenantAuthenticationMode.Jwt;
 
     public Task<AuthenticationProviderResult> AuthenticateAsync(
         HttpContext context,
-        Tenant tenant)
+        TenantId tenantId,
+        TenantAuthenticationPolicy authenticationPolicy)
     {
         if (!context.Request.Headers.TryGetValue("Authorization", out var value))
             return Task.FromResult(
@@ -47,7 +48,7 @@ public sealed class JwtTokenAuthenticationProvider : IAuthenticationProvider
             token = qsToken!;
         }
 
-        var jwt = tenant.Configuration.Security.Authentication.Jwt;
+        var jwt = authenticationPolicy.Jwt;
 
         var validationParameters = new TokenValidationParameters
         {
@@ -93,8 +94,8 @@ public sealed class JwtTokenAuthenticationProvider : IAuthenticationProvider
             // Normalize claims into system model
             var claims = new List<Claim>(principal.Claims)
             {
-                new(CustomClaimTypes.TenantId, tenant.Id.ToString()),
-                new(CustomClaimTypes.AuthMode, AuthenticationMode.Jwt.ToString())
+                new(CustomClaimTypes.TenantId, tenantId.ToString()),
+                new(CustomClaimTypes.AuthMode, TenantAuthenticationMode.Jwt.ToString())
             };
 
             // Map JWT roles → permissions (only allow known permissions)
@@ -105,7 +106,7 @@ public sealed class JwtTokenAuthenticationProvider : IAuthenticationProvider
 
             claims.AddRange(roleClaims);
 
-            var identity = new ClaimsIdentity(claims, AuthenticationMode.Jwt.ToString());
+            var identity = new ClaimsIdentity(claims, TenantAuthenticationMode.Jwt.ToString());
             var finalPrincipal = new ClaimsPrincipal(identity);
 
             context.User = finalPrincipal;

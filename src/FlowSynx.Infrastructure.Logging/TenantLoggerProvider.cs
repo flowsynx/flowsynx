@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Tenancy;
+﻿using FlowSynx.Application.Tenancy;
 using Microsoft.Extensions.Logging;
 
 

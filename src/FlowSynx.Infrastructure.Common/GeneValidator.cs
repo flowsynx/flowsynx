@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application.Core.Interfaces;
-using FlowSynx.Application.Core.Services;
+﻿using FlowSynx.Application.Abstractions.Persistence;
+using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.GeneInstances;

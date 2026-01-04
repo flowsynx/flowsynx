@@ -1,7 +1,8 @@
-﻿using FlowSynx.Application.Core.Tenancy;
+﻿using FlowSynx.Application.Abstractions.Services;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.TenantSecretConfigs.Networking;
 using FlowSynx.Persistence.Sqlite.Contexts;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -13,15 +14,18 @@ public sealed class TenantResolver : ITenantResolver
     private const string TenantIdHeaderName = "X-Tenant-Id";
 
     private readonly IDbContextFactory<SqliteApplicationContext> _appContextFactory;
+    private readonly ISecretProviderFactory _secretProviderFactory;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IMemoryCache _cache;
 
     public TenantResolver(
         IDbContextFactory<SqliteApplicationContext> appContextFactory,
+        ISecretProviderFactory secretProviderFactory,
         IHttpContextAccessor httpContextAccessor,
         IMemoryCache cache)
     {
         _appContextFactory = appContextFactory ?? throw new ArgumentNullException(nameof(appContextFactory));
+        _secretProviderFactory = secretProviderFactory ?? throw new ArgumentNullException(nameof(secretProviderFactory));
         _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
     }
@@ -55,6 +59,10 @@ public sealed class TenantResolver : ITenantResolver
         }
 
         var tenantId = TenantId.Create(resolvedTenantId);
+
+        var provider = await _secretProviderFactory.GetProviderForTenantAsync(tenantId);
+        var secrets = await provider.GetSecretsAsync();
+
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         var tenant = await context.Tenants
             .AsNoTracking()
@@ -64,7 +72,8 @@ public sealed class TenantResolver : ITenantResolver
                 IsValid = true,
                 TenantId = t.Id,
                 Status = t.Status,
-                AuthenticationMode = t.Configuration.Security.Authentication.Mode
+                CorsPolicy = ParseCorsPolicy(secrets, tenantId),
+                RateLimitingPolicy = ParseRateLimitingPolicy(secrets)
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -103,5 +112,25 @@ public sealed class TenantResolver : ITenantResolver
         }
 
         return Guid.Empty;
+    }
+
+    private TenantCorsPolicy? ParseCorsPolicy(Dictionary<string, string?> secrets, TenantId tenantId)
+    {
+        return new TenantCorsPolicy
+        {
+            PolicyName = secrets.GetValueOrDefault("cors:policyName") ?? $"DefaultCorsPolicy.{tenantId}",
+            AllowedOrigins = secrets.GetValueOrDefault("cors:allowedOrigins")?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>(),
+            AllowCredentials = bool.TryParse(secrets.GetValueOrDefault("cors:allowCredentials"), out var allowCredentials) && allowCredentials
+        };
+    }
+
+    private TenantRateLimitingPolicy? ParseRateLimitingPolicy(Dictionary<string, string?> secrets)
+    {
+        return new TenantRateLimitingPolicy
+        {
+            WindowSeconds = int.TryParse(secrets.GetValueOrDefault("rateLimiting:windowSeconds"), out var windowSeconds) ? windowSeconds : 60,
+            PermitLimit = int.TryParse(secrets.GetValueOrDefault("rateLimiting:permitLimit"), out var permitLimit) ? permitLimit : 100,
+            QueueLimit = int.TryParse(secrets.GetValueOrDefault("rateLimiting:queueLimit"), out var queueLimit) ? queueLimit : 0
+        };
     }
 }

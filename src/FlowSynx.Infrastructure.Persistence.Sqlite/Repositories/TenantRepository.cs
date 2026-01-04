@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Interfaces;
+﻿using FlowSynx.Application.Abstractions.Persistence;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
@@ -57,12 +57,19 @@ public class TenantRepository : ITenantRepository
         }
     }
 
-    public async Task<List<Tenant>> GetAllAsync(CancellationToken cancellationToken)
+    public Task<bool> ExistsAsync(TenantId id, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-            return await context.Tenants.ToListAsync(cancellationToken);
+            return await context.Tenants
+                .FirstOrDefaultAsync(t => t.Id == id, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -72,13 +79,49 @@ public class TenantRepository : ITenantRepository
         }
     }
 
-    public async Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken)
+    public async Task<Tenant?> GetWithConfigAsync(TenantId id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.Tenants
+                .Include(t => t.SecretConfig)
+                .FirstOrDefaultAsync(t => t.Id == id, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, ex.Message);
+            _logger.LogError(ex, errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task<Tenant?> GetWithContactAsync(TenantId id, CancellationToken cancellationToken = default)
     {
         try
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             return await context.Tenants
                 .Include(t => t.Contacts)
+                .FirstOrDefaultAsync(t => t.Id == id, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, ex.Message);
+            _logger.LogError(ex, errorMessage.ToString());
+            throw new FlowSynxException(errorMessage);
+        }
+    }
+
+    public async Task<Tenant?> GetWithSecretsAsync(TenantId id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+            return await context.Tenants
+                .Include(t => t.Secrets)
                 .FirstOrDefaultAsync(t => t.Id == id, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
         }

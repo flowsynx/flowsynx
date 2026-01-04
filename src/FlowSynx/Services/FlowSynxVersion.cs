@@ -1,7 +1,7 @@
 ﻿using FlowSynx.PluginCore.Exceptions;
 using System.Reflection;
 using FlowSynx.Domain.Primitives;
-using FlowSynx.Application.Core.Services;
+using FlowSynx.Application.Abstractions.Services;
 
 namespace FlowSynx.Services;
 

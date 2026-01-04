@@ -1,23 +1,24 @@
 ﻿using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
+using FlowSynx.Domain.TenantSecretConfigs.Security;
 using System.Security.Claims;
 
 namespace FlowSynx.Security;
 
 public sealed class NoneAuthenticationProvider : IAuthenticationProvider
 {
-    public AuthenticationMode AuthenticationMode => AuthenticationMode.None;
+    public TenantAuthenticationMode AuthenticationMode => TenantAuthenticationMode.None;
 
     public Task<AuthenticationProviderResult> AuthenticateAsync(
         HttpContext context,
-        Tenant tenant)
+        TenantId tenantId,
+        TenantAuthenticationPolicy authenticationPolicy)
     {
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, "00000000-0000-0000-0000-000000000001"),
             new(ClaimTypes.Name, "admin"),
-            new(CustomClaimTypes.TenantId, tenant.Id.ToString()),
-            new(CustomClaimTypes.AuthMode, AuthenticationMode.None.ToString()),
+            new(CustomClaimTypes.TenantId, tenantId.ToString()),
+            new(CustomClaimTypes.AuthMode, TenantAuthenticationMode.None.ToString()),
             new(CustomClaimTypes.Permissions, Permissions.Admin)
         };
 

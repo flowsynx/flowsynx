@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Services;
+﻿using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Infrastructure.Persistence;
 using FlowSynx.Persistence.Sqlite.EntityConfigurations;
@@ -46,5 +46,7 @@ public class SqliteApplicationContext : BaseDbContext
         modelBuilder.ApplyConfiguration(new GenomeConfiguration());
         modelBuilder.ApplyConfiguration(new TenantEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TenantContactEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantSecretEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new TenantSecretConfigEntityConfiguration());
     }
 }

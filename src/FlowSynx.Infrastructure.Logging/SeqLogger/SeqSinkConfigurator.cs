@@ -1,14 +1,14 @@
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
+using FlowSynx.Domain.TenantSecretConfigs.Logging;
 using Serilog;
 
 namespace FlowSynx.Infrastructure.Logging.SeqLogger;
 
 public sealed class SeqSinkConfigurator : ILoggingSinkConfigurator
 {
-    public LoggerConfiguration Configure(LoggerConfiguration configuration, TenantId tenantId, LoggingConfiguration config)
+    public LoggerConfiguration Configure(LoggerConfiguration configuration, TenantId tenantId, TenantLoggingPolicy policy)
     {
-        var logConfig = config.Seq;
+        var logConfig = policy.Seq;
 
         // Expecting something like: Logging.Seq.Url and Logging.Seq.ApiKey
         if (logConfig is null ||

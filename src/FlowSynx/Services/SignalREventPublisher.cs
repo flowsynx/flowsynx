@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Services;
+﻿using FlowSynx.Application.Abstractions.Messaging;
 using Microsoft.AspNetCore.SignalR;
 
 namespace FlowSynx.Services;

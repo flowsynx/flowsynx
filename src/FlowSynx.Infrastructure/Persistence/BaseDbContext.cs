@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Services;
+﻿using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;
@@ -7,6 +7,8 @@ using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.TenantSecretConfigs;
+using FlowSynx.Domain.TenantSecrets;
 using FlowSynx.Infrastructure.Abstractions.Persistence;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Http;
@@ -40,6 +42,8 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
     }
 
     public DbSet<Tenant> Tenants { get; set; }
+    public DbSet<TenantSecret> TenantSecrets { get; set; }
+    public DbSet<TenantSecretConfig> TenantSecretConfigs { get; set; }
     public DbSet<TenantContact> TenantContacts { get; set; }
     public DbSet<GeneBlueprint> GeneBlueprints { get; set; }
     public DbSet<Chromosome> Chromosomes { get; set; }

@@ -2,6 +2,8 @@ using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants.Events;
+using FlowSynx.Domain.TenantSecretConfigs;
+using FlowSynx.Domain.TenantSecrets;
 using System.Text.RegularExpressions;
 
 namespace FlowSynx.Domain.Tenants;
@@ -13,8 +15,9 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     public string? Description { get; private set; }
     public TenantStatus Status { get; private set; }
 
-    public TenantConfiguration Configuration { get; private set; }
+    public TenantSecretConfig SecretConfig { get; private set; }
     public List<TenantContact> Contacts { get; private set; } = new();
+    public List<TenantSecret> Secrets { get; private set; } = new();
 
     // Private constructor for EF Core
     private Tenant() { }
@@ -35,7 +38,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             Slug = slug,
             Description = description?.Trim(),
             Status = TenantStatus.Active,
-            Configuration = TenantConfigurationDefaults.Create()
+            //SecretConfig = TenantSecretConfig.Create(tenantId, SecretProviderType.BuiltIn, ProviderConfiguration.Default)
         };
 
         tenant.AddDomainEvent(new TenantCreatedEvent(tenant.Id, tenant.Name, tenant.Slug));
@@ -91,6 +94,30 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
 
         AddDomainEvent(new TenantTerminatedEvent(Id, reason));
     }
+
+    public TenantSecret AddSecret(SecretKey key, SecretValue value)
+    {
+        var existing = Secrets.FirstOrDefault(s => s.Key == key);
+        if (existing != null)
+            throw new DomainException($"Secret with key '{key.Value}' already exists");
+
+        var secret = TenantSecret.Create(Id, key, value);
+        Secrets.Add(secret);
+
+        AddDomainEvent(new SecretAddedEvent(Id, key));
+        return secret;
+    }
+
+    public void RemoveSecret(SecretKey key)
+    {
+        var secret = Secrets.FirstOrDefault(s => s.Key == key);
+        if (secret == null) return;
+
+        Secrets.Remove(secret);
+        AddDomainEvent(new SecretRemovedEvent(Id, key));
+    }
+
+    public TenantSecret? GetSecret(SecretKey key) => Secrets.FirstOrDefault(s => s.Key == key);
 
     public void AddContact(string email, string name, bool isPrimary)
     {
@@ -168,18 +195,18 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             throw new DomainException("Tenant name cannot exceed 100 characters");
     }
 
-    public TenantConfiguration FallBackToDefaultConfiguration()
-    {
-        Configuration = TenantConfigurationDefaults.Create();
+    //public TenantConfiguration FallBackToDefaultConfiguration()
+    //{
+    //    Configuration = TenantConfigurationDefaults.Create();
 
-        AddDomainEvent(new TenantConfigurationCreatedEvent(Id));
+    //    AddDomainEvent(new TenantConfigurationCreatedEvent(Id));
 
-        return Configuration;
-    }
+    //    return Configuration;
+    //}
 
-    public void UpdateSettings(TenantConfiguration newSettings, string changeReason)
-    {
-        Configuration = newSettings;
-        AddDomainEvent(new TenantConfigurationUpdatedEvent(Id, changeReason));
-    }
+    //public void UpdateSettings(TenantConfiguration newSettings, string changeReason)
+    //{
+    //    Configuration = newSettings;
+    //    AddDomainEvent(new TenantConfigurationUpdatedEvent(Id, changeReason));
+    //}
 }

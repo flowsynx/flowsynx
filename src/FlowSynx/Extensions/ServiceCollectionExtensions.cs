@@ -1,5 +1,6 @@
-﻿using FlowSynx.Application.Core.Services;
-using FlowSynx.Application.Core.Tenancy;
+﻿using FlowSynx.Application.Abstractions.Messaging;
+using FlowSynx.Application.Abstractions.Services;
+using FlowSynx.Application.Tenancy;
 using FlowSynx.Configuration.Database;
 using FlowSynx.Configuration.OpenApi;
 using FlowSynx.Configuration.Server;
@@ -70,7 +71,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ITenantResolver, TenantResolver>();
         services.AddScoped<ITenantContext, TenantContext>();
-        services.AddScoped<ITenantRateLimitPolicyProvider, TenantRateLimitPolicyProvider>();
+        //services.AddScoped<ITenantRateLimitPolicyProvider, TenantRateLimitPolicyProvider>();
         return services;
     }
 

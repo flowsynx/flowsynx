@@ -1,14 +1,14 @@
 ﻿using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
-using Microsoft.AspNetCore.Authentication;
+using FlowSynx.Domain.TenantSecretConfigs.Security;
 
 namespace FlowSynx.Security;
 
 public interface IAuthenticationProvider
 {
-    AuthenticationMode AuthenticationMode { get; }
+    TenantAuthenticationMode AuthenticationMode { get; }
 
     Task<AuthenticationProviderResult> AuthenticateAsync(
         HttpContext context,
-        Tenant tenant);
+        TenantId tenantId,
+        TenantAuthenticationPolicy authenticationPolicy);
 }

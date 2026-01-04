@@ -4,7 +4,7 @@ using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.AuditTrails;
-using FlowSynx.Application.Core.Interfaces;
+using FlowSynx.Application.Abstractions.Persistence;
 
 namespace FlowSynx.Persistence.Sqlite.Repositories;
 

@@ -1,9 +1,9 @@
-﻿using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
+﻿//using FlowSynx.Domain.Tenants;
+//using FlowSynx.Domain.TenantSecretConfigs.Networking;
 
-namespace FlowSynx.Services;
+//namespace FlowSynx.Services;
 
-public interface ITenantRateLimitPolicyProvider
-{
-    ValueTask<RateLimitingConfiguration?> GetPolicyAsync(TenantId tenantId, CancellationToken ct);
-}
+//public interface ITenantRateLimitPolicyProvider
+//{
+//    ValueTask<TenantRateLimitingPolicy?> GetPolicyAsync(TenantId tenantId, CancellationToken ct);
+//}

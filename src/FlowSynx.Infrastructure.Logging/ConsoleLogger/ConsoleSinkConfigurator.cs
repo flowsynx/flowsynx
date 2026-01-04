@@ -1,12 +1,12 @@
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
+using FlowSynx.Domain.TenantSecretConfigs.Logging;
 using Serilog;
 
 namespace FlowSynx.Infrastructure.Logging.ConsoleLogger;
 
 public sealed class ConsoleSinkConfigurator : ILoggingSinkConfigurator
 {
-    public LoggerConfiguration Configure(LoggerConfiguration configuration, TenantId tenantId, LoggingConfiguration config)
+    public LoggerConfiguration Configure(LoggerConfiguration configuration, TenantId tenantId, TenantLoggingPolicy policy)
     {
         return configuration.WriteTo.Console(
             restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,

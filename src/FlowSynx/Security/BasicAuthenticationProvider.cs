@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.Tenants.ValueObjects;
+using FlowSynx.Domain.TenantSecretConfigs.Security;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
@@ -8,11 +8,12 @@ namespace FlowSynx.Security;
 
 public sealed class BasicAuthenticationProvider : IAuthenticationProvider
 {
-    public AuthenticationMode AuthenticationMode => AuthenticationMode.Basic;
+    public TenantAuthenticationMode AuthenticationMode => TenantAuthenticationMode.Basic;
 
     public async Task<AuthenticationProviderResult> AuthenticateAsync(
         HttpContext context,
-        Tenant tenant)
+        TenantId tenantId,
+        TenantAuthenticationPolicy authenticationPolicy)
     {
         if (!context.Request.Headers.TryGetValue("Authorization", out var header))
             return AuthenticationProviderResult.Fail("Missing Authorization header");
@@ -53,11 +54,10 @@ public sealed class BasicAuthenticationProvider : IAuthenticationProvider
             return AuthenticationProviderResult.Fail("Invalid Base64 credentials");
         }
 
-        var securityConfig = tenant.Configuration.Security.Authentication;
-        var users = securityConfig.Basic.Users;
+        var users = authenticationPolicy.Basic.Users;
 
         var user = users.FirstOrDefault(u =>
-            u.Name.Equals(username, StringComparison.OrdinalIgnoreCase) &&
+            u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase) &&
             u.Password == password);
 
         if (user is null)
@@ -66,9 +66,9 @@ public sealed class BasicAuthenticationProvider : IAuthenticationProvider
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id),
-            new(ClaimTypes.Name, user.Name),
-            new(CustomClaimTypes.TenantId, tenant.Id.ToString()),
-            new(CustomClaimTypes.AuthMode, AuthenticationMode.Basic.ToString())
+            new(ClaimTypes.Name, user.UserName),
+            new(CustomClaimTypes.TenantId, tenantId.ToString()),
+            new(CustomClaimTypes.AuthMode, TenantAuthenticationMode.Basic.ToString())
         };
 
         claims.AddRange(user.Roles

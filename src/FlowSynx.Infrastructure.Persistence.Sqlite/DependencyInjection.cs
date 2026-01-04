@@ -1,4 +1,5 @@
-﻿using FlowSynx.Application.Core.Interfaces;
+﻿using FlowSynx.Application.Abstractions.Persistence;
+using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Repositories;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 using FlowSynx.Persistence.Sqlite.Contexts;
@@ -20,6 +21,9 @@ public static class DependencyInjection
             .AddScoped<IGenomeRepository, GenomeRepository>()
             .AddScoped<ITenantRepository, TenantRepository>()
             .AddScoped<IDatabaseInitializer, SqliteDatabaseInitializer>()
+            .AddScoped<ITenantSecretConfigRepository, TenantSecretConfigRepository>()
+            .AddScoped<ISecretProviderFactory, SecretProviderFactory>()
+            //.AddTransient<BuiltInSecretProvider>()
             .AddDbContextFactory<SqliteApplicationContext>(options =>
             {
                 options.UseSqlite(databaseConnection.ConnectionString);
