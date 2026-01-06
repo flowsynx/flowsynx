@@ -70,7 +70,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFlowSynxTenantService(this IServiceCollection services)
     {
         services.AddScoped<ITenantResolver, TenantResolver>();
-        services.AddScoped<ITenantContext, TenantContext>();
+        services.AddSingleton<ITenantContext, TenantContextAccessor>();
         return services;
     }
 

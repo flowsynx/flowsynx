@@ -6,5 +6,5 @@ namespace FlowSynx.Infrastructure.Security.Secrets.Providers;
 public interface ISecretProviderFactory
 {
     Task<ISecretProvider> GetProviderForTenantAsync(TenantId tenantId, CancellationToken ct = default);
-    ISecretProvider CreateProvider(TenantId tenantId, SecretProviderType providerType, ProviderConfiguration configuration);
+    ISecretProvider CreateProvider(TenantId tenantId, SecretProviderType providerType, ProviderConfiguration configuration, IServiceProvider scopedProvider);
 }

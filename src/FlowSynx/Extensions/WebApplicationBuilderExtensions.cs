@@ -12,19 +12,38 @@ public static class WebApplicationBuilderExtensions
     private const int DefaultHttpPort = 6262;
     private const int DefaultHttpsPort = 6263;
 
-    public static WebApplicationBuilder AddSerilogLogging(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddSystemLogging(this WebApplicationBuilder builder)
     {
         builder.Logging.AddFlowSynxLoggingFilter();
 
+        // System logs go to console and system file
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .WriteTo.Console(
-                restrictedToMinimumLevel: LogEventLevel.Information,
-                outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                outputTemplate: "[SYSTEM] [{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File(
+                "logs/system/log-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 31,
+                shared: true)
             .CreateLogger();
 
-        builder.Host.UseSerilog(Log.Logger);
+        builder.Host.UseSerilog();
+
+
+
+        //Log.Logger = new LoggerConfiguration()
+        //    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
+        //    .Enrich.FromLogContext()
+        //    .WriteTo.Console(
+        //        restrictedToMinimumLevel: LogEventLevel.Information,
+        //        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+        //    .CreateLogger();
+
+        //builder.Host.UseSerilog(Log.Logger);
 
         return builder;
     }
@@ -33,11 +52,11 @@ public static class WebApplicationBuilderExtensions
     {
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
         var serverConfig = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        //var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         try
         {
-            ConfigureKestrelEndpoints(builder, serverConfig, logger);
+            ConfigureKestrelEndpoints(builder, serverConfig);
             ConfigureKestrelSettings(builder);
 
             return builder;
@@ -45,15 +64,14 @@ public static class WebApplicationBuilderExtensions
         catch (Exception ex)
         {
             var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationConfigureServer, ex.Message);
-            logger.LogError(ex, errorMessage.ToString());
+            Log.Logger.Error(ex, errorMessage.ToString());
             throw new FlowSynxException(errorMessage);
         }
     }
 
     private static void ConfigureKestrelEndpoints(
         WebApplicationBuilder builder,
-        ServerConfiguration config,
-        Microsoft.Extensions.Logging.ILogger logger)
+        ServerConfiguration config)
     {
         builder.WebHost.ConfigureKestrel((_, options) =>
         {
@@ -64,11 +82,11 @@ public static class WebApplicationBuilderExtensions
 
             if (!httpsPort.HasValue)
             {
-                logger.LogInformation("Configuring HTTP endpoint only: HTTP {HttpPort}", httpPort);
+                Log.Logger.Information("Configuring HTTP endpoint only: HTTP {HttpPort}", httpPort);
                 return;
             }
 
-            ConfigureHttps(options, httpsPort.Value, config.Https, logger, httpPort);
+            ConfigureHttps(options, httpsPort.Value, config.Https, httpPort);
         });
     }
 
@@ -98,7 +116,6 @@ public static class WebApplicationBuilderExtensions
         KestrelServerOptions options,
         int httpsPort,
         HttpsServerConfiguration? httpsConfig,
-        Microsoft.Extensions.Logging.ILogger logger,
         int httpPort)
     {   
         options.ListenAnyIP(httpsPort, listenOptions =>
@@ -106,7 +123,7 @@ public static class WebApplicationBuilderExtensions
             ConfigureListenOptions(listenOptions, httpsConfig);
         });
 
-        logger.LogInformation("Configuring HTTP and HTTPS endpoints: HTTP {HttpPort}, HTTPS {HttpsPort}", httpPort, httpsPort);
+        Log.Logger.Information("Configuring HTTP and HTTPS endpoints: HTTP {HttpPort}, HTTPS {HttpsPort}", httpPort, httpsPort);
     }
 
     private static void ConfigureListenOptions(

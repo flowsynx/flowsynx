@@ -29,6 +29,8 @@ public record TenantId
         return new TenantId(value);
     }
 
+    public bool HasValue => this != null && Value != Guid.Empty;
+
     public static bool IsValid(string value)
     {
         if (string.IsNullOrWhiteSpace(value))

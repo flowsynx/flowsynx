@@ -7,7 +7,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddFlowSynxSecretManagement(this IServiceCollection services)
     {
-        services.AddScoped<ISecretProviderFactory, SecretProviderFactory>();
+        services.AddSingleton<ISecretProviderFactory, SecretProviderFactory>();
         return services;
     }
 }

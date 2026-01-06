@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Abstractions.Services;
 using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
-using Serilog.Context;
+using FlowSynx.Infrastructure.Logging;
 
 namespace FlowSynx.Middleware;
 
@@ -38,22 +38,23 @@ public class TenantMiddleware
             return;
         }
 
-        tenantContext.TenantId = result.TenantId;
-        tenantContext.CorsPolicy = result.CorsPolicy;
-        tenantContext.RateLimitingPolicy = result.RateLimitingPolicy;
-        tenantContext.Status = result.Status;
-        tenantContext.IsValid = result.IsValid;
-        tenantContext.UserId = currentUserService.UserId();
-        tenantContext.UserAgent = context.Request.Headers["User-Agent"].ToString();
-        tenantContext.IPAddress = GetClientIpAddress(context);
-        tenantContext.Endpoint = context.Request.Path;
-
-        using (LogContext.PushProperty("TenantId", result.TenantId.ToString()))
-        using (LogContext.PushProperty("RequestPath", context.Request.Path))
+        TenantContextAccessor.Set(new TenantContextAccessor.TenantContext
         {
-            logger.LogInformation("Tenant '{TenantId}' resolved successfully.", result.TenantId);
-            await _next(context);
-        }
+            TenantId = result.TenantId,
+            IsValid = result.IsValid,
+            Status = result.Status,
+            CorsPolicy = result.CorsPolicy,
+            RateLimitingPolicy = result.RateLimitingPolicy,
+            UserId = currentUserService.UserId(),
+            UserAgent = context.Request.Headers.UserAgent.ToString(),
+            IPAddress = GetClientIpAddress(context),
+            Endpoint = context.Request.Path
+        });
+
+        var loggingService = context.RequestServices.GetRequiredService<TenantLoggingService>();
+        await loggingService.ConfigureTenantLogger(result.TenantId);
+
+        await _next(context);
     }
 
     private string? GetClientIpAddress(HttpContext? httpContext)

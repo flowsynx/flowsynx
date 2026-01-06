@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddSerilogLogging();
+builder.AddSystemLogging();
 
 try
 {
@@ -115,7 +115,7 @@ static void ConfigureMiddleware(WebApplication app)
 
     // Tenant resolution (early)
     app.UseFlowSynxTenants();
-    app.UseFlowSynxTenantLogging();
+    //app.UseFlowSynxTenantLogging();
 
     // Routing (needed before auth)
     app.UseRouting();

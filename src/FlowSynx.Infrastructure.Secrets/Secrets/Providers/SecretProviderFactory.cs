@@ -5,6 +5,7 @@ using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Infrastructure.Security.Secrets.Exceptions;
 using FlowSynx.Infrastructure.Security.Secrets.Providers.BuildIn;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 
@@ -12,19 +13,16 @@ namespace FlowSynx.Infrastructure.Security.Secrets.Providers;
 
 public class SecretProviderFactory : ISecretProviderFactory
 {
-    private readonly ITenantSecretConfigRepository _configRepository;
     private readonly IServiceProvider _serviceProvider;
     private readonly IMemoryCache _cache;
     private readonly ILogger<SecretProviderFactory> _logger;
     private readonly ConcurrentDictionary<string, ISecretProvider> _providers = new();
 
     public SecretProviderFactory(
-        ITenantSecretConfigRepository configRepository,
         IServiceProvider serviceProvider,
         IMemoryCache cache,
         ILogger<SecretProviderFactory> logger)
     {
-        _configRepository = configRepository;
         _serviceProvider = serviceProvider;
         _cache = cache;
         _logger = logger;
@@ -32,27 +30,23 @@ public class SecretProviderFactory : ISecretProviderFactory
 
     public async Task<ISecretProvider> GetProviderForTenantAsync(TenantId tenantId, CancellationToken ct = default)
     {
-        var cacheKey = $"provider_{tenantId}";
+        using var scope = _serviceProvider.CreateScope();
+        var configRepository = scope.ServiceProvider.GetRequiredService<ITenantSecretConfigRepository>();
+        var config = await configRepository.GetByTenantIdAsync(tenantId, ct)
+                     ?? throw new SecretException($"No secret provider configured for tenant {tenantId}");
 
-        if (_providers.TryGetValue(cacheKey, out var provider))
-            return provider;
-
-        var config = await _configRepository.GetByTenantIdAsync(tenantId, ct);
-
-        if (config == null)
-            throw new SecretException($"No secret provider configured for tenant {tenantId}");
-
-        provider = CreateProvider(tenantId, config.ProviderType, config.Configuration);
-        _providers[cacheKey] = provider;
-
-        return provider;
+        return CreateProvider(tenantId, config.ProviderType, config.Configuration, scope.ServiceProvider);
     }
 
-    public ISecretProvider CreateProvider(TenantId tenantId, SecretProviderType providerType, ProviderConfiguration configuration)
+    public ISecretProvider CreateProvider(
+        TenantId tenantId,
+        SecretProviderType providerType,
+        ProviderConfiguration configuration,
+        IServiceProvider scopedProvider)
     {
         return providerType switch
         {
-            SecretProviderType.BuiltIn => new BuiltInSecretProvider(tenantId, _serviceProvider),
+            SecretProviderType.BuiltIn => new BuiltInSecretProvider(tenantId, scopedProvider),
             //SecretProviderType.AzureKeyVault => new AzureKeyVaultProvider(tenantId, configuration, _serviceProvider),
             //SecretProviderType.AwsSecretsManager => new AwsSecretsManagerProvider(tenantId, configuration, _serviceProvider),
             //SecretProviderType.HashiCorpVault => new HashiCorpVaultProvider(tenantId, configuration, _serviceProvider),
