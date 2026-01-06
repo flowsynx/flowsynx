@@ -6,12 +6,7 @@ public static class ProviderConfigurationDefaults
     {
         get
         {
-            var settings = new Dictionary<string, string>
-            {
-                { "ApiEndpoint", "https://api.defaultsecrets.com" },
-                { "Timeout", "30" } // Timeout in seconds
-            };
-
+            var settings = new Dictionary<string, string>();
             return new ProviderConfiguration(settings);
         }
     }

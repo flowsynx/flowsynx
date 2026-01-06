@@ -17,6 +17,7 @@ public static class TenantSecretDefaults
         // Logging
         // --------------------
         AddSecret(SecretKey.Create(TenantSecretKeys.Logging.Enabled), SecretValue.Create("true"));
+        AddSecret(SecretKey.Create(TenantSecretKeys.Logging.DefaultLogLevel), SecretValue.Create("Information"));
 
         // File logging
         AddSecret(SecretKey.Create(TenantSecretKeys.Logging.File.LogLevel), SecretValue.Create("Information"));

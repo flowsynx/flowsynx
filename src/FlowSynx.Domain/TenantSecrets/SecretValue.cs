@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.TenantSecrets;
 
-public record SecretValue
+public sealed record SecretValue
 {
     public string Value { get; init; }
     public bool IsEncrypted { get; init; }

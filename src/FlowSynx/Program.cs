@@ -113,9 +113,8 @@ static void ConfigureMiddleware(WebApplication app)
     app.UseFlowSynxHttps();
     app.UseFlowSynxCustomHeaders();
 
-    // Tenant resolution (early)
+    // Tenant resolution
     app.UseFlowSynxTenants();
-    //app.UseFlowSynxTenantLogging();
 
     // Routing (needed before auth)
     app.UseRouting();

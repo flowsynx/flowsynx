@@ -2,7 +2,7 @@
 
 namespace FlowSynx.Domain.Tenants;
 
-public record TenantId
+public sealed record TenantId
 {
     public Guid Value { get; }
 
@@ -29,7 +29,7 @@ public record TenantId
         return new TenantId(value);
     }
 
-    public bool HasValue => this != null && Value != Guid.Empty;
+    public bool HasValue => Value != Guid.Empty;
 
     public static bool IsValid(string value)
     {

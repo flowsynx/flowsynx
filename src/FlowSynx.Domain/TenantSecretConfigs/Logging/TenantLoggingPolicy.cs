@@ -3,6 +3,7 @@
 public sealed record TenantLoggingPolicy
 {
     public bool Enabled { get; init; } = false;
+    public string DefaultLogLevel { get; init; } = "Information";
     public TenantFileLoggingPolicy File { get; init; } = new();
     public TenantSeqLoggingPolicy Seq { get; set; } = new();
 

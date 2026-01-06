@@ -22,7 +22,7 @@ public sealed class TenantRateLimitingMiddleware
         ITenantContext tenantContext)
     {
         var tenantId = tenantContext.TenantId;
-        if (!Guid.TryParse(tenantId?.ToString(), out var parsedTenantId))
+        if (!Guid.TryParse(tenantId.ToString(), out var parsedTenantId))
         {
             await _next(context);
             return;

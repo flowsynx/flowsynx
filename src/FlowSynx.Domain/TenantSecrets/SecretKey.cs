@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.TenantSecrets;
 
-public record SecretKey
+public sealed record SecretKey
 {
     public string Value { get; }
     public string Prefix { get; }

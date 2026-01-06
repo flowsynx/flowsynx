@@ -39,10 +39,9 @@ public class TenantLoggingService
             }
 
             var loggerConfig = new LoggerConfiguration()
-                .Enrich.WithProperty("TenantId", tenantId);
-                //.MinimumLevel.Is(GetLogEventLevel(parsedLoggingPolicy.DefaultLogLevel));
+                .Enrich.WithProperty("TenantId", tenantId)
+                .MinimumLevel.Is(parsedLoggingPolicy.DefaultLogLevel.GetLogEventLevel());
 
-            // Configure sinks based on tenant config
             ConfigureSinks(loggerConfig, parsedLoggingPolicy, tenantId);
 
             _tenantLoggers[tenantId.ToString()] = loggerConfig.CreateLogger();
@@ -85,17 +84,6 @@ public class TenantLoggingService
             }
         }
     }
-
-    private static Serilog.Events.LogEventLevel GetLogEventLevel(string level) => level.ToUpper() switch
-    {
-        "VERBOSE" => Serilog.Events.LogEventLevel.Verbose,
-        "DEBUG" => Serilog.Events.LogEventLevel.Debug,
-        "INFORMATION" => Serilog.Events.LogEventLevel.Information,
-        "WARNING" => Serilog.Events.LogEventLevel.Warning,
-        "ERROR" => Serilog.Events.LogEventLevel.Error,
-        "FATAL" => Serilog.Events.LogEventLevel.Fatal,
-        _ => Serilog.Events.LogEventLevel.Information
-    };
 
     public Serilog.Core.Logger? GetTenantLogger(TenantId tenantId)
     {

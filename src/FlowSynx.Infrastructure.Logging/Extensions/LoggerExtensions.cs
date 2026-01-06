@@ -20,4 +20,15 @@ public static class LoggerExtensions
             ? interval
             : RollingInterval.Day;
     }
+
+    public static Serilog.Events.LogEventLevel GetLogEventLevel(this string level) => level.ToUpper() switch
+    {
+        "VERBOSE" => Serilog.Events.LogEventLevel.Verbose,
+        "DEBUG" => Serilog.Events.LogEventLevel.Debug,
+        "INFORMATION" => Serilog.Events.LogEventLevel.Information,
+        "WARNING" => Serilog.Events.LogEventLevel.Warning,
+        "ERROR" => Serilog.Events.LogEventLevel.Error,
+        "FATAL" => Serilog.Events.LogEventLevel.Fatal,
+        _ => Serilog.Events.LogEventLevel.Information
+    };
 }

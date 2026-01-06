@@ -5,6 +5,7 @@ public static class TenantSecretKeys
     public static class Logging
     {
         public const string Enabled = "logging:enabled";
+        public const string DefaultLogLevel = "logging:defaultLogLevel";
 
         public static class File
         {

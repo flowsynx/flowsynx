@@ -96,6 +96,7 @@ public static class SecretsExtensions
         return new TenantLoggingPolicy
         {
             Enabled = bool.TryParse(secrets.GetValueOrDefault("logging:enabled"), out var enabled) && enabled,
+            DefaultLogLevel = secrets.GetValueOrDefault("logging:defaultLogLevel") ?? "Information",
             File = new TenantFileLoggingPolicy
             {
                 LogLevel = secrets.GetValueOrDefault("logging:File:logLevel") ?? "Information",

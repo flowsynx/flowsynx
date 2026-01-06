@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs.Logging;
 using FlowSynx.Infrastructure.Logging.Extensions;
@@ -16,16 +15,13 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
     private static readonly AsyncLocal<bool> _suppressTenantLogger = new();
     private readonly Dictionary<string, Microsoft.Extensions.Logging.ILogger> _tenantLoggers = new();
     private readonly object _lock = new();
-    //private readonly ISecretProviderFactory _secretProviderFactory;
     private readonly ILoggerFactory _defaultFactory;
     private readonly IServiceProvider _serviceProvider;
 
     public TenantAwareLoggerFactory(
-        //ISecretProviderFactory secretProviderFactory,
         ILoggerFactory defaultFactory,
         IServiceProvider serviceProvider)
     {
-        //_secretProviderFactory = secretProviderFactory ?? throw new ArgumentNullException(nameof(secretProviderFactory));
         _defaultFactory = defaultFactory ?? throw new ArgumentNullException(nameof(defaultFactory));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
@@ -69,6 +65,7 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
 
             var loggerConfiguration = new Serilog.LoggerConfiguration()
                 .Enrich.WithProperty("TenantId", tenantId)
+                .MinimumLevel.Is(parsedLoggingPolicy.DefaultLogLevel.GetLogEventLevel())
                 .Enrich.FromLogContext();
 
             if (parsedLoggingPolicy != null && parsedLoggingPolicy.Enabled == true)
@@ -108,17 +105,6 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
         }
     }
 
-    private static Serilog.Events.LogEventLevel GetLogEventLevel(string level) => level.ToUpperInvariant() switch
-    {
-        "VERBOSE" => Serilog.Events.LogEventLevel.Verbose,
-        "DEBUG" => Serilog.Events.LogEventLevel.Debug,
-        "INFORMATION" => Serilog.Events.LogEventLevel.Information,
-        "WARNING" => Serilog.Events.LogEventLevel.Warning,
-        "ERROR" => Serilog.Events.LogEventLevel.Error,
-        "FATAL" => Serilog.Events.LogEventLevel.Fatal,
-        _ => Serilog.Events.LogEventLevel.Information
-    };
-
     public void Dispose()
     {
         _defaultFactory.Dispose();
@@ -130,7 +116,6 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
         _tenantLoggers.Clear();
     }
 
-    // Tenant-aware logger implementation
     private class TenantAwareLogger : Microsoft.Extensions.Logging.ILogger
     {
         private readonly string _categoryName;
@@ -193,7 +178,6 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
         }
     }
 
-    // Serilog logger wrapper
     private class SerilogLoggerWrapper : Microsoft.Extensions.Logging.ILogger
     {
         private readonly Serilog.ILogger _serilogLogger;

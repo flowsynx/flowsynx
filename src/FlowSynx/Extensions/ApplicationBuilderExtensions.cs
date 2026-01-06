@@ -19,11 +19,6 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder UseFlowSynxTenantLogging(this IApplicationBuilder app)
-    {
-        return app.UseMiddleware<TenantLoggingMiddleware>();
-    }
-
     public static IApplicationBuilder UseFlowSynxTenantCors(this IApplicationBuilder app)
     {
         app.UseMiddleware<TenantCorsMiddleware>();
