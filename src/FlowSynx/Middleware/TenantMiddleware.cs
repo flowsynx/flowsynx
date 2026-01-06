@@ -104,7 +104,7 @@ public sealed class TenantMiddleware
 
         // 4️⃣ Configure tenant-aware logging
         var loggingService = context.RequestServices.GetRequiredService<TenantLoggingService>();
-        await loggingService.ConfigureTenantLogger(result.TenantId!);
+        await loggingService.ConfigureTenantLoggerAsync(result.TenantId!);
 
         await _next(context);
     }

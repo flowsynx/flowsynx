@@ -7,112 +7,105 @@ using FlowSynx.Infrastructure.Security.Secrets.Providers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using System.Collections.Concurrent;
 
 namespace FlowSynx.Infrastructure.Logging;
 
-public class TenantLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
+public class TenantLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory, IDisposable
 {
-    private static readonly AsyncLocal<bool> _suppressTenantLogger = new();
-    private readonly Dictionary<string, Microsoft.Extensions.Logging.ILogger> _tenantLoggers = new();
-    private readonly object _lock = new();
+    private readonly ConcurrentDictionary<string, Microsoft.Extensions.Logging.ILogger> _tenantLoggers = new();
     private readonly ILoggerFactory _defaultFactory;
     private readonly IServiceProvider _serviceProvider;
 
+    // Optional suppression for internal logger creation
+    private static readonly AsyncLocal<bool> _suppressTenantLogger = new();
+
     public TenantLoggerFactory(
-        ILoggerFactory defaultFactory,
+        ILoggerFactory defaultFactory, 
         IServiceProvider serviceProvider)
     {
         _defaultFactory = defaultFactory ?? throw new ArgumentNullException(nameof(defaultFactory));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public void AddProvider(ILoggerProvider provider) =>
-        _defaultFactory.AddProvider(provider);
+    public void AddProvider(ILoggerProvider provider) => _defaultFactory.AddProvider(provider);
 
-    public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName)
-    {
-        return new TenantAwareLogger(
-            categoryName,
-            this,
-            _serviceProvider.GetRequiredService<ITenantContext>());
-    }
+    public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) =>
+        new TenantAwareLogger(categoryName, this, _serviceProvider.GetRequiredService<ITenantContext>());
 
     internal Microsoft.Extensions.Logging.ILogger GetOrCreateTenantLogger(string categoryName, TenantId tenantId)
     {
         var key = $"{tenantId}:{categoryName}";
-
-        lock (_lock)
-        {
-            if (!_tenantLoggers.TryGetValue(key, out var logger))
-            {
-                logger = CreateTenantSpecificLogger(categoryName, tenantId);
-                _tenantLoggers[key] = logger;
-            }
-            return logger;
-        }
+        return _tenantLoggers.GetOrAdd(key, _ => CreateTenantSpecificLogger(categoryName, tenantId));
     }
 
     private Microsoft.Extensions.Logging.ILogger CreateTenantSpecificLogger(string categoryName, TenantId tenantId)
     {
-        bool prev = _suppressTenantLogger.Value;
+        var previous = _suppressTenantLogger.Value;
         _suppressTenantLogger.Value = true;
+
         try
         {
             var spf = _serviceProvider.GetRequiredService<ISecretProviderFactory>();
             var provider = spf.GetProviderForTenantAsync(tenantId).ConfigureAwait(false).GetAwaiter().GetResult();
             var secrets = provider.GetSecretsAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-            TenantLoggingPolicy parsedLoggingPolicy = secrets.GetLoggingPolicy();
+            var loggingPolicy = secrets.GetLoggingPolicy();
 
-            var loggerConfiguration = new Serilog.LoggerConfiguration()
+            var loggerConfig = new Serilog.LoggerConfiguration()
                 .Enrich.WithProperty("TenantId", tenantId)
-                .MinimumLevel.Is(parsedLoggingPolicy.DefaultLogLevel.GetLogEventLevel())
+                .MinimumLevel.Is(loggingPolicy?.DefaultLogLevel.GetLogEventLevel() ?? Serilog.Events.LogEventLevel.Information)
                 .Enrich.FromLogContext();
 
-            if (parsedLoggingPolicy != null && parsedLoggingPolicy.Enabled == true)
-            {
-                var fileLogPolicies = parsedLoggingPolicy.File;
-                if (!string.IsNullOrWhiteSpace(fileLogPolicies.LogPath))
-                {
-                    var logPath = Path.Combine(fileLogPolicies.LogPath, "log-.txt");
-                    loggerConfiguration.WriteTo.File(
-                        path: logPath,
-                        restrictedToMinimumLevel: LogLevelMapper.Map(fileLogPolicies.LogLevel),
-                        outputTemplate:
-                            "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [Tenant:{TenantId}] [Thread:{ThreadId}] " +
-                            "[Machine:{MachineName}] [Process:{ProcessName}:{ProcessId}] [{SourceContext}] " +
-                            "{Message:lj}{NewLine}{Exception}",
-                        rollingInterval: fileLogPolicies.RollingInterval.RollingIntervalFromString(),
-                        retainedFileCountLimit: fileLogPolicies.RetainedFileCountLimit ?? 7,
-                        shared: true);
-                }
+            ConfigureFileSink(loggerConfig, loggingPolicy?.File, tenantId);
+            ConfigureSeqSink(loggerConfig, loggingPolicy?.Seq);
 
-                var seq = parsedLoggingPolicy.Seq;
-                if (seq != null && !string.IsNullOrWhiteSpace(seq.Url))
-                {
-                    loggerConfiguration.WriteTo.Seq(
-                        serverUrl: seq.Url!,
-                        apiKey: string.IsNullOrWhiteSpace(seq.ApiKey) ? null : seq.ApiKey,
-                        restrictedToMinimumLevel: LogLevelMapper.Map(seq.LogLevel));
-                }
-            }
-
-            var serilogLogger = loggerConfiguration.CreateLogger();
-            return new SerilogLoggerWrapper(serilogLogger.ForContext("SourceContext", categoryName));
+            var serilogLogger = loggerConfig.CreateLogger().ForContext("SourceContext", categoryName);
+            return new SerilogLoggerWrapper(serilogLogger);
         }
         finally
         {
-            _suppressTenantLogger.Value = prev;
+            _suppressTenantLogger.Value = previous;
         }
+    }
+
+    private static void ConfigureFileSink(Serilog.LoggerConfiguration config, TenantFileLoggingPolicy? filePolicy, TenantId tenantId)
+    {
+        if (filePolicy == null || string.IsNullOrWhiteSpace(filePolicy.LogPath)) return;
+
+        var logPath = Path.Combine(filePolicy.LogPath, "log-.txt");
+        config.WriteTo.File(
+            path: logPath,
+            restrictedToMinimumLevel: LogLevelMapper.Map(filePolicy.LogLevel),
+            outputTemplate:
+                "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [Tenant:{TenantId}] [Thread:{ThreadId}] " +
+                "[Machine:{MachineName}] [Process:{ProcessName}:{ProcessId}] [{SourceContext}] {Message:lj}{NewLine}{Exception}",
+            rollingInterval: filePolicy.RollingInterval.RollingIntervalFromString(),
+            retainedFileCountLimit: filePolicy.RetainedFileCountLimit ?? 7,
+            shared: true
+        );
+    }
+
+    private static void ConfigureSeqSink(Serilog.LoggerConfiguration config, TenantSeqLoggingPolicy? seqPolicy)
+    {
+        if (seqPolicy == null || string.IsNullOrWhiteSpace(seqPolicy.Url)) return;
+
+        config.WriteTo.Seq(
+            serverUrl: seqPolicy.Url!,
+            apiKey: string.IsNullOrWhiteSpace(seqPolicy.ApiKey) ? null : seqPolicy.ApiKey,
+            restrictedToMinimumLevel: LogLevelMapper.Map(seqPolicy.LogLevel)
+        );
     }
 
     public void Dispose()
     {
         _defaultFactory.Dispose();
+
         foreach (var logger in _tenantLoggers.Values)
         {
             if (logger is IDisposable disposable)
                 disposable.Dispose();
         }
+
         _tenantLoggers.Clear();
     }
 
@@ -122,10 +115,7 @@ public class TenantLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
         private readonly TenantLoggerFactory _factory;
         private readonly ITenantContext _tenantContext;
 
-        public TenantAwareLogger(
-            string categoryName,
-            TenantLoggerFactory factory,
-            ITenantContext tenantContext)
+        public TenantAwareLogger(string categoryName, TenantLoggerFactory factory, ITenantContext tenantContext)
         {
             _categoryName = categoryName;
             _factory = factory;
@@ -135,40 +125,27 @@ public class TenantLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
         public IDisposable BeginScope<TState>(TState state)
         {
             var tenantId = _tenantContext.TenantId;
-            if (tenantId != null && tenantId.HasValue)
-            {
-                return Serilog.Context.LogContext.PushProperty("TenantId", tenantId.ToString());
-            }
-            return NullScope.Instance;
+            return tenantId?.HasValue == true
+                ? Serilog.Context.LogContext.PushProperty("TenantId", tenantId.ToString())
+                : NullScope.Instance;
         }
 
         public bool IsEnabled(LogLevel logLevel) => true;
 
-        public void Log<TState>(
-            LogLevel logLevel,
-            EventId eventId,
-            TState state,
-            Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (_suppressTenantLogger.Value)
             {
-                var systemLogger = _factory._defaultFactory.CreateLogger(_categoryName);
-                systemLogger.Log(logLevel, eventId, state, exception, formatter);
+                _factory._defaultFactory.CreateLogger(_categoryName).Log(logLevel, eventId, state, exception, formatter);
                 return;
             }
 
             var tenantId = _tenantContext.TenantId;
-            if (tenantId != null && tenantId.HasValue)
-            {
-                var tenantLogger = _factory.GetOrCreateTenantLogger(_categoryName, tenantId);
-                tenantLogger.Log(logLevel, eventId, state, exception, formatter);
-            }
-            else
-            {
-                var systemLogger = _factory._defaultFactory.CreateLogger(_categoryName);
-                systemLogger.Log(logLevel, eventId, state, exception, formatter);
-            }
+            var logger = tenantId?.HasValue == true
+                ? _factory.GetOrCreateTenantLogger(_categoryName, tenantId)
+                : _factory._defaultFactory.CreateLogger(_categoryName);
+
+            logger.Log(logLevel, eventId, state, exception, formatter);
         }
 
         private class NullScope : IDisposable
@@ -182,36 +159,19 @@ public class TenantLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
     {
         private readonly Serilog.ILogger _serilogLogger;
 
-        public SerilogLoggerWrapper(Serilog.ILogger serilogLogger)
-        {
-            _serilogLogger = serilogLogger;
-        }
+        public SerilogLoggerWrapper(Serilog.ILogger serilogLogger) => _serilogLogger = serilogLogger;
 
-        public IDisposable BeginScope<TState>(TState state)
-        {
-            return Serilog.Context.LogContext.PushProperty(
-                "Scope",
-                state?.ToString() ?? string.Empty
-            );
-        }
+        public IDisposable BeginScope<TState>(TState state) =>
+            Serilog.Context.LogContext.PushProperty("Scope", state?.ToString() ?? string.Empty);
 
-        public bool IsEnabled(LogLevel logLevel) =>
-            _serilogLogger.IsEnabled(ConvertLogLevel(logLevel));
+        public bool IsEnabled(LogLevel logLevel) => _serilogLogger.IsEnabled(ConvertLogLevel(logLevel));
 
-        public void Log<TState>(
-            LogLevel logLevel,
-            EventId eventId,
-            TState state,
-            Exception? exception,
-            Func<TState, Exception?, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             var serilogLevel = ConvertLogLevel(logLevel);
-
-            if (!_serilogLogger.IsEnabled(serilogLevel))
-                return;
+            if (!_serilogLogger.IsEnabled(serilogLevel)) return;
 
             var message = formatter(state, exception);
-
             _serilogLogger.Write(serilogLevel, exception, message);
         }
 
