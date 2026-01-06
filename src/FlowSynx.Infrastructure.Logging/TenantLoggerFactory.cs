@@ -10,7 +10,7 @@ using Serilog;
 
 namespace FlowSynx.Infrastructure.Logging;
 
-public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
+public class TenantLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory
 {
     private static readonly AsyncLocal<bool> _suppressTenantLogger = new();
     private readonly Dictionary<string, Microsoft.Extensions.Logging.ILogger> _tenantLoggers = new();
@@ -18,7 +18,7 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
     private readonly ILoggerFactory _defaultFactory;
     private readonly IServiceProvider _serviceProvider;
 
-    public TenantAwareLoggerFactory(
+    public TenantLoggerFactory(
         ILoggerFactory defaultFactory,
         IServiceProvider serviceProvider)
     {
@@ -119,12 +119,12 @@ public class TenantAwareLoggerFactory : Microsoft.Extensions.Logging.ILoggerFact
     private class TenantAwareLogger : Microsoft.Extensions.Logging.ILogger
     {
         private readonly string _categoryName;
-        private readonly TenantAwareLoggerFactory _factory;
+        private readonly TenantLoggerFactory _factory;
         private readonly ITenantContext _tenantContext;
 
         public TenantAwareLogger(
             string categoryName,
-            TenantAwareLoggerFactory factory,
+            TenantLoggerFactory factory,
             ITenantContext tenantContext)
         {
             _categoryName = categoryName;

@@ -12,6 +12,7 @@ public sealed class TenantResolver : ITenantResolver
 {
     private const string TenantIdClaimType = "tenant_id";
     private const string TenantIdHeaderName = "X-Tenant-Id";
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(2);
 
     private readonly ITenantRepository _tenantRepository;
     private readonly ISecretProviderFactory _secretProviderFactory;
@@ -33,85 +34,130 @@ public sealed class TenantResolver : ITenantResolver
     public async Task<TenantResolutionResult> ResolveAsync(CancellationToken cancellationToken = default)
     {
         var httpContext = _httpContextAccessor.HttpContext;
-
-        // Extract claim and header (do not use out-of-scope variables later)
-        var claimValue = httpContext?.User?.Identity?.IsAuthenticated == true
-            ? httpContext!.User.FindFirst(TenantIdClaimType)?.Value
-            : null;
-
-        _ = Guid.TryParse(claimValue, out var claimTenantId);
-
-        var headerValue = httpContext?.Request.Headers[TenantIdHeaderName].FirstOrDefault();
-        _ = Guid.TryParse(headerValue, out var headerTenantId);
-
-        // Decide source of truth
-        var resolvedTenantId = ResolveTenantId(claimTenantId, headerTenantId);
-        if (resolvedTenantId == Guid.Empty)
+        if (httpContext is null)
         {
-            return new TenantResolutionResult { IsValid = false };
+            return Failure(TenantResolutionStatus.Error, "HTTP context is unavailable.");
         }
 
-        // Cache by tenant id to avoid repeated DB lookups
-        var cacheKey = $"tenants:active:{resolvedTenantId:D}";
-        if (_cache.TryGetValue(cacheKey, out var cachedObj) && cachedObj is TenantResolutionResult cached && cached.IsValid)
+        var resolution = ResolveTenantId(httpContext);
+        if (resolution.ResolutionStatus != TenantResolutionStatus.Active)
+        {
+            return resolution;
+        }
+
+        var tenantId = resolution.TenantId!;
+
+        var cacheKey = $"tenant:resolution:{tenantId.Value:D}";
+        if (_cache.TryGetValue(cacheKey, out var cachedObj) && cachedObj is TenantResolutionResult cached)
         {
             return cached;
         }
 
-        var tenantId = TenantId.Create(resolvedTenantId);
-
-        var provider = await _secretProviderFactory.GetProviderForTenantAsync(tenantId);
-        var secrets = await provider.GetSecretsAsync();
-
-        var tenant = await _tenantRepository.GetByIdAsync(tenantId, cancellationToken);
-        if (tenant is null || tenant.Status != TenantStatus.Active)
+        try
         {
-            return new TenantResolutionResult { IsValid = false };
-        }
-
-        var tenantResult = new TenantResolutionResult
-        {
-            IsValid = true,
-            TenantId = tenant.Id,
-            Status = tenant.Status,
-            CorsPolicy = secrets.GetCorsPolicy(tenantId),
-            RateLimitingPolicy = secrets.GetRateLimitingPolicy()
-        };
-
-        if (tenant is null)
-        {
-            return new TenantResolutionResult { IsValid = false };
-        }
-
-        // Cache with a short TTL; adjust as needed
-        _cache.Set(cacheKey, tenantResult, new MemoryCacheEntryOptions
-        {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(2)
-        });
-
-        return tenantResult;
-    }
-
-    private static Guid ResolveTenantId(Guid claimTenantId, Guid headerTenantId)
-    {
-        // If authenticated, require claim and optionally enforce match with header
-        if (claimTenantId != Guid.Empty)
-        {
-            // If header present and mismatched, fail-fast
-            if (headerTenantId != Guid.Empty && headerTenantId != claimTenantId)
+            var tenant = await _tenantRepository.GetByIdAsync(tenantId, cancellationToken);
+            if (tenant is null)
             {
-                return Guid.Empty;
+                return CacheAndReturn(
+                    cacheKey,
+                    Failure(TenantResolutionStatus.NotFound, "Tenant does not exist."));
             }
 
-            return claimTenantId;
-        }
+            var provider = await _secretProviderFactory.GetProviderForTenantAsync(tenantId);
+            if (provider is null)
+            {
+                return Failure(
+                    TenantResolutionStatus.Error,
+                    "Secret provider for tenant could not be resolved.");
+            }
 
-        // Allow header for anonymous/service calls if claim not present
-        if (headerTenantId != Guid.Empty)
+            var secrets = await provider.GetSecretsAsync();
+
+            var result = new TenantResolutionResult
+            {
+                ResolutionStatus = TenantResolutionStatus.Active,
+                TenantId = tenant.Id,
+                TenantStatus = tenant.Status,
+                CorsPolicy = secrets.GetCorsPolicy(tenantId),
+                RateLimitingPolicy = secrets.GetRateLimitingPolicy()
+            };
+
+            return CacheAndReturn(cacheKey, result);
+        }
+        catch (Exception ex)
         {
-            return headerTenantId;
+            return Failure(
+                TenantResolutionStatus.Error,
+                $"Tenant resolution failed: {ex.Message}");
+        }
+    }
+
+    // ----------------------------
+    // Resolution helpers
+    // ----------------------------
+    private TenantResolutionResult ResolveTenantId(HttpContext context)
+    {
+        var claimTenantId = TryGetGuid(
+            context.User?.Identity?.IsAuthenticated == true
+                ? context.User.FindFirst(TenantIdClaimType)?.Value
+                : null);
+
+        var headerTenantId = TryGetGuid(
+            context.Request.Headers[TenantIdHeaderName].FirstOrDefault());
+
+        if (claimTenantId.HasValue)
+        {
+            if (headerTenantId.HasValue && headerTenantId != claimTenantId)
+            {
+                return Failure(
+                    TenantResolutionStatus.Forbidden,
+                    "Tenant ID header does not match authenticated tenant.");
+            }
+
+            return Success(claimTenantId.Value);
         }
 
-        return Guid.Empty;
+        if (headerTenantId.HasValue)
+        {
+            return Success(headerTenantId.Value);
+        }
+
+        return Failure(
+            TenantResolutionStatus.Invalid,
+            "Tenant ID could not be resolved from claim or header.");
+    }
+
+    private static Guid? TryGetGuid(string? value) =>
+        Guid.TryParse(value, out var guid) ? guid : null;
+
+    // ----------------------------
+    // Result helpers
+    // ----------------------------
+    private static TenantResolutionResult Success(Guid tenantId) =>
+        new()
+        {
+            ResolutionStatus = TenantResolutionStatus.Active,
+            TenantId = TenantId.Create(tenantId)
+        };
+
+    private static TenantResolutionResult Failure(
+        TenantResolutionStatus status,
+        string message) =>
+        new()
+        {
+            ResolutionStatus = status,
+            Messages = new[] { message }
+        };
+
+    private TenantResolutionResult CacheAndReturn(
+        string key,
+        TenantResolutionResult result)
+    {
+        if (result.ResolutionStatus == TenantResolutionStatus.Active)
+        {
+            _cache.Set(key, result, CacheDuration);
+        }
+
+        return result;
     }
 }

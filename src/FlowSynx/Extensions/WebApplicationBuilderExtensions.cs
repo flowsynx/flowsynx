@@ -33,18 +33,6 @@ public static class WebApplicationBuilderExtensions
 
         builder.Host.UseSerilog();
 
-
-
-        //Log.Logger = new LoggerConfiguration()
-        //    .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
-        //    .Enrich.FromLogContext()
-        //    .WriteTo.Console(
-        //        restrictedToMinimumLevel: LogEventLevel.Information,
-        //        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-        //    .CreateLogger();
-
-        //builder.Host.UseSerilog(Log.Logger);
-
         return builder;
     }
 
@@ -52,7 +40,6 @@ public static class WebApplicationBuilderExtensions
     {
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
         var serverConfig = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();
-        //var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
         try
         {
