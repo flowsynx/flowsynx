@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.ValueObjects;
 
-public record DefenseMechanism(
+public record ImmuneSystem(
     string ResponsePattern = "propagate",           // "apoptosis", "quarantine", "regenerate"
     int MaximumMutationAttempts = 3,                // Max retry attempts
     int RecoveryLatency = 100,                      // Delay between attempts

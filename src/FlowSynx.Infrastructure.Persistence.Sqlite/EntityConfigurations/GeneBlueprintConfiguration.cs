@@ -61,10 +61,10 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<EpistaticInteraction>(v));
 
-        builder.Property(gb => gb.DefenseMechanism)
+        builder.Property(gb => gb.ImmuneSystem)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<DefenseMechanism>(v));
+                v => JsonSerializer.Deserialize<ImmuneSystem>(v));
 
         builder.Property(gb => gb.ExpressedProtein)
             .HasConversion(

@@ -37,7 +37,7 @@ public class GenomeRepository : IGenomeRepository
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Genomes
             .Include(g => g.Chromosomes).ThenInclude(c => c.Genes)
-            .Where(g => g.Metadata.ContainsKey(key) && g.Metadata[key].ToString() == value.ToString())
+            .Where(g => g.EpigeneticMarks.ContainsKey(key) && g.EpigeneticMarks[key].ToString() == value.ToString())
             .ToListAsync(cancellationToken);
     }
 

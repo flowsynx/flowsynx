@@ -49,10 +49,10 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        builder.Property(gi => gi.ExpressionConfiguration)
+        builder.Property(gi => gi.ExpressionProfile)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<ExpressionConfiguration>(v));
+                v => JsonSerializer.Deserialize<ExpressionProfile>(v));
 
         var dependenciesComparer = new ValueComparer<List<GeneInstanceId>>(
         (l, r) =>
@@ -71,7 +71,7 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
                 v => JsonSerializer.Deserialize<List<GeneInstanceId>>(v))
             .Metadata.SetValueComparer(dependenciesComparer);
 
-        builder.Property(gi => gi.Metadata)
+        builder.Property(gi => gi.EpigeneticMarks)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))

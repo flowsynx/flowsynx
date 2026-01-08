@@ -6,12 +6,12 @@ namespace FlowSynx.Application.Core.Services;
 
 public interface IGeneExpressionEngine
 {
-    Task<GeneExecutionResult> ExpressGeneAsync(
+    Task<ExpressionResult> ExpressGeneAsync(
         GeneInstance gene,
-        EnvironmentalFactor environmentalFactor,
+        CellularEnvironment cellularEnvironment,
         Dictionary<string, object> sharedContext);
 
-    Task<List<GeneExecutionResult>> ExpressChromosomeAsync(
+    Task<List<ExpressionResult>> ExpressChromosomeAsync(
         Chromosome chromosome,
         Dictionary<string, object> runtimeContext);
 }

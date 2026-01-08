@@ -28,10 +28,10 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
         builder.Property(c => c.UserId).IsRequired();
         builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
 
-        builder.Property(c => c.EnvironmentalFactor)
+        builder.Property(c => c.CellularEnvironment)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<EnvironmentalFactor>(v));
+                v => JsonSerializer.Deserialize<CellularEnvironment>(v));
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
@@ -40,14 +40,14 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        builder.Property(c => c.Metadata)
+        builder.Property(c => c.EpigeneticMarks)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        // Store execution results separately (not in same table)
-        builder.Ignore(c => c.ExecutionResults);
+        // Store expression results separately (not in same table)
+        builder.Ignore(c => c.ExpressionResults);
 
         // Genes are stored in separate table
         builder.HasMany(c => c.Genes)

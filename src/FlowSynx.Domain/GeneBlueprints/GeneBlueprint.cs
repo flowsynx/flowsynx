@@ -17,7 +17,7 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
     public List<NucleotideSequence> NucleotideSequences { get; private set; }   // Parameters
     public ExpressionProfile ExpressionProfile { get; private set; }
     public EpistaticInteraction EpistaticInteraction { get; private set; }      // Compatibility Matrix
-    public DefenseMechanism DefenseMechanism { get; private set; }              // Immune Response
+    public ImmuneSystem ImmuneSystem { get; private set; }
     public ExpressedProtein ExpressedProtein { get; private set; }              // ExecutableComponent
     public Dictionary<string, object> EpigeneticMarks { get; private set; }     // Metadata
     public Tenant? Tenant { get; private set; }
@@ -36,7 +36,7 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
         List<NucleotideSequence> nucleotideSequences,
         ExpressionProfile expressionProfile,
         EpistaticInteraction epistaticInteraction,
-        DefenseMechanism defenseMechanism,
+        ImmuneSystem immuneSystem,
         ExpressedProtein expressedProtein)
     {
         TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
@@ -49,7 +49,7 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
         NucleotideSequences = nucleotideSequences ?? new List<NucleotideSequence>();
         ExpressionProfile = expressionProfile ?? throw new ArgumentNullException(nameof(expressionProfile));
         EpistaticInteraction = epistaticInteraction ?? throw new ArgumentNullException(nameof(epistaticInteraction));
-        DefenseMechanism = defenseMechanism ?? throw new ArgumentNullException(nameof(defenseMechanism));
+        ImmuneSystem = immuneSystem ?? throw new ArgumentNullException(nameof(immuneSystem));
         ExpressedProtein = expressedProtein ?? throw new ArgumentNullException(nameof(expressedProtein));
         EpigeneticMarks = new Dictionary<string, object>();
 
@@ -61,13 +61,13 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
         string? phenotypic = null,
         string? annotation = null,
         ExpressionProfile? expressionProfile = null,
-        DefenseMechanism? defenseMechanism = null,
+        ImmuneSystem? immuneSystem = null,
         Dictionary<string, object>? epigeneticMarks = null)
     {
         if (phenotypic != null) Phenotypic = phenotypic;
         if (annotation != null) Annotation = annotation;
         if (expressionProfile != null) ExpressionProfile = expressionProfile;
-        if (defenseMechanism != null) DefenseMechanism = defenseMechanism;
+        if (immuneSystem != null) ImmuneSystem = immuneSystem;
         if (epigeneticMarks != null) EpigeneticMarks = epigeneticMarks;
 
         ValidateState();
@@ -89,7 +89,7 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
             throw new DomainException("Expressed protein is required");
     }
 
-    public bool HasDefenseMechanism() => DefenseMechanism != null;
+    public bool HasImmuneSystem() => ImmuneSystem != null;
 
     public string GetGeneticBlueprintId() =>
         string.IsNullOrEmpty(GeneticBlueprint) ? Id.Value : GeneticBlueprint;

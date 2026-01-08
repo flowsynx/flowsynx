@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.ValueObjects;
 
-public record ExpressionCondition(
+public record RegulatoryCondition(
     string ConditionType,
     string Field,
     string Operator,

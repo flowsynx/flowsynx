@@ -1,6 +1,6 @@
 ﻿namespace FlowSynx.Domain.Chromosomes;
 
-public record ResourceConstraints(
+public record NutrientConstraints(
     int MaxMemoryMB = 100,
     int MaxCpuPercent = 50,
     int TimeoutMs = 5000,

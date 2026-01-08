@@ -27,7 +27,7 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
             .IsRequired();
 
         builder.Property(g => g.UserId).IsRequired();
-        builder.Property(g => g.Name).IsRequired().HasMaxLength(200);
+        builder.Property(g => g.SpeciesName).IsRequired().HasMaxLength(200);
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
@@ -36,13 +36,13 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        builder.Property(g => g.Metadata)
+        builder.Property(g => g.EpigeneticMarks)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        builder.Property(g => g.SharedEnvironment)
+        builder.Property(g => g.CytoplasmicEnvironment)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))

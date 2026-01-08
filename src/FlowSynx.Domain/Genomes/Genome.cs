@@ -10,10 +10,10 @@ public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, 
 {
     public TenantId TenantId { get; set; }
     public string UserId { get; set; }
-    public string Name { get; private set; }
+    public string SpeciesName { get; private set; }
     public List<Chromosome> Chromosomes { get; private set; }
-    public Dictionary<string, object> Metadata { get; private set; }
-    public Dictionary<string, object> SharedEnvironment { get; private set; }
+    public Dictionary<string, object> EpigeneticMarks { get; private set; }
+    public Dictionary<string, object> CytoplasmicEnvironment { get; private set; }
     public Tenant? Tenant { get; set; }
 
     private Genome() { }
@@ -22,15 +22,15 @@ public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, 
         TenantId tenantId,
         string userId,
         GenomeId id,
-        string name)
+        string speciesName)
     {
         TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
         UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         Id = id ?? throw new ArgumentNullException(nameof(id));
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        SpeciesName = speciesName ?? throw new ArgumentNullException(nameof(speciesName));
         Chromosomes = new List<Chromosome>();
-        Metadata = new Dictionary<string, object>();
-        SharedEnvironment = new Dictionary<string, object>();
+        EpigeneticMarks = new Dictionary<string, object>();
+        CytoplasmicEnvironment = new Dictionary<string, object>();
     }
 
     public void AddChromosome(Chromosome chromosome)

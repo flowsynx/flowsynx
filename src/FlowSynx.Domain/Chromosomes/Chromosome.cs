@@ -14,9 +14,9 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
     public string UserId { get; set; }
     public string Name { get; private set; }
     public List<GeneInstance> Genes { get; private set; }
-    public EnvironmentalFactor EnvironmentalFactor { get; private set; }
-    public Dictionary<string, object> Metadata { get; private set; }
-    public List<GeneExecutionResult> ExecutionResults { get; private set; }
+    public CellularEnvironment CellularEnvironment { get; private set; }
+    public Dictionary<string, object> EpigeneticMarks { get; private set; }
+    public List<ExpressionResult> ExpressionResults { get; private set; }
     public Tenant? Tenant { get; set; }
 
     private Chromosome() { }
@@ -26,27 +26,27 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
         string userId,
         ChromosomeId id,
         string name,
-        EnvironmentalFactor environmentalFactor = null)
+        CellularEnvironment cellularEnvironment = null)
     {
         TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
         UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         Id = id ?? throw new ArgumentNullException(nameof(id));
         Name = name ?? throw new ArgumentNullException(nameof(name));
-        EnvironmentalFactor = environmentalFactor ?? new EnvironmentalFactor(
-            new DefenseMechanism(),
-            new ResourceConstraints(),
+        CellularEnvironment = cellularEnvironment ?? new CellularEnvironment(
+            new ImmuneSystem(),
+            new NutrientConstraints(),
             new Dictionary<string, object>(),
             new Dictionary<string, object>());
         Genes = new List<GeneInstance>();
-        Metadata = new Dictionary<string, object>();
-        ExecutionResults = new List<GeneExecutionResult>();
+        EpigeneticMarks = new Dictionary<string, object>();
+        ExpressionResults = new List<ExpressionResult>();
     }
 
     public GeneInstance AddGene(
         GeneInstanceId instanceId,
         GeneBlueprintId blueprintId,
         Dictionary<string, object> parameters = null,
-        ExpressionConfiguration expressionConfiguration = null)
+        ExpressionProfile expressionProfile = null)
     {
         if (Genes.Any(g => g.Id == instanceId))
             throw new DomainException($"Gene instance with ID {instanceId} already exists");
@@ -57,7 +57,7 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
             instanceId,
             blueprintId,
             parameters,
-            expressionConfiguration);
+            expressionProfile);
 
         Genes.Add(geneInstance);
         return geneInstance;
@@ -78,16 +78,16 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
         Genes.Remove(gene);
     }
 
-    public void UpdateEnvironmentalFactor(EnvironmentalFactor environment)
+    public void UpdateCellularEnvironment(CellularEnvironment environment)
     {
-        EnvironmentalFactor = environment ?? throw new ArgumentNullException(nameof(environment));
+        CellularEnvironment = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
-    public void AddExecutionResults(List<GeneExecutionResult> results)
+    public void AddExpressionResults(List<ExpressionResult> results)
     {
-        ExecutionResults.Clear();
-        ExecutionResults.AddRange(results);
-        AddDomainEvent(new ChromosomeExecuted(this, results));
+        ExpressionResults.Clear();
+        ExpressionResults.AddRange(results);
+        AddDomainEvent(new ChromosomeExpressed(this, results));
     }
 
     public GeneInstance? GetGene(GeneInstanceId instanceId) =>
