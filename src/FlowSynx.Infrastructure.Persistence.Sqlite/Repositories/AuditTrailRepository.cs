@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using FlowSynx.Domain.AuditTrails;
-using FlowSynx.Application.Abstractions.Persistence;
+using FlowSynx.Application.Core.Persistence;
 
 namespace FlowSynx.Persistence.Sqlite.Repositories;
 

@@ -27,13 +27,13 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
             .IsRequired();
 
         builder.Property(gb => gb.UserId).IsRequired();
-        builder.Property(gb => gb.Version).IsRequired().HasMaxLength(50);
+        builder.Property(gb => gb.Generation).IsRequired().HasMaxLength(50);
         builder.Property(gb => gb.GeneticBlueprint).HasMaxLength(255);
-        builder.Property(gb => gb.Name).IsRequired().HasMaxLength(200);
-        builder.Property(gb => gb.Description).HasMaxLength(1000);
+        builder.Property(gb => gb.Phenotypic).IsRequired().HasMaxLength(200);
+        builder.Property(gb => gb.Annotation).HasMaxLength(1000);
 
-        // ValueComparer for GeneticParameters to ensure proper change tracking
-        var parameterListComparer = new ValueComparer<List<ParameterDefinition>>(
+        // ValueComparer for NucleotideSequences to ensure proper change tracking
+        var nucleotideSequencesComparer = new ValueComparer<List<NucleotideSequence>>(
             (l, r) =>
                 ReferenceEquals(l, r) ||
                 (l != null && r != null && l.SequenceEqual(r)),
@@ -42,34 +42,34 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
                     ? 0
                     : l.Aggregate(0, (acc, item) => HashCode.Combine(acc, item != null ? item.GetHashCode() : 0)),
             l =>
-                new List<ParameterDefinition>(l ?? System.Linq.Enumerable.Empty<ParameterDefinition>()));
+                new List<NucleotideSequence>(l ?? System.Linq.Enumerable.Empty<NucleotideSequence>()));
 
         // Store complex objects as JSON
-        builder.Property(gb => gb.GeneticParameters)
+        builder.Property(gb => gb.NucleotideSequences)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<List<ParameterDefinition>>(v))
-            .Metadata.SetValueComparer(parameterListComparer);
+                v => JsonSerializer.Deserialize<List<NucleotideSequence>>(v))
+            .Metadata.SetValueComparer(nucleotideSequencesComparer);
 
         builder.Property(gb => gb.ExpressionProfile)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<ExpressionProfile>(v));
 
-        builder.Property(gb => gb.CompatibilityMatrix)
+        builder.Property(gb => gb.EpistaticInteraction)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<CompatibilityMatrix>(v));
+                v => JsonSerializer.Deserialize<EpistaticInteraction>(v));
 
-        builder.Property(gb => gb.ImmuneResponse)
+        builder.Property(gb => gb.DefenseMechanism)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<ImmuneResponse>(v));
+                v => JsonSerializer.Deserialize<DefenseMechanism>(v));
 
-        builder.Property(gb => gb.ExecutableComponent)
+        builder.Property(gb => gb.ExpressedProtein)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<ExecutableComponent>(v));
+                v => JsonSerializer.Deserialize<ExpressedProtein>(v));
 
         var metadataComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
@@ -81,15 +81,15 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
                 : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)) ?? new Dictionary<string, object>()
         );
 
-        builder.Property(gb => gb.Metadata)
+        builder.Property(gb => gb.EpigeneticMarks)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
             .Metadata.SetValueComparer(metadataComparer);
 
         // Indexes
-        builder.HasIndex(gb => new { gb.Id, gb.Version }).IsUnique();
-        builder.HasIndex(gb => gb.Name);
+        builder.HasIndex(gb => new { gb.Id, gb.Generation }).IsUnique();
+        builder.HasIndex(gb => gb.Phenotypic);
         builder.HasIndex(gb => gb.GeneticBlueprint);
     }
 }

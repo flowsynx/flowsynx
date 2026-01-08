@@ -1,5 +1,5 @@
-﻿using FlowSynx.Domain.DomainEvents;
-using FlowSynx.Domain.Exceptions;
+﻿using FlowSynx.Domain.Exceptions;
+using FlowSynx.Domain.GeneBlueprints.Events;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.ValueObjects;
@@ -10,61 +10,65 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
 {
     public TenantId TenantId { get; set; }
     public string UserId { get; set; }
-    public string Version { get; private set; }
     public string GeneticBlueprint { get; private set; }
-    public string Name { get; private set; }
-    public string Description { get; private set; }
-    public List<ParameterDefinition> GeneticParameters { get; private set; }
+    public string Generation { get; private set; }
+    public string Phenotypic { get; private set; }
+    public string Annotation { get; private set; }
+    public List<NucleotideSequence> NucleotideSequences { get; private set; }   // Parameters
     public ExpressionProfile ExpressionProfile { get; private set; }
-    public CompatibilityMatrix CompatibilityMatrix { get; private set; }
-    public ImmuneResponse ImmuneResponse { get; private set; }
-    public ExecutableComponent ExecutableComponent { get; private set; }
-    public Dictionary<string, object> Metadata { get; private set; }
-    public Tenant? Tenant { get; set; }
+    public EpistaticInteraction EpistaticInteraction { get; private set; }      // Compatibility Matrix
+    public DefenseMechanism DefenseMechanism { get; private set; }              // Immune Response
+    public ExpressedProtein ExpressedProtein { get; private set; }              // ExecutableComponent
+    public Dictionary<string, object> EpigeneticMarks { get; private set; }     // Metadata
+    public Tenant? Tenant { get; private set; }
 
     // Domain invariants
     private GeneBlueprint() { } // For EF Core
 
     public GeneBlueprint(
+        TenantId tenantId,
+        string userId,
         GeneBlueprintId id,
-        string version,
-        string name,
-        string description,
-        List<ParameterDefinition> geneticParameters,
+        string geneticBlueprint,
+        string generation,
+        string phenotypic,
+        string annotation,
+        List<NucleotideSequence> nucleotideSequences,
         ExpressionProfile expressionProfile,
-        CompatibilityMatrix compatibilityMatrix,
-        ImmuneResponse immuneResponse,
-        ExecutableComponent executableComponent,
-        string geneticBlueprint = null)
+        EpistaticInteraction epistaticInteraction,
+        DefenseMechanism defenseMechanism,
+        ExpressedProtein expressedProtein)
     {
+        TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
+        UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         Id = id ?? throw new ArgumentNullException(nameof(id));
-        Version = version ?? throw new ArgumentNullException(nameof(version));
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Description = description ?? throw new ArgumentNullException(nameof(description));
-        GeneticParameters = geneticParameters ?? new List<ParameterDefinition>();
+        GeneticBlueprint = geneticBlueprint ?? throw new ArgumentNullException(nameof(geneticBlueprint));
+        Generation = generation ?? throw new ArgumentNullException(nameof(generation));
+        Phenotypic = phenotypic ?? throw new ArgumentNullException(nameof(phenotypic));
+        Annotation = annotation ?? throw new ArgumentNullException(nameof(annotation));
+        NucleotideSequences = nucleotideSequences ?? new List<NucleotideSequence>();
         ExpressionProfile = expressionProfile ?? throw new ArgumentNullException(nameof(expressionProfile));
-        CompatibilityMatrix = compatibilityMatrix ?? throw new ArgumentNullException(nameof(compatibilityMatrix));
-        ImmuneResponse = immuneResponse;
-        ExecutableComponent = executableComponent ?? throw new ArgumentNullException(nameof(executableComponent));
-        GeneticBlueprint = geneticBlueprint;
-        Metadata = new Dictionary<string, object>();
+        EpistaticInteraction = epistaticInteraction ?? throw new ArgumentNullException(nameof(epistaticInteraction));
+        DefenseMechanism = defenseMechanism ?? throw new ArgumentNullException(nameof(defenseMechanism));
+        ExpressedProtein = expressedProtein ?? throw new ArgumentNullException(nameof(expressedProtein));
+        EpigeneticMarks = new Dictionary<string, object>();
 
         ValidateState();
         AddDomainEvent(new GeneBlueprintCreated(this));
     }
 
     public void Update(
-        string? name = null,
-        string? description = null,
+        string? phenotypic = null,
+        string? annotation = null,
         ExpressionProfile? expressionProfile = null,
-        ImmuneResponse? immuneResponse = null,
-        Dictionary<string, object>? metadata = null)
+        DefenseMechanism? defenseMechanism = null,
+        Dictionary<string, object>? epigeneticMarks = null)
     {
-        if (name != null) Name = name;
-        if (description != null) Description = description;
+        if (phenotypic != null) Phenotypic = phenotypic;
+        if (annotation != null) Annotation = annotation;
         if (expressionProfile != null) ExpressionProfile = expressionProfile;
-        if (immuneResponse != null) ImmuneResponse = immuneResponse;
-        if (metadata != null) Metadata = metadata;
+        if (defenseMechanism != null) DefenseMechanism = defenseMechanism;
+        if (epigeneticMarks != null) EpigeneticMarks = epigeneticMarks;
 
         ValidateState();
         AddDomainEvent(new GeneBlueprintUpdated(this));
@@ -72,17 +76,20 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
 
     private void ValidateState()
     {
-        if (string.IsNullOrWhiteSpace(Version))
-            throw new DomainException("Gene blueprint version cannot be empty");
+        if (string.IsNullOrWhiteSpace(Generation))
+            throw new DomainException("Gene blueprint generation cannot be empty");
 
-        if (string.IsNullOrWhiteSpace(Name))
-            throw new DomainException("Gene blueprint name cannot be empty");
+        if (string.IsNullOrWhiteSpace(Phenotypic))
+            throw new DomainException("Gene blueprint phenotypic cannot be empty");
 
-        if (ExecutableComponent == null)
-            throw new DomainException("Executable component is required");
+        if (string.IsNullOrWhiteSpace(Annotation))
+            throw new DomainException("Gene blueprint annotation cannot be empty");
+
+        if (ExpressedProtein == null)
+            throw new DomainException("Expressed protein is required");
     }
 
-    public bool HasImmuneResponse() => ImmuneResponse != null;
+    public bool HasDefenseMechanism() => DefenseMechanism != null;
 
     public string GetGeneticBlueprintId() =>
         string.IsNullOrEmpty(GeneticBlueprint) ? Id.Value : GeneticBlueprint;

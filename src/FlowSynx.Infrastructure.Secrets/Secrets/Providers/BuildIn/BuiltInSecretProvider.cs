@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
+﻿using FlowSynx.Application.Core.Persistence;
+using FlowSynx.Application.Core.Services;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
@@ -16,9 +16,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
     private readonly IDataProtectionService _dataProtectionService;
 
     public BuiltInSecretProvider(
-    TenantId tenantId,
-    IServiceProvider serviceProvider)
-    : base(tenantId, ProviderConfiguration.Create(new Dictionary<string, string>()), serviceProvider)
+        TenantId tenantId,
+        IServiceProvider serviceProvider)
+        : base(tenantId, ProviderConfiguration.Create(new Dictionary<string, string>()), serviceProvider)
     {
         _tenantRepository = serviceProvider.GetRequiredService<ITenantRepository>() 
             ?? throw new ArgumentNullException(nameof(ITenantRepository));
@@ -32,7 +32,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
 
     public override SecretProviderType ProviderType => SecretProviderType.BuiltIn;
 
-    protected override async Task<string?> GetSecretInternalAsync(SecretKey secretKey, CancellationToken cancellationToken = default)
+    protected override async Task<string?> GetSecretInternalAsync(
+        SecretKey secretKey, 
+        CancellationToken cancellationToken = default)
     {
         var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
@@ -48,7 +50,9 @@ public class BuiltInSecretProvider : BaseSecretProvider
             : secret.Value.Value;
     }
 
-    public override async Task<Dictionary<string, string?>> GetSecretsAsync(string? prefix = null, CancellationToken cancellationToken = default)
+    public override async Task<Dictionary<string, string?>> GetSecretsAsync(
+        string? prefix = null, 
+        CancellationToken cancellationToken = default)
     {
         var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
@@ -80,7 +84,10 @@ public class BuiltInSecretProvider : BaseSecretProvider
         }
     }
 
-    public override async Task SetSecretAsync(SecretKey secretKey, SecretValue secretValue, CancellationToken cancellationToken = default)
+    public override async Task SetSecretAsync(
+        SecretKey secretKey, 
+        SecretValue secretValue, 
+        CancellationToken cancellationToken = default)
     {
         var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 

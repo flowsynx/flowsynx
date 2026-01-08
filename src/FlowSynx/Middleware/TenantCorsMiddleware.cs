@@ -1,5 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Tenancy;
+﻿using FlowSynx.Application.Tenancy;
 
 namespace FlowSynx.Middleware;
 

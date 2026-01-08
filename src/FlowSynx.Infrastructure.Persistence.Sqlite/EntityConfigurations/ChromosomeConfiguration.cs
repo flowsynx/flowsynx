@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -29,10 +28,10 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
         builder.Property(c => c.UserId).IsRequired();
         builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
 
-        builder.Property(c => c.CellularEnvironment)
+        builder.Property(c => c.EnvironmentalFactor)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<CellularEnvironment>(v));
+                v => JsonSerializer.Deserialize<EnvironmentalFactor>(v));
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>

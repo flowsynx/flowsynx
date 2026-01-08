@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
+﻿using FlowSynx.Application.Core.Persistence;
+using FlowSynx.Application.Core.Services;
 using FlowSynx.Infrastructure.Persistence.Abstractions;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Repositories;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;

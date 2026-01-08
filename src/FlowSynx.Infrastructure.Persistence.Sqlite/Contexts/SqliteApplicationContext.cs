@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Services;
+﻿using FlowSynx.Application.Core.Services;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Infrastructure.Persistence.Abstractions;
 using FlowSynx.Persistence.Sqlite.EntityConfigurations;

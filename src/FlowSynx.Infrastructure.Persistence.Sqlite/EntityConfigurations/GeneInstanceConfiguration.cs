@@ -43,7 +43,7 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        builder.Property(gi => gi.Parameters)
+        builder.Property(gi => gi.NucleotideSequences)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
@@ -65,7 +65,7 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
         l =>
             new List<GeneInstanceId>(l ?? System.Linq.Enumerable.Empty<GeneInstanceId>()));
 
-        builder.Property(gi => gi.Dependencies)
+        builder.Property(gi => gi.RegulatoryNetwork)
             .HasConversion(
                 v => JsonSerializer.Serialize(v),
                 v => JsonSerializer.Deserialize<List<GeneInstanceId>>(v))

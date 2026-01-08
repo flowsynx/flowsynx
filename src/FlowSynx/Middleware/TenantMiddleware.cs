@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Services;
+﻿using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Infrastructure.Logging;
@@ -42,7 +42,7 @@ public sealed class TenantMiddleware
             return;
         }
 
-        // 1️⃣ Resolution-level validation
+        // Resolution-level validation
         switch (result.ResolutionStatus)
         {
             case TenantResolutionStatus.Invalid:
@@ -76,7 +76,7 @@ public sealed class TenantMiddleware
                 return;
         }
 
-        // 2️⃣ Lifecycle-level authorization
+        // Lifecycle-level authorization
         if (result.TenantStatus != TenantStatus.Active)
         {
             logger.LogWarning(
@@ -89,8 +89,8 @@ public sealed class TenantMiddleware
             return;
         }
 
-        // 3️⃣ Populate tenant context
-        TenantContextAccessor.Set(new TenantContextAccessor.TenantContext
+        // Populate tenant context
+        TenantContextAccessor.Set(new TenantContext
         {
             TenantId = result.TenantId!,
             Status = result.TenantStatus!.Value,
@@ -102,7 +102,7 @@ public sealed class TenantMiddleware
             Endpoint = context.Request.Path
         });
 
-        // 4️⃣ Configure tenant-aware logging
+        // Configure tenant-aware logging
         var loggingService = context.RequestServices.GetRequiredService<TenantLoggingService>();
         await loggingService.ConfigureTenantLoggerAsync(result.TenantId!);
 

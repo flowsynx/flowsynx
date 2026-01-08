@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
+﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -43,8 +43,8 @@ public class GeneBlueprintRepository : IGeneBlueprintRepository
 
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.GeneBlueprints
-            .Where(gb => gb.Name.Contains(searchTerm) ||
-                            gb.Description.Contains(searchTerm) ||
+            .Where(gb => gb.Phenotypic.Contains(searchTerm) ||
+                            gb.Annotation.Contains(searchTerm) ||
                             gb.Id.Value.Contains(searchTerm))
             .ToListAsync(cancellationToken);
     }
@@ -83,7 +83,7 @@ public class GeneBlueprintRepository : IGeneBlueprintRepository
         var blueprint = await GetByIdAsync(geneId, cancellationToken);
         if (blueprint == null) return false;
 
-        var compat = blueprint.CompatibilityMatrix;
+        var compat = blueprint.EpistaticInteraction;
 
         // Check runtime version
         if (!string.IsNullOrEmpty(compat.MinimumRuntimeVersion))

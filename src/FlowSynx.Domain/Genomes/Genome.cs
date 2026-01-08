@@ -3,7 +3,6 @@ using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Domain.Genomes;
 
@@ -20,9 +19,13 @@ public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, 
     private Genome() { }
 
     public Genome(
+        TenantId tenantId,
+        string userId,
         GenomeId id,
         string name)
     {
+        TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
+        UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         Id = id ?? throw new ArgumentNullException(nameof(id));
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Chromosomes = new List<Chromosome>();
@@ -50,10 +53,10 @@ public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, 
         Chromosomes.Remove(chromosome);
     }
 
-    public Chromosome GetChromosome(ChromosomeId chromosomeId) =>
+    public Chromosome? GetChromosome(ChromosomeId chromosomeId) =>
         Chromosomes.FirstOrDefault(c => c.Id == chromosomeId);
 
-    public GeneInstance GetGene(GeneInstanceId instanceId)
+    public GeneInstance? GetGene(GeneInstanceId instanceId)
     {
         foreach (var chromosome in Chromosomes)
         {

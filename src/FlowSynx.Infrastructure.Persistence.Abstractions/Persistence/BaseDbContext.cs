@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Services;
+﻿using FlowSynx.Application.Core.Services;
 using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;

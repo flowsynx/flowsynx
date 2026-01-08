@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain.Primitives;
 using FlowSynx.Application.Core.Extensions;
 using FlowSynx.Application.Core.Dispatcher;
-using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
+using FlowSynx.Application.Core.Persistence;
+using FlowSynx.Application.Core.Services;
+using FlowSynx.Application.Core.Results;
 
 namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 

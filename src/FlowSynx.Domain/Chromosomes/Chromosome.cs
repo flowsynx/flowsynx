@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.DomainEvents;
+﻿using FlowSynx.Domain.Chromosomes.Events;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.GeneInstances;
@@ -14,7 +14,7 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
     public string UserId { get; set; }
     public string Name { get; private set; }
     public List<GeneInstance> Genes { get; private set; }
-    public CellularEnvironment CellularEnvironment { get; private set; }
+    public EnvironmentalFactor EnvironmentalFactor { get; private set; }
     public Dictionary<string, object> Metadata { get; private set; }
     public List<GeneExecutionResult> ExecutionResults { get; private set; }
     public Tenant? Tenant { get; set; }
@@ -22,14 +22,18 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
     private Chromosome() { }
 
     public Chromosome(
+        TenantId tenantId,
+        string userId,
         ChromosomeId id,
         string name,
-        CellularEnvironment cellularEnvironment = null)
+        EnvironmentalFactor environmentalFactor = null)
     {
+        TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
+        UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         Id = id ?? throw new ArgumentNullException(nameof(id));
         Name = name ?? throw new ArgumentNullException(nameof(name));
-        CellularEnvironment = cellularEnvironment ?? new CellularEnvironment(
-            new ImmuneResponse(),
+        EnvironmentalFactor = environmentalFactor ?? new EnvironmentalFactor(
+            new DefenseMechanism(),
             new ResourceConstraints(),
             new Dictionary<string, object>(),
             new Dictionary<string, object>());
@@ -48,6 +52,8 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
             throw new DomainException($"Gene instance with ID {instanceId} already exists");
 
         var geneInstance = new GeneInstance(
+            TenantId,
+            UserId,
             instanceId,
             blueprintId,
             parameters,
@@ -66,15 +72,15 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
         // Remove dependencies on this gene
         foreach (var otherGene in Genes)
         {
-            otherGene.RemoveDependency(instanceId);
+            otherGene.RemoveRegulatoryNetwork(instanceId);
         }
 
         Genes.Remove(gene);
     }
 
-    public void UpdateCellularEnvironment(CellularEnvironment environment)
+    public void UpdateEnvironmentalFactor(EnvironmentalFactor environment)
     {
-        CellularEnvironment = environment ?? throw new ArgumentNullException(nameof(environment));
+        EnvironmentalFactor = environment ?? throw new ArgumentNullException(nameof(environment));
     }
 
     public void AddExecutionResults(List<GeneExecutionResult> results)
@@ -84,6 +90,6 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
         AddDomainEvent(new ChromosomeExecuted(this, results));
     }
 
-    public GeneInstance GetGene(GeneInstanceId instanceId) =>
+    public GeneInstance? GetGene(GeneInstanceId instanceId) =>
         Genes.FirstOrDefault(g => g.Id == instanceId);
 }

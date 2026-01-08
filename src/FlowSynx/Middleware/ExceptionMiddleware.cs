@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using FlowSynx.Application.Core.Results;
 using FlowSynx.Application.Core.Serializations;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.PluginCore.Exceptions;

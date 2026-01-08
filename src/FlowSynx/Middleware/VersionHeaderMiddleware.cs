@@ -1,4 +1,4 @@
-using FlowSynx.Application.Abstractions.Services;
+using FlowSynx.Application.Core.Services;
 
 namespace FlowSynx.Middleware;
 

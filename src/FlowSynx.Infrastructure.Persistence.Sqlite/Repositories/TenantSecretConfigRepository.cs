@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
+﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Persistence.Sqlite.Contexts;

@@ -77,17 +77,4 @@ public sealed class TenantContextAccessor : ITenantContext
         public TenantContext Context { get; }
         public TenantContextHolder(TenantContext context) => Context = context;
     }
-
-    public sealed class TenantContext
-    {
-        public TenantId TenantId { get; set; }
-        public bool IsValid { get; set; }
-        public TenantStatus Status { get; set; }
-        public TenantCorsPolicy? CorsPolicy { get; set; }
-        public TenantRateLimitingPolicy? RateLimitingPolicy { get; set; }
-        public string UserId { get; set; } = string.Empty;
-        public string? UserAgent { get; set; }
-        public string? IPAddress { get; set; }
-        public string? Endpoint { get; set; }
-    }
 }

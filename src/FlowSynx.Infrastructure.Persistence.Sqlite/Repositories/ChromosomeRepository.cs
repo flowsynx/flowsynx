@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
+﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;

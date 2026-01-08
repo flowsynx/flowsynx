@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
+﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;

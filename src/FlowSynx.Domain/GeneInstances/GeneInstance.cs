@@ -10,9 +10,9 @@ public class GeneInstance : AuditableEntity<GeneInstanceId>, ITenantScoped, IUse
     public TenantId TenantId { get; set; }
     public string UserId { get; set; }
     public GeneBlueprintId GeneBlueprintId { get; private set; }
-    public Dictionary<string, object> Parameters { get; private set; }
+    public Dictionary<string, object> NucleotideSequences { get; private set; }
     public ExpressionConfiguration ExpressionConfiguration { get; private set; }
-    public List<GeneInstanceId> Dependencies { get; private set; }
+    public List<GeneInstanceId> RegulatoryNetwork { get; private set; }
     public Dictionary<string, object> Metadata { get; private set; }
     public GeneBlueprint Blueprint { get; set; }
     public Tenant? Tenant { get; set; }
@@ -20,36 +20,40 @@ public class GeneInstance : AuditableEntity<GeneInstanceId>, ITenantScoped, IUse
     private GeneInstance() { }
 
     public GeneInstance(
+        TenantId tenantId,
+        string userId,
         GeneInstanceId id,
         GeneBlueprintId geneBlueprintId,
-        Dictionary<string, object> parameters = null,
+        Dictionary<string, object> nucleotideSequences = null,
         ExpressionConfiguration expressionConfiguration = null,
-        List<GeneInstanceId> dependencies = null)
+        List<GeneInstanceId> regulatoryNetwork = null)
     {
+        TenantId = tenantId ?? throw new ArgumentNullException(nameof(tenantId));
+        UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         Id = id ?? throw new ArgumentNullException(nameof(id));
         GeneBlueprintId = geneBlueprintId ?? throw new ArgumentNullException(nameof(geneBlueprintId));
-        Parameters = parameters ?? new Dictionary<string, object>();
+        NucleotideSequences = nucleotideSequences ?? new Dictionary<string, object>();
         ExpressionConfiguration = expressionConfiguration ?? new ExpressionConfiguration(null, new Dictionary<string, object>(), new List<ExpressionCondition>());
-        Dependencies = dependencies ?? new List<GeneInstanceId>();
+        RegulatoryNetwork = regulatoryNetwork ?? new List<GeneInstanceId>();
         Metadata = new Dictionary<string, object>();
     }
 
-    public void UpdateParameters(Dictionary<string, object> parameters)
+    public void UpdateNucleotideSequences(Dictionary<string, object> nucleotideSequences)
     {
-        Parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
+        NucleotideSequences = nucleotideSequences ?? throw new ArgumentNullException(nameof(nucleotideSequences));
     }
 
-    public void AddDependency(GeneInstanceId dependencyId)
+    public void AddRegulatoryNetwork(GeneInstanceId regulatoryId)
     {
-        if (dependencyId == null)
-            throw new ArgumentNullException(nameof(dependencyId));
+        if (regulatoryId == null)
+            throw new ArgumentNullException(nameof(regulatoryId));
 
-        if (!Dependencies.Contains(dependencyId))
-            Dependencies.Add(dependencyId);
+        if (!RegulatoryNetwork.Contains(regulatoryId))
+            RegulatoryNetwork.Add(regulatoryId);
     }
 
-    public void RemoveDependency(GeneInstanceId dependencyId)
+    public void RemoveRegulatoryNetwork(GeneInstanceId regulatoryId)
     {
-        Dependencies.Remove(dependencyId);
+        RegulatoryNetwork.Remove(regulatoryId);
     }
 }

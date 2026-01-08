@@ -1,7 +1,7 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
-using FlowSynx.Application.Abstractions.Services;
-using FlowSynx.Application.Core.Dispatcher;
-using FlowSynx.Domain.Primitives;
+﻿using FlowSynx.Application.Core.Dispatcher;
+using FlowSynx.Application.Core.Persistence;
+using FlowSynx.Application.Core.Results;
+using FlowSynx.Application.Core.Services;
 using FlowSynx.PluginCore.Exceptions;
 using Microsoft.Extensions.Logging;
 

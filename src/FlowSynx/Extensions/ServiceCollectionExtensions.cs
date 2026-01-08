@@ -1,5 +1,5 @@
-﻿using FlowSynx.Application.Abstractions.Messaging;
-using FlowSynx.Application.Abstractions.Services;
+﻿using FlowSynx.Application.Core.Messaging;
+using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Tenancy;
 using FlowSynx.Configuration.Database;
 using FlowSynx.Configuration.OpenApi;

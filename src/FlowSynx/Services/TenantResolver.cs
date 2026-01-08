@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Abstractions.Persistence;
+﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Application.Tenancy;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Infrastructure.Security.Secrets.Extensions;
