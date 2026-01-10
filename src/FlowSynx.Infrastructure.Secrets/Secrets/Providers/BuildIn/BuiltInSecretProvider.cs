@@ -1,10 +1,10 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Application.Core.Services;
-using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
 using FlowSynx.Infrastructure.Security.Cryptography;
+using FlowSynx.Infrastructure.Security.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FlowSynx.Infrastructure.Security.Secrets.Providers.BuildIn;
@@ -39,7 +39,7 @@ public class BuiltInSecretProvider : BaseSecretProvider
         var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
         if (tenant == null)
-            throw new DomainException($"Tenant {_tenantId} not found");
+            throw new TenantNotFoundException(_tenantId);
 
         var secret = tenant.GetSecret(secretKey);
         if (secret == null || secret.IsExpired)
@@ -57,7 +57,7 @@ public class BuiltInSecretProvider : BaseSecretProvider
         var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
         if (tenant == null)
-            throw new DomainException($"Tenant {_tenantId} not found");
+            throw new TenantNotFoundException(_tenantId);
 
         var secrets = tenant.Secrets
             .Where(s => string.IsNullOrEmpty(prefix) || s.Key.Value.StartsWith(prefix))
@@ -92,7 +92,7 @@ public class BuiltInSecretProvider : BaseSecretProvider
         var tenant = await _tenantRepository.GetWithSecretsAsync(_tenantId, cancellationToken);
 
         if (tenant == null)
-            throw new DomainException($"Tenant {_tenantId} not found");
+            throw new TenantNotFoundException(_tenantId);
 
         var protectedValue = secretValue.IsEncrypted
             ? _dataProtectionService.Protect(secretValue.Value)

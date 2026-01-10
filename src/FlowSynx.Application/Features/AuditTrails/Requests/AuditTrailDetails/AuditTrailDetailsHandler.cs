@@ -1,8 +1,8 @@
 ﻿using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Core.Persistence;
-using FlowSynx.Application.Core.Results;
 using FlowSynx.Application.Core.Services;
-using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Application.Exceptions;
+using FlowSynx.BuildingBlocks.Results;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
@@ -29,12 +29,8 @@ internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsReques
         {
             _currentUserService.ValidateAuthentication();
 
-            var audit = await _auditTrailRepository.Get(request.AuditId, cancellationToken);
-            //if (audit is null)
-            //{
-            //    var message = _localization.Get("Feature_Audit_DetailsNotFound", auditId);
-            //    throw new FlowSynxException((int)ErrorCode.AuditNotFound, message);
-            //}
+            var audit = await _auditTrailRepository.Get(request.AuditId, cancellationToken) 
+                ?? throw new AuditTrailAuditNotFoundException(request.AuditId);
 
             var response = new AuditTrailDetailsResult
             {
@@ -51,10 +47,10 @@ internal class AuditTrailDetailsHandler : IActionHandler<AuditTrailDetailsReques
             _logger.LogInformation("Audit details for '{AuditId}' has been retrieved successfully.", request.AuditId);
             return await Result<AuditTrailDetailsResult>.SuccessAsync(response);
         }
-        catch (FlowSynxException ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "FlowSynx exception caught in AuditTrailDetailsHandler for audit '{AuditId}'.", request.AuditId);
-            return await Result<AuditTrailDetailsResult>.FailAsync(ex.ToString());
+            return await Result<AuditTrailDetailsResult>.FailAsync(ex.Message);
         }
     }
 }

@@ -1,8 +1,8 @@
 using FlowSynx.Application.Core.Dispatcher;
-using FlowSynx.Application.Core.Results;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 using FlowSynx.Application.Features.Version.VersionRequest;
+using FlowSynx.BuildingBlocks.Results;
 
 namespace FlowSynx.Application.Core.Extensions;
 

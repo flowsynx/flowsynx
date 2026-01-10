@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Results;
+﻿using FlowSynx.BuildingBlocks.Results;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.GeneInstances;

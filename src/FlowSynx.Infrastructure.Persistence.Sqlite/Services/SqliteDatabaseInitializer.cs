@@ -1,9 +1,8 @@
-﻿using FlowSynx.Persistence.Sqlite.Contexts;
-using FlowSynx.PluginCore.Exceptions;
+﻿using FlowSynx.Infrastructure.Persistence.Abstractions;
+using FlowSynx.Infrastructure.Persistence.Abstractions.Exceptions;
+using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.Infrastructure.Persistence.Abstractions;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 
@@ -42,9 +41,7 @@ public class SqliteDatabaseInitializer : IDatabaseInitializer
         }
         catch (Exception ex)
         {
-            throw new FlowSynxException(
-                (int)ErrorCode.DatabaseCreation,
-                $"Error occurred while connecting the application database: {ex.Message}");
+            throw new DatabaseInitializerException(ex);
         }
     }
 }

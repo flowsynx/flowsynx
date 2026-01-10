@@ -1,6 +1,4 @@
-﻿using FlowSynx.PluginCore.Exceptions;
-using System.Reflection;
-using FlowSynx.Domain.Primitives;
+﻿using System.Reflection;
 using FlowSynx.Application.Core.Services;
 
 namespace FlowSynx.Services;
@@ -40,9 +38,8 @@ public class FlowSynxVersion : IVersion
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationVersion, ex.Message);
-            logger?.LogError(errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
+            logger?.LogWarning(ex, "Failed to parse application version. Using default 0.0.0.0.");
+            return new Version(0, 0, 0, 0);
         }
     }
 }

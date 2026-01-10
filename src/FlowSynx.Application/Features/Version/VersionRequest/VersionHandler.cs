@@ -1,8 +1,6 @@
 ﻿using FlowSynx.Application.Core.Dispatcher;
-using FlowSynx.Application.Core.Results;
 using FlowSynx.Application.Core.Services;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.BuildingBlocks.Results;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.Version.VersionRequest;
@@ -29,10 +27,10 @@ internal class VersionHandler : IActionHandler<VersionRequest, Result<VersionRes
 
             return await Result<VersionResult>.SuccessAsync(response);
         }
-        catch (FlowSynxException ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex.ToString());
-            return await Result<VersionResult>.FailAsync(ex.ToString());
+            _logger.LogError(ex, ex.Message);
+            return await Result<VersionResult>.FailAsync(ex.Message);
         }
     }
 }

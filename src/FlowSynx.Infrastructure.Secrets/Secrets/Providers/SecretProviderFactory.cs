@@ -1,8 +1,7 @@
 ﻿using FlowSynx.Application.Core.Persistence;
-using FlowSynx.Domain.Exceptions;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
-using FlowSynx.Infrastructure.Security.Secrets.Exceptions;
+using FlowSynx.Infrastructure.Security.Exceptions;
 using FlowSynx.Infrastructure.Security.Secrets.Providers.BuildIn;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +32,7 @@ public class SecretProviderFactory : ISecretProviderFactory
         using var scope = _serviceProvider.CreateScope();
         var configRepository = scope.ServiceProvider.GetRequiredService<ITenantSecretConfigRepository>();
         var config = await configRepository.GetByTenantIdAsync(tenantId, ct)
-                     ?? throw new SecretException($"No secret provider configured for tenant {tenantId}");
+                     ?? throw new NoSecretProviderException(tenantId);
 
         return CreateProvider(tenantId, config.ProviderType, config.Configuration, scope.ServiceProvider);
     }
@@ -51,7 +50,7 @@ public class SecretProviderFactory : ISecretProviderFactory
             //SecretProviderType.AwsSecretsManager => new AwsSecretsManagerProvider(tenantId, configuration, _serviceProvider),
             //SecretProviderType.HashiCorpVault => new HashiCorpVaultProvider(tenantId, configuration, _serviceProvider),
             //SecretProviderType.Infisical => new InfisicalProvider(tenantId, configuration, _serviceProvider),
-            _ => throw new DomainException($"Unsupported provider type: {providerType}")
+            _ => throw new UnsupportedSecretProviderException(providerType)
         };
     }
 }

@@ -11,4 +11,8 @@
 		<DebugType>None</DebugType>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\FlowSynx.BuildingBlocks\FlowSynx.BuildingBlocks.csproj" />
+	</ItemGroup>
+
 </Project>

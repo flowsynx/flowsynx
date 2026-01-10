@@ -1,59 +1,39 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.Application.Core.Serializations;
+﻿using FlowSynx.Application.Core.Serializations;
+using System.Text.Json;
 
 namespace FlowSynx.Infrastructure.Serializations.Json;
 
 public class JsonSerializer : ISerializer
 {
-    private readonly ILogger<JsonSerializer> _logger;
+    private readonly JsonSerializerOptions _options;
 
-    public JsonSerializer(
-        ILogger<JsonSerializer> logger)
+    public JsonSerializer()
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+
+        _options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     }
 
-    public string ContentMineType => "application/json";
-
-    public string Serialize(object? input)
+    public string Serialize<T>(T obj)
     {
-        return Serialize(input, new SerializationConfiguration { Indented = false });
+        return System.Text.Json.JsonSerializer.Serialize(obj, new JsonSerializerOptions(_options)
+        {
+            WriteIndented = false
+        });
     }
 
-    public string Serialize(object? input, SerializationConfiguration configuration)
+    public string SerializePretty<T>(T obj)
     {
-        try
+        return System.Text.Json.JsonSerializer.Serialize(obj, new JsonSerializerOptions(_options)
         {
-            if (input is null)
-            {
-                var errorMessage = new ErrorMessage((int)ErrorCode.SerializerEmptyValue,
-                                    InfrastructureSerializationsResources.JsonSerializer_InputValueCanNotBeEmpty);
-                _logger.LogError(errorMessage.ToString());
-                throw new FlowSynxException(errorMessage);
-            }
-
-            var settings = new JsonSerializerSettings
-            {
-                Formatting = configuration.Indented ? Formatting.Indented : Formatting.None,
-                ContractResolver = configuration.NameCaseInsensitive
-                    ? new DefaultContractResolver()
-                    : new CamelCasePropertyNamesContractResolver()
-            };
-
-            if (configuration.Converters is not null)
-                settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
-
-            return JsonConvert.SerializeObject(input, settings);
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.Serialization, ex.Message);
-            _logger.LogError(errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
-        }
+            WriteIndented = true
+        });
     }
 }

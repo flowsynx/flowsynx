@@ -1,6 +1,4 @@
 ﻿using FlowSynx.Configuration.Server;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Serilog;
 using Serilog.Events;
@@ -41,19 +39,10 @@ public static class WebApplicationBuilderExtensions
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
         var serverConfig = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();
 
-        try
-        {
-            ConfigureKestrelEndpoints(builder, serverConfig);
-            ConfigureKestrelSettings(builder);
+        ConfigureKestrelEndpoints(builder, serverConfig);
+        ConfigureKestrelSettings(builder);
 
-            return builder;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationConfigureServer, ex.Message);
-            Log.Logger.Error(ex, errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
-        }
+        return builder;
     }
 
     private static void ConfigureKestrelEndpoints(

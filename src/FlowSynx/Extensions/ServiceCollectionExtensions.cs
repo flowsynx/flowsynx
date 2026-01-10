@@ -1,10 +1,11 @@
 ﻿using FlowSynx.Application.Core.Messaging;
 using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Tenancy;
+using FlowSynx.BuildingBlocks.Clock;
 using FlowSynx.Configuration.Database;
 using FlowSynx.Configuration.OpenApi;
 using FlowSynx.Configuration.Server;
-using FlowSynx.Domain.Primitives;
+using FlowSynx.Exceptions;
 using FlowSynx.Hubs;
 using FlowSynx.Infrastructure.Logging;
 using FlowSynx.Infrastructure.Persistence.Abstractions;
@@ -13,7 +14,6 @@ using FlowSynx.Infrastructure.Persistence.Sqlite;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Configuration;
 using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
 using FlowSynx.Infrastructure.Security.Cryptography;
-using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Security;
 using FlowSynx.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -34,6 +34,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddFlowSynxCancellationTokenSource(this IServiceCollection services)
     {
         services.AddSingleton(new CancellationTokenSource());
+        return services;
+    }
+
+    public static IServiceCollection AddFlowSynxSystemClock(this IServiceCollection services)
+    {
+        services.AddSingleton<IClock, BuildingBlocks.Clock.SystemClock>();
         return services;
     }
 
@@ -110,65 +116,58 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddFlowSynxApiDocumentation(this IServiceCollection services)
     {
-        try
+        services.AddScoped(provider =>
         {
-            services.AddScoped(provider =>
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            return tenantConfig.BindSection<OpenApiConfiguration>("OpenApi");
+        });
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("flowsynx", new OpenApiInfo
             {
-                var tenantConfig = provider.GetRequiredService<IConfiguration>();
-                return tenantConfig.BindSection<OpenApiConfiguration>("OpenApi");
+                Version = "flowsynx",
+                Title = "Service Invocation",
+                Description = "Using the service invocation API to find out how to communicate with FlowSynx API.",
+                License = new OpenApiLicense
+                {
+                    Name = "MIT License",
+                    Url = new Uri("https://opensource.org/licenses/MIT")
+                }
+            });
+            c.OperationFilter<TenantHeaderOperationFilter>();
+
+            c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "basic",
+                Description = "Basic Authentication using username and password."
             });
 
-            services.AddSwaggerGen(c =>
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                c.SwaggerDoc("flowsynx", new OpenApiInfo
-                {
-                    Version = "flowsynx",
-                    Title = "Service Invocation",
-                    Description = "Using the service invocation API to find out how to communicate with FlowSynx API.",
-                    License = new OpenApiLicense
-                    {
-                        Name = "MIT License",
-                        Url = new Uri("https://opensource.org/licenses/MIT")
-                    }
-                });
-                c.OperationFilter<TenantHeaderOperationFilter>();
-
-                c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "basic",
-                    Description = "Basic Authentication using username and password."
-                });
-
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
-                    BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
-                });
-
-                c.AddSecurityRequirement(document =>
-                {
-                    var requirement = new OpenApiSecurityRequirement
-                    {
-                        [new OpenApiSecuritySchemeReference("Basic", document)] = new List<string>(),
-                        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
-                    };
-
-                    return requirement;
-                });
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
             });
 
-            return services;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationOpenApiService, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
+            c.AddSecurityRequirement(document =>
+            {
+                var requirement = new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Basic", document)] = new List<string>(),
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+                };
+
+                return requirement;
+            });
+        });
+
+        return services;
+
     }
 
     internal class TenantHeaderOperationFilter : IOperationFilter
@@ -216,29 +215,21 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddFlowSynxSecurity(this IServiceCollection services)
     {
-        try
+        services.AddScoped<IAuthenticationProvider, NoneAuthenticationProvider>();
+        services.AddScoped<IAuthenticationProvider, BasicAuthenticationProvider>();
+        services.AddScoped<IAuthenticationProvider, JwtTokenAuthenticationProvider>();
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        services.AddAuthentication("Dynamic")
+            .AddScheme<AuthenticationSchemeOptions, DynamicAuthHandler>(
+                "Dynamic", null);
+
+        services.AddAuthorization(options =>
         {
-            services.AddScoped<IAuthenticationProvider, NoneAuthenticationProvider>();
-            services.AddScoped<IAuthenticationProvider, BasicAuthenticationProvider>();
-            services.AddScoped<IAuthenticationProvider, JwtTokenAuthenticationProvider>();
-            services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            options.AddPermissionPolicies();
+        });
 
-            services.AddAuthentication("Dynamic")
-                .AddScheme<AuthenticationSchemeOptions, DynamicAuthHandler>(
-                    "Dynamic", null);
-
-            services.AddAuthorization(options =>
-            {
-                options.AddPermissionPolicies();
-            });
-
-            return services;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.SecurityInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
+        return services;
     }
 
     #endregion
@@ -253,10 +244,7 @@ public static class ServiceCollectionExtensions
         var hasStartArgument = args.Contains("--start");
         if (!hasStartArgument)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, "The '--start' argument is required.");
-            logger.LogError(errorMessage.ToString());
-            Task.Delay(500).Wait();
-            Environment.Exit(1);
+            throw new StartArgumentRequiredException();
         }
 
         return services;

@@ -1,61 +1,75 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using FlowSynx.PluginCore.Exceptions;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.Application.Core.Serializations;
+﻿using FlowSynx.Application.Core.Serializations;
+using FlowSynx.Infrastructure.Serializations.Json.Exceptions;
+using System.Text.Json;
 
 namespace FlowSynx.Infrastructure.Serializations.Json;
 
 public class JsonDeserializer : IDeserializer
 {
-    private readonly ILogger<JsonDeserializer> _logger;
-    private readonly INormalizer _normalizer;
+    private readonly JsonSerializerOptions _options;
 
-    public JsonDeserializer(
-        ILogger<JsonDeserializer> logger,
-        INormalizer normalizer)
+    public JsonDeserializer()
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _normalizer = normalizer ?? throw new ArgumentNullException(nameof(normalizer));
+        _options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true,
+            AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip
+        };
+
+        _options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     }
 
-    public T Deserialize<T>(string? input)
+    public T Deserialize<T>(string? input) where T : class
     {
-        return Deserialize<T>(input, new SerializationConfiguration());
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            throw new JsonSerializationInputRequiredException(typeof(T));
+        }
+
+        try
+        {
+            var result = System.Text.Json.JsonSerializer.Deserialize<T>(input, _options);
+            if (result is null)
+            {
+                throw new JsonSerializationException($"Deserialization returned null for type {typeof(T).Name}.");
+            }
+            return result;
+        }
+        catch (JsonException ex)
+        {
+            throw new JsonSerializationException($"Failed to parse JSON as {typeof(T).Name}", ex);
+        }
     }
 
-    public T Deserialize<T>(string? input, SerializationConfiguration configuration)
+    public Task<object> DeserializeDynamicAsync(string json)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(input))
-            {
-                var errorMessage = new ErrorMessage((int)ErrorCode.DeserializerEmptyValue,
-                    InfrastructureSerializationsResources.JsonDeserializer_InputValueCanNotBeEmpty);
-                _logger.LogError(errorMessage.ToString());
-                throw new FlowSynxException(errorMessage);
-            }
-
-            var settings = new JsonSerializerSettings
-            {
-                Formatting = configuration.Indented ? Formatting.Indented : Formatting.None,
-                ContractResolver = configuration.NameCaseInsensitive 
-                                   ? new DefaultContractResolver() 
-                                   : new CamelCasePropertyNamesContractResolver()
-            };
-
-            if (configuration.Converters is not null)
-                settings.Converters = configuration.Converters.ConvertAll(item => (JsonConverter)item);
-
-            var sanitized = _normalizer.Normalize(input);
-            return JsonConvert.DeserializeObject<T>(sanitized, settings)!;
+            var element = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(json, _options);
+            return Task.FromResult<object>(element);
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.Serialization, ex.Message);
-            _logger.LogError(errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
+            throw new JsonSerializationException("Failed to parse JSON", ex);
+        }
+    }
+
+    public Task<bool> TryDeserializeAsync<T>(string json, out T result) where T : class
+    {
+        T? tempResult = null;
+        try
+        {
+            tempResult = System.Text.Json.JsonSerializer.Deserialize<T>(json, _options);
+            result = tempResult!;
+            return Task.FromResult(result != null);
+        }
+        catch
+        {
+            result = null!;
+            return Task.FromResult(false);
         }
     }
 }

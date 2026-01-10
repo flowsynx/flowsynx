@@ -1,14 +1,9 @@
 ﻿using FlowSynx.Application.Core.Services;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.Localization;
-using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Exceptions;
 using System.Security.Claims;
 
 namespace FlowSynx.Services;
 
-/// <summary>
-/// Provides safe access to the current HTTP user's identity information.
-/// </summary>
 public class CurrentUserService : ICurrentUserService
 {
     private readonly HttpContext? _httpContext;
@@ -30,7 +25,8 @@ public class CurrentUserService : ICurrentUserService
         }
         catch (Exception ex)
         {
-            throw CreateFlowSynxException(ErrorCode.SecurityGetUserId, ex);
+            _logger.LogError(ex, "Error retrieving tenant ID.");
+            return string.Empty;
         }
     }
 
@@ -43,7 +39,8 @@ public class CurrentUserService : ICurrentUserService
         }
         catch (Exception ex)
         {
-            throw CreateFlowSynxException(ErrorCode.SecurityGetUserId, ex);
+            _logger.LogError(ex, "Error retrieving user ID.");
+            return string.Empty;
         }
     }
 
@@ -56,7 +53,8 @@ public class CurrentUserService : ICurrentUserService
         }
         catch (Exception ex)
         {
-            throw CreateFlowSynxException(ErrorCode.SecurityGetUserName, ex);
+            _logger.LogError(ex, "Error retrieving user name.");
+            return string.Empty;
         }
     }
 
@@ -70,7 +68,8 @@ public class CurrentUserService : ICurrentUserService
         }
         catch (Exception ex)
         {
-            throw CreateFlowSynxException(ErrorCode.SecurityCheckIsAuthenticated, ex);
+            _logger.LogError(ex, "Error checking authentication status.");
+            return false;
         }
     }
 
@@ -92,7 +91,8 @@ public class CurrentUserService : ICurrentUserService
         }
         catch (Exception ex)
         {
-            throw CreateFlowSynxException(ErrorCode.SecurityGetUserRoles, ex);
+            _logger.LogError(ex, "Error retrieving user roles.");
+            return new List<string>();
         }
     }
 
@@ -101,15 +101,7 @@ public class CurrentUserService : ICurrentUserService
     {
         if (string.IsNullOrEmpty(UserId()))
         {
-            throw new FlowSynxException((int)ErrorCode.SecurityAuthenticationIsRequired,
-                FlowSynxResources.Authentication_Access_Denied);
+            throw new AuthenticationRequiredException();
         }
-    }
-
-    private FlowSynxException CreateFlowSynxException(ErrorCode errorCode, Exception exception)
-    {
-        var errorMessage = new ErrorMessage((int)errorCode, exception.Message);
-        _logger.LogError(errorMessage.ToString());
-        return new FlowSynxException(errorMessage);
     }
 }

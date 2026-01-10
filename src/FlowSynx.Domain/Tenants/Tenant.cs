@@ -60,7 +60,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     public void UpdateName(string newName)
     {
         if (string.IsNullOrWhiteSpace(newName))
-            throw new DomainException("Tenant name cannot be empty");
+            throw new TenantNameRequiredException();
 
         var oldName = Name;
         Name = newName.Trim();
@@ -89,7 +89,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     public void Suspend(string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
-            throw new DomainException("Suspension reason is required");
+            throw new TenantSuspensionReasonRequiredException();
 
         Status = TenantStatus.Suspended;
 
@@ -99,7 +99,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     public void Terminate(string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
-            throw new DomainException("Termination reason is required");
+            throw new TenantTerminationReasonRequiredException();
 
         Status = TenantStatus.Terminated;
 
@@ -110,7 +110,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     {
         var existing = Secrets.FirstOrDefault(s => s.Key == key);
         if (existing != null)
-            throw new DomainException($"Secret with key '{key.Value}' already exists");
+            throw new TenantSecretKeyAlreadyExistsException(key);
 
         var secret = TenantSecret.Create(Id, key, value);
         Secrets.Add(secret);
@@ -133,10 +133,10 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     public void AddContact(string email, string name, bool isPrimary)
     {
         if (string.IsNullOrWhiteSpace(email))
-            throw new DomainException("Contact email cannot be empty");
+            throw new TenantContactEmailRequiredException();
 
         if (Contacts.Any(c => c.Email.Equals(email, StringComparison.OrdinalIgnoreCase)))
-            throw new DomainException($"Contact with email {email} already exists");
+            throw new TenantContactEmailAlreadyExistsException(email);
 
         var contact = new TenantContact(Id, email, name, isPrimary);
         Contacts.Add(contact);
@@ -197,12 +197,12 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("Tenant name cannot be empty");
+            throw new TenantNameRequiredException();
 
         if (name.Length < 2)
-            throw new DomainException("Tenant name must be at least 2 characters long");
+            throw new TenantNameTooShortException();
 
         if (name.Length > 100)
-            throw new DomainException("Tenant name cannot exceed 100 characters");
+            throw new TenantNameTooLongException();
     }
 }

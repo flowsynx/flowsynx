@@ -77,16 +77,16 @@ public class GeneBlueprint : AuditableEntity<GeneBlueprintId>, IAggregateRoot, I
     private void ValidateState()
     {
         if (string.IsNullOrWhiteSpace(Generation))
-            throw new DomainException("Gene blueprint generation cannot be empty");
+            throw new GeneBlueprintGenerationRequiredException();
 
         if (string.IsNullOrWhiteSpace(Phenotypic))
-            throw new DomainException("Gene blueprint phenotypic cannot be empty");
+            throw new GeneBlueprintPhenotypicRequiredException();
 
         if (string.IsNullOrWhiteSpace(Annotation))
-            throw new DomainException("Gene blueprint annotation cannot be empty");
+            throw new GeneBlueprintAnnotationRequiredException();
 
         if (ExpressedProtein == null)
-            throw new DomainException("Expressed protein is required");
+            throw new GeneBlueprintExpressedProteinRequiredException();
     }
 
     public bool HasImmuneSystem() => ImmuneSystem != null;

@@ -74,7 +74,7 @@ public class GeneBlueprintRepository : IGeneBlueprintRepository
         }
     }
 
-    public async Task<bool> IsCompatibleAsync(
+    public async Task<bool> IsEpistaticCompatibleAsync(
         GeneBlueprintId geneId, 
         string runtimeVersion, 
         string platform, 

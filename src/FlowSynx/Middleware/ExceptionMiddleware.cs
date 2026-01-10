@@ -1,8 +1,8 @@
-﻿using System.Net;
-using FlowSynx.Application.Core.Results;
-using FlowSynx.Application.Core.Serializations;
-using FlowSynx.Domain.Primitives;
-using FlowSynx.PluginCore.Exceptions;
+﻿using FlowSynx.Application.Core.Serializations;
+using FlowSynx.BuildingBlocks.Errors;
+using FlowSynx.BuildingBlocks.Exceptions;
+using FlowSynx.BuildingBlocks.Results;
+using System.Net;
 
 namespace FlowSynx.Middleware;
 
@@ -33,7 +33,7 @@ public class ExceptionMiddleware
 
             switch (error)
             {
-                case FlowSynxException e:
+                case BaseException e:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
                     responseModel.Messages = new List<string> { e.ToString() };
                     break;

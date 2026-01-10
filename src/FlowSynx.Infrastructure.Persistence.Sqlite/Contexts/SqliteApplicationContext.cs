@@ -1,8 +1,7 @@
-﻿using FlowSynx.Application.Core.Services;
-using FlowSynx.Domain.Primitives;
+﻿using FlowSynx.BuildingBlocks.Clock;
 using FlowSynx.Infrastructure.Persistence.Abstractions;
+using FlowSynx.Infrastructure.Persistence.Abstractions.Exceptions;
 using FlowSynx.Persistence.Sqlite.EntityConfigurations;
-using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -17,8 +16,8 @@ public class SqliteApplicationContext : BaseDbContext
         DbContextOptions<SqliteApplicationContext> contextOptions,
         ILogger<SqliteApplicationContext> logger,
         IHttpContextAccessor httpContextAccessor,
-        ISystemClock systemClock)
-        : base(contextOptions, logger, httpContextAccessor, systemClock)
+        IClock clock)
+        : base(contextOptions, logger, httpContextAccessor, clock)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -31,9 +30,7 @@ public class SqliteApplicationContext : BaseDbContext
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseModelCreating, ex.Message);
-            _logger.LogError(ex, errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
+            throw new DatabaseModelCreatingException(ex);
         }
     }
 

@@ -1,10 +1,7 @@
 ﻿using FlowSynx.Application.Core.Persistence;
-using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
-using FlowSynx.PluginCore.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Repositories;
 

@@ -49,7 +49,7 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
         ExpressionProfile expressionProfile = null)
     {
         if (Genes.Any(g => g.Id == instanceId))
-            throw new DomainException($"Gene instance with ID {instanceId} already exists");
+            throw new GeneInstanceExistsException(instanceId);
 
         var geneInstance = new GeneInstance(
             TenantId,
@@ -67,7 +67,7 @@ public class Chromosome : AuditableEntity<ChromosomeId>, ITenantScoped, IUserSco
     {
         var gene = Genes.FirstOrDefault(g => g.Id == instanceId);
         if (gene == null)
-            throw new DomainException($"Gene instance {instanceId} not found");
+            throw new GeneInstanceNotFoundException(instanceId);
 
         // Remove dependencies on this gene
         foreach (var otherGene in Genes)

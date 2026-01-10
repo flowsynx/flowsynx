@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
-using FlowSynx.PluginCore.Exceptions;
 using FlowSynx.Application.Core.Extensions;
 using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Application.Core.Services;
-using FlowSynx.Application.Core.Results;
+using FlowSynx.BuildingBlocks.Results;
 
 namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 
@@ -41,12 +40,14 @@ internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, P
                 NewValues = audit.NewValues,
                 OccurredAtUtc = audit.OccurredAtUtc
             });
+
             var pagedItems = response.ToPaginatedList(
                 request.Page,
                 request.PageSize,
                 out var totalCount,
                 out var page,
                 out var pageSize);
+
             _logger.LogInformation(
                 "Audit list retrieved successfully for page {Page} with size {PageSize}.",
                 page,
@@ -57,14 +58,14 @@ internal class AuditTrailsListHandler : IActionHandler<AuditTrailsListRequest, P
                 page,
                 pageSize);
         }
-        catch (FlowSynxException ex)
+        catch (Exception ex)
         {
             _logger.LogError(
                 ex,
                 "FlowSynx exception caught in AuditsListHandler for page {Page} with size {PageSize}.",
                 request.Page,
                 request.PageSize);
-            return await PaginatedResult<AuditTrailsListResult>.FailureAsync(ex.ToString());
+            return await PaginatedResult<AuditTrailsListResult>.FailureAsync(ex.Message);
         }
     }
 }

@@ -8,8 +8,6 @@ public static class DependencyInjection
     public static IServiceCollection AddJsonSerialization(this IServiceCollection services)
     {
         services
-            .AddSingleton<INormalizer, JsonNormalizer>()
-            .AddSingleton<IObjectParser, JsonObjectParser>()
             .AddSingleton<ISerializer, JsonSerializer>()
             .AddSingleton<IDeserializer, JsonDeserializer>();
 

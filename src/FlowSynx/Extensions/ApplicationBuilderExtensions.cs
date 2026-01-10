@@ -1,9 +1,7 @@
 ﻿using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
-using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using FlowSynx.Domain.Primitives;
 using FlowSynx.Application.Core.Serializations;
 using FlowSynx.Configuration.OpenApi;
 using FlowSynx.Configuration.Server;
@@ -109,20 +107,12 @@ public static class ApplicationBuilderExtensions
         using var serviceScope = app.ApplicationServices.CreateScope();
         var initializers = serviceScope.ServiceProvider.GetServices<IDatabaseInitializer>();
 
-        try
+        foreach (var initializer in initializers)
         {
-            foreach (var initializer in initializers)
-            {
-                await initializer.EnsureDatabaseCreatedAsync();
-            }
+            await initializer.EnsureDatabaseCreatedAsync();
+        }
 
-            return app;
-        }
-        catch (Exception ex)
-        {
-            throw new FlowSynxException((int)ErrorCode.DatabaseCreation,
-                $"Error occurred while connecting the application database: {ex.Message}");
-        }
+        return app;
     }
 
     public static IApplicationBuilder UseFlowSynxHttps(this IApplicationBuilder app)

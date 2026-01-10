@@ -16,10 +16,10 @@ public class TenantContact: AuditableEntity<Guid>, ITenantScoped
     {
         TenantId = tenantId;
         if (string.IsNullOrWhiteSpace(email))
-            throw new DomainException("Email cannot be empty");
+            throw new TenantEmailRequiredException();
 
         if (!IsValidEmail(email))
-            throw new DomainException($"Invalid email format: {email}");
+            throw new TenantEmailInvalidException(email);
 
         Email = email.ToLowerInvariant();
         Name = name?.Trim() ?? string.Empty;

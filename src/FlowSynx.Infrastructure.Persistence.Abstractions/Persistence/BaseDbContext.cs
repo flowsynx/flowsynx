@@ -1,4 +1,4 @@
-﻿using FlowSynx.Application.Core.Services;
+﻿using FlowSynx.BuildingBlocks.Clock;
 using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;
@@ -9,7 +9,7 @@ using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
-using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Infrastructure.Persistence.Abstractions.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -22,7 +22,7 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
 {
     protected readonly ILogger<BaseDbContext> Logger;
     protected readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly ISystemClock _systemClock;
+    private readonly IClock _clock;
 
     private string _userId;
     private TenantId _tenantId;
@@ -34,7 +34,7 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
             DbContextOptions options,
             ILogger<BaseDbContext> logger,
             IHttpContextAccessor httpContextAccessor,
-            ISystemClock systemClock): base(options)
+            IClock clock): base(options)
     {
         Logger = logger;
         _httpContextAccessor = httpContextAccessor;
@@ -52,21 +52,19 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        SetCurrentUserIdAndTenantId();
+        ApplyTenantScope();
+        ApplyAuditing();
+
         try
         {
-            SetCurrentUserIdAndTenantId();
-            ApplyTenantScope();
-            ApplyAuditing();
-
             return string.IsNullOrEmpty(_userId)
                 ? await base.SaveChangesAsync(cancellationToken)
                 : await SaveChangesAsync(_tenantId, _userId, cancellationToken);
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseSaveData, ex.Message);
-            Logger.LogError(ex, errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
+            throw new DatabaseSaveException(ex);
         }
     }
 
@@ -78,9 +76,7 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.DatabaseModelCreating, ex.Message);
-            Logger.LogError(ex, errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
+            throw new DatabaseModelCreatingException(ex);
         }
     }
 
@@ -194,12 +190,12 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        auditable.CreatedOn = _systemClock.UtcNow;
+                        auditable.CreatedOn = _clock.UtcNow;
                         auditable.CreatedBy = _userId;
                         break;
 
                     case EntityState.Modified:
-                        auditable.LastModifiedOn = _systemClock.UtcNow;
+                        auditable.LastModifiedOn = _clock.UtcNow;
                         auditable.LastModifiedBy = _userId;
                         break;
                 }
@@ -207,9 +203,7 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
         }
         catch (Exception ex)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.AuditsApplying, ex.Message);
-            Logger.LogError(ex, errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
+            throw new AuditingApplyException(ex);
         }
     }
 

@@ -9,9 +9,11 @@ public interface IGeneExpressionEngine
     Task<ExpressionResult> ExpressGeneAsync(
         GeneInstance gene,
         CellularEnvironment cellularEnvironment,
-        Dictionary<string, object> sharedContext);
+        Dictionary<string, object> sharedContext,
+        CancellationToken cancellationToken);
 
     Task<List<ExpressionResult>> ExpressChromosomeAsync(
         Chromosome chromosome,
-        Dictionary<string, object> runtimeContext);
+        Dictionary<string, object> runtimeContext,
+        CancellationToken cancellationToken);
 }

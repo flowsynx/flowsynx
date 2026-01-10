@@ -11,5 +11,5 @@ public interface IGeneBlueprintRepository
     Task AddAsync(GeneBlueprint entity, CancellationToken cancellationToken);
     Task UpdateAsync(GeneBlueprint entity, CancellationToken cancellationToken);
     Task DeleteAsync(GeneBlueprintId id, CancellationToken cancellationToken);
-    Task<bool> IsCompatibleAsync(GeneBlueprintId geneId, string runtimeVersion, string platform, CancellationToken cancellationToken);
+    Task<bool> IsEpistaticCompatibleAsync(GeneBlueprintId geneId, string runtimeVersion, string platform, CancellationToken cancellationToken);
 }

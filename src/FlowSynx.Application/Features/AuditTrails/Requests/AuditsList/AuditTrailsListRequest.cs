@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Core.Dispatcher;
-using FlowSynx.Application.Core.Results;
+using FlowSynx.BuildingBlocks.Results;
 
 namespace FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 

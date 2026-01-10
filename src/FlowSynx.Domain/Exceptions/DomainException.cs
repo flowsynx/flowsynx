@@ -1,28 +1,11 @@
-﻿namespace FlowSynx.Domain.Exceptions;
+﻿using FlowSynx.BuildingBlocks.Errors;
+using FlowSynx.BuildingBlocks.Exceptions;
 
-public class DomainException : Exception
+namespace FlowSynx.Domain.Exceptions;
+
+public abstract class DomainException : BaseException
 {
-    public string ErrorCode { get; }
-    public string? AdditionalInfo { get; }
-
-    public DomainException(string message) : base(message)
+    protected DomainException(ErrorCode errorCode, string message) : base(errorCode, message)
     {
-        ErrorCode = "DOMAIN_ERROR";
-    }
-
-    public DomainException(string message, string errorCode) : base(message)
-    {
-        ErrorCode = errorCode;
-    }
-
-    public DomainException(string message, string errorCode, string additionalInfo) : base(message)
-    {
-        ErrorCode = errorCode;
-        AdditionalInfo = additionalInfo;
-    }
-
-    public DomainException(string message, System.Exception innerException) : base(message, innerException)
-    {
-        ErrorCode = "DOMAIN_ERROR";
     }
 }

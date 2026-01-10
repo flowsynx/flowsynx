@@ -59,7 +59,7 @@ public class TenantSecretConfig : AuditableEntity<Guid>, IAggregateRoot
     public void UpdateCacheDuration(int minutes)
     {
         if (minutes < 1 || minutes > 1440) // 24 hours max
-            throw new DomainException("Cache duration must be between 1 and 1440 minutes");
+            throw new TenantCacheDurationOutOfRangeException();
 
         CacheDurationMinutes = minutes;
     }

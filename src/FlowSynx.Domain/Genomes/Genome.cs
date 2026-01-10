@@ -39,7 +39,7 @@ public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, 
             throw new ArgumentNullException(nameof(chromosome));
 
         if (Chromosomes.Any(c => c.Id == chromosome.Id))
-            throw new DomainException($"Chromosome with ID {chromosome.Id} already exists");
+            throw new ChromosomeIdExistsException(chromosome.Id);
 
         Chromosomes.Add(chromosome);
     }
@@ -48,7 +48,7 @@ public class Genome : AuditableEntity<GenomeId>, IAggregateRoot, ITenantScoped, 
     {
         var chromosome = Chromosomes.FirstOrDefault(c => c.Id == chromosomeId);
         if (chromosome == null)
-            throw new DomainException($"Chromosome {chromosomeId} not found");
+            throw new ChromosomeIdNotFoundException(chromosomeId);
 
         Chromosomes.Remove(chromosome);
     }

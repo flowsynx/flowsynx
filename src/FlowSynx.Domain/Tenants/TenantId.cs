@@ -9,7 +9,7 @@ public sealed record TenantId
     private TenantId(Guid value)
     {
         if (value == Guid.Empty)
-            throw new DomainException("Tenant ID cannot be empty");
+            throw new TenantIdRequiredException();
 
         Value = value;
     }
@@ -41,7 +41,7 @@ public sealed record TenantId
     public static TenantId FromString(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            throw new DomainException("Tenant ID string cannot be null or empty");
+            throw new TenantIdRequiredException();
 
         return new TenantId(Guid.Parse(value));
     }

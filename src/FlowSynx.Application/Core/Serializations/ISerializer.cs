@@ -2,6 +2,6 @@
 
 public interface ISerializer
 {
-    string Serialize(object? input);
-    string Serialize(object? input, SerializationConfiguration configuration);
+    string Serialize<T>(T obj);
+    string SerializePretty<T>(T obj);
 }
