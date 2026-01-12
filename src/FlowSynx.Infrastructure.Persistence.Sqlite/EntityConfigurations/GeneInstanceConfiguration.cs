@@ -6,6 +6,7 @@ using FlowSynx.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Text.Json;
 
 namespace FlowSynx.Persistence.Sqlite.EntityConfigurations;
@@ -25,6 +26,15 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<Domain.GeneIns
         builder.Property(gi => gi.Id)
             .ValueGeneratedOnAdd();
 
+        builder.Property(c => c.TenantId)
+            .HasConversion(
+                id => id.Value,
+                value => TenantId.Create(value));
+
+        // Ensure FK type matches Chromosome.Id by converting the value object
+        builder.Property(gi => gi.ChromosomeId)
+            .IsRequired();
+
         builder.Property(gi => gi.GeneId)
             .IsRequired()
             .HasMaxLength(200);
@@ -36,6 +46,11 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<Domain.GeneIns
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
+        var configConverter = new ValueConverter<GeneConfig, string>(
+            v => v.ToString(),
+            v => (GeneConfig)Enum.Parse(typeof(GeneConfig), v, true)
+        );
+
         // Store JSON fields
         builder.Property(gi => gi.Parameters)
             .HasColumnType("TEXT")
@@ -46,10 +61,7 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<Domain.GeneIns
 
         builder.Property(gi => gi.Config)
             .HasColumnType("TEXT")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, jsonOptions),
-                v => JsonSerializer.Deserialize<GeneConfig>(v, jsonOptions))
-            .Metadata.SetValueComparer(dictionaryComparer);
+            .HasConversion(configConverter);
 
         builder.Property(gi => gi.Metadata)
             .HasColumnType("TEXT")
@@ -59,10 +71,10 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<Domain.GeneIns
             .Metadata.SetValueComparer(dictionaryComparer);
 
         // Relationship with Chromosome
-        builder.HasOne<Chromosome>()
-            .WithMany(c => c.Genes)
-            .HasForeignKey(gi => gi.ChromosomeId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(we => we.Chromosome)
+           .WithMany(w => w.Genes)
+           .HasForeignKey(we => we.ChromosomeId)
+           .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(gi => gi.GeneId);
         builder.HasIndex(gi => gi.ChromosomeId);

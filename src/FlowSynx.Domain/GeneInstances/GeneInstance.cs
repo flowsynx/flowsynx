@@ -16,7 +16,7 @@ public class GeneInstance : AuditableEntity<Guid>, ITenantScoped, IUserScoped
     public int Order { get; set; }
 
     // Navigation property
-    public Chromosome Chromosome { get; set; }
+    public Chromosome? Chromosome { get; set; }
 
     //public TenantId TenantId { get; set; }
     //public string UserId { get; set; }

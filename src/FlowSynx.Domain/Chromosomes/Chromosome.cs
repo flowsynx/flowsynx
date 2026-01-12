@@ -23,7 +23,7 @@ public class Chromosome : AuditableEntity<Guid>, ITenantScoped, IUserScoped
 
     // Navigation properties
     public ICollection<GeneInstances.GeneInstance> Genes { get; set; } = new List<GeneInstances.GeneInstance>();
-    public Genome Genome { get; set; }
+    public Genome? Genome { get; set; }
 
 
     //public TenantId TenantId { get; set; }
