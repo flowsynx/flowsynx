@@ -1,14 +1,15 @@
 ﻿using FlowSynx.Domain.Genomes;
-using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Application.Core.Persistence;
 
 public interface IGenomeRepository
 {
-    Task<List<Genome>> GetAllAsync(CancellationToken cancellationToken);
-    Task<Genome?> GetByIdAsync(GenomeId id, CancellationToken cancellationToken);
-    Task AddAsync(Genome entity, CancellationToken cancellationToken);
-    Task UpdateAsync(Genome entity, CancellationToken cancellationToken);
-    Task DeleteAsync(GenomeId id, CancellationToken cancellationToken);
-    Task<List<Genome>> GetByMetadataAsync(string key, object value, CancellationToken cancellationToken);
+    Task<List<Genome>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<Genome?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Genome?> GetByNameAsync(string name, string @namespace = "default", CancellationToken cancellationToken = default);
+    Task<IEnumerable<Genome>> GetByOwnerAsync(string owner, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Genome>> GetByNamespaceAsync(string @namespace, CancellationToken cancellationToken = default);
+    Task AddAsync(Genome entity, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Genome entity, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

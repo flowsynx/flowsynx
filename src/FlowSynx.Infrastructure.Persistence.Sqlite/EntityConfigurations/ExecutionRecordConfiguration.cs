@@ -1,6 +1,4 @@
-﻿using FlowSynx.Application.Core.Serializations;
-using FlowSynx.Domain.Genomes;
-using FlowSynx.Domain.Tenants;
+﻿using FlowSynx.Domain.Genomes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,9 +6,9 @@ using System.Text.Json;
 
 namespace FlowSynx.Persistence.Sqlite.EntityConfigurations;
 
-public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
+public class ExecutionRecordConfiguration : IEntityTypeConfiguration<ExecutionRecord>
 {
-    public void Configure(EntityTypeBuilder<Genome> builder)
+    public void Configure(EntityTypeBuilder<ExecutionRecord> builder)
     {
         var jsonOptions = new JsonSerializerOptions
         {
@@ -18,22 +16,27 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
             WriteIndented = false
         };
 
-        builder.HasKey(g => g.Id);
+        builder.HasKey(er => er.Id);
 
-        builder.Property(g => g.Id)
+        builder.Property(er => er.Id)
             .ValueGeneratedOnAdd();
 
-        builder.Property(g => g.Name)
+        builder.Property(er => er.ExecutionId)
             .IsRequired()
-            .HasMaxLength(200);
+            .HasMaxLength(100);
 
-        builder.Property(g => g.Namespace)
+        builder.Property(er => er.TargetType)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Property(er => er.Status)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Property(er => er.Namespace)
             .IsRequired()
             .HasMaxLength(100)
             .HasDefaultValue("default");
-
-        builder.Property(g => g.Description)
-            .HasMaxLength(1000);
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
@@ -43,53 +46,49 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
         // Store JSON fields
-        builder.Property(g => g.Metadata)
+        builder.Property(er => er.Request)
             .HasColumnType("TEXT")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, jsonOptions),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        builder.Property(g => g.Spec)
-            .HasColumnType("TEXT")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, jsonOptions),
-                v => JsonSerializer.Deserialize<GenomeSpec>(v, jsonOptions))
-            .Metadata.SetValueComparer(dictionaryComparer);
-
-        builder.Property(g => g.Labels)
-            .HasColumnType("TEXT")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, jsonOptions),
-                v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions) ?? new Dictionary<string, string>())
-            .Metadata.SetValueComparer(dictionaryComparer);
-
-        builder.Property(g => g.Annotations)
-            .HasColumnType("TEXT")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, jsonOptions),
-                v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions) ?? new Dictionary<string, string>())
-            .Metadata.SetValueComparer(dictionaryComparer);
-
-        builder.Property(g => g.SharedEnvironment)
+        builder.Property(er => er.Response)
             .HasColumnType("TEXT")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, jsonOptions),
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        // Relationship with Chromosomes
-        builder.HasMany(g => g.Chromosomes)
-            .WithOne()
-            .HasForeignKey(c => c.GenomeId)
-            .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(er => er.Context)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
+            .Metadata.SetValueComparer(dictionaryComparer);
 
-        builder.HasIndex(g => new { g.Namespace, g.Name })
+        builder.Property(er => er.Parameters)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
+            .Metadata.SetValueComparer(dictionaryComparer);
+
+        builder.Property(er => er.Metadata)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
+            .Metadata.SetValueComparer(dictionaryComparer);
+
+        builder.HasIndex(er => er.ExecutionId)
             .IsUnique();
 
-        builder.HasIndex(g => g.Name);
-        builder.HasIndex(g => g.Namespace);
-        builder.HasIndex(g => g.Owner);
-        builder.HasIndex(g => g.CreatedOn);
+        builder.HasIndex(er => er.TargetType);
+        builder.HasIndex(er => er.TargetId);
+        builder.HasIndex(er => er.Status);
+        builder.HasIndex(er => er.Namespace);
+        builder.HasIndex(er => er.StartedAt);
+        builder.HasIndex(er => er.CompletedAt);
     }
 }

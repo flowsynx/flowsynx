@@ -47,8 +47,11 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
     public DbSet<GeneBlueprint> GeneBlueprints { get; set; }
     public DbSet<Chromosome> Chromosomes { get; set; }
     public DbSet<Genome> Genomes { get; set; }
-    public DbSet<GeneInstance> GeneInstances { get; set; }
+    public DbSet<Domain.GeneInstances.GeneInstance> GeneInstances { get; set; }
     public DbSet<AuditTrail> AuditTrails { get; set; }
+    public DbSet<ExecutionRecord> ExecutionRecords { get; set; }
+    public DbSet<ExecutionLog> ExecutionLogs { get; set; }
+    public DbSet<ExecutionArtifact> ExecutionArtifacts { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

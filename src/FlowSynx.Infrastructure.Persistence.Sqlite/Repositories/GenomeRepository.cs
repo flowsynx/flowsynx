@@ -14,7 +14,7 @@ public class GenomeRepository : IGenomeRepository
         _appContextFactory = appContextFactory ?? throw new ArgumentNullException(nameof(appContextFactory));
     }
 
-    public async Task<List<Genome>> GetAllAsync(CancellationToken cancellationToken)
+    public async Task<List<Genome>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Genomes
@@ -22,7 +22,7 @@ public class GenomeRepository : IGenomeRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Genome?> GetByIdAsync(GenomeId id, CancellationToken cancellationToken)
+    public async Task<Genome?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Genomes
@@ -32,16 +32,7 @@ public class GenomeRepository : IGenomeRepository
             .ConfigureAwait(false);
     }
 
-    public async Task<List<Genome>> GetByMetadataAsync(string key, object value, CancellationToken cancellationToken)
-    {
-        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-        return await context.Genomes
-            .Include(g => g.Chromosomes).ThenInclude(c => c.Genes)
-            .Where(g => g.EpigeneticMarks.ContainsKey(key) && g.EpigeneticMarks[key].ToString() == value.ToString())
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task AddAsync(Genome entity, CancellationToken cancellationToken)
+    public async Task AddAsync(Genome entity, CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         await context.Genomes
@@ -49,14 +40,14 @@ public class GenomeRepository : IGenomeRepository
             .ConfigureAwait(false);
     }
 
-    public async Task UpdateAsync(Genome entity, CancellationToken cancellationToken)
+    public async Task UpdateAsync(Genome entity, CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         context.Entry(entity).State = EntityState.Detached;
         context.Genomes.Update(entity);
     }
 
-    public async Task DeleteAsync(GenomeId id, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await GetByIdAsync(id, cancellationToken);
         if (entity != null)
@@ -64,5 +55,31 @@ public class GenomeRepository : IGenomeRepository
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Genomes.Remove(entity);
         }
+    }
+
+    public async Task<Genome?> GetByNameAsync(string name, string @namespace = "default", CancellationToken cancellationToken = default)
+    {
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+
+        return await context.Genomes
+            .Include(g => g.Chromosomes)
+            .ThenInclude(c => c.Genes)
+            .FirstOrDefaultAsync(g => g.Name == name && g.Namespace == @namespace);
+    }
+
+    public async Task<IEnumerable<Genome>> GetByOwnerAsync(string owner, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Genomes
+            .Where(g => g.Owner == owner)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Genome>> GetByNamespaceAsync(string @namespace, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Genomes
+            .Where(g => g.Namespace == @namespace)
+            .ToListAsync(cancellationToken);
     }
 }

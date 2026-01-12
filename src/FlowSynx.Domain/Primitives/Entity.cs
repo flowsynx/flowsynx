@@ -8,7 +8,7 @@ public abstract class Entity : Entity<Guid>
 
 public abstract class Entity<TId> : IEquatable<Entity<TId>> where TId : notnull
 {
-    public TId Id { get; protected set; } = default!;
+    public TId Id { get; set; } = default!;
 
     private readonly List<IDomainEvent> _domainEvents = new();
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();

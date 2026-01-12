@@ -10,31 +10,24 @@ using System.Text.Json;
 
 namespace FlowSynx.Persistence.Sqlite.EntityConfigurations;
 
-public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
+public class GeneInstanceConfiguration : IEntityTypeConfiguration<Domain.GeneInstances.GeneInstance>
 {
-    public void Configure(EntityTypeBuilder<GeneInstance> builder)
+    public void Configure(EntityTypeBuilder<Domain.GeneInstances.GeneInstance> builder)
     {
-        builder.ToTable("GeneInstances");
+        var jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        };
 
         builder.HasKey(gi => gi.Id);
+
         builder.Property(gi => gi.Id)
-            .HasConversion(
-                id => id.Value,
-                value => new GeneInstanceId(value));
+            .ValueGeneratedOnAdd();
 
-        builder.Property(c => c.TenantId)
-            .HasConversion(
-                id => id.Value,
-                value => TenantId.Create(value))
-            .IsRequired();
-
-        builder.Property(gi => gi.UserId).IsRequired();
-
-        // Foreign key for GeneBlueprint
-        builder.Property(gi => gi.GeneBlueprintId)
-            .HasConversion(
-                id => id.Value,
-                value => new GeneBlueprintId(value));
+        builder.Property(gi => gi.GeneId)
+            .IsRequired()
+            .HasMaxLength(200);
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
@@ -43,48 +36,35 @@ public class GeneInstanceConfiguration : IEntityTypeConfiguration<GeneInstance>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        builder.Property(gi => gi.NucleotideSequences)
+        // Store JSON fields
+        builder.Property(gi => gi.Parameters)
+            .HasColumnType("TEXT")
             .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
+           .Metadata.SetValueComparer(dictionaryComparer);
+
+        builder.Property(gi => gi.Config)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<GeneConfig>(v, jsonOptions))
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        builder.Property(gi => gi.ExpressionProfile)
+        builder.Property(gi => gi.Metadata)
+            .HasColumnType("TEXT")
             .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<ExpressionProfile>(v));
-
-        var dependenciesComparer = new ValueComparer<List<GeneInstanceId>>(
-        (l, r) =>
-            ReferenceEquals(l, r) ||
-            (l != null && r != null && l.SequenceEqual(r)),
-        l =>
-            l == null
-                ? 0
-                : l.Aggregate(0, (acc, item) => HashCode.Combine(acc, item != null ? item.GetHashCode() : 0)),
-        l =>
-            new List<GeneInstanceId>(l ?? System.Linq.Enumerable.Empty<GeneInstanceId>()));
-
-        builder.Property(gi => gi.RegulatoryNetwork)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<List<GeneInstanceId>>(v))
-            .Metadata.SetValueComparer(dependenciesComparer);
-
-        builder.Property(gi => gi.EpigeneticMarks)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        // Foreign key to Chromosome
-        builder.Property<ChromosomeId>("ChromosomeId")
-            .HasConversion(
-                id => id.Value,
-                value => new ChromosomeId(value));
+        // Relationship with Chromosome
+        builder.HasOne<Chromosome>()
+            .WithMany(c => c.Genes)
+            .HasForeignKey(gi => gi.ChromosomeId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-        // Indexes
-        builder.HasIndex("GeneBlueprintId");
-        builder.HasIndex("ChromosomeId");
+        builder.HasIndex(gi => gi.GeneId);
+        builder.HasIndex(gi => gi.ChromosomeId);
     }
 }

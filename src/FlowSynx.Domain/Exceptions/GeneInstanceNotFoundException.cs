@@ -1,15 +1,15 @@
-﻿using FlowSynx.Domain.Errors;
-using FlowSynx.Domain.GeneInstances;
+﻿//using FlowSynx.Domain.Errors;
+//using FlowSynx.Domain.GeneInstances;
 
-namespace FlowSynx.Domain.Exceptions;
+//namespace FlowSynx.Domain.Exceptions;
 
-public sealed class GeneInstanceNotFoundException : DomainException
-{
-    public GeneInstanceNotFoundException(GeneInstanceId geneInstanceId)
-        : base(
-            DomainErrorCodes.GeneInstanceIdNotFound,
-            $"Gene instance {geneInstanceId} not found"
-        )
-    {
-    }
-}
+//public sealed class GeneInstanceNotFoundException : DomainException
+//{
+//    public GeneInstanceNotFoundException(GeneInstanceId geneInstanceId)
+//        : base(
+//            DomainErrorCodes.GeneInstanceIdNotFound,
+//            $"Gene instance {geneInstanceId} not found"
+//        )
+//    {
+//    }
+//}

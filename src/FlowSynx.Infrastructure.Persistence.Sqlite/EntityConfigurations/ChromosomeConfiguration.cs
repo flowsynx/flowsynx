@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.Genomes;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,27 +11,28 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
 {
     public void Configure(EntityTypeBuilder<Chromosome> builder)
     {
-        builder.ToTable("Chromosomes");
+        var jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = false
+        };
 
         builder.HasKey(c => c.Id);
+
         builder.Property(c => c.Id)
-            .HasConversion(
-                id => id.Value,
-                value => new ChromosomeId(value));
+            .ValueGeneratedOnAdd();
 
-        builder.Property(c => c.TenantId)
-            .HasConversion(
-                id => id.Value,
-                value => TenantId.Create(value))
-            .IsRequired();
+        builder.Property(c => c.Name)
+            .IsRequired()
+            .HasMaxLength(200);
 
-        builder.Property(c => c.UserId).IsRequired();
-        builder.Property(c => c.Name).IsRequired().HasMaxLength(200);
+        builder.Property(c => c.Namespace)
+            .IsRequired()
+            .HasMaxLength(100)
+            .HasDefaultValue("default");
 
-        builder.Property(c => c.CellularEnvironment)
-            .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<CellularEnvironment>(v));
+        builder.Property(c => c.Description)
+            .HasMaxLength(1000);
 
         var dictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
@@ -40,19 +41,48 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        builder.Property(c => c.EpigeneticMarks)
+        // Store JSON fields
+        builder.Property(c => c.Metadata)
+            .HasColumnType("TEXT")
             .HasConversion(
-                v => JsonSerializer.Serialize(v),
-                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v))
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        // Store expression results separately (not in same table)
-        builder.Ignore(c => c.ExpressionResults);
+        builder.Property(c => c.Spec)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<ChromosomeSpec>(v, jsonOptions))
+            .Metadata.SetValueComparer(dictionaryComparer);
 
-        // Genes are stored in separate table
-        builder.HasMany(c => c.Genes)
-            .WithOne()
-            .HasForeignKey("ChromosomeId")
+        builder.Property(c => c.Labels)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions) ?? new Dictionary<string, string>())
+            .Metadata.SetValueComparer(dictionaryComparer);
+
+        builder.Property(c => c.Annotations)
+            .HasColumnType("TEXT")
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, jsonOptions),
+                v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions) ?? new Dictionary<string, string>())
+            .Metadata.SetValueComparer(dictionaryComparer);
+
+        // Relationship with Genome
+        builder.HasOne<Genome>()
+            .WithMany(g => g.Chromosomes)
+            .HasForeignKey(c => c.GenomeId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(c => new { c.Namespace, c.Name })
+            .IsUnique();
+
+        builder.HasIndex(c => c.Name);
+        builder.HasIndex(c => c.Namespace);
+        builder.HasIndex(c => c.GenomeId);
+        builder.HasIndex(c => c.CreatedOn);
+
     }
 }

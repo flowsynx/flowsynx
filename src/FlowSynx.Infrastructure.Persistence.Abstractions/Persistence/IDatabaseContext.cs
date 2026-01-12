@@ -20,8 +20,11 @@ public interface IDatabaseContext
     DbSet<GeneBlueprint> GeneBlueprints { get; }
     DbSet<Chromosome> Chromosomes { get; }
     DbSet<Genome> Genomes { get; }
-    DbSet<GeneInstance> GeneInstances { get; }
+    DbSet<Domain.GeneInstances.GeneInstance> GeneInstances { get; }
     DbSet<AuditTrail> AuditTrails { get; }
+    DbSet<ExecutionRecord> ExecutionRecords { get; }
+    DbSet<ExecutionLog> ExecutionLogs { get; }
+    DbSet<ExecutionArtifact> ExecutionArtifacts { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

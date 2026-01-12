@@ -45,5 +45,8 @@ public class SqliteApplicationContext : BaseDbContext
         modelBuilder.ApplyConfiguration(new TenantContactEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TenantSecretEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TenantSecretConfigEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ExecutionRecordConfiguration());
+        modelBuilder.ApplyConfiguration(new ExecutionLogConfiguration());
+        modelBuilder.ApplyConfiguration(new ExecutionArtifactConfiguration());
     }
 }

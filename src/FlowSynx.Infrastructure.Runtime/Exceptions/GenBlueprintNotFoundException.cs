@@ -6,7 +6,7 @@ namespace FlowSynx.Infrastructure.Security.Exceptions;
 
 public sealed class GenBlueprintNotFoundException : RuntimeException
 {
-    public GenBlueprintNotFoundException(GeneBlueprintId geneBlueprintId)
+    public GenBlueprintNotFoundException(Guid geneBlueprintId)
         : base(
             RuntimeErrorCodes.GenBlueprintNotFound,
             $"Gene blueprint not found: {geneBlueprintId}"
