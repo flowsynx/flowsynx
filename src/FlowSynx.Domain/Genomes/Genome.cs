@@ -212,8 +212,8 @@ public class ExecutionRecord : AuditableEntity<Guid>, IAggregateRoot
     public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public string Status { get; set; } // "pending", "running", "completed", "failed", "cancelled"
     public int Progress { get; set; }
-    public string ErrorMessage { get; set; }
-    public string ErrorCode { get; set; }
+    public string? ErrorMessage { get; set; }
+    public string? ErrorCode { get; set; }
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public DateTime? CompletedAt { get; set; }
     public long Duration { get; set; }

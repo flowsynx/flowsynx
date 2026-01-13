@@ -21,6 +21,7 @@ public static class DependencyInjection
             .AddScoped<IGeneBlueprintRepository, GeneBlueprintRepository>()
             .AddScoped<IGenomeRepository, GenomeRepository>()
             .AddScoped<ITenantRepository, TenantRepository>()
+            .AddScoped<IExecutionRepository, ExecutionRepository>()
             .AddScoped<IValidateDatabaseConnection, ValidateDatabaseConnection>()
             .AddScoped<IDatabaseInitializer, SqliteDatabaseInitializer>()
             .AddScoped<ITenantSecretConfigRepository, TenantSecretConfigRepository>()

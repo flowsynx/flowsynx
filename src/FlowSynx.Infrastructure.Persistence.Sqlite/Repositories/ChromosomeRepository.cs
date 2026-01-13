@@ -37,6 +37,8 @@ public class ChromosomeRepository : IChromosomeRepository
         await context.Chromosomes
             .AddAsync(entity, cancellationToken)
             .ConfigureAwait(false);
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task UpdateAsync(Chromosome entity, CancellationToken cancellationToken = default)
@@ -44,6 +46,7 @@ public class ChromosomeRepository : IChromosomeRepository
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         context.Entry(entity).State = EntityState.Detached;
         context.Chromosomes.Update(entity);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -53,6 +56,7 @@ public class ChromosomeRepository : IChromosomeRepository
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Chromosomes.Remove(entity);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 

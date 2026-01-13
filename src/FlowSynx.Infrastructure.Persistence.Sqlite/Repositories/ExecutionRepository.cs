@@ -1,5 +1,4 @@
 ﻿using FlowSynx.Application.Core.Persistence;
-using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -32,6 +31,7 @@ public class ExecutionRepository : IExecutionRepository
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.ExecutionRecords.Remove(entity);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 

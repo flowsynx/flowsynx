@@ -34,7 +34,10 @@ public class GenomeManagementService : IGenomeManagementService
         _logger = logger;
     }
 
-    public async Task<GeneBlueprint> RegisterGeneBlueprintAsync(string json, CancellationToken cancellationToken = default)
+    public async Task<GeneBlueprint> RegisterGeneBlueprintAsync(
+        string userId, 
+        string json, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -71,6 +74,7 @@ public class GenomeManagementService : IGenomeManagementService
             else
             {
                 // Add new
+                geneBlueprint.UserId = userId;
                 await _geneBlueprintRepository.AddAsync(geneBlueprint, cancellationToken);
 
                 _logger.LogInformation("Registered new gene blueprint: {Name} v{Version}",
@@ -86,7 +90,10 @@ public class GenomeManagementService : IGenomeManagementService
         }
     }
 
-    public async Task<Chromosome> RegisterChromosomeAsync(string json, CancellationToken cancellationToken = default)
+    public async Task<Chromosome> RegisterChromosomeAsync(
+        string userId, 
+        string json, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -138,7 +145,10 @@ public class GenomeManagementService : IGenomeManagementService
         }
     }
 
-    public async Task<Genome> RegisterGenomeAsync(string json, CancellationToken cancellationToken = default)
+    public async Task<Genome> RegisterGenomeAsync(
+        string userId, 
+        string json, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -189,7 +199,10 @@ public class GenomeManagementService : IGenomeManagementService
         }
     }
 
-    public async Task<ValidationResponse> ValidateJsonAsync(string json, CancellationToken cancellationToken = default)
+    public async Task<ValidationResponse> ValidateJsonAsync(
+        string userId, 
+        string json, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -235,22 +248,34 @@ public class GenomeManagementService : IGenomeManagementService
         }
     }
 
-    public async Task<IEnumerable<GeneBlueprint>> SearchGeneBlueprintsAsync(string searchTerm, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<GeneBlueprint>> SearchGeneBlueprintsAsync(
+        string userId, 
+        string searchTerm, 
+        CancellationToken cancellationToken = default)
     {
         return await _geneBlueprintRepository.SearchAsync(searchTerm, cancellationToken);
     }
 
-    public async Task<IEnumerable<Chromosome>> GetChromosomesByGenomeAsync(Guid genomeId, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Chromosome>> GetChromosomesByGenomeAsync(
+        string userId, 
+        Guid genomeId, 
+        CancellationToken cancellationToken = default)
     {
         return await _chromosomeRepository.GetByGenomeIdAsync(genomeId, cancellationToken);
     }
 
-    public async Task<IEnumerable<Genome>> GetGenomesByOwnerAsync(string owner, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Genome>> GetGenomesByOwnerAsync(
+        string userId,
+        string owner, 
+        CancellationToken cancellationToken = default)
     {
         return await _genomeRepository.GetByOwnerAsync(owner, cancellationToken);
     }
 
-    public async Task<ExecutionResponse> ExecuteJsonAsync(string json, CancellationToken cancellationToken = default)
+    public async Task<ExecutionResponse> ExecuteJsonAsync(
+        string userId, 
+        string json, 
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -267,7 +292,7 @@ public class GenomeManagementService : IGenomeManagementService
                 }
                 else if (kind == "GeneBlueprint")
                 {
-                    var geneBlueprint = await RegisterGeneBlueprintAsync(json);
+                    var geneBlueprint = await RegisterGeneBlueprintAsync(userId, json);
                     return new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
@@ -288,7 +313,7 @@ public class GenomeManagementService : IGenomeManagementService
                 }
                 else if (kind == "Chromosome")
                 {
-                    var chromosome = await RegisterChromosomeAsync(json);
+                    var chromosome = await RegisterChromosomeAsync(userId, json);
                     return new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
@@ -309,7 +334,7 @@ public class GenomeManagementService : IGenomeManagementService
                 }
                 else if (kind == "Genome")
                 {
-                    var genome = await RegisterGenomeAsync(json);
+                    var genome = await RegisterGenomeAsync(userId, json);
                     return new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
@@ -339,7 +364,10 @@ public class GenomeManagementService : IGenomeManagementService
         }
     }
 
-    public async Task<ExecutionResponse> GetExecutionResultAsync(Guid executionId, CancellationToken cancellationToken = default)
+    public async Task<ExecutionResponse> GetExecutionResultAsync(
+        string userId, 
+        Guid executionId, 
+        CancellationToken cancellationToken = default)
     {
         var executionRecord = await _executionService.GetExecutionRecordAsync(executionId, cancellationToken);
 

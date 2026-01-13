@@ -72,35 +72,6 @@ public class GeneBlueprintRepository : IGeneBlueprintRepository
         }
     }
 
-    //public async Task<bool> IsEpistaticCompatibleAsync(
-    //    Guid geneId, 
-    //    string runtimeVersion, 
-    //    string platform, 
-    //    CancellationToken cancellationToken)
-    //{
-    //    var blueprint = await GetByIdAsync(geneId, cancellationToken);
-    //    if (blueprint == null) return false;
-
-    //    var compat = blueprint.EpistaticInteraction;
-
-    //    // Check runtime version
-    //    if (!string.IsNullOrEmpty(compat.MinimumRuntimeVersion))
-    //    {
-    //        var minVersion = new Version(compat.MinimumRuntimeVersion);
-    //        var currentVersion = new Version(runtimeVersion);
-    //        if (currentVersion < minVersion) return false;
-    //    }
-
-    //    // Check platform
-    //    if (compat.SupportedPlatforms.Count > 0 &&
-    //        !compat.SupportedPlatforms.Contains(platform, StringComparer.OrdinalIgnoreCase))
-    //    {
-    //        return false;
-    //    }
-
-    //    return true;
-    //}
-
     public async Task<GeneBlueprint?> GetByNameAndVersionAsync(string name, string version, CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);

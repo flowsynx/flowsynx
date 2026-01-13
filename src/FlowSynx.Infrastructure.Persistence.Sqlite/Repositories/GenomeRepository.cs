@@ -45,6 +45,7 @@ public class GenomeRepository : IGenomeRepository
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         context.Entry(entity).State = EntityState.Detached;
         context.Genomes.Update(entity);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -54,6 +55,7 @@ public class GenomeRepository : IGenomeRepository
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Genomes.Remove(entity);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 

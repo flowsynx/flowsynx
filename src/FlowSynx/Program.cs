@@ -6,6 +6,7 @@ using Serilog;
 using FlowSynx.Infrastructure.Messaging;
 using FlowSynx.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
+using FlowSynx.Infrastructure.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,7 +88,8 @@ static void ConfigureServices(WebApplicationBuilder builder, string[] args)
         .AddFlowSynxApplication()
         .AddFlowSynxEventPublisher()
         .AddFlowSynxHealthChecker()
-        .AddFlowSynxApiDocumentation();
+        .AddFlowSynxApiDocumentation()
+        .AddRuntimeServices();
 
     if (!env.IsDevelopment())
         builder.Services.ParseFlowSynxArguments(args);

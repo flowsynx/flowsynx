@@ -21,6 +21,8 @@ public class TenantRepository : ITenantRepository
         await context.Tenants
             .AddAsync(entity, cancellationToken)
             .ConfigureAwait(false);
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteAsync(TenantId id, CancellationToken cancellationToken)
@@ -30,6 +32,7 @@ public class TenantRepository : ITenantRepository
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
             context.Tenants.Remove(entity);
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -78,5 +81,6 @@ public class TenantRepository : ITenantRepository
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         context.Entry(entity).State = EntityState.Detached;
         context.Tenants.Update(entity);
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }
