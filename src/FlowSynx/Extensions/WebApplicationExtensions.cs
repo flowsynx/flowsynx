@@ -14,7 +14,7 @@ public static class WebApplicationExtensions
             .WithTags(groupName);
     }
 
-    public static WebApplication MapEndpoints(this WebApplication app, string rateLimitPolicyName)
+    public static WebApplication MapEndpoints(this WebApplication app)
     {
         var endpointGroupType = typeof(EndpointGroupBase);
         var assembly = Assembly.GetExecutingAssembly();
@@ -24,7 +24,7 @@ public static class WebApplicationExtensions
         foreach (var type in endpointGroupTypes)
         {
             if (Activator.CreateInstance(type) is EndpointGroupBase instance)
-                instance.Map(app, rateLimitPolicyName);
+                instance.Map(app);
         }
 
         return app;

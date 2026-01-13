@@ -1,10 +1,7 @@
-﻿using FlowSynx.Application.Configuration.System.Logger;
-using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Domain;
-using FlowSynx.Infrastructure.Logging;
-using FlowSynx.PluginCore.Exceptions;
+﻿using FlowSynx.Configuration.Server;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
-using FlowSynx.Persistence.Logging.Sqlite.Extensions;
+using Serilog;
+using Serilog.Events;
 
 namespace FlowSynx.Extensions;
 
@@ -13,109 +10,44 @@ public static class WebApplicationBuilderExtensions
     private const int DefaultHttpPort = 6262;
     private const int DefaultHttpsPort = 6263;
 
-    public static WebApplicationBuilder AddLoggers(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder AddSystemLogging(this WebApplicationBuilder builder)
     {
-        var config = builder.Configuration.BindSection<LoggerConfiguration>("System:Logger");
-        builder.Services.AddSingleton(config);
+        builder.Logging.AddFlowSynxLoggingFilter();
 
-        // Always ensure the sqlite logging layer and database exist (database logger must always be available)
-        builder.Services.AddSqLiteLoggerLayer();
-        builder.Services.EnsureLogDatabaseCreated();
+        // System logs go to console and system file
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(
+                outputTemplate: "[SYSTEM] [{Timestamp:HH:mm:ss} {Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}")
+            .WriteTo.File(
+                "logs/system/log-.txt",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 31,
+                shared: true)
+            .CreateLogger();
 
-        // Register a composite provider that always includes Console and Database providers.
-        // If the user provided configuration entries for those providers, their settings are used.
-        builder.Services.AddSingleton<ILoggerProvider>(sp =>
-        {
-            var factory = new CompositeLoggingProviderFactory(sp);
-            var loggingProviders = new List<ILoggerProvider>();
-
-            // 1) Ensure Console provider is present
-            var consoleProvider = CreateProviderWithFallback(factory, config, "console");
-            if (consoleProvider != null)
-                loggingProviders.Add(consoleProvider);
-
-            // 2) Ensure database provider is present
-            var databaseProvider = CreateProviderWithFallback(factory, config, "database");
-            if (databaseProvider != null)
-                loggingProviders.Add(databaseProvider);
-
-            // 3) If configuration enables other providers and specifies a default order, add them
-            if (config != null && config.Enabled && config.DefaultProviders != null && config.Providers != null)
-            {
-                foreach (var entry in config.DefaultProviders)
-                {
-                    // Skip console and database because we already added them
-                    if (string.Equals(entry, "console", StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(entry, "database", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    var match = config.Providers
-                        .FirstOrDefault(p => string.Equals(p.Key, entry, StringComparison.OrdinalIgnoreCase));
-
-                    if (string.IsNullOrEmpty(match.Key))
-                        continue;
-
-                    var provider = factory.Create(match.Key, match.Value);
-                    if (provider != null)
-                        loggingProviders.Add(provider);
-                }
-            }
-
-            return new CompositeLoggerProvider(loggingProviders);
-        });
+        builder.Host.UseSerilog();
 
         return builder;
     }
 
-    private static ILoggerProvider? CreateProviderWithFallback(
-        CompositeLoggingProviderFactory factory,
-        LoggerConfiguration? config,
-        string providerKey)
-    {
-        if (factory == null)
-            throw new ArgumentNullException(nameof(factory));
-
-        // Try to find a matching configured provider entry
-        if (config?.Providers != null)
-        {
-            var match = config.Providers.FirstOrDefault(p => string.Equals(p.Key, providerKey, StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrEmpty(match.Key))
-            {
-                return factory.Create(match.Key, match.Value);
-            }
-        }
-
-        // No configuration entry: create provider with default key and no settings
-        return factory.Create(providerKey, null);
-    }
-
-    public static WebApplicationBuilder ConfigureHttpServer(this WebApplicationBuilder builder)
+    public static WebApplicationBuilder ConfigureFlowSynxHttpServer(this WebApplicationBuilder builder)
     {
         using var scope = builder.Services.BuildServiceProvider().CreateScope();
         var serverConfig = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
 
-        try
-        {
-            ConfigureKestrelEndpoints(builder, serverConfig, logger);
-            ConfigureKestrelSettings(builder);
+        ConfigureKestrelEndpoints(builder, serverConfig);
+        ConfigureKestrelSettings(builder);
 
-            return builder;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationConfigureServer, ex.Message);
-            logger.LogError(ex, errorMessage.ToString());
-            throw new FlowSynxException(errorMessage);
-        }
+        return builder;
     }
 
     private static void ConfigureKestrelEndpoints(
         WebApplicationBuilder builder,
-        ServerConfiguration config,
-        ILogger logger)
+        ServerConfiguration config)
     {
         builder.WebHost.ConfigureKestrel((_, options) =>
         {
@@ -126,11 +58,11 @@ public static class WebApplicationBuilderExtensions
 
             if (!httpsPort.HasValue)
             {
-                logger.LogInformation("Configuring HTTP endpoint only: HTTP {HttpPort}", httpPort);
+                Log.Logger.Information("Configuring HTTP endpoint only: HTTP {HttpPort}", httpPort);
                 return;
             }
 
-            ConfigureHttps(options, httpsPort.Value, config.Https, logger, httpPort);
+            ConfigureHttps(options, httpsPort.Value, config.Https, httpPort);
         });
     }
 
@@ -160,7 +92,6 @@ public static class WebApplicationBuilderExtensions
         KestrelServerOptions options,
         int httpsPort,
         HttpsServerConfiguration? httpsConfig,
-        ILogger logger,
         int httpPort)
     {   
         options.ListenAnyIP(httpsPort, listenOptions =>
@@ -168,7 +99,7 @@ public static class WebApplicationBuilderExtensions
             ConfigureListenOptions(listenOptions, httpsConfig);
         });
 
-        logger.LogInformation("Configuring HTTP and HTTPS endpoints: HTTP {HttpPort}, HTTPS {HttpsPort}", httpPort, httpsPort);
+        Log.Logger.Information("Configuring HTTP and HTTPS endpoints: HTTP {HttpPort}, HTTPS {HttpsPort}", httpPort, httpsPort);
     }
 
     private static void ConfigureListenOptions(

@@ -1,55 +1,52 @@
-﻿using FlowSynx.Application.Configuration.System.Cors;
-using FlowSynx.Application.Configuration.System.HealthCheck;
-using FlowSynx.Application.Configuration.System.OpenApi;
-using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Application.Localizations;
-using FlowSynx.Domain;
-using FlowSynx.Application.Serialization;
-using FlowSynx.Application.Services;
-using FlowSynx.HealthCheck;
+﻿using FlowSynx.HealthCheck;
 using FlowSynx.Middleware;
-using FlowSynx.Models;
-using FlowSynx.PluginCore.Exceptions;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using FlowSynx.Application.Core.Serializations;
+using FlowSynx.Configuration.OpenApi;
+using FlowSynx.Configuration.Server;
+using FlowSynx.Infrastructure.Persistence.Abstractions;
 
 namespace FlowSynx.Extensions;
 
 public static class ApplicationBuilderExtensions
 {
-    public static IApplicationBuilder UseCustomException(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxCustomException(this IApplicationBuilder app)
     {
         app.UseMiddleware<ExceptionMiddleware>();
         return app;
     }
 
-    public static IApplicationBuilder UseCustomHeaders(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxTenantCors(this IApplicationBuilder app)
     {
-        var serviceProvider = app.ApplicationServices;
-        var versionService = serviceProvider.GetService<IVersion>();
-        if (versionService == null)
-            throw new ArgumentException(Localization.Get("UseCustomHeadersVersionServiceCouldNotBeInitialized"));
-
-        var headers = new CustomHeadersToAddAndRemove();
-        headers.HeadersToAdd.Add("flowsynx-version", versionService.Version.ToString());
-
-        app.UseMiddleware<CustomHeadersMiddleware>(headers);
+        app.UseMiddleware<TenantCorsMiddleware>();
         return app;
     }
 
-    public static IApplicationBuilder UseHealthCheck(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxTenants(this IApplicationBuilder app)
     {
-        var serviceProvider = app.ApplicationServices;
-        var serializer = serviceProvider.GetRequiredService<IJsonSerializer>();
-        var healthCheckConfiguration = serviceProvider.GetRequiredService<HealthCheckConfiguration>();
+        app.UseMiddleware<TenantMiddleware>();
+        return app;
+    }
 
-        if (!healthCheckConfiguration.Enabled)
-            return app;
+    public static IApplicationBuilder UseFlowSynxTenantRateLimiting(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<TenantRateLimitingMiddleware>();
+        return app;
+    }
 
-        app.UseEndpoints(endpoints => {
-            if (serializer == null)
-                throw new ArgumentException(Localization.Get("UseHealthCheckSerializerServiceCouldNotBeInitialized"));
-                
+
+    public static IApplicationBuilder UseFlowSynxCustomHeaders(this IApplicationBuilder app)
+    {
+        // Inject IVersion via middleware instead of locating from ApplicationServices
+        app.UseMiddleware<VersionHeaderMiddleware>();
+        return app;
+    }
+
+    public static IApplicationBuilder UseFlowSynxHealthCheck(this IApplicationBuilder app)
+    {
+        app.UseEndpoints(endpoints =>
+        {
             endpoints.MapHealthChecks("/health", new HealthCheckOptions
             {
                 ResultStatusCodes =
@@ -60,29 +57,27 @@ public static class ApplicationBuilderExtensions
                 },
                 ResponseWriter = async (context, report) =>
                 {
+                    // Resolve per-request instead of using ApplicationServices at startup
+                    var serializer = context.RequestServices.GetRequiredService<ISerializer>();
+
                     context.Response.ContentType = "application/json";
                     var response = new HealthCheckResponse
                     {
                         Status = report.Status.ToString(),
-                        HealthChecks = report.Entries.Select(x => new IndividualHealthCheckResponse
-                        {
-                            Component = x.Key,
-                            Status = x.Value.Status.ToString(),
-                            Description = x.Value.Description
-                        }),
                         HealthCheckDuration = report.TotalDuration
                     };
                     await context.Response.WriteAsync(serializer.Serialize(response));
                 }
             });
         });
+
         return app;
     }
 
-    public static IApplicationBuilder UseOpenApi(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxApiDocumentation(this IApplicationBuilder app)
     {
-        var serviceProvider = app.ApplicationServices;
-        var openApiConfiguration = serviceProvider.GetRequiredService<OpenApiConfiguration>();
+        using var serviceScope = app.ApplicationServices.CreateScope();
+        var openApiConfiguration = serviceScope.ServiceProvider.GetRequiredService<OpenApiConfiguration>();
 
         if (!openApiConfiguration.Enabled)
             return app;
@@ -95,56 +90,37 @@ public static class ApplicationBuilderExtensions
         app.UseSwaggerUI(options =>
         {
             options.RoutePrefix = "open-api";
-            options.SwaggerEndpoint($"flowsynx/specifications.json", $"flowsynx");
+            options.SwaggerEndpoint($"flowsynx/specifications.json", $"FlowSynx API");
+        });
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapSwagger()
+                .RequireAuthorization("admin");
         });
 
         return app;
     }
 
-    public static IApplicationBuilder EnsureApplicationDatabaseCreated(this IApplicationBuilder app)
+    public static async Task<IApplicationBuilder> EnsureApplicationDatabaseCreated(this IApplicationBuilder app)
     {
         using var serviceScope = app.ApplicationServices.CreateScope();
-        var logger = serviceScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         var initializers = serviceScope.ServiceProvider.GetServices<IDatabaseInitializer>();
 
-        try
+        foreach (var initializer in initializers)
         {
-            foreach (var initializer in initializers)
-            {
-                initializer.EnsureDatabaseCreatedAsync();
-            }
-
-            return app;
-        }
-        catch (Exception ex)
-        {
-            throw new FlowSynxException((int)ErrorCode.DatabaseCreation, 
-                $"Error occurred while connecting the application database: {ex.Message}");
-        }
-    }
-
-    public static IApplicationBuilder UseHttps(this IApplicationBuilder app)
-    {
-        var serviceProvider = app.ApplicationServices;
-        var serverConfiguration = serviceProvider.GetService<ServerConfiguration>();
-        if (serverConfiguration != null && serverConfiguration.Https?.Enabled == true)
-        {
-            app.UseHttpsRedirection();
+            await initializer.EnsureDatabaseCreatedAsync();
         }
 
         return app;
     }
 
-    public static IApplicationBuilder UseConfiguredCors(this IApplicationBuilder app)
+    public static IApplicationBuilder UseFlowSynxHttps(this IApplicationBuilder app)
     {
-        var serviceProvider = app.ApplicationServices;
-        var corsConfiguration = serviceProvider.GetService<CorsConfiguration>();
-        if (corsConfiguration == null)
-            throw new ArgumentException("Cors is not configured correctly.");
-
-        var policyName = corsConfiguration.PolicyName ?? "DefaultCorsPolicy";
-        app.UseCors(policyName);
-
+        using var scope = app.ApplicationServices.CreateScope();
+        var serverConfiguration = scope.ServiceProvider.GetRequiredService<ServerConfiguration>();
+        if (serverConfiguration.Https?.Enabled == true)
+            app.UseHttpsRedirection();
         return app;
     }
 }

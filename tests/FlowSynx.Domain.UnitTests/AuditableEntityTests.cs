@@ -1,3 +1,5 @@
+using FlowSynx.Domain.Primitives;
+
 namespace FlowSynx.Domain.UnitTests;
 
 public class AuditableEntityTests

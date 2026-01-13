@@ -1,9 +1,14 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.TenantSecretConfigs.Security;
 
 namespace FlowSynx.Security;
 
 public interface IAuthenticationProvider
 {
-    string SchemeName { get; }
-    void Configure(AuthenticationBuilder builder);
+    TenantAuthenticationMode AuthenticationMode { get; }
+
+    Task<AuthenticationProviderResult> AuthenticateAsync(
+        HttpContext context,
+        TenantId tenantId,
+        TenantAuthenticationPolicy authenticationPolicy);
 }

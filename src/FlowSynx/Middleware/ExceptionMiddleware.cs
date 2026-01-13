@@ -1,7 +1,8 @@
-﻿using System.Net;
-using FlowSynx.Application.Serialization;
-using FlowSynx.Domain.Wrapper;
-using FlowSynx.PluginCore.Exceptions;
+﻿using FlowSynx.Application.Core.Serializations;
+using FlowSynx.BuildingBlocks.Errors;
+using FlowSynx.BuildingBlocks.Exceptions;
+using FlowSynx.BuildingBlocks.Results;
+using System.Net;
 
 namespace FlowSynx.Middleware;
 
@@ -9,16 +10,13 @@ public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionMiddleware> _logger;
-    private readonly IJsonSerializer _serializer;
+    private readonly ISerializer _serializer;
 
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IJsonSerializer serializer)
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, ISerializer serializer)
     {
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(serializer);
-        ArgumentNullException.ThrowIfNull(next);
-        _next = next;
-        _logger = logger;
-        _serializer = serializer;
+        _next = next ?? throw new ArgumentNullException(nameof(next));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
     public async Task Invoke(HttpContext context)
@@ -35,7 +33,7 @@ public class ExceptionMiddleware
 
             switch (error)
             {
-                case FlowSynxException e:
+                case BaseException e:
                     response.StatusCode = (int)HttpStatusCode.BadRequest;
                     responseModel.Messages = new List<string> { e.ToString() };
                     break;

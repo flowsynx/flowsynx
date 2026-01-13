@@ -1,0 +1,47 @@
+﻿using FlowSynx.Infrastructure.Persistence.Abstractions;
+using FlowSynx.Infrastructure.Persistence.Abstractions.Exceptions;
+using FlowSynx.Persistence.Sqlite.Contexts;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace FlowSynx.Infrastructure.Persistence.Sqlite.Services;
+
+public class SqliteDatabaseInitializer : IDatabaseInitializer
+{
+    private readonly IDbContextFactory<SqliteApplicationContext> _contextFactory;
+    private readonly ILogger<SqliteDatabaseInitializer> _logger;
+
+    public SqliteDatabaseInitializer(
+        IDbContextFactory<SqliteApplicationContext> contextFactory,
+        ILogger<SqliteDatabaseInitializer> logger)
+    {
+        _contextFactory = contextFactory;
+        _logger = logger;
+    }
+
+    public async Task EnsureDatabaseCreatedAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+            var result = await context.Database.EnsureCreatedAsync(cancellationToken);
+
+            if (result)
+                _logger.LogInformation("Application database created successfully (SQLite).");
+            else
+                _logger.LogInformation("Application database already exists (SQLite).");
+
+            if (!await context.Tenants.AnyAsync(cancellationToken))
+            {
+                context.Tenants.Add(Domain.Tenants.Tenant.Create("FlowSynx Genome Platform", "FlowSynx Genome Platform"));
+                await context.SaveChangesAsync(cancellationToken);
+                _logger.LogInformation("Default tenant created successfully.");
+
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new DatabaseInitializerException(ex);
+        }
+    }
+}

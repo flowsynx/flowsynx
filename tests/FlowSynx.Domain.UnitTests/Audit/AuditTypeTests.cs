@@ -1,4 +1,4 @@
-using FlowSynx.Domain.Audit;
+using FlowSynx.Domain.Enums;
 
 namespace FlowSynx.Domain.UnitTests.Audit;
 

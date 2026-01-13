@@ -1,87 +1,82 @@
-﻿using FlowSynx.Application.Configuration.Core.Database;
-using FlowSynx.Application.Configuration.Core.Security;
-using FlowSynx.Application.Configuration.Integrations.PluginRegistry;
-using FlowSynx.Application.Configuration.System.Cors;
-using FlowSynx.Application.Configuration.System.HealthCheck;
-using FlowSynx.Application.Configuration.System.OpenApi;
-using FlowSynx.Application.Configuration.System.RateLimiting;
-using FlowSynx.Application.Configuration.System.Server;
-using FlowSynx.Application.Configuration.System.Workflow.Execution;
-using FlowSynx.Application.Configuration.System.Workflow.Queue;
-using FlowSynx.Application.Localizations;
-using FlowSynx.Application.Services;
-using FlowSynx.Domain;
-using FlowSynx.HealthCheck;
+﻿using FlowSynx.Application.Core.Messaging;
+using FlowSynx.Application.Core.Services;
+using FlowSynx.Application.Tenancy;
+using FlowSynx.BuildingBlocks.Clock;
+using FlowSynx.Configuration.Database;
+using FlowSynx.Configuration.OpenApi;
+using FlowSynx.Configuration.Server;
+using FlowSynx.Exceptions;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Infrastructure.PluginHost;
-using FlowSynx.Persistence.Logging.Sqlite.Contexts;
-using FlowSynx.Persistence.Postgres.Extensions;
-using FlowSynx.Persistence.Sqlite.Extensions;
-using FlowSynx.PluginCore.Exceptions;
+using FlowSynx.Infrastructure.Logging;
+using FlowSynx.Infrastructure.Persistence.Abstractions;
+using FlowSynx.Infrastructure.Persistence.Postgres.Configuration;
+using FlowSynx.Infrastructure.Persistence.Sqlite;
+using FlowSynx.Infrastructure.Persistence.Sqlite.Configuration;
+using FlowSynx.Infrastructure.Persistence.Sqlite.Services;
+using FlowSynx.Infrastructure.Security.Cryptography;
 using FlowSynx.Security;
 using FlowSynx.Services;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Text.Json.Serialization;
-using System.Threading.RateLimiting;
 
 namespace FlowSynx.Extensions;
 
-/// <summary>
-/// Extension methods for configuring services used across the FlowSynx application.
-/// Focused on clarity, consistency and small helper extraction to reduce duplication.
-/// </summary>
 public static class ServiceCollectionExtensions
 {
     private const string DefaultSqliteProvider = "SQLite";
-    private const string DatabaseSectionName = "Core:Databases";
-    private const string WorkflowQueueSectionName = "System:Workflow:Queue";
-    private const string EnsureWorkflowPluginsConfiguration = "System:Workflow:Execution:EnsureWorkflowPlugins";
+    private const string DatabaseSectionName = "Databases";
 
     #region Simple registrations
 
-    /// <summary>Registers a single CancellationTokenSource as a singleton.</summary>
-    public static IServiceCollection AddCancellationTokenSource(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxCancellationTokenSource(this IServiceCollection services)
     {
         services.AddSingleton(new CancellationTokenSource());
         return services;
     }
 
-    /// <summary>Register plugin location provider.</summary>
-    public static IServiceCollection AddPluginsPath(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxSystemClock(this IServiceCollection services)
     {
-        services.AddSingleton<IPluginsLocation, PluginsLocation>();
+        services.AddSingleton<IClock, BuildingBlocks.Clock.SystemClock>();
         return services;
     }
 
-    /// <summary>Register application version provider.</summary>
-    public static IServiceCollection AddVersion(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxVersion(this IServiceCollection services)
     {
         services.AddSingleton<IVersion, FlowSynxVersion>();
         return services;
     }
 
-    /// <summary>Register SignalR and the event publisher implementation.</summary>
-    public static IServiceCollection AddEventPublisher(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxEventPublisher(this IServiceCollection services)
     {
         services.AddSignalR();
         services.AddScoped<IEventPublisher, SignalREventPublisher<WorkflowsHub>>();
         return services;
     }
 
-    /// <summary>Bind and register server configuration.</summary>
-    public static IServiceCollection AddServer(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFlowSynxServer(this IServiceCollection services)
     {
-        var serverConfiguration = configuration.BindSection<ServerConfiguration>("System:Server");
-        services.AddSingleton(serverConfiguration);
+        services.AddScoped(provider =>
+        {
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            return tenantConfig.BindSection<ServerConfiguration>("System:Server");
+        });
+
         return services;
     }
 
-    /// <summary>Register current user service (transient).</summary>
-    public static IServiceCollection AddUserService(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxUserService(this IServiceCollection services)
     {
-        services.AddTransient<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        return services;
+    }
+
+    public static IServiceCollection AddFlowSynxTenantService(this IServiceCollection services)
+    {
+        services.AddScoped<ITenantResolver, TenantResolver>();
+        services.AddSingleton<ITenantContext, TenantContextAccessor>();
         return services;
     }
 
@@ -89,47 +84,29 @@ public static class ServiceCollectionExtensions
 
     #region Logging
 
-    /// <summary>Filter EF Core database command logs to warning or above.</summary>
-    public static void AddLoggingFilter(this ILoggingBuilder builder)
+    public static void AddFlowSynxLoggingFilter(this ILoggingBuilder builder)
     {
         builder.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
     }
 
-    public static void EnsureLogDatabaseCreated(this IServiceCollection services)
+    public static IServiceCollection AddFlowSynxLoggingServices(this IServiceCollection services)
     {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<LoggerContext>();
-
-        try
-        {
-            context.Database.EnsureCreated();
-        }
-        catch (Exception ex)
-        {
-            throw new FlowSynxException((int)ErrorCode.LoggerCreation, $"Error occurred while creating the logger: {ex.Message}");
-        }
+        services.AddLoggers()
+                .AddLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    logging.AddConsole();
+                    logging.AddFlowSynxLoggingFilter();
+                });
+        return services;
     }
     #endregion
 
     #region Health checks
 
-    /// <summary>Register health check configuration and checks if enabled.</summary>
-    public static IServiceCollection AddHealthChecker(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFlowSynxHealthChecker(this IServiceCollection services)
     {
-        var healthCheckConfiguration = configuration.BindSection<HealthCheckConfiguration>("System:HealthCheck");
-        services.AddSingleton(healthCheckConfiguration);
-
-        if (!healthCheckConfiguration.Enabled)
-            return services;
-
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var localization = scope.ServiceProvider.GetRequiredService<ILocalization>();
-
-        services
-            .AddHealthChecks()
-            .AddCheck<PluginsServiceHealthCheck>(name: localization.Get("AddHealthCheckerPluginService"))
-            .AddCheck<LogsServiceHealthCheck>(name: localization.Get("AddHealthCheckerLoggerService"));
-
+        services.AddHealthChecks();
         return services;
     }
 
@@ -137,66 +114,78 @@ public static class ServiceCollectionExtensions
 
     #region OpenAPI (Swagger)
 
-    /// <summary>Configure OpenAPI/Swagger when enabled in configuration.</summary>
-    public static IServiceCollection AddOpenApi(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFlowSynxApiDocumentation(this IServiceCollection services)
     {
-        try
+        services.AddScoped(provider =>
         {
-            var openApiConfiguration = configuration.BindSection<OpenApiConfiguration>("System:OpenApi");
-            services.AddSingleton(openApiConfiguration);
+            var tenantConfig = provider.GetRequiredService<IConfiguration>();
+            return tenantConfig.BindSection<OpenApiConfiguration>("OpenApi");
+        });
 
-            if (!openApiConfiguration.Enabled)
-                return services;
-
-            services.AddSwaggerGen(c =>
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("flowsynx", new OpenApiInfo
             {
-                c.SwaggerDoc("flowsynx", new OpenApiInfo
+                Version = "flowsynx",
+                Title = "Service Invocation",
+                Description = "Using the service invocation API to find out how to communicate with FlowSynx API.",
+                License = new OpenApiLicense
                 {
-                    Version = "flowsynx",
-                    Title = "Service Invocation",
-                    Description = "Using the service invocation API to find out how to communicate with FlowSynx API.",
-                    License = new OpenApiLicense
-                    {
-                        Name = "MIT License",
-                        Url = new Uri("https://opensource.org/licenses/MIT")
-                    }
-                });
+                    Name = "MIT License",
+                    Url = new Uri("https://opensource.org/licenses/MIT")
+                }
+            });
+            c.OperationFilter<TenantHeaderOperationFilter>();
 
-                c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "basic",
-                    Description = "Basic Authentication using username and password."
-                });
-
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "bearer",
-                    BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
-                });
-
-                c.AddSecurityRequirement(document =>
-                {
-                    var requirement = new OpenApiSecurityRequirement
-                    {
-                        [new OpenApiSecuritySchemeReference("Basic", document)] = new List<string>(),
-                        [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
-                    };
-
-                    return requirement;
-                });
+            c.AddSecurityDefinition("Basic", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "basic",
+                Description = "Basic Authentication using username and password."
             });
 
-            return services;
-        }
-        catch (Exception ex)
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+            });
+
+            c.AddSecurityRequirement(document =>
+            {
+                var requirement = new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Basic", document)] = new List<string>(),
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
+                };
+
+                return requirement;
+            });
+        });
+
+        return services;
+
+    }
+
+    internal class TenantHeaderOperationFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationOpenApiService, ex.Message);
-            throw new FlowSynxException(errorMessage);
+            if (operation.Parameters == null)
+            {
+                operation.Parameters = new List<IOpenApiParameter>();
+            }
+
+            operation.Parameters.Add(new OpenApiParameter
+            {
+                Name = "X-Tenant-Id",
+                In = ParameterLocation.Header,
+                Required = false,
+                Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+            });
         }
     }
 
@@ -204,7 +193,6 @@ public static class ServiceCollectionExtensions
 
     #region JSON options
 
-    /// <summary>Configure default HTTP JSON serialization options.</summary>
     public static IServiceCollection AddHttpJsonOptions(this IServiceCollection services)
     {
         services.ConfigureHttpJsonOptions(options =>
@@ -217,96 +205,38 @@ public static class ServiceCollectionExtensions
 
     #endregion
 
-    #region Plugin manager
+    #region Security
 
-    public static IServiceCollection AddInfrastructurePluginManager(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFlowSynxDataProtection(this IServiceCollection services)
     {
-        var pluginRegistryConfiguration = configuration.BindSection<PluginRegistryConfiguration>("Integrations:PluginRegistry");
-        services.AddSingleton(pluginRegistryConfiguration);
-        services.AddPluginManager();
+        services.AddScoped<IDataProtectionFactory, DataProtectionFactory>();
+        return services;
+    }
+
+    public static IServiceCollection AddFlowSynxSecurity(this IServiceCollection services)
+    {
+        services.AddScoped<IAuthenticationProvider, NoneAuthenticationProvider>();
+        services.AddScoped<IAuthenticationProvider, BasicAuthenticationProvider>();
+        services.AddScoped<IAuthenticationProvider, JwtTokenAuthenticationProvider>();
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+
+        services.AddAuthentication("Dynamic")
+            .AddScheme<AuthenticationSchemeOptions, DynamicAuthHandler>(
+                "Dynamic", null);
+
+        services.AddAuthorization(options =>
+        {
+            options.AddPermissionPolicies();
+        });
 
         return services;
     }
 
     #endregion
 
-    #region Security
-
-    /// <summary>Configures authentication providers, authorization policies, and encryption service.</summary>
-    public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
-    {
-        try
-        {
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            var securityConfiguration = configuration.BindSection<SecurityConfiguration>("Core:Security");
-            services.AddSingleton(securityConfiguration);
-
-            securityConfiguration.Authentication.ValidateDefaultScheme(logger);
-
-            var providers = new List<IAuthenticationProvider>();
-
-            if (!securityConfiguration.Authentication.Enabled)
-            {
-                providers.Add(new DisabledAuthenticationProvider());
-            }
-            else
-            {
-                if (securityConfiguration.Authentication.Basic.Enabled && securityConfiguration.Authentication.Basic.Users != null)
-                    providers.Add(new BasicAuthenticationProvider());
-
-                foreach (var jwt in securityConfiguration.Authentication.JwtProviders)
-                    providers.Add(new JwtAuthenticationProvider(jwt));
-            }
-
-            var authBuilder = services.AddAuthentication(options =>
-            {
-                options.DefaultScheme = securityConfiguration.Authentication.DefaultScheme ?? "Basic";
-            });
-
-            foreach (var provider in providers)
-                provider.Configure(authBuilder);
-
-            services.AddAuthorization(options =>
-            {
-                // keep authorization roles explicit and grouped for readability
-                void AddRolePolicy(string name, string role) => 
-                    options.AddPolicy(name, policy => policy.RequireRole(role));
-
-                AddRolePolicy("admin", "admin");
-                AddRolePolicy("user", "user");
-                AddRolePolicy("audits", "audits");
-                AddRolePolicy("config", "config");
-                AddRolePolicy("logs", "logs");
-                AddRolePolicy("plugins", "plugins");
-                AddRolePolicy("workflows", "workflows");
-                AddRolePolicy("executions", "executions");
-                AddRolePolicy("triggers", "triggers");
-
-                logger.LogInformation("Authorization initialized.");
-            });
-
-            services.AddSingleton<IEncryptionService>(provider =>
-            {
-                return new EncryptionService(securityConfiguration.Encryption.Key);
-            });
-
-            return services;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.SecurityInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    #endregion
-
     #region Arguments / Version helpers
 
-    /// <summary>Parse required startup arguments and exit the process with an error when missing.</summary>
-    public static IServiceCollection ParseArguments(this IServiceCollection services, string[] args)
+    public static IServiceCollection ParseFlowSynxArguments(this IServiceCollection services, string[] args)
     {
         using var scope = services.BuildServiceProvider().CreateScope();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
@@ -314,19 +244,12 @@ public static class ServiceCollectionExtensions
         var hasStartArgument = args.Contains("--start");
         if (!hasStartArgument)
         {
-            var errorMessage = new ErrorMessage((int)ErrorCode.ApplicationStartArgumentIsRequired, "The '--start' argument is required.");
-            logger.LogError(errorMessage.ToString());
-
-            // short delay to help ensure message appears in console before exit
-            Task.Delay(500).Wait();
-
-            Environment.Exit(1);
+            throw new StartArgumentRequiredException();
         }
 
         return services;
     }
 
-    /// <summary>Check for version flags and print the application version.</summary>
     public static bool HandleVersionFlag(this string[] args)
     {
         if (args.Any(arg => arg.Equals("--version", StringComparison.OrdinalIgnoreCase) ||
@@ -342,87 +265,14 @@ public static class ServiceCollectionExtensions
 
     #endregion
 
-    #region Rate limiting
-
-    /// <summary>Add rate limiting services.</summary>
-    public static IServiceCollection AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
-    {
-        var rateLimitingConfiguration = new RateLimitingConfiguration();
-        configuration.GetSection("System:RateLimiting").Bind(rateLimitingConfiguration);
-        services.AddSingleton(rateLimitingConfiguration);
-
-        services.AddRateLimiter(options =>
-        {
-            options.AddFixedWindowLimiter("Fixed", limiterOptions =>
-            {
-                limiterOptions.Window = TimeSpan.FromSeconds(rateLimitingConfiguration.WindowSeconds);
-                limiterOptions.PermitLimit = rateLimitingConfiguration.PermitLimit;
-                limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                limiterOptions.QueueLimit = rateLimitingConfiguration.QueueLimit;
-            });
-        });
-
-        return services;
-    }
-
-    #endregion
-
-    #region CORS
-
-    public static IServiceCollection AddConfiguredCors(this IServiceCollection services, IConfiguration configuration)
-    {
-        using var scope = services.BuildServiceProvider().CreateScope();
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-        var corsConfiguration = configuration.BindSection<CorsConfiguration>("System:Cors");
-        services.AddSingleton(corsConfiguration);
-
-        var allowedOrigins = corsConfiguration.AllowedOrigins?.ToArray() ?? Array.Empty<string>();
-        var allowCredentials = corsConfiguration.AllowCredentials;
-        var policyName = corsConfiguration.PolicyName ?? "DefaultCorsPolicy";
-
-        services.AddCors(options =>
-        {
-            options.AddPolicy(policyName, policyBuilder =>
-            {
-                if (allowedOrigins.Contains("*"))
-                {
-                    if (allowCredentials)
-                    {
-                        throw new InvalidOperationException("CORS configuration error: AllowCredentials cannot be used with wildcard origin '*'.");
-                    }
-
-                    policyBuilder.AllowAnyOrigin()
-                                 .AllowAnyHeader()
-                                 .AllowAnyMethod();
-                }
-                else
-                {
-                    policyBuilder.WithOrigins(allowedOrigins)
-                                 .AllowAnyHeader()
-                                 .AllowAnyMethod();
-
-                    if (allowCredentials)
-                    {
-                        policyBuilder.AllowCredentials();
-                    }
-                }
-            });
-        });
-
-        logger.LogInformation("Cors Initialized.");
-
-        return services;
-    }
-
-    #endregion
-
     #region Persistence
 
-    /// <summary>Setup persistence configuration and register provider-specific persistence layers.</summary>
-    public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddFlowSynxPersistence(this IServiceCollection services)
     {
-        var dbConfig = LoadDatabaseConfiguration(configuration);
+        using var scope = services.BuildServiceProvider().CreateScope();
+        var tenantConfig = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+
+        var dbConfig = LoadDatabaseConfiguration(tenantConfig);
         var activeConnection = dbConfig.GetActiveConnection();
 
         services.AddSingleton(dbConfig);
@@ -439,7 +289,7 @@ public static class ServiceCollectionExtensions
         switch (activeConnection.Provider.ToLowerInvariant())
         {
             case "postgres":
-                services.AddPostgresPersistenceLayer(activeConnection);
+                //services.AddPostgresPersistenceLayer(activeConnection);
                 break;
 
             case "sqlite":
@@ -451,8 +301,9 @@ public static class ServiceCollectionExtensions
         }
     }
 
-    private static DatabaseConfiguration LoadDatabaseConfiguration(IConfiguration configuration)
+    private static DatabaseConfiguration LoadDatabaseConfiguration(IConfiguration tenantConfig)
     {
+        var configuration = tenantConfig;
         var databasesSection = configuration.GetSection(DatabaseSectionName);
 
         if (!databasesSection.Exists() || !databasesSection.GetChildren().Any())
@@ -502,92 +353,6 @@ public static class ServiceCollectionExtensions
         Provider = DefaultSqliteProvider,
         FilePath = "flowsynx.db"
     };
-
-    #endregion
-
-    #region Workflow Queue
-
-    public static IServiceCollection AddWorkflowQueueService(this IServiceCollection services, IConfiguration configuration)
-    {
-        try
-        {
-            using var scope = services.BuildServiceProvider().CreateScope();
-            var provider = scope.ServiceProvider;
-
-            var logger = provider.GetRequiredService<ILogger<Program>>();
-            var localization = provider.GetRequiredService<ILocalization>();
-            var dbProvider = provider.GetRequiredService<IDatabaseProvider>();
-
-            var config = configuration.BindSection<WorkflowQueueConfiguration>(WorkflowQueueSectionName);
-            services.AddSingleton(config);
-
-            var providerName = config.Provider?.Trim().ToLowerInvariant();
-
-            if (string.IsNullOrEmpty(providerName))
-                return RegisterInMemoryQueue(services, logger);
-
-            return providerName switch
-            {
-                "durable" => RegisterDurableQueue(services, logger, dbProvider, localization, config),
-                "inmemory" => RegisterInMemoryQueue(services, logger),
-                _ => ThrowQueueProviderNotSupported(config, localization)
-            };
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    public static IServiceCollection AddEnsureWorkflowPluginsService(
-        this IServiceCollection services, 
-        IConfiguration configuration)
-    {
-        try
-        {
-            var config = configuration.BindSection<EnsureWorkflowPluginsConfiguration>(EnsureWorkflowPluginsConfiguration);
-            services.AddSingleton(config);
-
-            return services;
-        }
-        catch (Exception ex)
-        {
-            var errorMessage = new ErrorMessage((int)ErrorCode.WorkflowQueueProviderInitializedError, ex.Message);
-            throw new FlowSynxException(errorMessage);
-        }
-    }
-
-    private static IServiceCollection RegisterInMemoryQueue(IServiceCollection services, ILogger logger)
-    {
-        logger.LogInformation("Initializing In-Memory Workflow Queue...");
-        return services.AddInMemoryWorkflowQueueService();
-    }
-
-    private static IServiceCollection RegisterDurableQueue(
-        IServiceCollection services,
-        ILogger logger,
-        IDatabaseProvider dbProvider,
-        ILocalization localization,
-        WorkflowQueueConfiguration config)
-    {
-        var dbName = dbProvider.Name?.ToLowerInvariant();
-        logger.LogInformation("Initializing Durable Workflow Queue (Database: {Database})", dbName);
-
-        return dbName switch
-        {
-            "postgres" => services.AddPostgreDurableWorkflowQueueService(),
-            "sqlite" => services.AddSqliteDurableWorkflowQueueService(),
-            _ => ThrowQueueProviderNotSupported(config, localization)
-        };
-    }
-
-    private static IServiceCollection ThrowQueueProviderNotSupported(WorkflowQueueConfiguration config, ILocalization localization)
-    {
-        throw new FlowSynxException(
-            (int)ErrorCode.WorkflowQueueProviderNotSupported,
-            localization.Get("WorkflowQueueProvider_NotSupported", config.Provider));
-    }
 
     #endregion
 }

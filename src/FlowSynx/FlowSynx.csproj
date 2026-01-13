@@ -27,14 +27,6 @@
 			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
 		</None>
 	</ItemGroup>
-	
-	<ItemGroup>
-		<Content Remove="Resources\en.json" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<EmbeddedResource Include="Resources\en.json" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
@@ -45,10 +37,29 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\FlowSynx.Application\FlowSynx.Application.csproj" />
-		<ProjectReference Include="..\FlowSynx.Infrastructure\FlowSynx.Infrastructure.csproj" />
-		<ProjectReference Include="..\FlowSynx.Persistence\FlowSynx.Persistence.Logging.Sqlite\FlowSynx.Persistence.Logging.Sqlite.csproj" />
-		<ProjectReference Include="..\FlowSynx.Persistence\FlowSynx.Persistence.Postgres\FlowSynx.Persistence.Postgres.csproj" />
-		<ProjectReference Include="..\FlowSynx.Persistence\FlowSynx.Persistence.Sqlite\FlowSynx.Persistence.Sqlite.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Logging\FlowSynx.Infrastructure.Logging.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Messaging\FlowSynx.Infrastructure.Messaging.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Postgres\FlowSynx.Infrastructure.Persistence.Postgres.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Sqlite\FlowSynx.Infrastructure.Persistence.Sqlite.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Runtime\FlowSynx.Infrastructure.Runtime.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Secrets\FlowSynx.Infrastructure.Security.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Serializations.Json\FlowSynx.Infrastructure.Serializations.Json.csproj" />
+		<ProjectReference Include="..\FlowSynx.Infrastructure.Persistence.Abstractions\FlowSynx.Infrastructure.Persistence.Abstractions.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Localization\FlowSynxResources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>FlowSynxResources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Localization\FlowSynxResources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>FlowSynxResources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<Target Name="RemoveDevAppSettingsFromPublish" AfterTargets="ComputeFilesToPublish">

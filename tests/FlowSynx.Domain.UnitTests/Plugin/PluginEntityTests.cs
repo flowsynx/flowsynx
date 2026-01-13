@@ -1,4 +1,5 @@
 using FlowSynx.Domain.Plugin;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Domain.UnitTests.Plugin;
 

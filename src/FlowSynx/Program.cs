@@ -1,12 +1,16 @@
-using FlowSynx.Application.Extensions;
+using FlowSynx.Application;
 using FlowSynx.Extensions;
 using FlowSynx.Hubs;
-using FlowSynx.Infrastructure.Extensions;
-using FlowSynx.Infrastructure.Secrets;
-using FlowSynx.Infrastructure.Workflow.Triggers.HttpBased;
-using FlowSynx.Services;
+using FlowSynx.Infrastructure.Serializations.Json;
+using Serilog;
+using FlowSynx.Infrastructure.Messaging;
+using FlowSynx.Infrastructure.Security;
+using Microsoft.AspNetCore.DataProtection;
+using FlowSynx.Infrastructure.Runtime;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.AddSystemLogging();
 
 try
 {
@@ -14,13 +18,12 @@ try
     if (args.HandleVersionFlag())
         return;
 
-    FilterLogging(builder);
     ConfigureConfiguration(builder);
     ConfigureServices(builder, args);
 
     var app = builder.Build();
     ConfigureMiddleware(app);
-    ConfigureApplication(app);
+    await ConfigureFlowSynxApplication(app);
 
     await app.RunAsync();
 }
@@ -28,15 +31,13 @@ catch (Exception ex)
 {
     await HandleStartupExceptionAsync(builder, ex);
 }
-
-#region helpers
-static void FilterLogging(WebApplicationBuilder builder)
+finally
 {
-    // Clear built-in/default logging providers so only configured providers remain
-    builder.Logging.ClearProviders();
-    builder.Logging.AddLoggingFilter();
+    // Ensure Serilog flushes
+    Log.CloseAndFlush();
 }
 
+#region helpers
 static void ConfigureConfiguration(WebApplicationBuilder builder)
 {
     var env = builder.Environment;
@@ -54,97 +55,90 @@ static void ConfigureConfiguration(WebApplicationBuilder builder)
     {
         builder.Configuration.AddJsonFile(customConfigPath, optional: false, reloadOnChange: false);
     }
-
-    builder.Services.AddSecretService(builder.Configuration);
-
-    using var scope = builder.Services.BuildServiceProvider().CreateScope();
-    var secretFactory = scope.ServiceProvider.GetRequiredService<ISecretFactory>();
-    var secretProvider = secretFactory.GetDefaultProvider();
-
-    builder.Configuration.AddSecrets(secretProvider);
 }
 
 static void ConfigureServices(WebApplicationBuilder builder, string[] args)
 {
-    builder.AddLoggers();
-
     var services = builder.Services;
     var config = builder.Configuration;
     var env = builder.Environment;
 
+    services.AddDataProtection()
+            .SetApplicationName("FlowSynx");
+
     services
-        .AddCancellationTokenSource()
+        .AddMemoryCache()
+        .AddFlowSynxCancellationTokenSource()
         .AddHttpContextAccessor()
-        .AddSystemClock()
+        .AddFlowSynxUserService()
+        .AddFlowSynxSystemClock()
         .AddJsonSerialization()
-        .AddJsonLocalization(config)
         .AddEndpointsApiExplorer()
         .AddHttpClient()
         .AddHttpJsonOptions()
-        .AddSecurity(config)
-        .AddPersistence(config)
-        .AddWorkflowQueueService(config)
-        .AddEnsureWorkflowPluginsService(config)
-        .AddServer(config)
-        .AddPluginsPath()
-        .AddVersion()
-        .AddApplication()
-        .AddInfrastructure()
-        .AddInfrastructurePluginManager(config)
-        .AddUserService()
-        .AddRateLimiting(config)
-        .AddResultStorageService(config)
-        .AddEventPublisher()
-        .AddHealthChecker(config)
-        .AddOpenApi(config)
-        .AddHostedService<WorkflowExecutionWorker>()
-        .AddHostedService<TriggerProcessingService>()
-        .AddConfiguredCors(config)
-        .AddAiService(config)
-        .AddNotificationsService(config);
+        .AddFlowSynxDispatcher()
+        .AddFlowSynxTenantService()
+        .AddFlowSynxLoggingServices()
+        .AddFlowSynxPersistence()
+        .AddFlowSynxDataProtection()
+        .AddFlowSynxSecretManagement()
+        .AddFlowSynxSecurity()
+        .AddFlowSynxServer()
+        .AddFlowSynxVersion()
+        .AddFlowSynxApplication()
+        .AddFlowSynxEventPublisher()
+        .AddFlowSynxHealthChecker()
+        .AddFlowSynxApiDocumentation()
+        .AddRuntimeServices();
 
     if (!env.IsDevelopment())
-        builder.Services.ParseArguments(args);
+        builder.Services.ParseFlowSynxArguments(args);
 
-    builder.ConfigureHttpServer();
+    builder.ConfigureFlowSynxHttpServer();
 }
 
 static void ConfigureMiddleware(WebApplication app)
 {
+    // GLOBAL EXCEPTION HANDLING — MUST BE FIRST
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
     }
     else
     {
-        app.UseExceptionHandler(handlerApp =>
-            handlerApp.Run(async context =>
-                await Results.Problem().ExecuteAsync(context)));
+        // Centralized exception -> HTTP mapping
+        app.UseFlowSynxCustomException();
     }
 
-    app.UseHttps();
-    app.UseCustomHeaders();
-    app.UseConfiguredCors();
-    app.UseRateLimiter();
+    // Security
+    app.UseFlowSynxHttps();
+    app.UseFlowSynxCustomHeaders();
+
+    // Tenant resolution
+    app.UseFlowSynxTenants();
+
+    // Routing (needed before auth)
     app.UseRouting();
 
+    // Cross-cutting tenant concerns
+    app.UseFlowSynxTenantCors();
+    app.UseFlowSynxTenantRateLimiting();
+
+    // Auth
     app.UseAuthentication();
     app.UseAuthorization();
 
-    app.UseOpenApi();
-    app.UseCustomException();
-    app.UseHealthCheck();
+    // Observability
+    app.UseFlowSynxApiDocumentation();
+    app.UseFlowSynxHealthCheck();
 }
 
-static void ConfigureApplication(WebApplication app)
+static async Task ConfigureFlowSynxApplication(WebApplication app)
 {
-    app.EnsureApplicationDatabaseCreated();
+    await app.EnsureApplicationDatabaseCreated();
 
     app.MapHub<WorkflowsHub>("/hubs/workflowExecutions");
-    app.MapEndpoints("Fixed");
-
-    var listener = app.Services.GetRequiredService<IWorkflowHttpListener>();
-    app.MapHttpTriggersWorkflowRoutes(listener);
+    app.MapEndpoints();
 }
 
 static async Task HandleStartupExceptionAsync(WebApplicationBuilder builder, Exception ex)
