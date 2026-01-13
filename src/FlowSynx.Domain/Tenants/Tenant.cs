@@ -22,7 +22,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
     // Private constructor for EF Core
     private Tenant() { }
 
-    public static Tenant Create(string name, string? description = null)
+    public static Tenant Create(string name, string? description = null, TenantStatus status = TenantStatus.Active)
     {
         ValidateName(name);
 
@@ -35,7 +35,7 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             Name = name.Trim(),
             Slug = slug,
             Description = description?.Trim(),
-            Status = TenantStatus.Active
+            Status = status
         };
 
         // Add default SecretConfig

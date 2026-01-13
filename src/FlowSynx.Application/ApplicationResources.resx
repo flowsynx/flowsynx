@@ -306,4 +306,10 @@
   <data name="Features_Validation_TenantId_MustHaveValue" xml:space="preserve">
     <value>The tenant id value must have value.</value>
   </data>
+  <data name="Feature_Tenant_AddedSuccessfully" xml:space="preserve">
+    <value>tenant with id '{0}' has been added successfully.</value>
+  </data>
+  <data name="Feature_Tenant_DeletedSuccessfully" xml:space="preserve">
+    <value>The tenant has been deleted successfully.</value>
+  </data>
 </root>

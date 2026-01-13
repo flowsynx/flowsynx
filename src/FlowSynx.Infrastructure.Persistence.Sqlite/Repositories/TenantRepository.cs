@@ -51,6 +51,14 @@ public class TenantRepository : ITenantRepository
             .ConfigureAwait(false);
     }
 
+    public async Task<Tenant?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Tenants
+            .FirstOrDefaultAsync(t => t.Name == name, cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<Tenant?> GetWithConfigAsync(TenantId id, CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);

@@ -106,6 +106,24 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to tenant with id &apos;{0}&apos; has been added successfully..
+        /// </summary>
+        internal static string Feature_Tenant_AddedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Tenant_AddedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The tenant has been deleted successfully..
+        /// </summary>
+        internal static string Feature_Tenant_DeletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Tenant_DeletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The workflow has been added successfully..
         /// </summary>
         internal static string Feature_Workflow_Add_AddedSuccessfully {

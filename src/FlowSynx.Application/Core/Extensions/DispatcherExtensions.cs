@@ -3,6 +3,8 @@ using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 using FlowSynx.Application.Features.Execute;
 using FlowSynx.Application.Features.GeneBlueprints.GeneBlueprintRegister;
+using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
+using FlowSynx.Application.Features.Tenants.Actions.DeleteTenant;
 using FlowSynx.Application.Features.Tenants.Requests.TenantsDetails;
 using FlowSynx.Application.Features.Tenants.Requests.TenantsList;
 using FlowSynx.Application.Features.Version.VersionRequest;
@@ -86,6 +88,22 @@ public static class DispatcherExtensions
         CancellationToken cancellationToken)
     {
         return dispatcher.Dispatch(new TenantDetailsRequest { TenantId = tenantId }, cancellationToken);
+    }
+
+    public static Task<Result<AddTenantResult>> AddTenant(
+        this IDispatcher dispatcher,
+        AddTenantRequest tenantRequest,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(tenantRequest, cancellationToken);
+    }
+
+    public static Task<Result<DeleteTenantResult>> DeleteTenant(
+        this IDispatcher dispatcher,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new DeleteTenantRequest { tenantId = tenantId }, cancellationToken);
     }
     #endregion
 }
