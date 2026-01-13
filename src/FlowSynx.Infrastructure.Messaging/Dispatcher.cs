@@ -45,28 +45,14 @@ public class Dispatcher : IDispatcher
         var validatorType = typeof(IValidator<>).MakeGenericType(actionType);
         var validator = _serviceProvider.GetService(validatorType) as IValidator;
 
-        if (validator != null)
-        {
-            var validationContext = typeof(ValidationContext<>)
-                .MakeGenericType(actionType)
-                .GetConstructor(new[] { actionType })
-                .Invoke(new object[] { action });
+        if (validator is null)
+            return;
 
-            var validateMethod = validatorType.GetMethod("ValidateAsync", new[]
-            {
-                    typeof(IValidationContext),
-                    typeof(CancellationToken)
-                });
+        var context = new ValidationContext<object>(action);
+        ValidationResult validationResult = await validator.ValidateAsync(context, cancellationToken);
 
-            var validationResult = await (Task<ValidationResult>)validateMethod.Invoke(
-                validator,
-                new object[] { validationContext, cancellationToken });
-
-            if (!validationResult.IsValid)
-            {
-                throw new ValidationException(validationResult.Errors);
-            }
-        }
+        if (!validationResult.IsValid)
+            throw new ValidationException(validationResult.Errors);
     }
 
     private Func<IAction<TAction>, IServiceProvider, CancellationToken, Task<TAction>>

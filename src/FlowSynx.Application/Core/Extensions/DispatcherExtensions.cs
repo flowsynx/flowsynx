@@ -3,6 +3,8 @@ using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 using FlowSynx.Application.Features.Execute;
 using FlowSynx.Application.Features.GeneBlueprints.GeneBlueprintRegister;
+using FlowSynx.Application.Features.Tenants.Requests.TenantsDetails;
+using FlowSynx.Application.Features.Tenants.Requests.TenantsList;
 using FlowSynx.Application.Features.Version.VersionRequest;
 using FlowSynx.Application.Models;
 using FlowSynx.BuildingBlocks.Results;
@@ -64,5 +66,26 @@ public static class DispatcherExtensions
     }
     #endregion
 
-    
+    #region Tenants
+    public static Task<PaginatedResult<TenantsListResult>> Tenants(
+        this IDispatcher dispatcher,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new TenantsListRequest
+        {
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
+
+    public static Task<Result<TenantDetailsResult>> TenantDetails(
+        this IDispatcher dispatcher,
+        Guid tenantId,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new TenantDetailsRequest { TenantId = tenantId }, cancellationToken);
+    }
+    #endregion
 }

@@ -36,9 +36,11 @@ public class TenantRepository : ITenantRepository
         }
     }
 
-    public Task<bool> ExistsAsync(TenantId id, CancellationToken cancellationToken = default)
+    public async Task<List<Tenant>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Tenants
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Tenant?> GetByIdAsync(TenantId id, CancellationToken cancellationToken)

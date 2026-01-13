@@ -7,9 +7,10 @@ public static class Permissions
     public const string Audits = "audits";
     public const string Config = "config";
     public const string Logs = "logs";
+    public const string Tenants = "tenants";
 
     public static readonly IReadOnlyCollection<string> All = new[]
     {
-        Admin, User, Audits, Config, Logs
+        Admin, User, Audits, Config, Logs, Tenants
     };
 }

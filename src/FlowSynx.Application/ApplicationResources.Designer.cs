@@ -502,6 +502,15 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The tenant id value must have value..
+        /// </summary>
+        internal static string Features_Validation_TenantId_MustHaveValue {
+            get {
+                return ResourceManager.GetString("Features_Validation_TenantId_MustHaveValue", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid trigger Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
         /// </summary>
         internal static string Features_Validation_TriggerId_InvalidGuidFormat {

@@ -3,7 +3,6 @@ using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants.Events;
 using FlowSynx.Domain.TenantSecretConfigs;
-using FlowSynx.Domain.TenantSecretConfigs.Events;
 using FlowSynx.Domain.TenantSecrets;
 using System.Text.RegularExpressions;
 

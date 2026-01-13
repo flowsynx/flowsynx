@@ -303,4 +303,7 @@
   <data name="Features_Validation_AuditId_MustBePositive" xml:space="preserve">
     <value>Audit Id Must Be Positive.</value>
   </data>
+  <data name="Features_Validation_TenantId_MustHaveValue" xml:space="preserve">
+    <value>The tenant id value must have value.</value>
+  </data>
 </root>
