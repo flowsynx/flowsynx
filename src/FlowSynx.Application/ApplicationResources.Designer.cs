@@ -124,6 +124,15 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The tenant has been updated successfully..
+        /// </summary>
+        internal static string Feature_Tenant_UpdatedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Tenant_UpdatedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The workflow has been added successfully..
         /// </summary>
         internal static string Feature_Workflow_Add_AddedSuccessfully {

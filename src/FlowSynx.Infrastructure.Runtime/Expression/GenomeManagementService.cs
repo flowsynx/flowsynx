@@ -5,6 +5,7 @@ using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Tenants;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Runtime.Expression;
@@ -249,11 +250,12 @@ public class GenomeManagementService : IGenomeManagementService
     }
 
     public async Task<IEnumerable<GeneBlueprint>> SearchGeneBlueprintsAsync(
+        TenantId tenantId,
         string userId, 
         string searchTerm, 
         CancellationToken cancellationToken = default)
     {
-        return await _geneBlueprintRepository.SearchAsync(searchTerm, cancellationToken);
+        return await _geneBlueprintRepository.SearchAsync(tenantId, userId, searchTerm, cancellationToken);
     }
 
     public async Task<IEnumerable<Chromosome>> GetChromosomesByGenomeAsync(

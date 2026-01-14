@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +15,15 @@ public class GeneBlueprintRepository : IGeneBlueprintRepository
         _appContextFactory = appContextFactory ?? throw new ArgumentNullException(nameof(appContextFactory));
     }
 
-    public async Task<List<GeneBlueprint>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<List<GeneBlueprint>> GetAllAsync(
+        TenantId tenantId,
+        string userId, 
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-        return await context.GeneBlueprints.ToListAsync(cancellationToken);
+        return await context.GeneBlueprints
+            .Where(gb => gb.TenantId == tenantId && gb.UserId == userId)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<GeneBlueprint?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -28,10 +34,14 @@ public class GeneBlueprintRepository : IGeneBlueprintRepository
             .ConfigureAwait(false);
     }
 
-    public async Task<List<GeneBlueprint>> SearchAsync(string searchTerm, CancellationToken cancellationToken = default)
+    public async Task<List<GeneBlueprint>> SearchAsync(
+        TenantId tenantId,
+        string userId, 
+        string searchTerm, 
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(searchTerm))
-            return await GetAllAsync(cancellationToken);
+            return await GetAllAsync(tenantId, userId, cancellationToken);
 
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.GeneBlueprints

@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Core.Extensions;
 using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
+using FlowSynx.Application.Features.Tenants.Actions.UpdateTenant;
 using FlowSynx.Extensions;
 using FlowSynx.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -25,9 +26,9 @@ public class Tenants : EndpointGroupBase
             .WithName("AddTenant")
             .RequirePermissions(Permissions.Admin, Permissions.Tenants);
 
-        //group.MapPut("/{id:guid}", UpdateTenant)
-        //    .WithName("UpdateTenant")
-        //    .RequirePermissions(Permissions.Admin, Permissions.Tenants);
+        group.MapPut("/{id:guid}", UpdateTenant)
+            .WithName("UpdateTenant")
+            .RequirePermissions(Permissions.Admin, Permissions.Tenants);
 
         group.MapDelete("/{id:guid}", DeleteTenant)
             .WithName("DeleteTenant")
@@ -62,15 +63,15 @@ public class Tenants : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    //public static async Task<IResult> UpdateTenant(
-    //    Guid id,
-    //    [FromBody] object json,
-    //    [FromServices] IDispatcher dispatcher,
-    //    CancellationToken cancellationToken)
-    //{
-    //    var result = await dispatcher.UpdateTenant(id, json, cancellationToken);
-    //    return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
-    //}
+    public static async Task<IResult> UpdateTenant(
+        Guid id,
+        [FromBody] UpdateTenantDefinitionRequest json,
+        [FromServices] IDispatcher dispatcher,
+        CancellationToken cancellationToken)
+    {
+        var result = await dispatcher.UpdateTenant(id, json, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
 
     public static async Task<IResult> DeleteTenant(
         Guid id,

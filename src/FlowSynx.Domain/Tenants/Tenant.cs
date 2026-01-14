@@ -166,8 +166,8 @@ public class Tenant: AuditableEntity<TenantId>, IAggregateRoot
             .Replace('.', '-');
 
         // Remove all non-alphanumeric characters except hyphens
-        slug = Regex.Replace(slug, @"[^a-z0-9\-]", "");
-        slug = Regex.Replace(slug, @"-+", "-");
+        slug = Regex.Replace(slug, @"[^a-z0-9\-]", "", RegexOptions.None, TimeSpan.FromSeconds(5));
+        slug = Regex.Replace(slug, @"-+", "-", RegexOptions.None, TimeSpan.FromSeconds(5));
         slug = slug.Trim('-');
 
         if (slug.Length > 64)

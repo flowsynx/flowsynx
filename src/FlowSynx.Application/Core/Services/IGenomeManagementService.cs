@@ -2,6 +2,7 @@
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.GeneBlueprints;
 using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Application.Core.Services;
 
@@ -28,6 +29,7 @@ public interface IGenomeManagementService
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<GeneBlueprint>> SearchGeneBlueprintsAsync(
+        TenantId tenantId,
         string userId, 
         string searchTerm, 
         CancellationToken cancellationToken = default);

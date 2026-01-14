@@ -312,4 +312,7 @@
   <data name="Feature_Tenant_DeletedSuccessfully" xml:space="preserve">
     <value>The tenant has been deleted successfully.</value>
   </data>
+  <data name="Feature_Tenant_UpdatedSuccessfully" xml:space="preserve">
+    <value>The tenant has been updated successfully.</value>
+  </data>
 </root>
