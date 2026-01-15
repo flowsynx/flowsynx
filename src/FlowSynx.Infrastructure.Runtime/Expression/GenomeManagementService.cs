@@ -3,7 +3,7 @@ using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Tenants;
 using Microsoft.Extensions.Logging;
@@ -12,7 +12,7 @@ namespace FlowSynx.Infrastructure.Runtime.Expression;
 
 public class GenomeManagementService : IGenomeManagementService
 {
-    private readonly IGeneBlueprintRepository _geneBlueprintRepository;
+    private readonly IGeneRepository _geneRepository;
     private readonly IChromosomeRepository _chromosomeRepository;
     private readonly IGenomeRepository _genomeRepository;
     private readonly IJsonProcessingService _jsonService;
@@ -20,14 +20,14 @@ public class GenomeManagementService : IGenomeManagementService
     private readonly ILogger<GenomeManagementService> _logger;
 
     public GenomeManagementService(
-        IGeneBlueprintRepository geneBlueprintRepository,
+        IGeneRepository geneRepository,
         IChromosomeRepository chromosomeRepository,
         IGenomeRepository genomeRepository,
         IJsonProcessingService jsonService,
         IGenomeExecutionService executionService,
         ILogger<GenomeManagementService> logger)
     {
-        _geneBlueprintRepository = geneBlueprintRepository;
+        _geneRepository = geneRepository;
         _chromosomeRepository = chromosomeRepository;
         _genomeRepository = genomeRepository;
         _jsonService = jsonService;
@@ -35,7 +35,7 @@ public class GenomeManagementService : IGenomeManagementService
         _logger = logger;
     }
 
-    public async Task<GeneBlueprint> RegisterGeneBlueprintAsync(
+    public async Task<Gene> RegisterGeneAsync(
         string userId, 
         string json, 
         CancellationToken cancellationToken = default)
@@ -43,50 +43,50 @@ public class GenomeManagementService : IGenomeManagementService
         try
         {
             // Validate JSON
-            var validation = await _jsonService.ValidateJsonAsync(json, "GeneBlueprint");
+            var validation = await _jsonService.ValidateJsonAsync(json, "Gene");
             if (!validation.Status.Valid)
             {
-                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Gene blueprint validation failed", validation.Errors);
+                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Gene validation failed", validation.Errors);
             }
 
             // Parse JSON
-            var geneBlueprint = await _jsonService.ParseGeneBlueprintAsync(json);
+            var gene = await _jsonService.ParseGeneAsync(json);
 
             // Check if already exists
-            var existing = await _geneBlueprintRepository.GetByNameAndVersionAsync(
-                geneBlueprint.Name, geneBlueprint.Version, cancellationToken);
+            var existing = await _geneRepository.GetByNameAndVersionAsync(
+                gene.Name, gene.Version, cancellationToken);
 
             if (existing != null)
             {
                 // Update existing
-                existing.Spec = geneBlueprint.Spec;
-                existing.Description = geneBlueprint.Description;
-                existing.Metadata = geneBlueprint.Metadata;
-                existing.Labels = geneBlueprint.Labels;
-                existing.Annotations = geneBlueprint.Annotations;
+                existing.Specification = gene.Specification;
+                existing.Description = gene.Description;
+                existing.Metadata = gene.Metadata;
+                existing.Labels = gene.Labels;
+                existing.Annotations = gene.Annotations;
 
-                await _geneBlueprintRepository.UpdateAsync(existing, cancellationToken);
+                await _geneRepository.UpdateAsync(existing, cancellationToken);
 
-                _logger.LogInformation("Updated existing gene blueprint: {Name} v{Version}",
-                    geneBlueprint.Name, geneBlueprint.Version);
+                _logger.LogInformation("Updated existing gene: {Name} v{Version}",
+                    gene.Name, gene.Version);
 
                 return existing;
             }
             else
             {
                 // Add new
-                geneBlueprint.UserId = userId;
-                await _geneBlueprintRepository.AddAsync(geneBlueprint, cancellationToken);
+                gene.UserId = userId;
+                await _geneRepository.AddAsync(gene, cancellationToken);
 
-                _logger.LogInformation("Registered new gene blueprint: {Name} v{Version}",
-                    geneBlueprint.Name, geneBlueprint.Version);
+                _logger.LogInformation("Registered new gene: {Name} v{Version}",
+                    gene.Name, gene.Version);
 
-                return geneBlueprint;
+                return gene;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to register gene blueprint");
+            _logger.LogError(ex, "Failed to register gene");
             throw;
         }
     }
@@ -249,13 +249,13 @@ public class GenomeManagementService : IGenomeManagementService
         }
     }
 
-    public async Task<IEnumerable<GeneBlueprint>> SearchGeneBlueprintsAsync(
+    public async Task<IEnumerable<Gene>> SearchGenesAsync(
         TenantId tenantId,
         string userId, 
         string searchTerm, 
         CancellationToken cancellationToken = default)
     {
-        return await _geneBlueprintRepository.SearchAsync(tenantId, userId, searchTerm, cancellationToken);
+        return await _geneRepository.SearchAsync(tenantId, userId, searchTerm, cancellationToken);
     }
 
     public async Task<IEnumerable<Chromosome>> GetChromosomesByGenomeAsync(
@@ -275,6 +275,7 @@ public class GenomeManagementService : IGenomeManagementService
     }
 
     public async Task<ExecutionResponse> ExecuteJsonAsync(
+        TenantId tenantId,
         string userId, 
         string json, 
         CancellationToken cancellationToken = default)
@@ -290,11 +291,11 @@ public class GenomeManagementService : IGenomeManagementService
                 if (kind == "ExecutionRequest")
                 {
                     var request = await _jsonService.ParseExecutionRequestAsync(json);
-                    return await _executionService.ExecuteRequestAsync(request);
+                    return await _executionService.ExecuteRequestAsync(tenantId, userId, request);
                 }
-                else if (kind == "GeneBlueprint")
+                else if (kind == "Gene")
                 {
-                    var geneBlueprint = await RegisterGeneBlueprintAsync(userId, json);
+                    var gene = await RegisterGeneAsync(userId, json);
                     return new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
@@ -307,7 +308,7 @@ public class GenomeManagementService : IGenomeManagementService
                         Status = new ExecutionStatus
                         {
                             Phase = "succeeded",
-                            Message = $"Gene blueprint '{geneBlueprint.Name}' registered successfully",
+                            Message = $"Gene '{gene.Name}' registered successfully",
                             Progress = 100,
                             Health = "healthy"
                         }

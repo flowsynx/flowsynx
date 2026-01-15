@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Core.Services;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 
 namespace FlowSynx.Infrastructure.Runtime.Expression;
 

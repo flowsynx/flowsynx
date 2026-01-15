@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Application.Core.Services;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Runtime.Expression;

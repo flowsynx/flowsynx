@@ -2,7 +2,7 @@
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Genomes;
-using FlowSynx.Infrastructure.Runtime.Exceptions;
+using FlowSynx.Domain.Tenants;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Runtime.Expression;
@@ -10,7 +10,7 @@ namespace FlowSynx.Infrastructure.Runtime.Expression;
 public class GenomeExecutionService : IGenomeExecutionService
 {
     private readonly IExecutionRepository _executionRepository;
-    private readonly IGeneBlueprintRepository _geneBlueprintRepository;
+    private readonly IGeneRepository _geneRepository;
     private readonly IChromosomeRepository _chromosomeRepository;
     private readonly IGenomeRepository _genomeRepository;
     private readonly IJsonProcessingService _jsonService;
@@ -19,7 +19,7 @@ public class GenomeExecutionService : IGenomeExecutionService
 
     public GenomeExecutionService(
         IExecutionRepository executionRepository,
-        IGeneBlueprintRepository geneBlueprintRepository,
+        IGeneRepository geneRepository,
         IChromosomeRepository chromosomeRepository,
         IGenomeRepository genomeRepository,
         IJsonProcessingService jsonService,
@@ -27,7 +27,7 @@ public class GenomeExecutionService : IGenomeExecutionService
         ILogger<GenomeExecutionService> logger)
     {
         _executionRepository = executionRepository;
-        _geneBlueprintRepository = geneBlueprintRepository;
+        _geneRepository = geneRepository;
         _chromosomeRepository = chromosomeRepository;
         _genomeRepository = genomeRepository;
         _jsonService = jsonService;
@@ -36,7 +36,9 @@ public class GenomeExecutionService : IGenomeExecutionService
     }
 
     public async Task<ExecutionResponse> ExecuteGeneAsync(
-        Guid geneBlueprintId, 
+        TenantId tenantId,
+        string userId,
+        Guid geneId, 
         Dictionary<string, object> parameters, 
         Dictionary<string, object> context, 
         CancellationToken cancellationToken = default)
@@ -49,8 +51,8 @@ public class GenomeExecutionService : IGenomeExecutionService
         {
             ExecutionId = executionId,
             TargetType = "gene",
-            TargetId = geneBlueprintId,
-            TargetName = $"gene-{geneBlueprintId}",
+            TargetId = geneId,
+            TargetName = $"gene-{geneId}",
             Namespace = "default",
             Request = new Dictionary<string, object>
             {
@@ -67,12 +69,9 @@ public class GenomeExecutionService : IGenomeExecutionService
 
         try
         {
-            // Load gene blueprint
-            var geneBlueprint = await _geneBlueprintRepository.GetByIdAsync(geneBlueprintId, cancellationToken);
-            if (geneBlueprint == null)
-            {
-                throw new Exception($"Gene blueprint not found: {geneBlueprintId}");
-            }
+            // Load gene
+            var gene = await _geneRepository.GetByIdAsync(tenantId, userId, geneId, cancellationToken) 
+                ?? throw new Exception($"Gene not found: {geneId}");
 
             // Create gene instance
             var geneInstance = new GeneInstance
@@ -80,20 +79,20 @@ public class GenomeExecutionService : IGenomeExecutionService
                 Id = "execution-instance",
                 GeneRef = new GeneReference
                 {
-                    Name = geneBlueprint.Name,
-                    Version = geneBlueprint.Version,
-                    Namespace = geneBlueprint.Namespace
+                    Name = gene.Name,
+                    Version = gene.Version,
+                    Namespace = gene.Namespace
                 },
                 Parameters = parameters ?? new Dictionary<string, object>(),
                 Config = new GeneConfigJson
                 {
-                    Operation = geneBlueprint.Spec.ExpressionProfile?.DefaultOperation,
+                    Operation = gene.Specification.ExpressionProfile?.DefaultOperation,
                     Mode = "default"
                 }
             };
 
             // Get executor
-            var executor = _executorFactory.CreateExecutor(geneBlueprint.Spec.Executable);
+            var executor = _executorFactory.CreateExecutor(gene.Specification.Executable);
 
             // Update progress
             executionRecord.Progress = 50;
@@ -101,16 +100,16 @@ public class GenomeExecutionService : IGenomeExecutionService
 
             // Execute
             var result = await executor.ExecuteAsync(
-                new GeneBlueprintJson
+                new GeneJson
                 {
-                    Metadata = new GeneBlueprintMetadata
+                    Metadata = new GeneMetadata
                     {
-                        Name = geneBlueprint.Name,
-                        Namespace = geneBlueprint.Namespace,
-                        Id = geneBlueprint.Id.ToString(),
-                        Version = geneBlueprint.Version
+                        Name = gene.Name,
+                        Namespace = gene.Namespace,
+                        Id = gene.Id.ToString(),
+                        Version = gene.Version
                     },
-                    Spec = geneBlueprint.Spec
+                    Specification = gene.Specification
                 },
                 geneInstance,
                 parameters ?? new Dictionary<string, object>(),
@@ -130,8 +129,8 @@ public class GenomeExecutionService : IGenomeExecutionService
             executionRecord.Logs.Add(new Domain.Genomes.ExecutionLog
             {
                 Level = "info",
-                Message = $"Gene '{geneBlueprint.Name}' executed successfully",
-                Source = geneBlueprint.Name,
+                Message = $"Gene '{gene.Name}' executed successfully",
+                Source = gene.Name,
                 Timestamp = DateTime.UtcNow
             });
 
@@ -163,7 +162,7 @@ public class GenomeExecutionService : IGenomeExecutionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Gene execution failed for {GeneId}", geneBlueprintId);
+            _logger.LogError(ex, "Gene execution failed for {GeneId}", geneId);
 
             // Update execution record with error
             executionRecord.Status = "failed";
@@ -225,6 +224,8 @@ public class GenomeExecutionService : IGenomeExecutionService
     }
 
     public async Task<ExecutionResponse> ExecuteChromosomeAsync(
+        TenantId tenantId,
+        string userId,
         Guid chromosomeId, 
         Dictionary<string, object> context, 
         CancellationToken cancellationToken = default)
@@ -278,19 +279,21 @@ public class GenomeExecutionService : IGenomeExecutionService
 
                 try
                 {
-                    // Load gene blueprint
-                    var geneBlueprint = await _geneBlueprintRepository.GetByNameAndVersionAsync(
+                    // Load gene
+                    var geneByName = await _geneRepository.GetByNameAndVersionAsync(
                         gene.GeneId,
                         "latest", cancellationToken);
 
-                    if (geneBlueprint == null)
+                    if (geneByName == null)
                     {
                         throw new Exception($"Gene blueprint not found: {gene.GeneId}");
                     }
 
                     // Execute gene
                     var geneResult = await ExecuteGeneAsync(
-                        geneBlueprint.Id,
+                        tenantId,
+                        userId,
+                        geneByName.Id,
                         gene.Parameters,
                         context);
 
@@ -419,6 +422,8 @@ public class GenomeExecutionService : IGenomeExecutionService
     }
 
     public async Task<ExecutionResponse> ExecuteGenomeAsync(
+        TenantId tenantId,
+        string userId,
         Guid genomeId, 
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default)
@@ -471,7 +476,7 @@ public class GenomeExecutionService : IGenomeExecutionService
 
                 try
                 {
-                    var chromosomeResult = await ExecuteChromosomeAsync(chromosome.Id, context);
+                    var chromosomeResult = await ExecuteChromosomeAsync(tenantId, userId, chromosome.Id, context);
 
                     chromosomeResults.Add(new
                     {
@@ -599,6 +604,8 @@ public class GenomeExecutionService : IGenomeExecutionService
     }
 
     public async Task<ExecutionResponse> ExecuteRequestAsync(
+        TenantId tenantId,
+        string userId,
         ExecutionRequest request, 
         CancellationToken cancellationToken = default)
     {
@@ -627,12 +634,12 @@ public class GenomeExecutionService : IGenomeExecutionService
             switch (target.Type.ToLower())
             {
                 case "gene":
-                    var geneBlueprint = await _geneBlueprintRepository.GetByNameAndVersionAsync(
+                    var gene = await _geneRepository.GetByNameAndVersionAsync(
                         target.Name, target.Version ?? "latest");
-                    if (geneBlueprint == null)
-                        throw new Exception($"Gene blueprint not found: {target.Name}");
+                    if (gene == null)
+                        throw new Exception($"Gene not found: {target.Name}");
 
-                    return await ExecuteGeneAsync(geneBlueprint.Id, parameters, context);
+                    return await ExecuteGeneAsync(tenantId, userId, gene.Id, parameters, context);
 
                 case "chromosome":
                     var chromosome = await _chromosomeRepository.GetByNameAsync(
@@ -640,7 +647,7 @@ public class GenomeExecutionService : IGenomeExecutionService
                     if (chromosome == null)
                         throw new Exception($"Chromosome not found: {target.Name}");
 
-                    return await ExecuteChromosomeAsync(chromosome.Id, context);
+                    return await ExecuteChromosomeAsync(tenantId, userId, chromosome.Id, context);
 
                 case "genome":
                     var genome = await _genomeRepository.GetByNameAsync(
@@ -648,7 +655,7 @@ public class GenomeExecutionService : IGenomeExecutionService
                     if (genome == null)
                         throw new Exception($"Genome not found: {target.Name}");
 
-                    return await ExecuteGenomeAsync(genome.Id, context);
+                    return await ExecuteGenomeAsync(tenantId, userId, genome.Id, context);
 
                 default:
                     throw new Exception($"Unknown target type: {target.Type}");

@@ -1,7 +1,6 @@
 ﻿using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
-using FlowSynx.Domain.GeneInstances;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
@@ -17,7 +16,7 @@ public interface IDatabaseContext
     DbSet<TenantSecret> TenantSecrets { get; }
     DbSet<TenantSecretConfig> TenantSecretConfigs { get; }
     DbSet<TenantContact> TenantContacts { get; }
-    DbSet<GeneBlueprint> GeneBlueprints { get; }
+    DbSet<Gene> Genes { get; }
     DbSet<Chromosome> Chromosomes { get; }
     DbSet<Genome> Genomes { get; }
     DbSet<Domain.GeneInstances.GeneInstance> GeneInstances { get; }

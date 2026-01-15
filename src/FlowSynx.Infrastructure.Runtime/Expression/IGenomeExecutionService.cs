@@ -1,27 +1,36 @@
 ﻿using FlowSynx.Application.Models;
 using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Infrastructure.Runtime.Expression;
 
 public interface IGenomeExecutionService
 {
     Task<ExecutionResponse> ExecuteGeneAsync(
-        Guid geneBlueprintId, 
+        TenantId tenantId,
+        string userId,
+        Guid geneId, 
         Dictionary<string, object> parameters, 
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
     Task<ExecutionResponse> ExecuteChromosomeAsync(
+        TenantId tenantId,
+        string userId,
         Guid chromosomeId, 
         Dictionary<string, object> context, 
         CancellationToken cancellationToken = default);
 
     Task<ExecutionResponse> ExecuteGenomeAsync(
+        TenantId tenantId,
+        string userId,
         Guid genomeId, 
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
     Task<ExecutionResponse> ExecuteRequestAsync(
+        TenantId tenantId,
+        string userId,
         ExecutionRequest request, 
         CancellationToken cancellationToken = default);
 

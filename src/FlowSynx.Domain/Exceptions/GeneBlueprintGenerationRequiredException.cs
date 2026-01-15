@@ -2,12 +2,12 @@
 
 namespace FlowSynx.Domain.Exceptions;
 
-public sealed class GeneBlueprintGenerationRequiredException : DomainException
+public sealed class GeneGenerationRequiredException : DomainException
 {
-    public GeneBlueprintGenerationRequiredException()
+    public GeneGenerationRequiredException()
         : base(
-            DomainErrorCodes.GeneBlueprintGenerationRequired,
-            "Gene blueprint generation is required"
+            DomainErrorCodes.GeneGenerationRequired,
+            "Gene generation is required"
         )
     {
     }

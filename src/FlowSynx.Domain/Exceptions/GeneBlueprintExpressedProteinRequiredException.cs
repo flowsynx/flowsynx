@@ -2,12 +2,12 @@
 
 namespace FlowSynx.Domain.Exceptions;
 
-public sealed class GeneBlueprintExpressedProteinRequiredException : DomainException
+public sealed class GeneExpressedProteinRequiredException : DomainException
 {
-    public GeneBlueprintExpressedProteinRequiredException()
+    public GeneExpressedProteinRequiredException()
         : base(
-            DomainErrorCodes.GeneBlueprintExpressedProteinRequired,
-            "Gene blueprint expressed protein is required"
+            DomainErrorCodes.GeneExpressedProteinRequired,
+            "Gene expressed protein is required"
         )
     {
     }

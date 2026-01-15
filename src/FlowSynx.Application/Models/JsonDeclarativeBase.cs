@@ -1,5 +1,5 @@
 ﻿using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Genomes;
 
 namespace FlowSynx.Application.Models;
@@ -12,16 +12,16 @@ public abstract class JsonDeclarativeBase
     public object Spec { get; set; }
 }
 
-// Gene Blueprint JSON
-public class GeneBlueprintJson
+// Gene JSON
+public class GeneJson
 {
     public string ApiVersion { get; set; } = "gene/v1";
-    public string Kind { get; set; } = "GeneBlueprint";
-    public GeneBlueprintMetadata Metadata { get; set; }
-    public GeneBlueprintSpec Spec { get; set; }
+    public string Kind { get; set; } = "Gene";
+    public GeneMetadata Metadata { get; set; }
+    public GeneSpecification Specification { get; set; }
 }
 
-public class GeneBlueprintMetadata
+public class GeneMetadata
 {
     public string Name { get; set; }
     public string Namespace { get; set; } = "default";

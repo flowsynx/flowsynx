@@ -1,17 +1,17 @@
 ﻿using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
 
-namespace FlowSynx.Domain.GeneBlueprints;
+namespace FlowSynx.Domain.Genes;
 
-public class GeneBlueprint : AuditableEntity<Guid>, IAggregateRoot, ITenantScoped, IUserScoped
+public class Gene : AuditableEntity<Guid>, IAggregateRoot, ITenantScoped, IUserScoped
 {
     public TenantId TenantId { get; set; }
-    public string UserId { get; set; }
-    public string Name { get; set; }
-    public string Namespace { get; set; }
-    public string Version { get; set; }
-    public string Description { get; set; }
-    public GeneBlueprintSpec Spec { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Namespace { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public GeneSpecification Specification { get; set; } = new GeneSpecification();
     public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
     public Dictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
@@ -108,7 +108,7 @@ public class GeneBlueprint : AuditableEntity<Guid>, IAggregateRoot, ITenantScope
     //public bool HasImmuneSystem() => ImmuneSystem != null;
 }
 
-public class GeneBlueprintSpec
+public class GeneSpecification
 {
     public string Description { get; set; }
     public string GeneticBlueprint { get; set; }

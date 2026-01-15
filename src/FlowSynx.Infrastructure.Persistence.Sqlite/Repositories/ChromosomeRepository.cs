@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,10 +15,14 @@ public class ChromosomeRepository : IChromosomeRepository
         _appContextFactory = appContextFactory ?? throw new ArgumentNullException(nameof(appContextFactory));
     }
 
-    public async Task<List<Chromosome>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Chromosome>> GetAllAsync(
+        TenantId tenantId, 
+        string userId, 
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Chromosomes
+            .Where(c => c.TenantId == tenantId && (c.UserId == userId))
             .Include(c => c.Genes)
             .ToListAsync(cancellationToken);
     }

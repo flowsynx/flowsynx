@@ -1,9 +1,12 @@
 using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
+using FlowSynx.Application.Features.Chromosomes.Actions.RegisterChromosome;
+using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomesList;
 using FlowSynx.Application.Features.Execute;
-using FlowSynx.Application.Features.GeneBlueprints.Actions.GeneBlueprintRegister;
-using FlowSynx.Application.Features.GeneBlueprints.Requests.GeneblueprintsList;
+using FlowSynx.Application.Features.Genes.Actions.RegisterGene;
+using FlowSynx.Application.Features.Genes.Requests.GeneDetails;
+using FlowSynx.Application.Features.Genes.Requests.GenesList;
 using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
 using FlowSynx.Application.Features.Tenants.Actions.DeleteTenant;
 using FlowSynx.Application.Features.Tenants.Actions.UpdateTenant;
@@ -51,26 +54,57 @@ public static class DispatcherExtensions
     }
     #endregion
 
-    #region GeneBlueprints
-    public static Task<PaginatedResult<GeneblueprintsListResult>> GeneBlueprintsList(
+    #region Genes
+    public static Task<PaginatedResult<GenesListResult>> GenesList(
         this IDispatcher dispatcher,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GeneblueprintsListRequest
+        return dispatcher.Dispatch(new GenesListRequest
         {
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
     }
 
-    public static Task<Result<RegisterGeneblueprintResult>> RegisterGene(
+    public static Task<Result<GeneDetailsResult>> GeneDetails(
+        this IDispatcher dispatcher,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new GeneDetailsRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<RegisterGeneResult>> RegisterGene(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new RegisterGeneblueprintRequest { Json = json }, cancellationToken);
+        return dispatcher.Dispatch(new RegisterGeneRequest { Json = json }, cancellationToken);
+    }
+    #endregion
+
+    #region Chromosomes
+    public static Task<PaginatedResult<ChromosomesListResult>> ChromosomesList(
+        this IDispatcher dispatcher,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ChromosomesListRequest
+        {
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
+
+    public static Task<Result<RegisterChromosomeResult>> RegisterChromosome(
+        this IDispatcher dispatcher,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new RegisterChromosomeRequest { Json = json }, cancellationToken);
     }
     #endregion
 

@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Genomes;
 using System.Text.Json;
@@ -23,21 +23,21 @@ public class JsonProcessingService : IJsonProcessingService
         };
     }
 
-    public async Task<GeneBlueprint> ParseGeneBlueprintAsync(string json)
+    public async Task<Gene> ParseGeneAsync(string json)
     {
         try
         {
-            var geneJson = JsonSerializer.Deserialize<GeneBlueprintJson>(json, _jsonOptions);
+            var geneJson = JsonSerializer.Deserialize<GeneJson>(json, _jsonOptions);
 
             // Convert to domain entity
-            return new GeneBlueprint
+            return new Gene
             {
                 Id = Guid.NewGuid(),
                 Name = geneJson.Metadata.Name,
                 Namespace = geneJson.Metadata.Namespace,
                 Version = geneJson.Metadata.Version,
-                Description = geneJson.Spec.Description,
-                Spec = geneJson.Spec,
+                Description = geneJson.Specification.Description,
+                Specification = geneJson.Specification,
                 Metadata = new System.Collections.Generic.Dictionary<string, object>
                 {
                     ["apiVersion"] = geneJson.ApiVersion,

@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Infrastructure.Runtime.Errors;
 using FlowSynx.Infrastructure.Runtime.Exceptions;
 
-namespace FlowSynx.Infrastructure.Security.Exceptions;
+namespace FlowSynx.Infrastructure.Runtime.Exceptions;
 
 public sealed class GenExpressorNotFoundException : RuntimeException
 {

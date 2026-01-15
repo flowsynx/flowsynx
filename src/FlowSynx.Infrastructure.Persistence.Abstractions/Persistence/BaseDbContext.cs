@@ -1,8 +1,7 @@
 ﻿using FlowSynx.BuildingBlocks.Clock;
 using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
-using FlowSynx.Domain.GeneInstances;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
@@ -44,7 +43,7 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
     public DbSet<TenantSecret> TenantSecrets { get; set; }
     public DbSet<TenantSecretConfig> TenantSecretConfigs { get; set; }
     public DbSet<TenantContact> TenantContacts { get; set; }
-    public DbSet<GeneBlueprint> GeneBlueprints { get; set; }
+    public DbSet<Gene> Genes { get; set; }
     public DbSet<Chromosome> Chromosomes { get; set; }
     public DbSet<Genome> Genomes { get; set; }
     public DbSet<Domain.GeneInstances.GeneInstance> GeneInstances { get; set; }

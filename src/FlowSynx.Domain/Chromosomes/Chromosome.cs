@@ -1,10 +1,7 @@
-﻿using FlowSynx.Domain.Exceptions;
-using FlowSynx.Domain.GeneBlueprints;
-using FlowSynx.Domain.GeneInstances;
+﻿using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.ValueObjects;
 
 namespace FlowSynx.Domain.Chromosomes;
 

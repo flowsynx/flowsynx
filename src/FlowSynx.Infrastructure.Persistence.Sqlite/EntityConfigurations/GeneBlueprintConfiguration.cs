@@ -1,4 +1,4 @@
-﻿using FlowSynx.Domain.GeneBlueprints;
+﻿using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -8,9 +8,9 @@ using System.Text.Json;
 
 namespace FlowSynx.Persistence.Sqlite.EntityConfigurations;
 
-public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint>
+public class GeneConfiguration : IEntityTypeConfiguration<Gene>
 {
-    public void Configure(EntityTypeBuilder<GeneBlueprint> builder)
+    public void Configure(EntityTypeBuilder<Gene> builder)
     {
         var jsonOptions = new JsonSerializerOptions
         {
@@ -60,9 +60,9 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(d)));
 
-        var specConverter = new ValueConverter<GeneBlueprintSpec, string>(
+        var specConverter = new ValueConverter<GeneSpecification, string>(
             v => JsonSerializer.Serialize(v, jsonOptions),
-            v => JsonSerializer.Deserialize<GeneBlueprintSpec>(v, jsonOptions)
+            v => JsonSerializer.Deserialize<GeneSpecification>(v, jsonOptions)
         );
 
         // Store JSON fields
@@ -73,7 +73,7 @@ public class GeneBlueprintConfiguration : IEntityTypeConfiguration<GeneBlueprint
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(objectDictionaryComparer);
 
-        builder.Property(gb => gb.Spec)
+        builder.Property(gb => gb.Specification)
             .HasColumnType("TEXT")
             .HasConversion(specConverter);
 

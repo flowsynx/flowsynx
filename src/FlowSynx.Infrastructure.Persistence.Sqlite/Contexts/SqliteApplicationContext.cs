@@ -37,7 +37,7 @@ public class SqliteApplicationContext : BaseDbContext
     private void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new AuditTrailConfiguration());
-        modelBuilder.ApplyConfiguration(new GeneBlueprintConfiguration());
+        modelBuilder.ApplyConfiguration(new GeneConfiguration());
         modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration());
         modelBuilder.ApplyConfiguration(new ChromosomeConfiguration());
         modelBuilder.ApplyConfiguration(new GenomeConfiguration());

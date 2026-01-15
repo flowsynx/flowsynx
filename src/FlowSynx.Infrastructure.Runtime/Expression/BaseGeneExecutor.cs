@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 using Microsoft.Extensions.Logging;
 using System.Dynamic;
 using System.Text.Json;
@@ -18,7 +18,7 @@ public abstract class BaseGeneExecutor : IGeneExecutor
     }
 
     public abstract Task<object> ExecuteAsync(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context);
@@ -26,7 +26,7 @@ public abstract class BaseGeneExecutor : IGeneExecutor
     public abstract bool CanExecute(ExecutableComponent executable);
 
     protected Dictionary<string, object> PrepareContext(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> externalContext)
@@ -36,18 +36,18 @@ public abstract class BaseGeneExecutor : IGeneExecutor
             ["gene"] = new
             {
                 id = instance.Id,
-                name = blueprint.Metadata.Name,
-                version = blueprint.Metadata.Version
+                name = gene.Metadata.Name,
+                version = gene.Metadata.Version
             },
             ["parameters"] = parameters,
             ["config"] = instance.Config,
             ["blueprint"] = new
             {
-                metadata = blueprint.Metadata,
+                metadata = gene.Metadata,
                 spec = new
                 {
-                    description = blueprint.Spec.Description,
-                    expressionProfile = blueprint.Spec.ExpressionProfile
+                    description = gene.Specification.Description,
+                    expressionProfile = gene.Specification.ExpressionProfile
                 }
             }
         };
@@ -71,13 +71,13 @@ public class ScriptGeneExecutor : BaseGeneExecutor
     }
 
     public override async Task<object> ExecuteAsync(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var executable = blueprint.Spec.Executable;
-        var scriptContext = PrepareContext(blueprint, instance, parameters, context);
+        var executable = gene.Specification.Executable;
+        var scriptContext = PrepareContext(gene, instance, parameters, context);
 
         try
         {
@@ -91,7 +91,7 @@ public class ScriptGeneExecutor : BaseGeneExecutor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Script execution failed for gene {GeneName}", blueprint.Metadata.Name);
+            _logger.LogError(ex, "Script execution failed for gene {GeneName}", gene.Metadata.Name);
             throw new Exception($"Script execution failed: {ex.Message}", ex);
         }
     }
@@ -187,12 +187,12 @@ public class AssemblyGeneExecutor : BaseGeneExecutor
     }
 
     public override async Task<object> ExecuteAsync(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var executable = blueprint.Spec.Executable;
+        var executable = gene.Specification.Executable;
         var assemblyPath = executable.Assembly;
 
         if (string.IsNullOrEmpty(assemblyPath))
@@ -216,7 +216,7 @@ public class AssemblyGeneExecutor : BaseGeneExecutor
                 context = new
                 {
                     gene = instance.Id,
-                    blueprint = blueprint.Metadata.Name
+                    blueprint = gene.Metadata.Name
                 },
                 executedAt = DateTime.UtcNow,
                 success = true
@@ -247,12 +247,12 @@ public class HttpGeneExecutor : BaseGeneExecutor
     }
 
     public override async Task<object> ExecuteAsync(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var http = blueprint.Spec.Executable.Http;
+        var http = gene.Specification.Executable.Http;
         if (http == null)
         {
             throw new Exception("HTTP configuration is missing");
@@ -337,12 +337,12 @@ public class ContainerGeneExecutor : BaseGeneExecutor
     }
 
     public override async Task<object> ExecuteAsync(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var container = blueprint.Spec.Executable.Container;
+        var container = gene.Specification.Executable.Container;
         if (container == null)
         {
             throw new Exception("Container configuration is missing");
@@ -388,12 +388,12 @@ public class GrpcGeneExecutor : BaseGeneExecutor
     }
 
     public override async Task<object> ExecuteAsync(
-        GeneBlueprintJson blueprint,
+        GeneJson gene,
         GeneInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var grpc = blueprint.Spec.Executable.Grpc;
+        var grpc = gene.Specification.Executable.Grpc;
         if (grpc == null)
         {
             throw new Exception("gRPC configuration is missing");

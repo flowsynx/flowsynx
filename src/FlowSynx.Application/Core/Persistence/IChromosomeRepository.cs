@@ -1,10 +1,15 @@
 ﻿using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Application.Core.Persistence;
 
 public interface IChromosomeRepository
 {
-    Task<List<Chromosome>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<List<Chromosome>> GetAllAsync(
+        TenantId tenantId, 
+        string userId, 
+        CancellationToken cancellationToken = default);
+
     Task<Chromosome?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Chromosome?> GetByNameAsync(string name, string @namespace = "default", CancellationToken cancellationToken = default);
     Task<IEnumerable<Chromosome>> GetByGenomeIdAsync(Guid genomeId, CancellationToken cancellationToken = default);

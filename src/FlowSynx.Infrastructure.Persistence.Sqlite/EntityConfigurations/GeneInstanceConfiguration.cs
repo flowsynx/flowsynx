@@ -1,8 +1,5 @@
-﻿using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
-using FlowSynx.Domain.GeneInstances;
+﻿using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Tenants;
-using FlowSynx.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

@@ -2,12 +2,12 @@
 
 namespace FlowSynx.Domain.Exceptions;
 
-public sealed class GeneBlueprintPhenotypicRequiredException : DomainException
+public sealed class GenePhenotypicRequiredException : DomainException
 {
-    public GeneBlueprintPhenotypicRequiredException()
+    public GenePhenotypicRequiredException()
         : base(
-            DomainErrorCodes.GeneBlueprintPhenotypicRequired,
-            "Gene blueprint phenotypic is required"
+            DomainErrorCodes.GenePhenotypicRequired,
+            "Gene phenotypic is required"
         )
     {
     }

@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Application.Features.GeneBlueprints.Actions.GeneBlueprintRegister;
+﻿namespace FlowSynx.Application.Features.Genes.Actions.RegisterGene;
 
-public class RegisterGeneblueprintResult
+public class RegisterGeneResult
 {
     public string? Status {get; set; }
     public Guid Id { get; set; }

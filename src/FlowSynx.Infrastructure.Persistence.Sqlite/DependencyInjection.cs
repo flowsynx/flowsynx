@@ -18,7 +18,7 @@ public static class DependencyInjection
         services
             .AddScoped<IAuditTrailRepository, AuditTrailRepository>()
             .AddScoped<IChromosomeRepository, ChromosomeRepository>()
-            .AddScoped<IGeneBlueprintRepository, GeneBlueprintRepository>()
+            .AddScoped<IGeneRepository, GeneRepository>()
             .AddScoped<IGenomeRepository, GenomeRepository>()
             .AddScoped<ITenantRepository, TenantRepository>()
             .AddScoped<IExecutionRepository, ExecutionRepository>()

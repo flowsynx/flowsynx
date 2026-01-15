@@ -1,6 +1,6 @@
 ﻿using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.GeneBlueprints;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Tenants;
 
@@ -8,7 +8,7 @@ namespace FlowSynx.Application.Core.Services;
 
 public interface IGenomeManagementService
 {
-    Task<GeneBlueprint> RegisterGeneBlueprintAsync(
+    Task<Gene> RegisterGeneAsync(
         string userId, 
         string json, 
         CancellationToken cancellationToken = default);
@@ -28,7 +28,7 @@ public interface IGenomeManagementService
         string json, 
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<GeneBlueprint>> SearchGeneBlueprintsAsync(
+    Task<IEnumerable<Gene>> SearchGenesAsync(
         TenantId tenantId,
         string userId, 
         string searchTerm, 
@@ -45,6 +45,7 @@ public interface IGenomeManagementService
         CancellationToken cancellationToken = default);
 
     Task<ExecutionResponse> ExecuteJsonAsync(
+        TenantId tenantId,
         string userId, 
         string json, 
         CancellationToken cancellationToken = default);

@@ -5,17 +5,17 @@ using FlowSynx.Application.Exceptions;
 using FlowSynx.BuildingBlocks.Results;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.GeneBlueprints.Actions.GeneBlueprintRegister;
+namespace FlowSynx.Application.Features.Genes.Actions.RegisterGene;
 
-internal class RegisterGeneblueprintHandler : IActionHandler<RegisterGeneblueprintRequest, Result<RegisterGeneblueprintResult>>
+internal class RegisterGeneHandler : IActionHandler<RegisterGeneRequest, Result<RegisterGeneResult>>
 {
-    private readonly ILogger<RegisterGeneblueprintHandler> _logger;
+    private readonly ILogger<RegisterGeneHandler> _logger;
     private readonly ISerializer _serializer;
     private readonly IGenomeManagementService _managementService;
     private readonly ICurrentUserService _currentUserService;
 
-    public RegisterGeneblueprintHandler(
-        ILogger<RegisterGeneblueprintHandler> logger, 
+    public RegisterGeneHandler(
+        ILogger<RegisterGeneHandler> logger, 
         ISerializer serializer,
         IGenomeManagementService managementService,
         ICurrentUserService currentUserService)
@@ -26,37 +26,37 @@ internal class RegisterGeneblueprintHandler : IActionHandler<RegisterGenebluepri
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    public async Task<Result<RegisterGeneblueprintResult>> Handle(RegisterGeneblueprintRequest request, CancellationToken cancellationToken)
+    public async Task<Result<RegisterGeneResult>> Handle(RegisterGeneRequest request, CancellationToken cancellationToken)
     {
         try
         {
             _currentUserService.ValidateAuthentication();
 
             var jsonString = _serializer.Serialize(request.Json);
-            var geneBlueprint = await _managementService.RegisterGeneBlueprintAsync(_currentUserService.UserId(), jsonString);
+            var gene = await _managementService.RegisterGeneAsync(_currentUserService.UserId(), jsonString);
 
-            var response = new RegisterGeneblueprintResult
+            var response = new RegisterGeneResult
             {
                 Status = "registered",
-                Id = geneBlueprint.Id,
-                Name = geneBlueprint.Name,
-                Version = geneBlueprint.Version,
-                Namespace = geneBlueprint.Namespace
+                Id = gene.Id,
+                Name = gene.Name,
+                Version = gene.Version,
+                Namespace = gene.Namespace
             };
 
-            return await Result<RegisterGeneblueprintResult>.SuccessAsync(response);
+            return await Result<RegisterGeneResult>.SuccessAsync(response);
         }
         catch (ValidationException vex)
         {
             var errorMessages = vex.Errors
                 .SelectMany(kvp => kvp.Value.Select(msg => $"{kvp.Key}: {msg}"))
                 .ToList();
-            return await Result<RegisterGeneblueprintResult>.FailAsync(errorMessages);
+            return await Result<RegisterGeneResult>.FailAsync(errorMessages);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            return await Result<RegisterGeneblueprintResult>.FailAsync(ex.Message);
+            return await Result<RegisterGeneResult>.FailAsync(ex.Message);
         }
     }
 }

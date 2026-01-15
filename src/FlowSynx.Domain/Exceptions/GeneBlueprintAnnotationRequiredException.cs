@@ -2,12 +2,12 @@
 
 namespace FlowSynx.Domain.Exceptions;
 
-public sealed class GeneBlueprintAnnotationRequiredException : DomainException
+public sealed class GeneAnnotationRequiredException : DomainException
 {
-    public GeneBlueprintAnnotationRequiredException()
+    public GeneAnnotationRequiredException()
         : base(
-            DomainErrorCodes.GeneBlueprintAnnotationRequired,
-            "Gene blueprint annotation is required"
+            DomainErrorCodes.GeneAnnotationRequired,
+            "Gene annotation is required"
         )
     {
     }

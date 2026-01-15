@@ -4,6 +4,7 @@ using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.BuildingBlocks.Results;
+using FlowSynx.Domain.Tenants;
 using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Application.Features.Execute;
@@ -34,7 +35,9 @@ internal class ExecuteHandler : IActionHandler<ExecuteRequest, Result<ExecutionR
             _currentUserService.ValidateAuthentication();
 
             var jsonString = _serializer.Serialize(request.Json);
-            var result = await _managementService.ExecuteJsonAsync(_currentUserService.UserId(), jsonString);
+            var result = await _managementService.ExecuteJsonAsync(
+                TenantId.FromString(_currentUserService.TenantId()),
+                _currentUserService.UserId(), jsonString);
 
             return await Result<ExecutionResponse>.SuccessAsync(result);
         }
