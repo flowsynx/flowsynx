@@ -315,4 +315,7 @@
   <data name="Feature_Tenant_UpdatedSuccessfully" xml:space="preserve">
     <value>The tenant has been updated successfully.</value>
   </data>
+  <data name="Feature_Gene_DeletedSuccessfully" xml:space="preserve">
+    <value>The gene has been deleted successfully.</value>
+  </data>
 </root>

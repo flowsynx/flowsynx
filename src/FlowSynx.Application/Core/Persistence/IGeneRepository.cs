@@ -18,7 +18,11 @@ public interface IGeneRepository
 
     Task<Gene?> GetByNameAndVersionAsync(string name, string version, CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Gene>> GetByNamespaceAsync(string @namespace, CancellationToken cancellationToken = default);
+    Task<IEnumerable<Gene>> GetByNamespaceAsync(
+        TenantId tenantId,
+        string userId, 
+        string @namespace, 
+        CancellationToken cancellationToken = default);
 
     Task<List<Gene>> SearchAsync(
         TenantId tenantId,

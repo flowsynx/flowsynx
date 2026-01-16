@@ -2,7 +2,7 @@
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Tenants;
 
-namespace FlowSynx.Infrastructure.Runtime.Expression;
+namespace FlowSynx.Application.Core.Services;
 
 public interface IGenomeExecutionService
 {

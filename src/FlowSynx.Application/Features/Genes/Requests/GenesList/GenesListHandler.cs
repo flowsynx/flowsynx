@@ -30,12 +30,15 @@ internal class GenesListHandler : IActionHandler<GenesListRequest, PaginatedResu
         {
             _currentUserService.ValidateAuthentication();
 
-            var genes = await _geneRepository.GetAllAsync(
+            var genes = await _geneRepository.GetByNamespaceAsync(
                 TenantId.FromString(_currentUserService.TenantId()),
                 _currentUserService.UserId(),
+                request.Namespace,
                 cancellationToken);
+
             var response = genes.Select(gene => new GenesListResult
             {
+                Id = gene.Id.ToString(),
                 Name = gene.Name,
                 Namespace = gene.Namespace,
                 Version = gene.Version,

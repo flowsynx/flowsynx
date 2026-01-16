@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Core.Persistence;
+using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Models;
 using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Genomes;

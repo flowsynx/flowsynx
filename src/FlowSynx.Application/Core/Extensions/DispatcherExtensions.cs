@@ -4,6 +4,8 @@ using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 using FlowSynx.Application.Features.Chromosomes.Actions.RegisterChromosome;
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomesList;
 using FlowSynx.Application.Features.Execute;
+using FlowSynx.Application.Features.Genes.Actions.DeleteGene;
+using FlowSynx.Application.Features.Genes.Actions.ExecuteGene;
 using FlowSynx.Application.Features.Genes.Actions.RegisterGene;
 using FlowSynx.Application.Features.Genes.Requests.GeneDetails;
 using FlowSynx.Application.Features.Genes.Requests.GenesList;
@@ -59,10 +61,12 @@ public static class DispatcherExtensions
         this IDispatcher dispatcher,
         int page,
         int pageSize,
+        string? @namespace,
         CancellationToken cancellationToken)
     {
         return dispatcher.Dispatch(new GenesListRequest
         {
+            Namespace = @namespace,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
@@ -82,6 +86,27 @@ public static class DispatcherExtensions
         CancellationToken cancellationToken)
     {
         return dispatcher.Dispatch(new RegisterGeneRequest { Json = json }, cancellationToken);
+    }
+
+    public static Task<Result<Void>> DeleteGene(
+        this IDispatcher dispatcher,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new DeleteGeneRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<ExecutionResponse>> ExecuteGene(
+        this IDispatcher dispatcher,
+        Guid id,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ExecuteGeneRequest
+        {
+            GeneId = id,
+            Json = json
+        }, cancellationToken);
     }
     #endregion
 

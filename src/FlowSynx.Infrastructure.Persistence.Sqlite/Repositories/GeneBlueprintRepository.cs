@@ -97,11 +97,15 @@ public class GeneRepository : IGeneRepository
                 .FirstOrDefaultAsync(g => g.Name == name && g.Version == version, cancellationToken: cancellationToken);
     }
 
-    public async Task<IEnumerable<Gene>> GetByNamespaceAsync(string @namespace, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Gene>> GetByNamespaceAsync(
+        TenantId tenantId,
+        string userId, 
+        string @namespace, 
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Genes
-            .Where(g => g.Namespace == @namespace)
+            .Where(g => g.Namespace == @namespace && g.TenantId == tenantId && g.UserId == userId)
             .ToListAsync(cancellationToken);
     }
 }

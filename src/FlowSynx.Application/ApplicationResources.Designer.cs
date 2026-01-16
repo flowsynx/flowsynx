@@ -79,6 +79,15 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The gene has been deleted successfully..
+        /// </summary>
+        internal static string Feature_Gene_DeletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Gene_DeletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The plugin has been installed successfully..
         /// </summary>
         internal static string Feature_Plugin_Install_AddedSuccessfully {
