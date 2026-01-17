@@ -20,6 +20,7 @@ public class JsonDeserializer : IDeserializer
         };
 
         _options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        _options.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     }
 
     public T Deserialize<T>(string? input) where T : class

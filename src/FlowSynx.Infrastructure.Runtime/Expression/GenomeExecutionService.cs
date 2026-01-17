@@ -5,6 +5,7 @@ using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Tenants;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
 
 namespace FlowSynx.Infrastructure.Runtime.Expression;
 
@@ -257,7 +258,7 @@ public class GenomeExecutionService : IGenomeExecutionService
         try
         {
             // Load chromosome with genes
-            var chromosome = await _chromosomeRepository.GetByIdAsync(chromosomeId, cancellationToken);
+            var chromosome = await _chromosomeRepository.GetByIdAsync(tenantId, userId, chromosomeId, cancellationToken);
             if (chromosome == null)
             {
                 throw new Exception($"Chromosome not found: {chromosomeId}");
@@ -679,11 +680,9 @@ public class GenomeExecutionService : IGenomeExecutionService
     public async Task<IEnumerable<ExecutionRecord>> GetExecutionHistoryAsync(
         string targetType, 
         Guid targetId, 
-        int limit = 50, 
         CancellationToken cancellationToken = default)
     {
         return (await _executionRepository.GetByTargetAsync(targetType, targetId))
-            .Take(limit)
             .ToList();
     }
 }

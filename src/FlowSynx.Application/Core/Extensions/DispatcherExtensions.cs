@@ -1,14 +1,20 @@
 using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
-using FlowSynx.Application.Features.Chromosomes.Actions.RegisterChromosome;
+using FlowSynx.Application.Features.Chromosome.Actions.CreateChromosome;
+using FlowSynx.Application.Features.Chromosomes.Actions.DeleteChromosome;
+using FlowSynx.Application.Features.Chromosomes.Actions.ExecuteChromosome;
+using FlowSynx.Application.Features.Chromosomes.Actions.ValidateChromosome;
+using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeDetails;
+using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeExecutionsList;
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomesList;
 using FlowSynx.Application.Features.Execute;
+using FlowSynx.Application.Features.Genes.Actions.CreateGene;
 using FlowSynx.Application.Features.Genes.Actions.DeleteGene;
 using FlowSynx.Application.Features.Genes.Actions.ExecuteGene;
-using FlowSynx.Application.Features.Genes.Actions.RegisterGene;
 using FlowSynx.Application.Features.Genes.Actions.ValidateGene;
 using FlowSynx.Application.Features.Genes.Requests.GeneDetails;
+using FlowSynx.Application.Features.Genes.Requests.GeneExecutionsList;
 using FlowSynx.Application.Features.Genes.Requests.GenesList;
 using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
 using FlowSynx.Application.Features.Tenants.Actions.DeleteTenant;
@@ -81,12 +87,12 @@ public static class DispatcherExtensions
         return dispatcher.Dispatch(new GeneDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<RegisterGeneResult>> RegisterGene(
+    public static Task<Result<CreateGeneResult>> CreateGene(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new RegisterGeneRequest { Json = json }, cancellationToken);
+        return dispatcher.Dispatch(new CreateGeneRequest { Json = json }, cancellationToken);
     }
 
     public static Task<Result<Void>> DeleteGene(
@@ -120,6 +126,21 @@ public static class DispatcherExtensions
             Json = json
         }, cancellationToken);
     }
+
+    public static Task<PaginatedResult<GeneExecutionsListResult>> GeneExecutionHistoryList(
+        this IDispatcher dispatcher,
+        Guid geneId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new GeneExecutionsListRequest
+        {
+            GeneId = geneId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
     #endregion
 
     #region Chromosomes
@@ -127,21 +148,78 @@ public static class DispatcherExtensions
         this IDispatcher dispatcher,
         int page,
         int pageSize,
+        string? @namespace,
         CancellationToken cancellationToken)
     {
         return dispatcher.Dispatch(new ChromosomesListRequest
         {
+            Namespace = @namespace,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
     }
 
-    public static Task<Result<RegisterChromosomeResult>> RegisterChromosome(
+    public static Task<Result<ChromosomeDetailsResult>> ChromosomeDetails(
+        this IDispatcher dispatcher,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ChromosomeDetailsRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<CreateChromosomeResult>> CreateChromosome(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new RegisterChromosomeRequest { Json = json }, cancellationToken);
+        return dispatcher.Dispatch(new CreateChromosomeRequest { Json = json }, cancellationToken);
+    }
+
+    public static Task<Result<Void>> DeleteChromosome(
+        this IDispatcher dispatcher,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new DeleteChromosomeRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<ExecutionResponse>> ExecuteChromosome(
+        this IDispatcher dispatcher,
+        Guid id,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ExecuteChromosomeRequest
+        {
+            ChromosomeId = id,
+            Json = json
+        }, cancellationToken);
+    }
+
+    public static Task<Result<ValidationResponse>> ValidateChromosome(
+        this IDispatcher dispatcher,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ValidateChromosomeRequest
+        {
+            Json = json
+        }, cancellationToken);
+    }
+
+    public static Task<PaginatedResult<ChromosomeExecutionsListResult>> ChromosomeExecutionHistoryList(
+        this IDispatcher dispatcher,
+        Guid chromosomeId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ChromosomeExecutionsListRequest
+        {
+            ChromosomeId = chromosomeId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
     }
     #endregion
 

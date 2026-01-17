@@ -1,6 +1,6 @@
-﻿namespace FlowSynx.Application.Features.Genes.Actions.RegisterGene;
+﻿namespace FlowSynx.Application.Features.Genes.Actions.CreateGene;
 
-public class RegisterGeneResult
+public class CreateGeneResult
 {
     public string? Status {get; set; }
     public Guid Id { get; set; }

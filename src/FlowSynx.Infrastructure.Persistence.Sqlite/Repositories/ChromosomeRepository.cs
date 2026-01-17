@@ -3,6 +3,7 @@ using FlowSynx.Domain.Chromosomes;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace FlowSynx.Infrastructure.Persistence.Sqlite.Repositories;
 
@@ -27,12 +28,16 @@ public class ChromosomeRepository : IChromosomeRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Chromosome?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Chromosome?> GetByIdAsync(
+        TenantId tenantId, 
+        string userId, 
+        Guid id, 
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Chromosomes
             .Include(c => c.Genes)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken: cancellationToken)
+            .FirstOrDefaultAsync(c => c.Id == id && c.TenantId == tenantId && c.UserId == userId, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -54,9 +59,9 @@ public class ChromosomeRepository : IChromosomeRepository
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(TenantId tenantId, string userId, Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await GetByIdAsync(id, cancellationToken);
+        var entity = await GetByIdAsync(tenantId, userId, id, cancellationToken);
         if (entity != null)
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
@@ -81,12 +86,16 @@ public class ChromosomeRepository : IChromosomeRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Chromosome>> GetByNamespaceAsync(string @namespace, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<Chromosome>> GetByNamespaceAsync(
+        TenantId tenantId,
+        string userId, 
+        string @namespace, 
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Chromosomes
             .Include(c => c.Genes)
-            .Where(c => c.Namespace == @namespace)
+            .Where(c => c.Namespace == @namespace && c.TenantId == tenantId && c.UserId == userId)
             .ToListAsync(cancellationToken);
     }
 }

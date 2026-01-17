@@ -19,6 +19,7 @@ public class JsonSerializer : ISerializer
         };
 
         _options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        _options.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     }
 
     public string Serialize<T>(T obj)

@@ -5,17 +5,17 @@ using FlowSynx.Application.Exceptions;
 using FlowSynx.BuildingBlocks.Results;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Genes.Actions.RegisterGene;
+namespace FlowSynx.Application.Features.Genes.Actions.CreateGene;
 
-internal class RegisterGeneHandler : IActionHandler<RegisterGeneRequest, Result<RegisterGeneResult>>
+internal class CreateGeneHandler : IActionHandler<CreateGeneRequest, Result<CreateGeneResult>>
 {
-    private readonly ILogger<RegisterGeneHandler> _logger;
+    private readonly ILogger<CreateGeneHandler> _logger;
     private readonly ISerializer _serializer;
     private readonly IGenomeManagementService _managementService;
     private readonly ICurrentUserService _currentUserService;
 
-    public RegisterGeneHandler(
-        ILogger<RegisterGeneHandler> logger, 
+    public CreateGeneHandler(
+        ILogger<CreateGeneHandler> logger, 
         ISerializer serializer,
         IGenomeManagementService managementService,
         ICurrentUserService currentUserService)
@@ -26,7 +26,7 @@ internal class RegisterGeneHandler : IActionHandler<RegisterGeneRequest, Result<
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    public async Task<Result<RegisterGeneResult>> Handle(RegisterGeneRequest request, CancellationToken cancellationToken)
+    public async Task<Result<CreateGeneResult>> Handle(CreateGeneRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -35,28 +35,28 @@ internal class RegisterGeneHandler : IActionHandler<RegisterGeneRequest, Result<
             var jsonString = _serializer.Serialize(request.Json);
             var gene = await _managementService.RegisterGeneAsync(_currentUserService.UserId(), jsonString);
 
-            var response = new RegisterGeneResult
+            var response = new CreateGeneResult
             {
-                Status = "registered",
+                Status = "created",
                 Id = gene.Id,
                 Name = gene.Name,
                 Version = gene.Version,
                 Namespace = gene.Namespace
             };
 
-            return await Result<RegisterGeneResult>.SuccessAsync(response);
+            return await Result<CreateGeneResult>.SuccessAsync(response);
         }
         catch (ValidationException vex)
         {
             var errorMessages = vex.Errors
                 .SelectMany(kvp => kvp.Value.Select(msg => $"{kvp.Key}: {msg}"))
                 .ToList();
-            return await Result<RegisterGeneResult>.FailAsync(errorMessages);
+            return await Result<CreateGeneResult>.FailAsync(errorMessages);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            return await Result<RegisterGeneResult>.FailAsync(ex.Message);
+            return await Result<CreateGeneResult>.FailAsync(ex.Message);
         }
     }
 }

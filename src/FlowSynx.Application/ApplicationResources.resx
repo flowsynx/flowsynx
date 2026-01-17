@@ -123,15 +123,6 @@
   <data name="Feature_Audit_DetailsNotFound" xml:space="preserve">
     <value>The audit details, id '{0}', are not found.</value>
   </data>
-  <data name="Feature_Plugin_Install_AddedSuccessfully" xml:space="preserve">
-    <value>The plugin has been installed successfully.</value>
-  </data>
-  <data name="Feature_Plugin_Uninstall_DeletedSuccessfully" xml:space="preserve">
-    <value>The plugin has been uninstalled successfully.</value>
-  </data>
-  <data name="Feature_Plugin_Update_UpdatedSuccessfully" xml:space="preserve">
-    <value>The plugin has been updated successfully.</value>
-  </data>
   <data name="Feature_Workflow_Add_AddedSuccessfully" xml:space="preserve">
     <value>The workflow has been added successfully.</value>
   </data>
@@ -246,56 +237,11 @@
   <data name="Features_Validation_ExecutionId_MustHaveValue" xml:space="preserve">
     <value>The workflow id value must have value.</value>
   </data>
-  <data name="Features_Validation_Plugin_Type_Update_MustHaveValue" xml:space="preserve">
-    <value>Plugin type format must be &lt;type&gt; or &lt;type&gt;:&lt;current&gt;-&gt;&lt;target&gt;.</value>
-  </data>
-  <data name="Features_Validation_Plugin_Type_MustHaveValue" xml:space="preserve">
-    <value>Plugin type format must be &lt;type&gt; or &lt;type&gt;:&lt;version&gt;.</value>
-  </data>
-  <data name="Features_Validation_PluginId_InvalidGuidFormat" xml:space="preserve">
-    <value>Invalid plugin Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
-  </data>
-  <data name="Features_Validation_PluginId_MustHaveValue" xml:space="preserve">
-    <value>The plugin id value must have value.</value>
-  </data>
-  <data name="Features_Validation_TriggerId_InvalidGuidFormat" xml:space="preserve">
-    <value>Invalid trigger Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
-  </data>
-  <data name="Features_Validation_TriggerId_MustHaveValue" xml:space="preserve">
-    <value>The trigger id value must have value.</value>
-  </data>
   <data name="Features_Validation_WorkflowId_InvalidGuidFormat" xml:space="preserve">
     <value>Invalid workflow Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).</value>
   </data>
   <data name="Features_Validation_WorkflowId_MustHaveValue" xml:space="preserve">
     <value>The workflow id value must have value.</value>
-  </data>
-  <data name="Features_Workflow_Add_WorkflowDefinitionMustHaveValue" xml:space="preserve">
-    <value>Workflow definition must be not empty!</value>
-  </data>
-  <data name="Features_Workflow_Add_WorkflowNameMustHaveValue" xml:space="preserve">
-    <value>Workflow name must have value.</value>
-  </data>
-  <data name="Features_Workflow_Delete_WorkflowCouldNotBeFound" xml:space="preserve">
-    <value>The workflow with id '{0}' could not be found.</value>
-  </data>
-  <data name="Features_Workflow_Update_WorkflowDefinitionMustHaveValue" xml:space="preserve">
-    <value>Workflow definition must be not empty!</value>
-  </data>
-  <data name="Features_Workflow_Update_WorkflowNameMustHaveValue" xml:space="preserve">
-    <value>Workflow name must have value.</value>
-  </data>
-  <data name="Features_Workflow_Validation_Definition_MustHaveValue" xml:space="preserve">
-    <value>The workflow definition must have value.</value>
-  </data>
-  <data name="Features_Workflow_Validation_SchemaUrl_Invalid" xml:space="preserve">
-    <value>The workflow schema URL must be an absolute URL (e.g., https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json).</value>
-  </data>
-  <data name="Features_WorkflowFromIntent_Goal_MustHaveValue" xml:space="preserve">
-    <value>The workflow goal must have value.</value>
-  </data>
-  <data name="Features_WorkflowFromIntent_Validation_SchemaUrl_Invalid" xml:space="preserve">
-    <value>The workflow schema URL must be an absolute URL (e.g., https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json).</value>
   </data>
   <data name="Feature_Workflow_GenerateFromIntent_Success" xml:space="preserve">
     <value>Workflow generated successfully from intent.</value>
@@ -317,5 +263,8 @@
   </data>
   <data name="Feature_Gene_DeletedSuccessfully" xml:space="preserve">
     <value>The gene has been deleted successfully.</value>
+  </data>
+  <data name="Feature_Chromosome_DeletedSuccessfully" xml:space="preserve">
+    <value>The chromosome has been deleted successfully.</value>
   </data>
 </root>

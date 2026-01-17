@@ -5,17 +5,17 @@ using FlowSynx.Application.Exceptions;
 using FlowSynx.BuildingBlocks.Results;
 using Microsoft.Extensions.Logging;
 
-namespace FlowSynx.Application.Features.Chromosomes.Actions.RegisterChromosome;
+namespace FlowSynx.Application.Features.Chromosome.Actions.CreateChromosome;
 
-internal class RegisterChromosomeHandler : IActionHandler<RegisterChromosomeRequest, Result<RegisterChromosomeResult>>
+internal class CreateChromosomeHandler : IActionHandler<CreateChromosomeRequest, Result<CreateChromosomeResult>>
 {
-    private readonly ILogger<RegisterChromosomeHandler> _logger;
+    private readonly ILogger<CreateChromosomeHandler> _logger;
     private readonly ISerializer _serializer;
     private readonly IGenomeManagementService _managementService;
     private readonly ICurrentUserService _currentUserService;
 
-    public RegisterChromosomeHandler(
-        ILogger<RegisterChromosomeHandler> logger, 
+    public CreateChromosomeHandler(
+        ILogger<CreateChromosomeHandler> logger, 
         ISerializer serializer,
         IGenomeManagementService managementService,
         ICurrentUserService currentUserService)
@@ -26,36 +26,36 @@ internal class RegisterChromosomeHandler : IActionHandler<RegisterChromosomeRequ
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
-    public async Task<Result<RegisterChromosomeResult>> Handle(RegisterChromosomeRequest request, CancellationToken cancellationToken)
+    public async Task<Result<CreateChromosomeResult>> Handle(CreateChromosomeRequest request, CancellationToken cancellationToken)
     {
         try
         {
             _currentUserService.ValidateAuthentication();
 
             var jsonString = _serializer.Serialize(request.Json);
-            var geneBlueprint = await _managementService.RegisterChromosomeAsync(_currentUserService.UserId(), jsonString);
+            var chromosome = await _managementService.RegisterChromosomeAsync(_currentUserService.UserId(), jsonString);
 
-            var response = new RegisterChromosomeResult
+            var response = new CreateChromosomeResult
             {
-                Status = "registered",
-                Id = geneBlueprint.Id,
-                Name = geneBlueprint.Name,
-                Namespace = geneBlueprint.Namespace
+                Status = "created",
+                Id = chromosome.Id,
+                Name = chromosome.Name,
+                Namespace = chromosome.Namespace
             };
 
-            return await Result<RegisterChromosomeResult>.SuccessAsync(response);
+            return await Result<CreateChromosomeResult>.SuccessAsync(response);
         }
         catch (ValidationException vex)
         {
             var errorMessages = vex.Errors
                 .SelectMany(kvp => kvp.Value.Select(msg => $"{kvp.Key}: {msg}"))
                 .ToList();
-            return await Result<RegisterChromosomeResult>.FailAsync(errorMessages);
+            return await Result<CreateChromosomeResult>.FailAsync(errorMessages);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
-            return await Result<RegisterChromosomeResult>.FailAsync(ex.Message);
+            return await Result<CreateChromosomeResult>.FailAsync(ex.Message);
         }
     }
 }

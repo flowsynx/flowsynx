@@ -30,9 +30,10 @@ internal class ChromosomesListHandler : IActionHandler<ChromosomesListRequest, P
         {
             _currentUserService.ValidateAuthentication();
 
-            var chromosomes = await _chromosomeRepository.GetAllAsync(
+            var chromosomes = await _chromosomeRepository.GetByNamespaceAsync(
                 TenantId.FromString(_currentUserService.TenantId()),
                 _currentUserService.UserId(),
+                request.Namespace,
                 cancellationToken);
 
             var response = chromosomes.Select(chromosome => new ChromosomesListResult

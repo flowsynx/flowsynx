@@ -232,7 +232,7 @@ public class ExecutionLog : AuditableEntity<Guid>, IAggregateRoot
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     // Navigation property
-    public ExecutionRecord ExecutionRecord { get; set; }
+    public ExecutionRecord? ExecutionRecord { get; set; }
 }
 
 public class ExecutionArtifact : AuditableEntity<Guid>, IAggregateRoot
@@ -245,5 +245,5 @@ public class ExecutionArtifact : AuditableEntity<Guid>, IAggregateRoot
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation property
-    public ExecutionRecord ExecutionRecord { get; set; }
+    public ExecutionRecord? ExecutionRecord { get; set; }
 }

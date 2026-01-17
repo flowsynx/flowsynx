@@ -40,7 +40,6 @@ public interface IGenomeExecutionService
 
     Task<IEnumerable<ExecutionRecord>> GetExecutionHistoryAsync(
         string targetType, 
-        Guid targetId, 
-        int limit = 50, 
+        Guid targetId,
         CancellationToken cancellationToken = default);
 }

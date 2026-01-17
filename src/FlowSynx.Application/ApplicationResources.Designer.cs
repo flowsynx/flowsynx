@@ -79,38 +79,20 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The chromosome has been deleted successfully..
+        /// </summary>
+        internal static string Feature_Chromosome_DeletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Chromosome_DeletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The gene has been deleted successfully..
         /// </summary>
         internal static string Feature_Gene_DeletedSuccessfully {
             get {
                 return ResourceManager.GetString("Feature_Gene_DeletedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin has been installed successfully..
-        /// </summary>
-        internal static string Feature_Plugin_Install_AddedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Plugin_Install_AddedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin has been uninstalled successfully..
-        /// </summary>
-        internal static string Feature_Plugin_Uninstall_DeletedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Plugin_Uninstall_DeletedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin has been updated successfully..
-        /// </summary>
-        internal static string Feature_Plugin_Update_UpdatedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Plugin_Update_UpdatedSuccessfully", resourceCulture);
             }
         }
         
@@ -502,65 +484,11 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Plugin type format must be &lt;type&gt; or &lt;type&gt;:&lt;version&gt;..
-        /// </summary>
-        internal static string Features_Validation_Plugin_Type_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Validation_Plugin_Type_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Plugin type format must be &lt;type&gt; or &lt;type&gt;:&lt;current&gt;-&gt;&lt;target&gt;..
-        /// </summary>
-        internal static string Features_Validation_Plugin_Type_Update_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Validation_Plugin_Type_Update_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Invalid plugin Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
-        /// </summary>
-        internal static string Features_Validation_PluginId_InvalidGuidFormat {
-            get {
-                return ResourceManager.GetString("Features_Validation_PluginId_InvalidGuidFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The plugin id value must have value..
-        /// </summary>
-        internal static string Features_Validation_PluginId_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Validation_PluginId_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to The tenant id value must have value..
         /// </summary>
         internal static string Features_Validation_TenantId_MustHaveValue {
             get {
                 return ResourceManager.GetString("Features_Validation_TenantId_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Invalid trigger Id format. Please ensure the ID value  matches the standard GUID format (e.g., xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)..
-        /// </summary>
-        internal static string Features_Validation_TriggerId_InvalidGuidFormat {
-            get {
-                return ResourceManager.GetString("Features_Validation_TriggerId_InvalidGuidFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The trigger id value must have value..
-        /// </summary>
-        internal static string Features_Validation_TriggerId_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Validation_TriggerId_MustHaveValue", resourceCulture);
             }
         }
         
@@ -579,87 +507,6 @@ namespace FlowSynx.Application {
         internal static string Features_Validation_WorkflowId_MustHaveValue {
             get {
                 return ResourceManager.GetString("Features_Validation_WorkflowId_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Workflow definition must be not empty!.
-        /// </summary>
-        internal static string Features_Workflow_Add_WorkflowDefinitionMustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Add_WorkflowDefinitionMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Workflow name must have value..
-        /// </summary>
-        internal static string Features_Workflow_Add_WorkflowNameMustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Add_WorkflowNameMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The workflow with id &apos;{0}&apos; could not be found..
-        /// </summary>
-        internal static string Features_Workflow_Delete_WorkflowCouldNotBeFound {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Delete_WorkflowCouldNotBeFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Workflow definition must be not empty!.
-        /// </summary>
-        internal static string Features_Workflow_Update_WorkflowDefinitionMustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Update_WorkflowDefinitionMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Workflow name must have value..
-        /// </summary>
-        internal static string Features_Workflow_Update_WorkflowNameMustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Update_WorkflowNameMustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The workflow definition must have value..
-        /// </summary>
-        internal static string Features_Workflow_Validation_Definition_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Validation_Definition_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The workflow schema URL must be an absolute URL (e.g., https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json)..
-        /// </summary>
-        internal static string Features_Workflow_Validation_SchemaUrl_Invalid {
-            get {
-                return ResourceManager.GetString("Features_Workflow_Validation_SchemaUrl_Invalid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The workflow goal must have value..
-        /// </summary>
-        internal static string Features_WorkflowFromIntent_Goal_MustHaveValue {
-            get {
-                return ResourceManager.GetString("Features_WorkflowFromIntent_Goal_MustHaveValue", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The workflow schema URL must be an absolute URL (e.g., https://schema.flowsynx.io/workflows/v1.2.0/schema.flat.json)..
-        /// </summary>
-        internal static string Features_WorkflowFromIntent_Validation_SchemaUrl_Invalid {
-            get {
-                return ResourceManager.GetString("Features_WorkflowFromIntent_Validation_SchemaUrl_Invalid", resourceCulture);
             }
         }
     }

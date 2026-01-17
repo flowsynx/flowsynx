@@ -20,8 +20,8 @@ public class Genes : EndpointGroupBase
             .WithName("GeneDetails")
             .RequirePermissions(Permissions.Admin, Permissions.Genes);
 
-        group.MapPost("", RegisterGene)
-            .WithName("RegisterGene")
+        group.MapPost("", CreateGene)
+            .WithName("CreateGene")
             .RequirePermissions(Permissions.Admin, Permissions.Genes);
 
         group.MapDelete("/{id:guid}", DeleteGene)
@@ -34,6 +34,10 @@ public class Genes : EndpointGroupBase
 
         group.MapPost("/validate", ValidateGene)
             .WithName("ValidateGene")
+            .RequirePermissions(Permissions.Admin, Permissions.Genes);
+
+        group.MapGet("/{id:guid}/executions", GeneExecutionHistoryList)
+            .WithName("GeneExecutionHistoryList")
             .RequirePermissions(Permissions.Admin, Permissions.Genes);
     }
 
@@ -57,12 +61,12 @@ public class Genes : EndpointGroupBase
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
-    public static async Task<IResult> RegisterGene(
+    public static async Task<IResult> CreateGene(
         [FromBody] object json,
         [FromServices] IDispatcher dispatcher,
         CancellationToken cancellationToken)
     {
-        var result = await dispatcher.RegisterGene(json, cancellationToken);
+        var result = await dispatcher.CreateGene(json, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 
@@ -91,6 +95,17 @@ public class Genes : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var result = await dispatcher.ValidateGene(json, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public static async Task<IResult> GeneExecutionHistoryList(
+        [FromServices] IDispatcher dispatcher,
+        CancellationToken cancellationToken,
+        [FromRoute] Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        var result = await dispatcher.GeneExecutionHistoryList(id, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }
