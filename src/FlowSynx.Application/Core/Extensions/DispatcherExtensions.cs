@@ -7,6 +7,7 @@ using FlowSynx.Application.Features.Execute;
 using FlowSynx.Application.Features.Genes.Actions.DeleteGene;
 using FlowSynx.Application.Features.Genes.Actions.ExecuteGene;
 using FlowSynx.Application.Features.Genes.Actions.RegisterGene;
+using FlowSynx.Application.Features.Genes.Actions.ValidateGene;
 using FlowSynx.Application.Features.Genes.Requests.GeneDetails;
 using FlowSynx.Application.Features.Genes.Requests.GenesList;
 using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
@@ -105,6 +106,17 @@ public static class DispatcherExtensions
         return dispatcher.Dispatch(new ExecuteGeneRequest
         {
             GeneId = id,
+            Json = json
+        }, cancellationToken);
+    }
+
+    public static Task<Result<ValidationResponse>> ValidateGene(
+        this IDispatcher dispatcher,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ValidateGeneRequest
+        {
             Json = json
         }, cancellationToken);
     }

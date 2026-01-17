@@ -1,6 +1,5 @@
 ﻿using FlowSynx.Application.Core.Dispatcher;
 using FlowSynx.Application.Core.Extensions;
-using FlowSynx.Application.Core.Services;
 using FlowSynx.Extensions;
 using FlowSynx.Security;
 using Microsoft.AspNetCore.Mvc;
@@ -31,6 +30,10 @@ public class Genes : EndpointGroupBase
 
         group.MapPost("/{id:guid}/execute", ExecuteGene)
             .WithName("ExecuteGene")
+            .RequirePermissions(Permissions.Admin, Permissions.Genes);
+
+        group.MapPost("/validate", ValidateGene)
+            .WithName("ValidateGene")
             .RequirePermissions(Permissions.Admin, Permissions.Genes);
     }
 
@@ -79,6 +82,15 @@ public class Genes : EndpointGroupBase
         CancellationToken cancellationToken)
     {
         var result = await dispatcher.ExecuteGene(id, json, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public static async Task<IResult> ValidateGene(
+        [FromBody] object json,
+        [FromServices] IDispatcher dispatcher,
+        CancellationToken cancellationToken)
+    {
+        var result = await dispatcher.ValidateGene(json, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }
