@@ -407,7 +407,7 @@ public class GenomeJson
 
     public GenomeMetadata Metadata { get; set; }
 
-    public GenomeSpec Spec { get; set; }
+    public GenomeSpecification Specification { get; set; }
 }
 
 public class GenomeMetadata

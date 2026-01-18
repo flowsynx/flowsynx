@@ -134,8 +134,8 @@ public class JsonProcessingService : IJsonProcessingService
                 Id = Guid.NewGuid(),
                 Name = genomeJson.Metadata.Name,
                 Namespace = genomeJson.Metadata.Namespace,
-                Description = genomeJson.Spec.Description,
-                Spec = genomeJson.Spec,
+                Description = genomeJson.Specification.Description,
+                Specification = genomeJson.Specification,
                 Metadata = new System.Collections.Generic.Dictionary<string, object>
                 {
                     ["apiVersion"] = genomeJson.ApiVersion,
@@ -144,7 +144,7 @@ public class JsonProcessingService : IJsonProcessingService
                 },
                 Labels = genomeJson.Metadata.Labels ?? new System.Collections.Generic.Dictionary<string, string>(),
                 Annotations = genomeJson.Metadata.Annotations ?? new System.Collections.Generic.Dictionary<string, string>(),
-                SharedEnvironment = genomeJson.Spec.Environment?.Variables ?? new System.Collections.Generic.Dictionary<string, object>(),
+                SharedEnvironment = genomeJson.Specification.Environment?.Variables ?? new System.Collections.Generic.Dictionary<string, object>(),
                 Owner = genomeJson.Metadata.Owner,
                 IsShared = genomeJson.Metadata.Shared
             };

@@ -56,9 +56,9 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(d)));
 
-        var specConverter = new ValueConverter<GenomeSpec, string>(
+        var specConverter = new ValueConverter<GenomeSpecification, string>(
             v => JsonSerializer.Serialize(v, jsonOptions),
-            v => JsonSerializer.Deserialize<GenomeSpec>(v, jsonOptions)
+            v => JsonSerializer.Deserialize<GenomeSpecification>(v, jsonOptions)
         );
 
         // Store JSON fields
@@ -69,7 +69,7 @@ public class GenomeConfiguration : IEntityTypeConfiguration<Genome>
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(objectDictionaryComparer);
 
-        builder.Property(g => g.Spec)
+        builder.Property(g => g.Specification)
             .HasColumnType("TEXT")
             .HasConversion(specConverter);
 

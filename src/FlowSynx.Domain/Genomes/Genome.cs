@@ -12,7 +12,7 @@ public class Genome : AuditableEntity<Guid>, IAggregateRoot, ITenantScoped, IUse
     public string Name { get; set; }
     public string Namespace { get; set; }
     public string Description { get; set; }
-    public GenomeSpec Spec { get; set; }
+    public GenomeSpecification Specification { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
     public Dictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
@@ -85,7 +85,7 @@ public class Genome : AuditableEntity<Guid>, IAggregateRoot, ITenantScoped, IUse
     //}
 }
 
-public class GenomeSpec
+public class GenomeSpecification
 {
     public string Description { get; set; }
 

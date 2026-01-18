@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.Genomes;
+using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,11 @@ public class GenomeRepository : IGenomeRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Genome?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<Genome?> GetByIdAsync(
+        TenantId tenantId, 
+        string userId, 
+        Guid id, 
+        CancellationToken cancellationToken = default)
     {
         await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
         return await context.Genomes
@@ -48,9 +53,9 @@ public class GenomeRepository : IGenomeRepository
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(TenantId tenantId, string userId, Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await GetByIdAsync(id, cancellationToken);
+        var entity = await GetByIdAsync(tenantId, userId, id, cancellationToken);
         if (entity != null)
         {
             await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);

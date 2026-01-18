@@ -456,7 +456,7 @@ public class GenomeExecutionService : IGenomeExecutionService
         try
         {
             // Load genome with chromosomes
-            var genome = await _genomeRepository.GetByIdAsync(genomeId, cancellationToken);
+            var genome = await _genomeRepository.GetByIdAsync(tenantId, userId, genomeId, cancellationToken);
             if (genome == null)
             {
                 throw new Exception($"Genome not found: {genomeId}");
@@ -507,7 +507,7 @@ public class GenomeExecutionService : IGenomeExecutionService
                     });
 
                     // Check genome execution strategy
-                    var executionStrategy = genome.Spec.Execution?.Strategy;
+                    var executionStrategy = genome.Specification.Execution?.Strategy;
                     if (executionStrategy == "stop-on-error")
                     {
                         throw;

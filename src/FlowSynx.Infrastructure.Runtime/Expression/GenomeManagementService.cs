@@ -170,7 +170,7 @@ public class GenomeManagementService : IGenomeManagementService
             if (existing != null)
             {
                 // Update existing
-                existing.Spec = genome.Spec;
+                existing.Specification = genome.Specification;
                 existing.Description = genome.Description;
                 existing.Metadata = genome.Metadata;
                 existing.Labels = genome.Labels;
