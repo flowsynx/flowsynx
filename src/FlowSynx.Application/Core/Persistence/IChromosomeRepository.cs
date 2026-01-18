@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.GeneInstances;
 using FlowSynx.Domain.Tenants;
 
 namespace FlowSynx.Application.Core.Persistence;
@@ -21,6 +22,15 @@ public interface IChromosomeRepository
         string userId, 
         string @namespace, 
         CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<Domain.GeneInstances.GeneInstance>> GetChromosomeGenesAsync(
+        TenantId tenantId,
+        string userId,
+        Guid chromosomeId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> Exist(TenantId tenantId, string userId, Guid id, CancellationToken cancellationToken = default);
+
 
     Task AddAsync(Chromosome entity, CancellationToken cancellationToken = default);
 

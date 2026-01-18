@@ -267,7 +267,7 @@ public class ChromosomeJson
 
     public ChromosomeMetadata Metadata { get; set; }
 
-    public ChromosomeSpec Spec { get; set; }
+    public ChromosomeSpecification Specification { get; set; }
 }
 
 public class ChromosomeMetadata

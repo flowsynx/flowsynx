@@ -39,6 +39,10 @@ public class Chromosomes : EndpointGroupBase
         group.MapGet("/{id:guid}/executions", ChromosomeExecutionHistoryList)
             .WithName("ChromosomeExecutionHistoryList")
             .RequirePermissions(Permissions.Admin, Permissions.Chromosomes);
+
+        group.MapGet("/{id:guid}/genes", ChromosomeGenesList)
+            .WithName("ChromosomeGenesList")
+            .RequirePermissions(Permissions.Admin, Permissions.Chromosomes);
     }
 
     public static async Task<IResult> ChromosomesList(
@@ -106,6 +110,17 @@ public class Chromosomes : EndpointGroupBase
         [FromQuery] int pageSize = 25)
     {
         var result = await dispatcher.ChromosomeExecutionHistoryList(id, page, pageSize, cancellationToken);
+        return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
+    }
+
+    public static async Task<IResult> ChromosomeGenesList(
+        [FromServices] IDispatcher dispatcher,
+        CancellationToken cancellationToken,
+        [FromRoute] Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
+    {
+        var result = await dispatcher.ChromosomeGenesList(id, page, pageSize, cancellationToken);
         return result.Succeeded ? Results.Ok(result) : Results.NotFound(result);
     }
 }

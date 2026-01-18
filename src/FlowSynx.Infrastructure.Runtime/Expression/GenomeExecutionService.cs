@@ -325,7 +325,7 @@ public class GenomeExecutionService : IGenomeExecutionService
                     });
 
                     // Check if we should continue based on chromosome error handling
-                    var errorHandling = chromosome.Spec.Environment?.ErrorHandling;
+                    var errorHandling = chromosome.Specification.Environment?.ErrorHandling;
                     if (errorHandling?.ErrorHandling == "propagate")
                     {
                         throw;

@@ -116,7 +116,7 @@ public class GenomeManagementService : IGenomeManagementService
             if (existing != null)
             {
                 // Update existing
-                existing.Spec = chromosome.Spec;
+                existing.Specification = chromosome.Specification;
                 existing.Description = chromosome.Description;
                 existing.Metadata = chromosome.Metadata;
                 existing.Labels = chromosome.Labels;

@@ -69,8 +69,8 @@ public class JsonProcessingService : IJsonProcessingService
                 Id = Guid.NewGuid(),
                 Name = chromosomeJson.Metadata.Name,
                 Namespace = chromosomeJson.Metadata.Namespace,
-                Description = chromosomeJson.Spec.Description,
-                Spec = chromosomeJson.Spec,
+                Description = chromosomeJson.Specification.Description,
+                Specification = chromosomeJson.Specification,
                 Metadata = new System.Collections.Generic.Dictionary<string, object>
                 {
                     ["apiVersion"] = chromosomeJson.ApiVersion,
@@ -82,10 +82,10 @@ public class JsonProcessingService : IJsonProcessingService
             };
 
             // Parse gene instances
-            if (chromosomeJson.Spec.Genes != null)
+            if (chromosomeJson.Specification.Genes != null)
             {
                 int order = 0;
-                foreach (var geneJson in chromosomeJson.Spec.Genes)
+                foreach (var geneJson in chromosomeJson.Specification.Genes)
                 {
                     var geneInstance = new Domain.GeneInstances.GeneInstance
                     {

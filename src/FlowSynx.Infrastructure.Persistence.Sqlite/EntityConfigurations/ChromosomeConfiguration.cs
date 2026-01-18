@@ -58,9 +58,9 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(d)));
 
-        var specConverter = new ValueConverter<ChromosomeSpec, string>(
+        var specConverter = new ValueConverter<ChromosomeSpecification, string>(
             v => JsonSerializer.Serialize(v, jsonOptions),
-            v => JsonSerializer.Deserialize<ChromosomeSpec>(v, jsonOptions)
+            v => JsonSerializer.Deserialize<ChromosomeSpecification>(v, jsonOptions)
         );
 
         // Store JSON fields
@@ -71,7 +71,7 @@ public class ChromosomeConfiguration : IEntityTypeConfiguration<Chromosome>
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(objectDictionaryComparer);
 
-        builder.Property(c => c.Spec)
+        builder.Property(c => c.Specification)
             .HasColumnType("TEXT")
             .HasConversion(specConverter);
 

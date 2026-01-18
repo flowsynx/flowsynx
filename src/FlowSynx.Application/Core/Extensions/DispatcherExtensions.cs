@@ -7,6 +7,7 @@ using FlowSynx.Application.Features.Chromosomes.Actions.ExecuteChromosome;
 using FlowSynx.Application.Features.Chromosomes.Actions.ValidateChromosome;
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeDetails;
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeExecutionsList;
+using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeGenesList;
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomesList;
 using FlowSynx.Application.Features.Execute;
 using FlowSynx.Application.Features.Genes.Actions.CreateGene;
@@ -215,6 +216,21 @@ public static class DispatcherExtensions
         CancellationToken cancellationToken)
     {
         return dispatcher.Dispatch(new ChromosomeExecutionsListRequest
+        {
+            ChromosomeId = chromosomeId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
+
+    public static Task<PaginatedResult<ChromosomeGenesListResult>> ChromosomeGenesList(
+        this IDispatcher dispatcher,
+        Guid chromosomeId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ChromosomeGenesListRequest
         {
             ChromosomeId = chromosomeId,
             Page = page,

@@ -40,7 +40,7 @@ internal class ChromosomeDetailsHandler : IActionHandler<ChromosomeDetailsReques
                 Name = chromosome?.Name ?? string.Empty,
                 Namespace = chromosome?.Namespace ?? string.Empty,
                 Description = chromosome?.Description ?? string.Empty,
-                Specification = chromosome?.Spec!,
+                Specification = chromosome?.Specification!,
                 Metadata = chromosome?.Metadata ?? new Dictionary<string, object>(),
                 Labels = chromosome?.Labels ?? new Dictionary<string, string>(),
                 Annotations = chromosome?.Annotations ?? new Dictionary<string, string>()

@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Domain.Chromosomes;
+using FlowSynx.Domain.Genes;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Persistence.Sqlite.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -97,5 +98,26 @@ public class ChromosomeRepository : IChromosomeRepository
             .Include(c => c.Genes)
             .Where(c => c.Namespace == @namespace && c.TenantId == tenantId && c.UserId == userId)
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Domain.GeneInstances.GeneInstance>> GetChromosomeGenesAsync(
+        TenantId tenantId, 
+        string userId, 
+        Guid chromosomeId, 
+        CancellationToken cancellationToken = default)
+    {
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Chromosomes
+            .Where(c => c.TenantId == tenantId && (c.UserId == userId) && (c.Id == chromosomeId))
+            .Include(c => c.Genes)
+            .SelectMany(c => c.Genes)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> Exist(TenantId tenantId, string userId, Guid id, CancellationToken cancellationToken = default)
+    {
+        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Chromosomes
+            .AnyAsync(c => c.TenantId == tenantId && (c.UserId == userId) && (c.Id == id), cancellationToken);
     }
 }
