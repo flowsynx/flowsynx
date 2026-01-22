@@ -61,121 +61,121 @@ public abstract class BaseGeneExecutor : IGeneExecutor
     }
 }
 
-public class ScriptGeneExecutor : BaseGeneExecutor
-{
-    public ScriptGeneExecutor(ILogger<ScriptGeneExecutor> logger) : base(logger) { }
+//public class ScriptGeneExecutor : BaseGeneExecutor
+//{
+//    public ScriptGeneExecutor(ILogger<ScriptGeneExecutor> logger) : base(logger) { }
 
-    public override bool CanExecute(ExecutableComponent executable)
-    {
-        return executable.Type == "script";
-    }
+//    public override bool CanExecute(ExecutableComponent executable)
+//    {
+//        return executable.Type == "script";
+//    }
 
-    public override async Task<object> ExecuteAsync(
-        GeneJson gene,
-        GeneInstance instance,
-        Dictionary<string, object> parameters,
-        Dictionary<string, object> context)
-    {
-        var executable = gene.Specification.Executable;
-        var scriptContext = PrepareContext(gene, instance, parameters, context);
+//    public override async Task<object> ExecuteAsync(
+//        GeneJson gene,
+//        GeneInstance instance,
+//        Dictionary<string, object> parameters,
+//        Dictionary<string, object> context)
+//    {
+//        var executable = gene.Specification.Executable;
+//        var scriptContext = PrepareContext(gene, instance, parameters, context);
 
-        try
-        {
-            return executable.Language.ToLower() switch
-            {
-                "javascript" => await ExecuteJavaScriptAsync(executable, scriptContext),
-                "python" => await ExecutePythonAsync(executable, scriptContext),
-                "powershell" => await ExecutePowerShellAsync(executable, scriptContext),
-                _ => throw new NotSupportedException($"Script language '{executable.Language}' is not supported")
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Script execution failed for gene {GeneName}", gene.Metadata.Name);
-            throw new Exception($"Script execution failed: {ex.Message}", ex);
-        }
-    }
+//        try
+//        {
+//            return executable.Language.ToLower() switch
+//            {
+//                "javascript" => await ExecuteJavaScriptAsync(executable, scriptContext),
+//                "python" => await ExecutePythonAsync(executable, scriptContext),
+//                "powershell" => await ExecutePowerShellAsync(executable, scriptContext),
+//                _ => throw new NotSupportedException($"Script language '{executable.Language}' is not supported")
+//            };
+//        }
+//        catch (Exception ex)
+//        {
+//            _logger.LogError(ex, "Script execution failed for gene {GeneName}", gene.Metadata.Name);
+//            throw new Exception($"Script execution failed: {ex.Message}", ex);
+//        }
+//    }
 
-    private async Task<object> ExecuteJavaScriptAsync(ExecutableComponent executable, Dictionary<string, object> context)
-    {
-        _logger.LogInformation("Executing PowerShell script (mocked)");
+//    private async Task<object> ExecuteJavaScriptAsync(ExecutableComponent executable, Dictionary<string, object> context)
+//    {
+//        _logger.LogInformation("Executing PowerShell script (mocked)");
 
-        await Task.Delay(100);
+//        await Task.Delay(100);
 
-        return new
-        {
-            executed = true,
-            language = "javascript",
-            parameters = context["parameters"],
-            timestamp = DateTime.UtcNow
-        };
-    }
+//        return new
+//        {
+//            executed = true,
+//            language = "javascript",
+//            parameters = context["parameters"],
+//            timestamp = DateTime.UtcNow
+//        };
+//    }
 
-    private async Task<object> ExecutePythonAsync(ExecutableComponent executable, Dictionary<string, object> context)
-    {
-        // In a real implementation, use IronPython or Python.NET
-        // For now, we'll mock it
-        _logger.LogInformation("Executing Python script (mocked)");
+//    private async Task<object> ExecutePythonAsync(ExecutableComponent executable, Dictionary<string, object> context)
+//    {
+//        // In a real implementation, use IronPython or Python.NET
+//        // For now, we'll mock it
+//        _logger.LogInformation("Executing Python script (mocked)");
 
-        await Task.Delay(100); // Simulate execution
+//        await Task.Delay(100); // Simulate execution
 
-        return new
-        {
-            executed = true,
-            language = "python",
-            parameters = context["parameters"],
-            timestamp = DateTime.UtcNow
-        };
-    }
+//        return new
+//        {
+//            executed = true,
+//            language = "python",
+//            parameters = context["parameters"],
+//            timestamp = DateTime.UtcNow
+//        };
+//    }
 
-    private async Task<object> ExecutePowerShellAsync(ExecutableComponent executable, Dictionary<string, object> context)
-    {
-        // In a real implementation, use System.Management.Automation
-        // For now, we'll mock it
-        _logger.LogInformation("Executing PowerShell script (mocked)");
+//    private async Task<object> ExecutePowerShellAsync(ExecutableComponent executable, Dictionary<string, object> context)
+//    {
+//        // In a real implementation, use System.Management.Automation
+//        // For now, we'll mock it
+//        _logger.LogInformation("Executing PowerShell script (mocked)");
 
-        await Task.Delay(100);
+//        await Task.Delay(100);
 
-        return new
-        {
-            executed = true,
-            language = "powershell",
-            parameters = context["parameters"],
-            timestamp = DateTime.UtcNow
-        };
-    }
+//        return new
+//        {
+//            executed = true,
+//            language = "powershell",
+//            parameters = context["parameters"],
+//            timestamp = DateTime.UtcNow
+//        };
+//    }
 
-    private object ConvertToScriptObject(object value)
-    {
-        if (value == null) return null;
+//    private object ConvertToScriptObject(object value)
+//    {
+//        if (value == null) return null;
 
-        if (value is Dictionary<string, object> dict)
-        {
-            var expando = new ExpandoObject();
-            var expandoDict = (IDictionary<string, object>)expando;
+//        if (value is Dictionary<string, object> dict)
+//        {
+//            var expando = new ExpandoObject();
+//            var expandoDict = (IDictionary<string, object>)expando;
 
-            foreach (var kvp in dict)
-            {
-                expandoDict[kvp.Key] = ConvertToScriptObject(kvp.Value);
-            }
+//            foreach (var kvp in dict)
+//            {
+//                expandoDict[kvp.Key] = ConvertToScriptObject(kvp.Value);
+//            }
 
-            return expando;
-        }
-        else if (value is List<object> list)
-        {
-            var array = new List<object>();
-            foreach (var item in list)
-            {
-                array.Add(ConvertToScriptObject(item));
-            }
-            return array.ToArray();
-        }
-        else
-        {
-            return value;
-        }
-    }
-}
+//            return expando;
+//        }
+//        else if (value is List<object> list)
+//        {
+//            var array = new List<object>();
+//            foreach (var item in list)
+//            {
+//                array.Add(ConvertToScriptObject(item));
+//            }
+//            return array.ToArray();
+//        }
+//        else
+//        {
+//            return value;
+//        }
+//    }
+//}
 
 public class AssemblyGeneExecutor : BaseGeneExecutor
 {
