@@ -12,9 +12,10 @@ public static class Permissions
     public const string Tenants = "tenants";
     public const string Genes = "genes";
     public const string Chromosomes = "chromosomes";
+    public const string Genomes = "genomes";
 
     public static readonly IReadOnlyCollection<string> All = new[]
     {
-        Admin, User, Audits, Config, Logs, Tenants, Genes, Chromosomes
+        Admin, User, Audits, Config, Logs, Tenants, Genes, Chromosomes, Genomes
     };
 }

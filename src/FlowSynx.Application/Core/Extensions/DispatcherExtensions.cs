@@ -17,6 +17,14 @@ using FlowSynx.Application.Features.Genes.Actions.ValidateGene;
 using FlowSynx.Application.Features.Genes.Requests.GeneDetails;
 using FlowSynx.Application.Features.Genes.Requests.GeneExecutionsList;
 using FlowSynx.Application.Features.Genes.Requests.GenesList;
+using FlowSynx.Application.Features.Genomes.Actions.CreateGenome;
+using FlowSynx.Application.Features.Genomes.Actions.DeleteGenome;
+using FlowSynx.Application.Features.Genomes.Actions.ExecuteGenome;
+using FlowSynx.Application.Features.Genomes.Actions.ValidateGenome;
+using FlowSynx.Application.Features.Genomes.Requests.GenomeChromosomeList;
+using FlowSynx.Application.Features.Genomes.Requests.GenomeDetails;
+using FlowSynx.Application.Features.Genomes.Requests.GenomeExecutionsList;
+using FlowSynx.Application.Features.Genomes.Requests.GenomesList;
 using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
 using FlowSynx.Application.Features.Tenants.Actions.DeleteTenant;
 using FlowSynx.Application.Features.Tenants.Actions.UpdateTenant;
@@ -138,6 +146,101 @@ public static class DispatcherExtensions
         return dispatcher.Dispatch(new GeneExecutionsListRequest
         {
             GeneId = geneId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
+    #endregion
+
+    #region Genomes
+    public static Task<PaginatedResult<GenomesListResult>> GenomesList(
+        this IDispatcher dispatcher,
+        int page,
+        int pageSize,
+        string? @namespace,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new GenomesListRequest
+        {
+            Namespace = @namespace,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
+
+    public static Task<Result<GenomeDetailsResult>> GenomeDetails(
+        this IDispatcher dispatcher,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new GenomeDetailsRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<CreateGenomeResult>> CreateGenome(
+        this IDispatcher dispatcher,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new CreateGenomeRequest { Json = json }, cancellationToken);
+    }
+
+    public static Task<Result<Void>> DeleteGenome(
+        this IDispatcher dispatcher,
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new DeleteGenomeRequest { Id = id }, cancellationToken);
+    }
+
+    public static Task<Result<ExecutionResponse>> ExecuteGenome(
+        this IDispatcher dispatcher,
+        Guid id,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ExecuteGenomeRequest
+        {
+            GenomeId = id,
+            Json = json
+        }, cancellationToken);
+    }
+
+    public static Task<Result<ValidationResponse>> ValidateGenome(
+        this IDispatcher dispatcher,
+        object json,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new ValidateGenomeRequest
+        {
+            Json = json
+        }, cancellationToken);
+    }
+
+    public static Task<PaginatedResult<GenomeExecutionsListResult>> GenomeExecutionHistoryList(
+        this IDispatcher dispatcher,
+        Guid chromosomeId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new GenomeExecutionsListRequest
+        {
+            GenomeId = chromosomeId,
+            Page = page,
+            PageSize = pageSize
+        }, cancellationToken);
+    }
+
+    public static Task<PaginatedResult<GenomeChromosomeListResult>> GenomeChromosomesList(
+        this IDispatcher dispatcher,
+        Guid genomeId,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken)
+    {
+        return dispatcher.Dispatch(new GenomeChromosomeListRequest
+        {
+            GenomeId = genomeId,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
