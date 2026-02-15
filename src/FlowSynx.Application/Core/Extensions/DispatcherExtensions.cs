@@ -1,4 +1,11 @@
 using FlowSynx.Application.Core.Dispatcher;
+using FlowSynx.Application.Features.Activities.Actions.CreateActivity;
+using FlowSynx.Application.Features.Activities.Actions.DeleteActivity;
+using FlowSynx.Application.Features.Activities.Actions.ExecuteActivity;
+using FlowSynx.Application.Features.Activities.Actions.ValidateActivity;
+using FlowSynx.Application.Features.Activities.Requests.ActivitiesList;
+using FlowSynx.Application.Features.Activities.Requests.ActivityDetails;
+using FlowSynx.Application.Features.Activities.Requests.ActivityExecutionsList;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
 using FlowSynx.Application.Features.Chromosome.Actions.CreateChromosome;
@@ -10,13 +17,6 @@ using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeExecutionsLis
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeGenesList;
 using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomesList;
 using FlowSynx.Application.Features.Execute;
-using FlowSynx.Application.Features.Genes.Actions.CreateGene;
-using FlowSynx.Application.Features.Genes.Actions.DeleteGene;
-using FlowSynx.Application.Features.Genes.Actions.ExecuteGene;
-using FlowSynx.Application.Features.Genes.Actions.ValidateGene;
-using FlowSynx.Application.Features.Genes.Requests.GeneDetails;
-using FlowSynx.Application.Features.Genes.Requests.GeneExecutionsList;
-using FlowSynx.Application.Features.Genes.Requests.GenesList;
 using FlowSynx.Application.Features.Genomes.Actions.CreateGenome;
 using FlowSynx.Application.Features.Genomes.Actions.DeleteGenome;
 using FlowSynx.Application.Features.Genomes.Actions.ExecuteGenome;
@@ -72,15 +72,15 @@ public static class DispatcherExtensions
     }
     #endregion
 
-    #region Genes
-    public static Task<PaginatedResult<GenesListResult>> GenesList(
+    #region Activities
+    public static Task<PaginatedResult<ActivitiesListResult>> ActivitiesList(
         this IDispatcher dispatcher,
         int page,
         int pageSize,
         string? @namespace,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GenesListRequest
+        return dispatcher.Dispatch(new ActivitiesListRequest
         {
             Namespace = @namespace,
             Page = page,
@@ -88,64 +88,64 @@ public static class DispatcherExtensions
         }, cancellationToken);
     }
 
-    public static Task<Result<GeneDetailsResult>> GeneDetails(
+    public static Task<Result<ActivityDetailsResult>> ActivityDetails(
         this IDispatcher dispatcher,
         Guid id,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GeneDetailsRequest { Id = id }, cancellationToken);
+        return dispatcher.Dispatch(new ActivityDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<CreateGeneResult>> CreateGene(
+    public static Task<Result<CreateActivityResult>> CreateActivity(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new CreateGeneRequest { Json = json }, cancellationToken);
+        return dispatcher.Dispatch(new CreateActivityRequest { Json = json }, cancellationToken);
     }
 
-    public static Task<Result<Void>> DeleteGene(
+    public static Task<Result<Void>> DeleteActivity(
         this IDispatcher dispatcher,
         Guid id,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new DeleteGeneRequest { Id = id }, cancellationToken);
+        return dispatcher.Dispatch(new DeleteActivityRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<ExecutionResponse>> ExecuteGene(
+    public static Task<Result<ExecutionResponse>> ExecuteActivity(
         this IDispatcher dispatcher,
         Guid id,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ExecuteGeneRequest
+        return dispatcher.Dispatch(new ExecuteActivityRequest
         {
-            GeneId = id,
+            ActivityId = id,
             Json = json
         }, cancellationToken);
     }
 
-    public static Task<Result<ValidationResponse>> ValidateGene(
+    public static Task<Result<ValidationResponse>> ValidateActivity(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ValidateGeneRequest
+        return dispatcher.Dispatch(new ValidateActivityRequest
         {
             Json = json
         }, cancellationToken);
     }
 
-    public static Task<PaginatedResult<GeneExecutionsListResult>> GeneExecutionHistoryList(
+    public static Task<PaginatedResult<ActivityExecutionsListResult>> ActivityExecutionHistoryList(
         this IDispatcher dispatcher,
-        Guid geneId,
+        Guid activityId,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GeneExecutionsListRequest
+        return dispatcher.Dispatch(new ActivityExecutionsListRequest
         {
-            GeneId = geneId,
+            ActivityId = activityId,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);

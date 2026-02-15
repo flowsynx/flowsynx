@@ -6,18 +6,18 @@
 
 //namespace FlowSynx.Application.Core.Services;
 
-//public interface IGeneValidator
+//public interface IActivityValidator
 //{
-//    Task<ValidationResult> ValidateGeneInstanceAsync(
-//        GeneInstance instance, 
-//        GeneBlueprint blueprint, 
+//    Task<ValidationResult> ValidateActivityInstanceAsync(
+//        ActivityInstance instance, 
+//        ActivityBlueprint blueprint, 
 //        CancellationToken cancellationToken);
 
-//    Task<ValidationResult> ValidateChromosomeAsync(
-//        Chromosome chromosome, 
+//    Task<ValidationResult> ValidateWorkflowAsync(
+//        Workflow workflow, 
 //        CancellationToken cancellationToken);
 
-//    Task<ValidationResult> ValidateGenomeAsync(
-//        Genome genome, 
+//    Task<ValidationResult> ValidateWorkflowApplicationAsync(
+//        WorkflowApplication workflowApplication, 
 //        CancellationToken cancellationToken);
 //}
