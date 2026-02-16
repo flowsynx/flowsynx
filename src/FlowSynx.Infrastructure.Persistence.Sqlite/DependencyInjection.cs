@@ -17,11 +17,11 @@ public static class DependencyInjection
     {
         services
             .AddScoped<IAuditTrailRepository, AuditTrailRepository>()
-            .AddScoped<IChromosomeRepository, ChromosomeRepository>()
-            .AddScoped<IGeneRepository, GeneRepository>()
-            .AddScoped<IGenomeRepository, GenomeRepository>()
+            .AddScoped<IWorkflowRepository, WorkflowRepository>()
+            .AddScoped<IActivityRepository, ActivityRepository>()
+            .AddScoped<IWorkflowApplicationRepository, WorkflowApplicationRepository>()
             .AddScoped<ITenantRepository, TenantRepository>()
-            .AddScoped<IExecutionRepository, ExecutionRepository>()
+            .AddScoped<IWorkflowExecutionRepository, WorkflowExecutionRepository>()
             .AddScoped<IValidateDatabaseConnection, ValidateDatabaseConnection>()
             .AddScoped<IDatabaseInitializer, SqliteDatabaseInitializer>()
             .AddScoped<ITenantSecretConfigRepository, TenantSecretConfigRepository>()

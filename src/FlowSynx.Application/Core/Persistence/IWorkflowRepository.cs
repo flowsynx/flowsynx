@@ -21,8 +21,8 @@ public interface IWorkflowRepository
         string @namespace = "default", 
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Workflow>> GetByGenomeIdAsync(
-        Guid genomeId, 
+    Task<IEnumerable<Workflow>> GetByWorkflowApplicationIdAsync(
+        Guid workflowApplicationId, 
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<Workflow>> GetByNamespaceAsync(

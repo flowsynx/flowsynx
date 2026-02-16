@@ -8,13 +8,13 @@ public class ValidationException : RuntimeException
     public List<ValidationError> Errors { get; }
 
     public ValidationException(string message) 
-        : base(RuntimeErrorCodes.GeneNotFound, message)
+        : base(RuntimeErrorCodes.ActivityNotFound, message)
     {
         Errors = new List<ValidationError>();
     }
 
     public ValidationException(string message, List<ValidationError> errors) 
-        : base(RuntimeErrorCodes.GeneNotFound, message)
+        : base(RuntimeErrorCodes.ActivityNotFound, message)
     {
         Errors = errors;
     }

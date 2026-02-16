@@ -1,11 +1,12 @@
-﻿using FlowSynx.Domain.AuditTrails;
-using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.Genes;
-using FlowSynx.Domain.Genomes;
+﻿using FlowSynx.Domain.Activities;
+using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
+using FlowSynx.Domain.WorkflowApplications;
+using FlowSynx.Domain.WorkflowExecutions;
+using FlowSynx.Domain.Workflows;
 using Microsoft.EntityFrameworkCore;
 
 namespace FlowSynx.Infrastructure.Persistence.Abstractions;
@@ -16,14 +17,14 @@ public interface IDatabaseContext
     DbSet<TenantSecret> TenantSecrets { get; }
     DbSet<TenantSecretConfig> TenantSecretConfigs { get; }
     DbSet<TenantContact> TenantContacts { get; }
-    DbSet<Gene> Genes { get; }
-    DbSet<Chromosome> Chromosomes { get; }
-    DbSet<Genome> Genomes { get; }
-    DbSet<Domain.GeneInstances.GeneInstance> GeneInstances { get; }
+    DbSet<Activity> Activities { get; }
+    DbSet<Workflow> Workflows { get; }
+    DbSet<WorkflowApplication> WorkflowApplications { get; }
+    DbSet<Domain.ActivityInstances.ActivityInstance> ActivityInstances { get; }
     DbSet<AuditTrail> AuditTrails { get; }
-    DbSet<ExecutionRecord> ExecutionRecords { get; }
-    DbSet<ExecutionLog> ExecutionLogs { get; }
-    DbSet<ExecutionArtifact> ExecutionArtifacts { get; }
+    DbSet<WorkflowExecution> WorkflowExecutions { get; }
+    DbSet<WorkflowExecutionLog> WorkflowExecutionLogs { get; }
+    DbSet<WorkflowExecutionArtifact> WorkflowExecutionArtifacts { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

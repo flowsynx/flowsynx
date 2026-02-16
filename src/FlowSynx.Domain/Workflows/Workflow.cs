@@ -16,6 +16,6 @@ public class Workflow : AuditableEntity<Guid>, ITenantScoped, IUserScoped
     public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
     public Dictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
     public Guid? WorkflowApplicationId { get; set; }
-    public ICollection<ActivityInstances.ActivityInstance> Genes { get; set; } = new List<ActivityInstances.ActivityInstance>();
+    public ICollection<ActivityInstances.ActivityInstance> Activities { get; set; } = new List<ActivityInstances.ActivityInstance>();
     public WorkflowApplication? WorkflowApplication { get; set; }
 }

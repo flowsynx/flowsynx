@@ -18,17 +18,17 @@ public sealed class RecoverableExecutionException : RuntimeException
     }
 }
 
-public sealed class ChromosomeExecutionException : RuntimeException
+public sealed class WorkflowExecutionException : RuntimeException
 {
-    public ChromosomeExecutionException(ErrorCode errorCode, string message, Exception? innerException = null)
+    public WorkflowExecutionException(ErrorCode errorCode, string message, Exception? innerException = null)
         : base(errorCode, message, innerException)
     {
     }
 }
 
-public sealed class GenomeExecutionException : RuntimeException
+public sealed class WorkflowApplicationExecutionException : RuntimeException
 {
-    public GenomeExecutionException(ErrorCode errorCode, string message, Exception? innerException = null)
+    public WorkflowApplicationExecutionException(ErrorCode errorCode, string message, Exception? innerException = null)
         : base(errorCode, message, innerException)
     {
     }

@@ -8,29 +8,29 @@ using FlowSynx.Application.Features.Activities.Requests.ActivityDetails;
 using FlowSynx.Application.Features.Activities.Requests.ActivityExecutionsList;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailDetails;
 using FlowSynx.Application.Features.AuditTrails.Requests.AuditTrailsList;
-using FlowSynx.Application.Features.Chromosome.Actions.CreateChromosome;
-using FlowSynx.Application.Features.Chromosomes.Actions.DeleteChromosome;
-using FlowSynx.Application.Features.Chromosomes.Actions.ExecuteChromosome;
-using FlowSynx.Application.Features.Chromosomes.Actions.ValidateChromosome;
-using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeDetails;
-using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeExecutionsList;
-using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomeGenesList;
-using FlowSynx.Application.Features.Chromosomes.Requests.ChromosomesList;
 using FlowSynx.Application.Features.Execute;
-using FlowSynx.Application.Features.Genomes.Actions.CreateGenome;
-using FlowSynx.Application.Features.Genomes.Actions.DeleteGenome;
-using FlowSynx.Application.Features.Genomes.Actions.ExecuteGenome;
-using FlowSynx.Application.Features.Genomes.Actions.ValidateGenome;
-using FlowSynx.Application.Features.Genomes.Requests.GenomeChromosomeList;
-using FlowSynx.Application.Features.Genomes.Requests.GenomeDetails;
-using FlowSynx.Application.Features.Genomes.Requests.GenomeExecutionsList;
-using FlowSynx.Application.Features.Genomes.Requests.GenomesList;
 using FlowSynx.Application.Features.Tenants.Actions.AddTenant;
 using FlowSynx.Application.Features.Tenants.Actions.DeleteTenant;
 using FlowSynx.Application.Features.Tenants.Actions.UpdateTenant;
 using FlowSynx.Application.Features.Tenants.Requests.TenantsDetails;
 using FlowSynx.Application.Features.Tenants.Requests.TenantsList;
 using FlowSynx.Application.Features.Version.VersionRequest;
+using FlowSynx.Application.Features.WorkflowApplications.Actions.CreateWorkflowApplication;
+using FlowSynx.Application.Features.WorkflowApplications.Actions.DeleteWorkflowApplication;
+using FlowSynx.Application.Features.WorkflowApplications.Actions.ExecuteWorkflowApplication;
+using FlowSynx.Application.Features.WorkflowApplications.Actions.ValidateWorkflowApplication;
+using FlowSynx.Application.Features.WorkflowApplications.Requests.WorkflowApplicationDetails;
+using FlowSynx.Application.Features.WorkflowApplications.Requests.WorkflowApplicationExecutionsList;
+using FlowSynx.Application.Features.WorkflowApplications.Requests.WorkflowApplicationsList;
+using FlowSynx.Application.Features.WorkflowApplications.Requests.WorkflowApplicationWorkflowsList;
+using FlowSynx.Application.Features.Workflows.Actions.CreateWorkflow;
+using FlowSynx.Application.Features.Workflows.Actions.DeleteWorkflow;
+using FlowSynx.Application.Features.Workflows.Actions.ExecuteWorkflow;
+using FlowSynx.Application.Features.Workflows.Actions.ValidateWorkflow;
+using FlowSynx.Application.Features.Workflows.Requests.WorkflowActivitiesList;
+using FlowSynx.Application.Features.Workflows.Requests.WorkflowDetails;
+using FlowSynx.Application.Features.Workflows.Requests.WorkflowExecutionsList;
+using FlowSynx.Application.Features.Workflows.Requests.WorkflowsList;
 using FlowSynx.Application.Models;
 using FlowSynx.BuildingBlocks.Results;
 using Void = FlowSynx.Application.Core.Dispatcher.Void;
@@ -152,15 +152,15 @@ public static class DispatcherExtensions
     }
     #endregion
 
-    #region Genomes
-    public static Task<PaginatedResult<GenomesListResult>> GenomesList(
+    #region WorkflowApplications
+    public static Task<PaginatedResult<WorkflowApplicationsListResult>> WorkflowApplicationsList(
         this IDispatcher dispatcher,
         int page,
         int pageSize,
         string? @namespace,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GenomesListRequest
+        return dispatcher.Dispatch(new WorkflowApplicationsListRequest
         {
             Namespace = @namespace,
             Page = page,
@@ -168,94 +168,94 @@ public static class DispatcherExtensions
         }, cancellationToken);
     }
 
-    public static Task<Result<GenomeDetailsResult>> GenomeDetails(
+    public static Task<Result<WorkflowApplicationDetailsResult>> WorkflowApplicationDetails(
         this IDispatcher dispatcher,
         Guid id,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GenomeDetailsRequest { Id = id }, cancellationToken);
+        return dispatcher.Dispatch(new WorkflowApplicationDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<CreateGenomeResult>> CreateGenome(
+    public static Task<Result<CreateWorkflowApplicationResult>> CreateWorkflowApplication(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new CreateGenomeRequest { Json = json }, cancellationToken);
+        return dispatcher.Dispatch(new CreateWorkflowApplicationRequest { Json = json }, cancellationToken);
     }
 
-    public static Task<Result<Void>> DeleteGenome(
+    public static Task<Result<Void>> DeleteWorkflowApplication(
         this IDispatcher dispatcher,
         Guid id,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new DeleteGenomeRequest { Id = id }, cancellationToken);
+        return dispatcher.Dispatch(new DeleteWorkflowApplicationRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<ExecutionResponse>> ExecuteGenome(
+    public static Task<Result<ExecutionResponse>> ExecuteWorkflowApplication(
         this IDispatcher dispatcher,
         Guid id,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ExecuteGenomeRequest
+        return dispatcher.Dispatch(new ExecuteWorkflowApplicationRequest
         {
-            GenomeId = id,
+            WorkflowApplicationId = id,
             Json = json
         }, cancellationToken);
     }
 
-    public static Task<Result<ValidationResponse>> ValidateGenome(
+    public static Task<Result<ValidationResponse>> ValidateWorkflowApplication(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ValidateGenomeRequest
+        return dispatcher.Dispatch(new ValidateWorkflowApplicationRequest
         {
             Json = json
         }, cancellationToken);
     }
 
-    public static Task<PaginatedResult<GenomeExecutionsListResult>> GenomeExecutionHistoryList(
+    public static Task<PaginatedResult<WorkflowApplicationExecutionsListResult>> WorkflowApplicationExecutionHistoryList(
         this IDispatcher dispatcher,
-        Guid chromosomeId,
+        Guid workflowApplicationId,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GenomeExecutionsListRequest
+        return dispatcher.Dispatch(new WorkflowApplicationExecutionsListRequest
         {
-            GenomeId = chromosomeId,
+            WorkflowApplicationId = workflowApplicationId,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
     }
 
-    public static Task<PaginatedResult<GenomeChromosomeListResult>> GenomeChromosomesList(
+    public static Task<PaginatedResult<WorkflowApplicationWorkflowsListResult>> WorkflowApplicationWorkflowsList(
         this IDispatcher dispatcher,
-        Guid genomeId,
+        Guid workflowApplicationId,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new GenomeChromosomeListRequest
+        return dispatcher.Dispatch(new WorkflowApplicationWorkflowsListRequest
         {
-            GenomeId = genomeId,
+            WorkflowApplicationId = workflowApplicationId,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
     }
     #endregion
 
-    #region Chromosomes
-    public static Task<PaginatedResult<ChromosomesListResult>> ChromosomesList(
+    #region Workflows
+    public static Task<PaginatedResult<WorkflowsListResult>> WorkflowsList(
         this IDispatcher dispatcher,
         int page,
         int pageSize,
         string? @namespace,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ChromosomesListRequest
+        return dispatcher.Dispatch(new WorkflowsListRequest
         {
             Namespace = @namespace,
             Page = page,
@@ -263,79 +263,79 @@ public static class DispatcherExtensions
         }, cancellationToken);
     }
 
-    public static Task<Result<ChromosomeDetailsResult>> ChromosomeDetails(
+    public static Task<Result<WorkflowDetailsResult>> WorkflowDetails(
         this IDispatcher dispatcher,
         Guid id,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ChromosomeDetailsRequest { Id = id }, cancellationToken);
+        return dispatcher.Dispatch(new WorkflowDetailsRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<CreateChromosomeResult>> CreateChromosome(
+    public static Task<Result<CreateWorkflowResult>> CreateWorkflow(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new CreateChromosomeRequest { Json = json }, cancellationToken);
+        return dispatcher.Dispatch(new CreateWorkflowRequest { Json = json }, cancellationToken);
     }
 
-    public static Task<Result<Void>> DeleteChromosome(
+    public static Task<Result<Void>> DeleteWorkflow(
         this IDispatcher dispatcher,
         Guid id,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new DeleteChromosomeRequest { Id = id }, cancellationToken);
+        return dispatcher.Dispatch(new DeleteWorkflowRequest { Id = id }, cancellationToken);
     }
 
-    public static Task<Result<ExecutionResponse>> ExecuteChromosome(
+    public static Task<Result<ExecutionResponse>> ExecuteWorkflow(
         this IDispatcher dispatcher,
         Guid id,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ExecuteChromosomeRequest
+        return dispatcher.Dispatch(new ExecuteWorkflowRequest
         {
-            ChromosomeId = id,
+            WorkflowId = id,
             Json = json
         }, cancellationToken);
     }
 
-    public static Task<Result<ValidationResponse>> ValidateChromosome(
+    public static Task<Result<ValidationResponse>> ValidateWorkflow(
         this IDispatcher dispatcher,
         object json,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ValidateChromosomeRequest
+        return dispatcher.Dispatch(new ValidateWorkflowRequest
         {
             Json = json
         }, cancellationToken);
     }
 
-    public static Task<PaginatedResult<ChromosomeExecutionsListResult>> ChromosomeExecutionHistoryList(
+    public static Task<PaginatedResult<WorkflowExecutionsListResult>> WorkflowExecutionHistoryList(
         this IDispatcher dispatcher,
-        Guid chromosomeId,
+        Guid workflowId,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ChromosomeExecutionsListRequest
+        return dispatcher.Dispatch(new WorkflowExecutionsListRequest
         {
-            ChromosomeId = chromosomeId,
+            WorkflowId = workflowId,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);
     }
 
-    public static Task<PaginatedResult<ChromosomeGenesListResult>> ChromosomeGenesList(
+    public static Task<PaginatedResult<WorkflowActivitiesListResult>> WorkflowActivitiesList(
         this IDispatcher dispatcher,
-        Guid chromosomeId,
+        Guid workflowId,
         int page,
         int pageSize,
         CancellationToken cancellationToken)
     {
-        return dispatcher.Dispatch(new ChromosomeGenesListRequest
+        return dispatcher.Dispatch(new WorkflowActivitiesListRequest
         {
-            ChromosomeId = chromosomeId,
+            WorkflowId = workflowId,
             Page = page,
             PageSize = pageSize
         }, cancellationToken);

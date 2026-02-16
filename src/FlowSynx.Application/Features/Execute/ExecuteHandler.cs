@@ -13,13 +13,13 @@ internal class ExecuteHandler : IActionHandler<ExecuteRequest, Result<ExecutionR
 {
     private readonly ILogger<ExecuteHandler> _logger;
     private readonly ISerializer _serializer;
-    private readonly IGenomeManagementService _managementService;
+    private readonly IWorkflowApplicationManagementService _managementService;
     private readonly ICurrentUserService _currentUserService;
 
     public ExecuteHandler(
         ILogger<ExecuteHandler> logger,
         ISerializer serializer,
-        IGenomeManagementService managementService,
+        IWorkflowApplicationManagementService managementService,
         ICurrentUserService currentUserService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowApplications;
+using FlowSynx.Domain.Workflows;
 
 namespace FlowSynx.Application.Core.Persistence;
 
@@ -23,7 +24,21 @@ public interface IWorkflowApplicationRepository
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<WorkflowApplication>> GetByNamespaceAsync(
+        TenantId tenantId,
+        string userId,
         string @namespace, 
+        CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<Workflow>> GetWorkflowsAsync(
+        TenantId tenantId,
+        string userId,
+        Guid workflowApplicationId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> Exist(
+        TenantId tenantId,
+        string userId,
+        Guid id,
         CancellationToken cancellationToken = default);
 
     Task AddAsync(WorkflowApplication entity, CancellationToken cancellationToken = default);

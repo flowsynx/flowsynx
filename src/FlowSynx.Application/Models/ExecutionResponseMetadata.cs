@@ -6,5 +6,5 @@ public class ExecutionResponseMetadata
     public string ExecutionId { get; set; } = string.Empty;
     public DateTimeOffset StartedAt { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }
-    public long Duration { get; set; }
+    public long DurationMilliseconds { get; set; }
 }

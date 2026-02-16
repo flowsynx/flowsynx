@@ -12,20 +12,20 @@ internal class ValidateActivityHandler : IActionHandler<ValidateActivityRequest,
     private readonly ILogger<ValidateActivityHandler> _logger;
     private readonly ISerializer _serializer;
     private readonly IDeserializer _deserializer;
-    private readonly IWorkflowApplicationExecutionService _workflowExecutionService;
+    private readonly IWorkflowApplicationManagementService _workflowApplicationManagementService;
     private readonly ICurrentUserService _currentUserService;
 
     public ValidateActivityHandler(
         ILogger<ValidateActivityHandler> logger, 
         ISerializer serializer,
         IDeserializer deserializer,
-        IWorkflowApplicationExecutionService workflowExecutionService,
+        IWorkflowApplicationManagementService workflowApplicationManagementService,
         ICurrentUserService currentUserService)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
         _deserializer = deserializer ?? throw new ArgumentNullException(nameof(deserializer));
-        _workflowExecutionService = workflowExecutionService ?? throw new ArgumentNullException(nameof(workflowExecutionService));
+        _workflowApplicationManagementService = workflowApplicationManagementService ?? throw new ArgumentNullException(nameof(workflowApplicationManagementService));
         _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
     }
 
@@ -37,7 +37,7 @@ internal class ValidateActivityHandler : IActionHandler<ValidateActivityRequest,
 
             var jsonString = _serializer.Serialize(request.Json);
 
-            var result = await _genomeManagementService.ValidateJsonAsync(
+            var result = await _workflowApplicationManagementService.ValidateJsonAsync(
                 _currentUserService.UserId(),
                 jsonString,
                 cancellationToken);

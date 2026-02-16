@@ -1,7 +1,7 @@
 ﻿using FlowSynx.Application.Models;
-using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.Genes;
-using FlowSynx.Infrastructure.Runtime.Expression;
+using FlowSynx.Domain.Activities;
+using FlowSynx.Domain.Workflows;
+using FlowSynx.Infrastructure.Runtime.Execution;
 using IronPython.Hosting;
 using Jint;
 using Jint.Native;
@@ -15,13 +15,13 @@ using System.Text.Json;
 
 namespace FlowSynx.Infrastructure.Runtime.Executors;
 
-public class ScriptGeneExecutor : BaseGeneExecutor
+public class ScriptActivityExecutor : BaseActivityExecutor
 {
     private readonly IHttpClientFactory _httpClientFactory;
     //private readonly IServiceProvider _serviceProvider;
 
-    public ScriptGeneExecutor(
-        ILogger<ScriptGeneExecutor> logger,
+    public ScriptActivityExecutor(
+        ILogger<ScriptActivityExecutor> logger,
         IHttpClientFactory httpClientFactory) : base(logger)
     {
         _httpClientFactory = httpClientFactory;
@@ -35,13 +35,13 @@ public class ScriptGeneExecutor : BaseGeneExecutor
     }
 
     public override async Task<object> ExecuteAsync(
-        GeneJson gene,
-        GeneInstance instance,
+        ActivityJson activity,
+        ActivityInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var executable = gene.Specification.Executable;
-        var scriptContext = PrepareContext(gene, instance, parameters, context);
+        var executable = activity.Specification.Executable;
+        var scriptContext = PrepareContext(activity, instance, parameters, context);
 
         // Apply config from executable
         if (executable.Config != null)
@@ -65,7 +65,7 @@ public class ScriptGeneExecutor : BaseGeneExecutor
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Script execution failed for gene {GeneName}", gene.Metadata.Name);
+            _logger.LogError(ex, "Script execution failed for activity {ActivityName}", activity.Metadata.Name);
             throw new GeneExecutionException($"Script execution failed: {ex.Message}", ex);
         }
     }

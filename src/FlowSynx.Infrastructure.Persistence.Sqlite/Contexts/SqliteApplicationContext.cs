@@ -1,7 +1,6 @@
 ﻿using FlowSynx.BuildingBlocks.Clock;
 using FlowSynx.Infrastructure.Persistence.Abstractions;
 using FlowSynx.Infrastructure.Persistence.Abstractions.Exceptions;
-using FlowSynx.Persistence.Sqlite.EntityConfigurations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -36,17 +35,6 @@ public class SqliteApplicationContext : BaseDbContext
 
     private void ApplyEntityConfigurations(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfiguration(new AuditTrailConfiguration());
-        modelBuilder.ApplyConfiguration(new GeneConfiguration());
-        modelBuilder.ApplyConfiguration(new GeneInstanceConfiguration());
-        modelBuilder.ApplyConfiguration(new ChromosomeConfiguration());
-        modelBuilder.ApplyConfiguration(new GenomeConfiguration());
-        modelBuilder.ApplyConfiguration(new TenantEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new TenantContactEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new TenantSecretEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new TenantSecretConfigEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new ExecutionRecordConfiguration());
-        modelBuilder.ApplyConfiguration(new ExecutionLogConfiguration());
-        modelBuilder.ApplyConfiguration(new ExecutionArtifactConfiguration());
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(SqliteApplicationContext).Assembly);
     }
 }

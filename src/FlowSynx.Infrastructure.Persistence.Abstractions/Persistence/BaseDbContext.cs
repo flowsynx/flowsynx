@@ -1,13 +1,14 @@
 ﻿using FlowSynx.BuildingBlocks.Clock;
+using FlowSynx.Domain.Activities;
 using FlowSynx.Domain.AuditTrails;
-using FlowSynx.Domain.Chromosomes;
-using FlowSynx.Domain.Genes;
-using FlowSynx.Domain.Genomes;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.TenantSecretConfigs;
 using FlowSynx.Domain.TenantSecrets;
+using FlowSynx.Domain.WorkflowApplications;
+using FlowSynx.Domain.WorkflowExecutions;
+using FlowSynx.Domain.Workflows;
 using FlowSynx.Infrastructure.Persistence.Abstractions.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -43,14 +44,14 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
     public DbSet<TenantSecret> TenantSecrets { get; set; }
     public DbSet<TenantSecretConfig> TenantSecretConfigs { get; set; }
     public DbSet<TenantContact> TenantContacts { get; set; }
-    public DbSet<Gene> Genes { get; set; }
-    public DbSet<Chromosome> Chromosomes { get; set; }
-    public DbSet<Genome> Genomes { get; set; }
-    public DbSet<Domain.GeneInstances.GeneInstance> GeneInstances { get; set; }
+    public DbSet<Activity> Activities { get; set; }
+    public DbSet<Workflow> Workflows { get; set; }
+    public DbSet<WorkflowApplication> WorkflowApplications { get; set; }
+    public DbSet<Domain.ActivityInstances.ActivityInstance> ActivityInstances { get; set; }
     public DbSet<AuditTrail> AuditTrails { get; set; }
-    public DbSet<ExecutionRecord> ExecutionRecords { get; set; }
-    public DbSet<ExecutionLog> ExecutionLogs { get; set; }
-    public DbSet<ExecutionArtifact> ExecutionArtifacts { get; set; }
+    public DbSet<WorkflowExecution> WorkflowExecutions { get; set; }
+    public DbSet<WorkflowExecutionLog> WorkflowExecutionLogs { get; set; }
+    public DbSet<WorkflowExecutionArtifact> WorkflowExecutionArtifacts { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {

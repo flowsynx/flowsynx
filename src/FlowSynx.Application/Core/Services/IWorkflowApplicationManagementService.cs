@@ -28,18 +28,18 @@ public interface IWorkflowApplicationManagementService
         string json, 
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Activity>> SearchActivityAsync(
+    Task<IEnumerable<Activity>> SearchActivitiesAsync(
         TenantId tenantId,
         string userId, 
         string searchTerm, 
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Workflow>> GetWorkflowByApplicationAsync(
+    Task<IEnumerable<Workflow>> GetWorkflowsByApplicationIdAsync(
         string userId, 
         Guid workflowApplicationId, 
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Workflow>> GetWorkflowsByOwnerAsync(
+    Task<IEnumerable<WorkflowApplication>> GetWorkflowApplicationsByOwnerAsync(
         string userId, 
         string owner, 
         CancellationToken cancellationToken = default);

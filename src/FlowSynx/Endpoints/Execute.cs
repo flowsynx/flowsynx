@@ -20,7 +20,7 @@ public class Execute : EndpointGroupBase
 
     public static async Task<IResult> Executetion(
         [FromBody] object json,
-        [FromServices] IGenomeManagementService managementService,
+        [FromServices] IWorkflowApplicationManagementService managementService,
         [FromServices] IDispatcher dispatcher,
         CancellationToken cancellationToken)
     {
