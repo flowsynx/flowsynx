@@ -66,7 +66,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         catch (Exception ex)
         {
             _logger.LogError(ex, "Script execution failed for activity {ActivityName}", activity.Metadata.Name);
-            throw new GeneExecutionException($"Script execution failed: {ex.Message}", ex);
+            throw new ActivityExecutionException($"Script execution failed: {ex.Message}", ex);
         }
     }
 
@@ -129,7 +129,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         }
         catch (Jint.Runtime.JavaScriptException jsEx)
         {
-            throw new GeneExecutionException(
+            throw new ActivityExecutionException(
                 $"JavaScript error: {jsEx.Message}",
                 jsEx);
         }
@@ -211,11 +211,11 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         }
         catch (Microsoft.Scripting.SyntaxErrorException synEx)
         {
-            throw new GeneExecutionException($"Python syntax error: {synEx.Message}", synEx);
+            throw new ActivityExecutionException($"Python syntax error: {synEx.Message}", synEx);
         }
         catch (Exception ex)
         {
-            throw new GeneExecutionException($"Python execution error: {ex.Message}", ex);
+            throw new ActivityExecutionException($"Python execution error: {ex.Message}", ex);
         }
     }
 
@@ -266,7 +266,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         }
         catch (CompilationErrorException compEx)
         {
-            throw new GeneExecutionException($"C# compilation error: {string.Join("\n", compEx.Diagnostics)}", compEx);
+            throw new ActivityExecutionException($"C# compilation error: {string.Join("\n", compEx.Diagnostics)}", compEx);
         }
     }
 
@@ -430,8 +430,8 @@ public class ScriptGlobals
     public Dictionary<string, string> Environment { get; set; }
 }
 
-public class GeneExecutionException : Exception
+public class ActivityExecutionException : Exception
 {
-    public GeneExecutionException(string message) : base(message) { }
-    public GeneExecutionException(string message, Exception innerException) : base(message, innerException) { }
+    public ActivityExecutionException(string message) : base(message) { }
+    public ActivityExecutionException(string message, Exception innerException) : base(message, innerException) { }
 }

@@ -217,7 +217,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         {
                             Code = "EXECUTION_FAILED",
                             Message = ex.Message,
-                            Source = "gene",
+                            Source = "activity",
                             Timestamp = DateTime.UtcNow
                         }
                     }
@@ -257,7 +257,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
         try
         {
-            // Load workflow with genes
+            // Load workflow with activities
             var workflow = await _workflowRepository.GetByIdAsync(tenantId, userId, workflowId, cancellationToken);
             if (workflow == null)
             {
@@ -265,30 +265,29 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             }
 
             var results = new Dictionary<string, object>();
-            var geneResults = new List<object>();
+            var activityResults = new List<object>();
 
-            // Execute genes in order
-            var genes = workflow.Activities.OrderBy(g => g.Order).ToList();
-            int totalGenes = genes.Count;
-
-            for (int i = 0; i < totalGenes; i++)
+            // Execute activities in order
+            var activities = workflow.Activities.OrderBy(a => a.Order).ToList();
+            int totalActivities = activities.Count;
+            for (int i = 0; i < totalActivities; i++)
             {
-                var gene = genes[i];
+                var activity = activities[i];
 
                 // Update progress
-                executionRecord.Progress = (int)((i * 100) / totalGenes);
+                executionRecord.Progress = (int)((i * 100) / totalActivities);
                 await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
                 try
                 {
                     // Load activity
                     var activityByName = await _activityRepository.GetByNameAndVersionAsync(
-                        gene.ActivityId,
+                        activity.ActivityId,
                         "latest", cancellationToken);
 
                     if (activityByName == null)
                     {
-                        throw new Exception($"Activity blueprint not found: {gene.ActivityId}");
+                        throw new Exception($"Activity blueprint not found: {activity.ActivityId}");
                     }
 
                     // Execute activity
@@ -296,12 +295,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         tenantId,
                         userId,
                         activityByName.Id,
-                        gene.Parameters,
+                        activity.Parameters,
                         context);
 
-                    geneResults.Add(new
+                    activityResults.Add(new
                     {
-                        activityId = gene.ActivityId,
+                        activityId = activity.ActivityId,
                         result = activityResult.Results?.GetValueOrDefault("result"),
                         status = activityResult.Status.Phase
                     });
@@ -309,8 +308,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "info",
-                        Message = $"Activity '{gene.ActivityId}' executed successfully",
-                        Source = gene.ActivityId,
+                        Message = $"Activity '{activity.ActivityId}' executed successfully",
+                        Source = activity.ActivityId,
                         Timestamp = DateTime.UtcNow
                     });
                 }
@@ -319,8 +318,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "error",
-                        Message = $"Activity '{gene.ActivityId}' failed: {ex.Message}",
-                        Source = gene.ActivityId,
+                        Message = $"Activity '{activity.ActivityId}' failed: {ex.Message}",
+                        Source = activity.ActivityId,
                         Timestamp = DateTime.UtcNow
                     });
 
@@ -341,7 +340,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             executionRecord.DurationMilliseconds = (long)((executionRecord.CompletedAt - startedAt)?.TotalMilliseconds ?? 0);
             executionRecord.Response = new Dictionary<string, object>
             {
-                ["geneResults"] = geneResults,
+                ["activityResults"] = activityResults,
                 ["success"] = true
             };
 
@@ -361,13 +360,13 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 Status = new ExecutionStatus
                 {
                     Phase = "succeeded",
-                    Message = "Chromosome execution completed",
+                    Message = "Workflow execution completed",
                     Progress = 100,
                     Health = "healthy"
                 },
                 Results = new Dictionary<string, object>
                 {
-                    ["geneResults"] = geneResults
+                    ["activityResults"] = activityResults
                 }
             };
         }
@@ -455,44 +454,43 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
         try
         {
-            // Load workflow application with chromosomes
+            // Load workflow application with workflows
             var workflowApplication = await _workflowApplicationRepository.GetByIdAsync(tenantId, userId, workflowApplicationId, cancellationToken);
             if (workflowApplication == null)
             {
                 throw new Exception($"Workflow application not found: {workflowApplicationId}");
             }
 
-            var chromosomeResults = new List<object>();
+            var workflowResults = new List<object>();
 
-            // Execute chromosomes
-            var chromosomes = workflowApplication.Workflows.ToList();
-            int totalChromosomes = chromosomes.Count;
-
-            for (int i = 0; i < totalChromosomes; i++)
+            // Execute workflows
+            var workflows = workflowApplication.Workflows.ToList();
+            int totalWorkflows = workflows.Count;
+            for (int i = 0; i < totalWorkflows; i++)
             {
-                var chromosome = chromosomes[i];
+                var workflow = workflows[i];
 
                 // Update progress
-                executionRecord.Progress = (int)((i * 100) / totalChromosomes);
+                executionRecord.Progress = (int)((i * 100) / totalWorkflows);
                 await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
                 try
                 {
-                    var chromosomeResult = await ExecuteWorkflowAsync(tenantId, userId, chromosome.Id, context);
+                    var workflowResult = await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context);
 
-                    chromosomeResults.Add(new
+                    workflowResults.Add(new
                     {
-                        chromosomeId = chromosome.Id,
-                        chromosomeName = chromosome.Name,
-                        result = chromosomeResult,
-                        status = chromosomeResult.Status.Phase
+                        workflowId = workflow.Id,
+                        workflowName = workflow.Name,
+                        result = workflowResult,
+                        status = workflowResult.Status.Phase
                     });
 
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "info",
-                        Message = $"Workflow '{chromosome.Name}' executed successfully",
-                        Source = chromosome.Name,
+                        Message = $"Workflow '{workflow.Name}' executed successfully",
+                        Source = workflow.Name,
                         Timestamp = DateTime.UtcNow
                     });
                 }
@@ -501,8 +499,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "error",
-                        Message = $"Workflow '{chromosome.Name}' failed: {ex.Message}",
-                        Source = chromosome.Name,
+                        Message = $"Workflow '{workflow.Name}' failed: {ex.Message}",
+                        Source = workflow.Name,
                         Timestamp = DateTime.UtcNow
                     });
 
@@ -512,7 +510,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     {
                         throw;
                     }
-                    // else continue with other chromosomes
+                    // else continue with other workflows
                 }
             }
 
@@ -523,7 +521,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             executionRecord.DurationMilliseconds = (long)((executionRecord.CompletedAt - startedAt)?.TotalMilliseconds ?? 0);
             executionRecord.Response = new Dictionary<string, object>
             {
-                ["chromosomeResults"] = chromosomeResults,
+                ["workflowResults"] = workflowResults,
                 ["success"] = true
             };
 
@@ -543,13 +541,13 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 Status = new ExecutionStatus
                 {
                     Phase = "succeeded",
-                    Message = "Genome execution completed",
+                    Message = "Workflow application execution completed",
                     Progress = 100,
                     Health = "healthy"
                 },
                 Results = new Dictionary<string, object>
                 {
-                    ["chromosomeResults"] = chromosomeResults
+                    ["workflowResults"] = workflowResults
                 }
             };
         }
@@ -597,7 +595,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         {
                             Code = "EXECUTION_FAILED",
                             Message = ex.Message,
-                            Source = "genome",
+                            Source = "workflowApplication",
                             Timestamp = DateTime.UtcNow
                         }
                     }
@@ -635,29 +633,29 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             switch (target.Type.ToLower())
             {
-                case "gene":
-                    var gene = await _activityRepository.GetByNameAndVersionAsync(
+                case "activity":
+                    var activity = await _activityRepository.GetByNameAndVersionAsync(
                         target.Name, target.Version ?? "latest");
-                    if (gene == null)
+                    if (activity == null)
                         throw new Exception($"Activity not found: {target.Name}");
 
-                    return await ExecuteActivityAsync(tenantId, userId, gene.Id, parameters, context);
+                    return await ExecuteActivityAsync(tenantId, userId, activity.Id, parameters, context);
 
-                case "chromosome":
-                    var chromosome = await _workflowRepository.GetByNameAsync(
+                case "workflow":
+                    var workflow = await _workflowRepository.GetByNameAsync(
                         target.Name, target.Namespace ?? "default");
-                    if (chromosome == null)
+                    if (workflow == null)
                         throw new Exception($"Workflow not found: {target.Name}");
 
-                    return await ExecuteWorkflowAsync(tenantId, userId, chromosome.Id, context);
+                    return await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context);
 
-                case "genome":
-                    var genome = await _workflowApplicationRepository.GetByNameAsync(
+                case "workflowApplication":
+                    var workflowApplication = await _workflowApplicationRepository.GetByNameAsync(
                         target.Name, target.Namespace ?? "default");
-                    if (genome == null)
+                    if (workflowApplication == null)
                         throw new Exception($"WorkflowApplication not found: {target.Name}");
 
-                    return await ExecuteWorkflowApplicationAsync(tenantId, userId, genome.Id, context);
+                    return await ExecuteWorkflowApplicationAsync(tenantId, userId, workflowApplication.Id, context);
 
                 default:
                     throw new Exception($"Unknown target type: {target.Type}");

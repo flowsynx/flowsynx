@@ -43,10 +43,10 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         try
         {
             // Validate JSON
-            var validation = await _jsonService.ValidateJsonAsync(json, "Gene");
+            var validation = await _jsonService.ValidateJsonAsync(json, "Activity");
             if (!validation.Status.Valid)
             {
-                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Gene validation failed", validation.Errors);
+                throw new Exceptions.ValidationException("Activity validation failed", validation.Errors);
             }
 
             // Parse JSON
@@ -97,10 +97,10 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         try
         {
             // Validate JSON
-            var validation = await _jsonService.ValidateJsonAsync(json, "Chromosome");
+            var validation = await _jsonService.ValidateJsonAsync(json, "Workflow");
             if (!validation.Status.Valid)
             {
-                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Chromosome validation failed", validation.Errors);
+                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Workflow validation failed", validation.Errors);
             }
 
             // Parse JSON
@@ -151,47 +151,46 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         try
         {
             // Validate JSON
-            var validation = await _jsonService.ValidateJsonAsync(json, "Genome");
+            var validation = await _jsonService.ValidateJsonAsync(json, "WorkflowApplication");
             if (!validation.Status.Valid)
             {
-                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Genome validation failed", validation.Errors);
+                throw new FlowSynx.Infrastructure.Runtime.Exceptions.ValidationException("Workflow application validation failed", validation.Errors);
             }
 
             // Parse JSON
-            var genome = await _jsonService.ParseWorkflowApplicationAsync(json);
-
+            var workflowApplication = await _jsonService.ParseWorkflowApplicationAsync(json);
             // Check if already exists
             var existing = await _workflowApplicationRepository.GetByNameAsync(
-                genome.Name, genome.Namespace, cancellationToken);
+                workflowApplication.Name, workflowApplication.Namespace, cancellationToken);
 
             if (existing != null)
             {
                 // Update existing
-                existing.Specification = genome.Specification;
-                existing.Description = genome.Description;
-                existing.Metadata = genome.Metadata;
-                existing.Labels = genome.Labels;
-                existing.Annotations = genome.Annotations;
-                existing.SharedContext = genome.SharedContext;
+                existing.Specification = workflowApplication.Specification;
+                existing.Description = workflowApplication.Description;
+                existing.Metadata = workflowApplication.Metadata;
+                existing.Labels = workflowApplication.Labels;
+                existing.Annotations = workflowApplication.Annotations;
+                existing.SharedContext = workflowApplication.SharedContext;
 
                 await _workflowApplicationRepository.UpdateAsync(existing, cancellationToken);
 
-                _logger.LogInformation("Updated existing workflow application: {Name}", genome.Name);
+                _logger.LogInformation("Updated existing workflow application: {Name}", workflowApplication.Name);
                 return existing;
             }
             else
             {
                 // Add new
-                await _workflowApplicationRepository.AddAsync(genome, cancellationToken);
+                await _workflowApplicationRepository.AddAsync(workflowApplication, cancellationToken);
 
-                _logger.LogInformation("Registered new workflow application: {Name}", genome.Name);
+                _logger.LogInformation("Registered new workflow application: {Name}", workflowApplication.Name);
 
-                return genome;
+                return workflowApplication;
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to register genome");
+            _logger.LogError(ex, "Failed to register workflow application");
             throw;
         }
     }

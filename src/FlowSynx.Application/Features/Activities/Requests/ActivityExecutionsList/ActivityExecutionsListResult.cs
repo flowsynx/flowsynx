@@ -20,11 +20,11 @@ public class ActivityExecutionsListResult
     public DateTime? CompletedAt { get; set; }
     public long DurationMilliseconds { get; set; }
     public string TriggeredBy { get; set; }
-    public ICollection<GeneExecutionsLog> Logs { get; set; } = new List<GeneExecutionsLog>();
-    public ICollection<GeneExecutionsArtifact> Artifacts { get; set; } = new List<GeneExecutionsArtifact>();
+    public ICollection<ActivityExecutionsLog> Logs { get; set; } = new List<ActivityExecutionsLog>();
+    public ICollection<ActivityExecutionsArtifact> Artifacts { get; set; } = new List<ActivityExecutionsArtifact>();
 }
 
-public class GeneExecutionsLog
+public class ActivityExecutionsLog
 {
     public string Level { get; set; } // "info", "warn", "error", "debug"
     public string Message { get; set; }
@@ -33,7 +33,7 @@ public class GeneExecutionsLog
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
 
-public class GeneExecutionsArtifact
+public class ActivityExecutionsArtifact
 {
     public string Name { get; set; }
     public string Type { get; set; } // "file", "data", "report"

@@ -39,7 +39,7 @@ internal class DeleteWorkflowHandler : IActionHandler<DeleteWorkflowRequest, Res
                 TenantId.FromString(_currentUserService.TenantId()),
                 _currentUserService.UserId(), request.Id, cancellationToken);
 
-            return await Result<Void>.SuccessAsync(ApplicationResources.Feature_Chromosome_DeletedSuccessfully);
+            return await Result<Void>.SuccessAsync(ApplicationResources.Feature_Workflow_DeletedSuccessfully);
         }
         catch (ValidationException vex)
         {

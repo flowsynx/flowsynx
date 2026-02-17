@@ -89,7 +89,7 @@ public class WorkflowConfiguration : IEntityTypeConfiguration<Workflow>
                 v => JsonSerializer.Deserialize<Dictionary<string, string>>(v, jsonOptions) ?? new Dictionary<string, string>())
             .Metadata.SetValueComparer(stringDictionaryComparer);
 
-        // Relationship with Genome
+        // Relationship with WorkflowApplication
         builder.HasOne(we => we.WorkflowApplication)
            .WithMany(w => w.Workflows)
            .HasForeignKey(we => we.WorkflowApplicationId)

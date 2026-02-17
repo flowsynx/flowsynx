@@ -76,15 +76,6 @@ public class WorkflowRepository : IWorkflowRepository
             .FirstOrDefaultAsync(c => c.Name == name && c.Namespace == @namespace, cancellationToken: cancellationToken);
     }
 
-    public async Task<IEnumerable<Workflow>> GetByGenomeIdAsync(Guid genomeId, CancellationToken cancellationToken = default)
-    {
-        await using var context = await _appContextFactory.CreateDbContextAsync(cancellationToken);
-        return await context.Workflows
-            .Include(c => c.Activities)
-            .Where(c => c.WorkflowApplicationId == genomeId)
-            .ToListAsync(cancellationToken);
-    }
-
     public async Task<IEnumerable<Workflow>> GetByNamespaceAsync(
         TenantId tenantId,
         string userId, 

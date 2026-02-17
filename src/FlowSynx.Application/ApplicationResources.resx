@@ -261,10 +261,10 @@
   <data name="Feature_Tenant_UpdatedSuccessfully" xml:space="preserve">
     <value>The tenant has been updated successfully.</value>
   </data>
-  <data name="Feature_Gene_DeletedSuccessfully" xml:space="preserve">
-    <value>The gene has been deleted successfully.</value>
+  <data name="Feature_Activity_DeletedSuccessfully" xml:space="preserve">
+    <value>The activity has been deleted successfully.</value>
   </data>
-  <data name="Feature_Chromosome_DeletedSuccessfully" xml:space="preserve">
-    <value>The chromosome has been deleted successfully.</value>
+  <data name="Feature_Workflow_DeletedSuccessfully" xml:space="preserve">
+    <value>The workflow has been deleted successfully.</value>
   </data>
 </root>

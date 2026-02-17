@@ -39,7 +39,7 @@ internal class DeleteActivityHandler : IActionHandler<DeleteActivityRequest, Res
                 TenantId.FromString(_currentUserService.TenantId()),
                 _currentUserService.UserId(), request.Id, cancellationToken);
 
-            return await Result<Void>.SuccessAsync(ApplicationResources.Feature_Gene_DeletedSuccessfully);
+            return await Result<Void>.SuccessAsync(ApplicationResources.Feature_Activity_DeletedSuccessfully);
         }
         catch (ValidationException vex)
         {

@@ -54,7 +54,7 @@ internal class WorkflowExecutionsListHandler
                 CompletedAt = history.CompletedAt,
                 DurationMilliseconds = history.DurationMilliseconds,
                 TriggeredBy = history.TriggeredBy,
-                Logs = history.Logs.Select(l=>new ChromosomeExecutionsLog
+                Logs = history.Logs.Select(l=>new WorkflowExecutionsLog
                 {
                     Timestamp = l.Timestamp,
                     Level = l.Level,
@@ -62,7 +62,7 @@ internal class WorkflowExecutionsListHandler
                     Message = l.Message,
                     Data = l.Data
                 }).ToList(),
-                Artifacts = history.Artifacts.Select(a=>new ChromosomeExecutionsArtifact
+                Artifacts = history.Artifacts.Select(a=>new WorkflowExecutionsArtifact
                 {
                     Name = a.Name,
                     Type = a.Type,

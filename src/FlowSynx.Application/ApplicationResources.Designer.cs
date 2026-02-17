@@ -70,29 +70,20 @@ namespace FlowSynx.Application {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The activity has been deleted successfully..
+        /// </summary>
+        internal static string Feature_Activity_DeletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Activity_DeletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The audit details, id &apos;{0}&apos;, are not found..
         /// </summary>
         internal static string Feature_Audit_DetailsNotFound {
             get {
                 return ResourceManager.GetString("Feature_Audit_DetailsNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The chromosome has been deleted successfully..
-        /// </summary>
-        internal static string Feature_Chromosome_DeletedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Chromosome_DeletedSuccessfully", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to The gene has been deleted successfully..
-        /// </summary>
-        internal static string Feature_Gene_DeletedSuccessfully {
-            get {
-                return ResourceManager.GetString("Feature_Gene_DeletedSuccessfully", resourceCulture);
             }
         }
         
@@ -138,6 +129,15 @@ namespace FlowSynx.Application {
         internal static string Feature_Workflow_Delete_DeletedSuccessfully {
             get {
                 return ResourceManager.GetString("Feature_Workflow_Delete_DeletedSuccessfully", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The workflow has been deleted successfully..
+        /// </summary>
+        internal static string Feature_Workflow_DeletedSuccessfully {
+            get {
+                return ResourceManager.GetString("Feature_Workflow_DeletedSuccessfully", resourceCulture);
             }
         }
         

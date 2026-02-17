@@ -52,7 +52,7 @@ public class JsonProcessingService : IJsonProcessingService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to parse GeneBlueprint JSON: {ex.Message}", ex);
+            throw new Exception($"Failed to parse Activity JSON: {ex.Message}", ex);
         }
     }
 
@@ -80,7 +80,7 @@ public class JsonProcessingService : IJsonProcessingService
                 Annotations = workflowJson.Metadata.Annotations ?? new System.Collections.Generic.Dictionary<string, string>()
             };
 
-            // Parse gene instances
+            // Parse activity instances
             if (workflowJson.Specification.Activities != null)
             {
                 int order = 0;
@@ -117,7 +117,7 @@ public class JsonProcessingService : IJsonProcessingService
         }
         catch (Exception ex)
         {
-            throw new Exception($"Failed to parse Chromosome JSON: {ex.Message}", ex);
+            throw new Exception($"Failed to parse Workflow JSON: {ex.Message}", ex);
         }
     }
 

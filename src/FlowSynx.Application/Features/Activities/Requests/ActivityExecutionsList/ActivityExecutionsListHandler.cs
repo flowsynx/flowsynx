@@ -53,7 +53,7 @@ internal class ActivityExecutionsListHandler : IActionHandler<ActivityExecutions
                 CompletedAt = history.CompletedAt,
                 DurationMilliseconds = history.DurationMilliseconds,
                 TriggeredBy = history.TriggeredBy,
-                Logs = history.Logs.Select(l=>new GeneExecutionsLog
+                Logs = history.Logs.Select(l=>new ActivityExecutionsLog
                 {
                     Timestamp = l.Timestamp,
                     Level = l.Level,
@@ -61,7 +61,7 @@ internal class ActivityExecutionsListHandler : IActionHandler<ActivityExecutions
                     Message = l.Message,
                     Data = l.Data
                 }).ToList(),
-                Artifacts = history.Artifacts.Select(a=>new GeneExecutionsArtifact
+                Artifacts = history.Artifacts.Select(a=>new ActivityExecutionsArtifact
                 {
                     Name = a.Name,
                     Type = a.Type,

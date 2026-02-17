@@ -27,7 +27,7 @@ public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.Act
                 id => id.Value,
                 value => TenantId.Create(value));
 
-        // Ensure FK type matches Chromosome.Id by converting the value object
+        // Ensure FK type matches Workflow.Id by converting the value object
         builder.Property(gi => gi.WorkflowId)
             .IsRequired();
 

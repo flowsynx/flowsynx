@@ -33,7 +33,7 @@ public class SqliteDatabaseInitializer : IDatabaseInitializer
 
             if (!await context.Tenants.AnyAsync(cancellationToken))
             {
-                context.Tenants.Add(Domain.Tenants.Tenant.Create("FlowSynx Genome Platform", "FlowSynx Genome Platform"));
+                context.Tenants.Add(Domain.Tenants.Tenant.Create("FlowSynx Platform", "FlowSynx Platform"));
                 await context.SaveChangesAsync(cancellationToken);
                 _logger.LogInformation("Default tenant created successfully.");
 

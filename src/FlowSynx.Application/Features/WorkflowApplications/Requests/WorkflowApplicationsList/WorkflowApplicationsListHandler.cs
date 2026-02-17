@@ -53,7 +53,7 @@ internal class WorkflowApplicationsListHandler : IActionHandler<WorkflowApplicat
                 out var pageSize);
 
             _logger.LogInformation(
-                "Genomes list retrieved successfully for page {Page} with size {PageSize}.",
+                "WorkflowApplications list retrieved successfully for page {Page} with size {PageSize}.",
                 page,
                 pageSize);
             return await PaginatedResult<WorkflowApplicationsListResult>.SuccessAsync(
@@ -66,7 +66,7 @@ internal class WorkflowApplicationsListHandler : IActionHandler<WorkflowApplicat
         {
             _logger.LogError(
                 ex,
-                "FlowSynx exception caught in GenomesListHandler for page {Page} with size {PageSize}.",
+                "FlowSynx exception caught in WorkflowApplicationsListHandler for page {Page} with size {PageSize}.",
                 request.Page,
                 request.PageSize);
             return await PaginatedResult<WorkflowApplicationsListResult>.FailureAsync(ex.Message);

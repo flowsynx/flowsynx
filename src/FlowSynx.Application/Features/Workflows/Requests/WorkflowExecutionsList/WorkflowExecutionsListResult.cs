@@ -20,11 +20,11 @@ public class WorkflowExecutionsListResult
     public DateTime? CompletedAt { get; set; }
     public long DurationMilliseconds { get; set; }
     public string TriggeredBy { get; set; }
-    public ICollection<ChromosomeExecutionsLog> Logs { get; set; } = new List<ChromosomeExecutionsLog>();
-    public ICollection<ChromosomeExecutionsArtifact> Artifacts { get; set; } = new List<ChromosomeExecutionsArtifact>();
+    public ICollection<WorkflowExecutionsLog> Logs { get; set; } = new List<WorkflowExecutionsLog>();
+    public ICollection<WorkflowExecutionsArtifact> Artifacts { get; set; } = new List<WorkflowExecutionsArtifact>();
 }
 
-public class ChromosomeExecutionsLog
+public class WorkflowExecutionsLog
 {
     public string Level { get; set; } // "info", "warn", "error", "debug"
     public string Message { get; set; }
@@ -33,7 +33,7 @@ public class ChromosomeExecutionsLog
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
 
-public class ChromosomeExecutionsArtifact
+public class WorkflowExecutionsArtifact
 {
     public string Name { get; set; }
     public string Type { get; set; } // "file", "data", "report"
