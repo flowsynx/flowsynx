@@ -42,9 +42,9 @@ public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.Act
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        var configConverter = new ValueConverter<ActivityConfiguration, string>(
+        var configConverter = new ValueConverter<FlowSynx.Domain.ActivityInstances.ActivityConfiguration, string>(
             v => v.ToString(),
-            v => (ActivityConfiguration)Enum.Parse(typeof(ActivityConfiguration), v, true)
+            v => (FlowSynx.Domain.ActivityInstances.ActivityConfiguration)Enum.Parse(typeof(FlowSynx.Domain.ActivityInstances.ActivityConfiguration), v, true)
         );
 
         // Store JSON fields
