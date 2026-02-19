@@ -67,7 +67,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             TriggeredBy = "system"
         };
 
-        await _executionRepository.AddAsync(workflowExecution);
+        await _executionRepository.AddAsync(workflowExecution, cancellationToken);
 
         try
         {
@@ -115,7 +115,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 },
                 activityInstance,
                 parameters ?? new Dictionary<string, object>(),
-                context ?? new Dictionary<string, object>());
+                context ?? new Dictionary<string, object>()
+            );
 
             // Update execution record
             workflowExecution.Progress = 100;
