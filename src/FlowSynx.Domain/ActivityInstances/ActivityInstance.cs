@@ -9,7 +9,7 @@ public class ActivityInstance : AuditableEntity<Guid>, ITenantScoped, IUserScope
     public TenantId TenantId { get; set; }
     public string UserId { get; set; } = string.Empty;
     public string ActivityId { get; set; } = string.Empty;
-    public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
+    public Dictionary<string, object> Params { get; set; } = new Dictionary<string, object>();
     public ActivityConfiguration Configuration { get; set; } = new();
     public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public Guid WorkflowId { get; set; }

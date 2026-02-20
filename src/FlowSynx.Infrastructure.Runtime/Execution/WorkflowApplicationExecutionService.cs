@@ -5,7 +5,6 @@ using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowExecutions;
 using FlowSynx.Domain.Workflows;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 
 namespace FlowSynx.Infrastructure.Runtime.Execution;
 
@@ -58,7 +57,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             Namespace = "default",
             Request = new Dictionary<string, object>
             {
-                ["parameters"] = parameters,
+                ["params"] = parameters,
                 ["context"] = context
             },
             Status = "running",
@@ -85,7 +84,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Version = activity.Version,
                     Namespace = activity.Namespace
                 },
-                Parameters = parameters ?? new Dictionary<string, object>(),
+                Params = parameters ?? new Dictionary<string, object>(),
                 Configuration = new ActivityConfiguration
                 {
                     Operation = activity.Specification.ExecutionProfile?.DefaultOperation,
@@ -296,7 +295,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         tenantId,
                         userId,
                         activityByName.Id,
-                        activity.Parameters,
+                        activity.Params,
                         context);
 
                     activityResults.Add(new
@@ -613,7 +612,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         try
         {
             var target = request.Spec.Target;
-            var parameters = request.Spec.Parameters ?? new Dictionary<string, object>();
+            var parameters = request.Spec.Params ?? new Dictionary<string, object>();
             var context = new Dictionary<string, object>();
 
             // Merge environment and context

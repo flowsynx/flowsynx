@@ -90,7 +90,7 @@ public class JsonProcessingService : IJsonProcessingService
                     {
                         Id = Guid.NewGuid(),
                         ActivityId = activityJson.Activity.Name,
-                        Parameters = activityJson.Parameters ?? new System.Collections.Generic.Dictionary<string, object>(),
+                        Params = activityJson.Params ?? new System.Collections.Generic.Dictionary<string, object>(),
                         Configuration = new Domain.ActivityInstances.ActivityConfiguration
                         {
                             Operation = activityJson.Configuration?.Operation,

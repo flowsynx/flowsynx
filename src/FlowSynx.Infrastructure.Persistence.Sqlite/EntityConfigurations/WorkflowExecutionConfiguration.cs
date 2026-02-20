@@ -67,7 +67,7 @@ public class WorkflowExecutionConfiguration : IEntityTypeConfiguration<WorkflowE
                 v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
             .Metadata.SetValueComparer(dictionaryComparer);
 
-        builder.Property(er => er.Parameters)
+        builder.Property(er => er.Params)
             .HasColumnType("TEXT")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, jsonOptions),

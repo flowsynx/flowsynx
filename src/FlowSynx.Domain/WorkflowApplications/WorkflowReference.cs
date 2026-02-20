@@ -12,5 +12,5 @@ public class WorkflowReference
 
     public bool RunInParallel { get; set; } = false;
 
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Params { get; set; } = new();
 }

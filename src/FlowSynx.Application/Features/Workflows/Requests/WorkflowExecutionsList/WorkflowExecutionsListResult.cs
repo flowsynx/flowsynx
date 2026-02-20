@@ -10,7 +10,7 @@ public class WorkflowExecutionsListResult
     public Dictionary<string, object> Request { get; set; } = new Dictionary<string, object>();
     public Dictionary<string, object> Response { get; set; } = new Dictionary<string, object>();
     public Dictionary<string, object> Context { get; set; } = new Dictionary<string, object>();
-    public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
+    public Dictionary<string, object> Params { get; set; } = new Dictionary<string, object>();
     public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
     public string Status { get; set; } // "pending", "running", "completed", "failed", "cancelled"
     public int Progress { get; set; }

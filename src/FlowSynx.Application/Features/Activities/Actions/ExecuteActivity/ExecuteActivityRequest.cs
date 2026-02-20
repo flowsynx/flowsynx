@@ -12,6 +12,6 @@ public class ExecuteActivityRequest : IRequest<Result<ExecutionResponse>>
 
 public class ExecuteActivityRequestDefinition
 {
-    public Dictionary<string, object>? Parameters { get; set; }
+    public Dictionary<string, object>? Params { get; set; }
     public Dictionary<string, object>? Context { get; set; }
 }

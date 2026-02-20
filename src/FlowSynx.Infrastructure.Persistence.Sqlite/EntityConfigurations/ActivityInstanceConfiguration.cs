@@ -48,7 +48,7 @@ public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.Act
         );
 
         // Store JSON fields
-        builder.Property(gi => gi.Parameters)
+        builder.Property(gi => gi.Params)
             .HasColumnType("TEXT")
             .HasConversion(
                 v => JsonSerializer.Serialize(v, jsonOptions),

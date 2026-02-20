@@ -7,7 +7,7 @@ public class ActivityInstance
     public string Id { get; set; } = string.Empty;
 
     public ActivityReference Activity { get; set; } = new();
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Params { get; set; } = new();
 
     public ActivityConfiguration Configuration { get; set; } = new();
     public List<string> DependsOn { get; set; } = new();

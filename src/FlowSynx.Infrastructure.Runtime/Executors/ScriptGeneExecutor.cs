@@ -80,6 +80,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
             options.TimeoutInterval(TimeSpan.FromSeconds(30));
         });
 
+        // Inject all context variables as globals (params, context, env_*)
         foreach (var kvp in context)
         {
             engine.SetValue(kvp.Key, kvp.Value);
@@ -93,6 +94,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
             }
         }
 
+        // Provide console and fetch utilities
         engine.SetValue("console", new
         {
             log = new Action<object>(msg => _logger.LogInformation("JavaScript: {Message}", msg)),
@@ -116,10 +118,12 @@ public class ScriptActivityExecutor : BaseActivityExecutor
 
         try
         {
+            // Wrap user code in an IIFE that receives params and context as arguments.
+            // The user's code should return the desired result.
             var script = $@"
-            var __result = (function() {{
+            var __result = (function(params, context) {{
                 {executable.Source}
-            }})();
+            }})(params, context);
         ";
 
             engine.Execute(script);
@@ -241,7 +245,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         {
             Context = context,
             Logger = _logger,
-            Parameters = context.ContainsKey("parameters") ? context["parameters"] as Dictionary<string, object> : null,
+            Params = context.ContainsKey("params") ? context["params"] as Dictionary<string, object> : null,
             Config = context.ContainsKey("config") ? context["config"] as Dictionary<string, object> : null,
             Environment = executable.Environment ?? new Dictionary<string, string>()
         };
@@ -278,13 +282,13 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         using var powershell = PowerShell.Create();
         powershell.Runspace = runspace;
 
-        // Add variables to PowerShell
+        // Add context variables
         foreach (var kvp in context)
         {
             powershell.Runspace.SessionStateProxy.SetVariable(kvp.Key, kvp.Value);
         }
 
-        // Add environment variables
+        // Add environment variables (as $env:KEY)
         if (executable.Environment != null)
         {
             foreach (var env in executable.Environment)
@@ -293,11 +297,11 @@ public class ScriptActivityExecutor : BaseActivityExecutor
             }
         }
 
-        // Configure PowerShell
+        // Configure error preference and add the main script
         powershell.AddScript("$ErrorActionPreference = 'Stop'");
         powershell.AddScript(executable.Source);
 
-        // Add output collection
+        // Collection to capture output as it arrives
         var output = new PSDataCollection<PSObject>();
         output.DataAdded += (sender, e) =>
         {
@@ -307,82 +311,40 @@ public class ScriptActivityExecutor : BaseActivityExecutor
 
         try
         {
+            // Begin invocation with the output collection
+            var asyncResult = powershell.BeginInvoke(output);
+
+            // Wait for completion using the non‑generic EndInvoke
             var results = await Task.Factory.FromAsync(
-                powershell.BeginInvoke<PSObject, PSObject>(null, output),
-                powershell.EndInvoke);
+                asyncResult,
+                ar => powershell.EndInvoke(ar));
 
             if (powershell.HadErrors)
             {
                 var errors = powershell.Streams.Error.ReadAll();
-                throw new AggregateException(errors.Select(e =>
-                    new Exception($"PowerShell error: {e.Exception?.Message ?? e.ToString()}")));
+                throw new AggregateException(
+                    errors.Select(e => new Exception($"PowerShell error: {e.Exception?.Message ?? e.ToString()}")));
             }
 
-            // Convert results
-            var resultList = results.ToList();
+            // Unwrap PSObject to underlying .NET objects
+            var resultList = results.ToList(); // results is PSDataCollection<PSObject>
             if (resultList.Count == 0)
-            {
                 return null;
-            }
-            else if (resultList.Count == 1)
-            {
-                return ConvertPowerShellObject(resultList[0]);
-            }
-            else
-            {
-                return resultList.Select(ConvertPowerShellObject).ToArray();
-            }
+            if (resultList.Count == 1)
+                return UnwrapPSObject(resultList[0]);
+            return resultList.Select(UnwrapPSObject).ToArray();
         }
         finally
         {
             powershell.Dispose();
-            runspace.Close();
+            // runspace is disposed automatically by the 'using' statement
         }
     }
 
-    //private JsValue ConvertToJavaScriptValue(Engine engine, object? value)
-    //{
-    //    if (value == null)
-    //        return JsValue.Null;
-
-    //    if (value is JsValue jsValue)
-    //        return jsValue;
-
-    //    if (value is Dictionary<string, object> dict)
-    //    {
-    //        var obj = engine.Object.Construct(Arguments.Empty);
-
-    //        foreach (var kvp in dict)
-    //        {
-    //            obj.FastAddProperty(
-    //                kvp.Key,
-    //                ConvertToJavaScriptValue(engine, kvp.Value),
-    //                writable: true,
-    //                enumerable: true,
-    //                configurable: true);
-    //        }
-
-    //        return obj;
-    //    }
-
-    //    if (value is IList<object> list)
-    //    {
-    //        var array = engine.Array.Construct(Arguments.Empty);
-
-    //        for (uint i = 0; i < list.Count; i++)
-    //        {
-    //            array.Set(
-    //                i,
-    //                ConvertToJavaScriptValue(engine, list[(int)i]),
-    //                throwOnError: false);
-    //        }
-
-    //        return array;
-    //    }
-
-    //    // Fallback for primitives & POCOs
-    //    return JsValue.FromObject(engine, value);
-    //}
+    private object UnwrapPSObject(PSObject psObject)
+    {
+        return psObject?.BaseObject;
+    }
 
     private object ConvertPowerShellObject(PSObject psObject)
     {
@@ -425,7 +387,7 @@ public class ScriptGlobals
 {
     public Dictionary<string, object> Context { get; set; }
     public ILogger Logger { get; set; }
-    public Dictionary<string, object> Parameters { get; set; }
+    public Dictionary<string, object> Params { get; set; }
     public Dictionary<string, object> Config { get; set; }
     public Dictionary<string, string> Environment { get; set; }
 }

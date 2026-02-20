@@ -44,7 +44,7 @@ internal class ExecuteActivityHandler : IActionHandler<ExecuteActivityRequest, R
                 TenantId.FromString(_currentUserService.TenantId()),
                 _currentUserService.UserId(),
                 request.ActivityId,
-                deserializedJson.Parameters ?? new Dictionary<string, object>(),
+                deserializedJson.Params ?? new Dictionary<string, object>(),
                 deserializedJson.Context ?? new Dictionary<string, object>(),
                 cancellationToken);
 

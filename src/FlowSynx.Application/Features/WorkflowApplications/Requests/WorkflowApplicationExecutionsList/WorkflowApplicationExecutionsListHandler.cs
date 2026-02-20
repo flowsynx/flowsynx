@@ -44,7 +44,7 @@ internal class WorkflowApplicationExecutionsListHandler
                 Request = history.Request,
                 Response = history.Response,
                 Context = history.Context,
-                Parameters = history.Parameters,
+                Params = history.Params,
                 Metadata = history.Metadata,
                 Status = history.Status,
                 Progress = history.Progress,
