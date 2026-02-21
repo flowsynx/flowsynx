@@ -1,7 +1,9 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Models;
+using FlowSynx.Domain.Activities;
 using FlowSynx.Domain.Tenants;
+using FlowSynx.Domain.WorkflowApplications;
 using FlowSynx.Domain.WorkflowExecutions;
 using FlowSynx.Domain.Workflows;
 using Microsoft.Extensions.Logging;
@@ -74,12 +76,13 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             var activity = await _activityRepository.GetByIdAsync(tenantId, userId, activityId, cancellationToken)
                 ?? throw new Exception($"Activity not found: {activityId}");
 
+            // Get execution settings from profile (retry policy now in FaultHandling)
             var execSettings = activity.Specification.ExecutionProfile.ToSettings();
 
-            // Create activity instance
-            var activityInstance = new Domain.Workflows.ActivityInstance
+            // Create a blueprint activity instance for this execution
+            var activityInstance = new ActivityInstance
             {
-                Id = "execution-instance",
+                Id = "execution-instance", // local ID
                 Activity = new ActivityReference
                 {
                     Name = activity.Name,
@@ -94,7 +97,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Priority = execSettings.Priority
                 },
                 TimeoutMilliseconds = execSettings.TimeoutMilliseconds,
-                RetryPolicy = execSettings.RetryPolicy
+                // Retry policy from fault handling
+                RetryPolicy = activity.Specification.FaultHandling?.RetryPolicy
             };
 
             // Get executor
@@ -278,8 +282,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             var results = new Dictionary<string, object>();
             var activityResults = new List<object>();
 
-            // Execute activities in order
-            var activities = workflow.Activities.OrderBy(a => a.Order).ToList();
+            // Execute activities in the order they appear in the list (ignoring DependsOn for simplicity)
+            var activities = workflow.Activities.ToList();
             int totalActivities = activities.Count;
             for (int i = 0; i < totalActivities; i++)
             {
@@ -291,28 +295,33 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
                 try
                 {
-                    // Load activity
-                    var activityByName = await _activityRepository.GetByNameAndVersionAsync(
-                        activity.ActivityId,
-                        "latest", cancellationToken);
+                    // Load the actual activity entity using the reference in the blueprint instance
+                    var activityEntity = await _activityRepository.GetByNameAndVersionAsync(
+                        activity.Activity.Name,
+                        activity.Activity.Version ?? "latest",
+                        cancellationToken);
 
-                    if (activityByName == null)
+                    if (activityEntity == null)
                     {
-                        throw new Exception($"Activity blueprint not found: {activity.ActivityId}");
+                        throw new Exception($"Activity not found: {activity.Activity.Name} (v{activity.Activity.Version})");
                     }
+
+                    // Merge workflow context with any activity-specific parameters
+                    var activityParams = activity.Params ?? new Dictionary<string, object>();
 
                     // Execute activity
                     var activityResult = await ExecuteActivityAsync(
                         tenantId,
                         userId,
-                        activityByName.Id,
-                        activity.Params,
+                        activityEntity.Id,
+                        activityParams,
                         context,
                         cancellationToken);
 
                     activityResults.Add(new
                     {
-                        activityId = activity.ActivityId,
+                        activityId = activity.Id, // local ID within workflow
+                        activityName = activity.Activity.Name,
                         result = activityResult.Results?.GetValueOrDefault("result"),
                         status = activityResult.Status.Phase
                     });
@@ -320,8 +329,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "info",
-                        Message = $"Activity '{activity.ActivityId}' executed successfully",
-                        Source = activity.ActivityId,
+                        Message = $"Activity '{activity.Activity.Name}' executed successfully",
+                        Source = activity.Activity.Name,
                         Timestamp = DateTime.UtcNow
                     });
                 }
@@ -330,18 +339,18 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "error",
-                        Message = $"Activity '{activity.ActivityId}' failed: {ex.Message}",
-                        Source = activity.ActivityId,
+                        Message = $"Activity '{activity.Activity.Name}' failed: {ex.Message}",
+                        Source = activity.Activity.Name,
                         Timestamp = DateTime.UtcNow
                     });
 
                     // Check if we should continue based on workflow error handling
                     var errorHandling = workflow.Specification.Context?.FaultHandling;
-                    if (errorHandling?.ErrorHandling == "propagate")
+                    if (errorHandling?.ErrorHandling == ErrorHandlingStrategy.Propagate)
                     {
                         throw;
                     }
-                    // else continue with other genes
+                    // else continue with other activities
                 }
             }
 
@@ -466,7 +475,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
         try
         {
-            // Load workflow application with workflows
+            // Load workflow application
             var workflowApplication = await _workflowApplicationRepository.GetByIdAsync(tenantId, userId, workflowApplicationId, cancellationToken);
             if (workflowApplication == null)
             {
@@ -475,12 +484,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             var workflowResults = new List<object>();
 
-            // Execute workflows
-            var workflows = workflowApplication.Workflows.ToList();
-            int totalWorkflows = workflows.Count;
+            // Get workflow references from the specification (not from a direct collection)
+            var workflowRefs = workflowApplication.Specification.Workflows ?? new List<WorkflowReference>();
+            int totalWorkflows = workflowRefs.Count;
             for (int i = 0; i < totalWorkflows; i++)
             {
-                var workflow = workflows[i];
+                var wfRef = workflowRefs[i];
 
                 // Update progress
                 executionRecord.Progress = (int)((i * 100) / totalWorkflows);
@@ -488,7 +497,33 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
                 try
                 {
-                    var workflowResult = await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context, cancellationToken);
+                    // Load the actual workflow entity using the reference
+                    var workflow = await _workflowRepository.GetByNameAsync(
+                        wfRef.Name,
+                        wfRef.Namespace ?? "default",
+                        cancellationToken);
+
+                    if (workflow == null)
+                    {
+                        throw new Exception($"Workflow not found: {wfRef.Name} (namespace: {wfRef.Namespace})");
+                    }
+
+                    // Merge application context with any workflow-specific parameters from the reference
+                    var mergedContext = new Dictionary<string, object>(context);
+                    if (wfRef.Params != null)
+                    {
+                        foreach (var kvp in wfRef.Params)
+                        {
+                            mergedContext[kvp.Key] = kvp.Value;
+                        }
+                    }
+
+                    var workflowResult = await ExecuteWorkflowAsync(
+                        tenantId,
+                        userId,
+                        workflow.Id,
+                        mergedContext,
+                        cancellationToken);
 
                     workflowResults.Add(new
                     {
@@ -511,8 +546,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "error",
-                        Message = $"Workflow '{workflow.Name}' failed: {ex.Message}",
-                        Source = workflow.Name,
+                        Message = $"Workflow '{wfRef.Name}' failed: {ex.Message}",
+                        Source = wfRef.Name,
                         Timestamp = DateTime.UtcNow
                     });
 
@@ -647,7 +682,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             {
                 case "activity":
                     var activity = await _activityRepository.GetByNameAndVersionAsync(
-                        target.Name, target.Version ?? "latest");
+                        target.Name, target.Version ?? "latest", cancellationToken);
                     if (activity == null)
                         throw new Exception($"Activity not found: {target.Name}");
 
@@ -655,7 +690,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
                 case "workflow":
                     var workflow = await _workflowRepository.GetByNameAsync(
-                        target.Name, target.Namespace ?? "default");
+                        target.Name, target.Namespace ?? "default", cancellationToken);
                     if (workflow == null)
                         throw new Exception($"Workflow not found: {target.Name}");
 
@@ -663,7 +698,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
                 case "workflowApplication":
                     var workflowApplication = await _workflowApplicationRepository.GetByNameAsync(
-                        target.Name, target.Namespace ?? "default");
+                        target.Name, target.Namespace ?? "default", cancellationToken);
                     if (workflowApplication == null)
                         throw new Exception($"WorkflowApplication not found: {target.Name}");
 
@@ -698,14 +733,14 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
     private async Task<object> ExecuteWithTimeoutAsync(
         Func<Task<object>> operation,
-        int timeoutMilliseconds,
+        int? timeoutMilliseconds,
         CancellationToken cancellationToken)
     {
-        if (timeoutMilliseconds < 1)
+        if (!timeoutMilliseconds.HasValue || timeoutMilliseconds < 1)
             return await operation();
 
         var executionTask = operation();
-        var timeoutTask = Task.Delay(timeoutMilliseconds, cancellationToken);
+        var timeoutTask = Task.Delay(timeoutMilliseconds.Value, cancellationToken);
 
         var completed = await Task.WhenAny(executionTask, timeoutTask);
         if (completed == executionTask)
@@ -722,7 +757,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         ActivityInstance instance,
         CancellationToken cancellationToken)
     {
-        var policy = instance.RetryPolicy;
+        var policy = instance.RetryPolicy ?? new RetryPolicy(); // fallback if null
 
         var maxAttempts = Math.Max(1, policy.MaxAttempts);
         var baseDelayMs = Math.Max(0, policy.DelayMilliseconds);

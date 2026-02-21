@@ -3,7 +3,6 @@
 public class WorkflowSpecification
 {
     public string Description { get; set; } = string.Empty;
-
     public List<ActivityInstance> Activities { get; set; } = new List<ActivityInstance>();
 
     public ExecutionContext Context { get; set; } = new ExecutionContext();

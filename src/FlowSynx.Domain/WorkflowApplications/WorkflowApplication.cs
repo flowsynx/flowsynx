@@ -17,9 +17,9 @@ public class WorkflowApplication : AuditableEntity<Guid>, IAggregateRoot, ITenan
 
     public WorkflowApplicationSpecification Specification { get; set; } = new();
 
-    public Dictionary<string, object> Metadata { get; set; } = new();
-    public Dictionary<string, string> Labels { get; set; } = new();
-    public Dictionary<string, string> Annotations { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = new();     // Arbitrary key-value pairs for additional information
+    public Dictionary<string, string> Labels { get; set; } = new();       // Key-value pairs for categorization and filtering
+    public Dictionary<string, string> Annotations { get; set; } = new();  // Key-value pairs for additional metadata
 
     public Dictionary<string, object> SharedContext { get; set; } = new();
 

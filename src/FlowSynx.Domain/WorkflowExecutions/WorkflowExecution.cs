@@ -1,4 +1,5 @@
-﻿using FlowSynx.Domain.Primitives;
+﻿using FlowSynx.Domain.ActivityInstances;
+using FlowSynx.Domain.Primitives;
 
 namespace FlowSynx.Domain.WorkflowExecutions;
 
@@ -31,4 +32,5 @@ public class WorkflowExecution : AuditableEntity<Guid>, IAggregateRoot
 
     public ICollection<WorkflowExecutionLog> Logs { get; set; } = new List<WorkflowExecutionLog>();
     public ICollection<WorkflowExecutionArtifact> Artifacts { get; set; } = new List<WorkflowExecutionArtifact>();
+    public ICollection<ActivityRun> ActivityRuns { get; set; } = new List<ActivityRun>();
 }

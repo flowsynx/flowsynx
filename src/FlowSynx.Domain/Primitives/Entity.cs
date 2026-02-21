@@ -55,7 +55,7 @@ public abstract class Entity<TId> : IEquatable<Entity<TId>> where TId : notnull
     }
 
     public override int GetHashCode() =>
-        (GetType().ToString() + Id).GetHashCode();
+       HashCode.Combine(GetType(), Id);
 
     public static bool operator ==(Entity<TId>? left, Entity<TId>? right)
     {

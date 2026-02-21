@@ -1,4 +1,6 @@
-﻿using FlowSynx.Domain.Tenants;
+﻿using FlowSynx.Domain.Activities;
+using FlowSynx.Domain.ActivityInstances;
+using FlowSynx.Domain.Tenants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -7,9 +9,9 @@ using System.Text.Json;
 
 namespace FlowSynx.Persistence.Sqlite.EntityConfigurations;
 
-public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.ActivityInstances.ActivityInstance>
+public class ActivityRunConfiguration : IEntityTypeConfiguration<ActivityRun>
 {
-    public void Configure(EntityTypeBuilder<Domain.ActivityInstances.ActivityInstance> builder)
+    public void Configure(EntityTypeBuilder<ActivityRun> builder)
     {
         var jsonOptions = new JsonSerializerOptions
         {
@@ -28,7 +30,7 @@ public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.Act
                 value => TenantId.Create(value));
 
         // Ensure FK type matches Workflow.Id by converting the value object
-        builder.Property(gi => gi.WorkflowId)
+        builder.Property(gi => gi.WorkflowExecutionId)
             .IsRequired();
 
         builder.Property(gi => gi.ActivityId)
@@ -42,9 +44,9 @@ public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.Act
             d => d == null ? 0 : JsonSerializer.Serialize(d).GetHashCode(),
             d => d == null ? null : JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(d)));
 
-        var configConverter = new ValueConverter<FlowSynx.Domain.ActivityInstances.ActivityConfiguration, string>(
-            v => v.ToString(),
-            v => (FlowSynx.Domain.ActivityInstances.ActivityConfiguration)Enum.Parse(typeof(FlowSynx.Domain.ActivityInstances.ActivityConfiguration), v, true)
+        var configConverter = new ValueConverter<FlowSynx.Domain.Workflows.ActivityConfiguration, string>(
+            v => JsonSerializer.Serialize(v, jsonOptions),
+            v => JsonSerializer.Deserialize<FlowSynx.Domain.Workflows.ActivityConfiguration>(v, jsonOptions)
         );
 
         // Store JSON fields
@@ -59,20 +61,13 @@ public class ActivityInstanceConfiguration : IEntityTypeConfiguration<Domain.Act
             .HasColumnType("TEXT")
             .HasConversion(configConverter);
 
-        builder.Property(gi => gi.Metadata)
-            .HasColumnType("TEXT")
-            .HasConversion(
-                v => JsonSerializer.Serialize(v, jsonOptions),
-                v => JsonSerializer.Deserialize<Dictionary<string, object>>(v, jsonOptions) ?? new Dictionary<string, object>())
-            .Metadata.SetValueComparer(dictionaryComparer);
-
         // Relationship with Workflow
-        builder.HasOne(we => we.Workflow)
-           .WithMany(w => w.Activities)
-           .HasForeignKey(we => we.WorkflowId)
+        builder.HasOne(we => we.WorkflowExecution)
+           .WithMany(w => w.ActivityRuns)
+           .HasForeignKey(we => we.WorkflowExecutionId)
            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(gi => gi.ActivityId);
-        builder.HasIndex(gi => gi.WorkflowId);
+        builder.HasIndex(gi => gi.WorkflowExecutionId);
     }
 }

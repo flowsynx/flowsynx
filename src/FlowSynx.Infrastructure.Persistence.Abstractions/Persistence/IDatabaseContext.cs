@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Domain.Activities;
+using FlowSynx.Domain.ActivityInstances;
 using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.TenantContacts;
 using FlowSynx.Domain.Tenants;
@@ -20,7 +21,7 @@ public interface IDatabaseContext
     DbSet<Activity> Activities { get; }
     DbSet<Workflow> Workflows { get; }
     DbSet<WorkflowApplication> WorkflowApplications { get; }
-    DbSet<Domain.ActivityInstances.ActivityInstance> ActivityInstances { get; }
+    DbSet<ActivityRun> ActivityRuns { get; }
     DbSet<AuditTrail> AuditTrails { get; }
     DbSet<WorkflowExecution> WorkflowExecutions { get; }
     DbSet<WorkflowExecutionLog> WorkflowExecutionLogs { get; }

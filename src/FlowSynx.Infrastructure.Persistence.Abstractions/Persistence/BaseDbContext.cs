@@ -1,5 +1,6 @@
 ﻿using FlowSynx.BuildingBlocks.Clock;
 using FlowSynx.Domain.Activities;
+using FlowSynx.Domain.ActivityInstances;
 using FlowSynx.Domain.AuditTrails;
 using FlowSynx.Domain.Primitives;
 using FlowSynx.Domain.TenantContacts;
@@ -47,7 +48,7 @@ public abstract class BaseDbContext : DbContext, IDatabaseContext
     public DbSet<Activity> Activities { get; set; }
     public DbSet<Workflow> Workflows { get; set; }
     public DbSet<WorkflowApplication> WorkflowApplications { get; set; }
-    public DbSet<Domain.ActivityInstances.ActivityInstance> ActivityInstances { get; set; }
+    public DbSet<ActivityRun> ActivityRuns { get; set; }
     public DbSet<AuditTrail> AuditTrails { get; set; }
     public DbSet<WorkflowExecution> WorkflowExecutions { get; set; }
     public DbSet<WorkflowExecutionLog> WorkflowExecutionLogs { get; set; }

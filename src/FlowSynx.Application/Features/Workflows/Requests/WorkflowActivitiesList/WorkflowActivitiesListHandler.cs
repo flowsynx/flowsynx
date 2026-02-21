@@ -50,7 +50,7 @@ internal class WorkflowActivitiesListHandler : IActionHandler<WorkflowActivities
 
             var response = workflowActivities.Select(activity => new WorkflowActivitiesListResult
             {
-                Name = activity.ActivityId.ToString()
+                Name = activity.Activity.Name
             });
 
             var pagedItems = response.ToPaginatedList(

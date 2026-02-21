@@ -44,6 +44,8 @@ public class WorkflowConfiguration : IEntityTypeConfiguration<Workflow>
         builder.Property(c => c.Description)
             .HasMaxLength(1000);
 
+        builder.Ignore(c => c.Activities);
+
         var objectDictionaryComparer = new ValueComparer<Dictionary<string, object>>(
             (l, r) =>
                 ReferenceEquals(l, r) ||

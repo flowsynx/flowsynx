@@ -11,11 +11,12 @@ public class Workflow : AuditableEntity<Guid>, ITenantScoped, IUserScoped
     public string Name { get; set; } = string.Empty;
     public string Namespace { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public WorkflowSpecification Specification { get; set; } = new WorkflowSpecification();
-    public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
-    public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
-    public Dictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
+    public WorkflowSpecification Specification { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = new();     // Arbitrary key-value pairs for additional information
+    public Dictionary<string, string> Labels { get; set; } = new();       // Key-value pairs for categorization and filtering
+    public Dictionary<string, string> Annotations { get; set; } = new();  // Key-value pairs for additional metadata
     public Guid? WorkflowApplicationId { get; set; }
-    public ICollection<ActivityInstances.ActivityInstance> Activities { get; set; } = new List<ActivityInstances.ActivityInstance>();
+
+    public ICollection<ActivityInstance> Activities { get; set; } = new List<ActivityInstance>();
     public WorkflowApplication? WorkflowApplication { get; set; }
 }

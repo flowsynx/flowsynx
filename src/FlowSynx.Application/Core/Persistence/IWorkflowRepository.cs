@@ -31,7 +31,7 @@ public interface IWorkflowRepository
         string @namespace, 
         CancellationToken cancellationToken = default);
 
-    Task<IEnumerable<Domain.ActivityInstances.ActivityInstance>> GetWorkflowActivitiesAsync(
+    Task<IEnumerable<ActivityInstance>> GetWorkflowActivitiesAsync(
         TenantId tenantId,
         string userId,
         Guid workflowId,

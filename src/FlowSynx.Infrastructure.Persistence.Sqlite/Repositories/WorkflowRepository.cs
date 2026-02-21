@@ -89,7 +89,7 @@ public class WorkflowRepository : IWorkflowRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IEnumerable<Domain.ActivityInstances.ActivityInstance>> GetWorkflowActivitiesAsync(
+    public async Task<IEnumerable<ActivityInstance>> GetWorkflowActivitiesAsync(
         TenantId tenantId, 
         string userId, 
         Guid workflowId, 

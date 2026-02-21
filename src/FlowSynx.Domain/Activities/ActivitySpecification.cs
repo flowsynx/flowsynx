@@ -2,12 +2,12 @@
 
 public class ActivitySpecification
 {
-    public string Description { get; set; } = string.Empty;
-    public List<ParameterDefinition> Params { get; set; } = new List<ParameterDefinition>();
-    public ExecutionProfile ExecutionProfile { get; set; } = new ExecutionProfile();
-    public CompatibilityMatrix Compatibility { get; set; } = new CompatibilityMatrix();
-    public FaultHandling FaultHandling { get; set; } = new FaultHandling();
-    public ExecutableComponent Executable { get; set; } = new ExecutableComponent();
-    public List<ValidationRule> ValidationRules { get; set; } = new List<ValidationRule>();
-    public List<string> Tags { get; set; } = new List<string>();
+    public string Description { get; set; } = string.Empty;  // Detailed description
+    public List<ParameterDefinition> Params { get; set; } = new();
+    public ExecutionProfile ExecutionProfile { get; set; } = new();
+    public CompatibilityMatrix Compatibility { get; set; } = new();
+    public FaultHandling FaultHandling { get; set; } = new();
+    public ExecutableComponent Executable { get; set; } = new();
+    public List<ValidationRule> ValidationRules { get; set; } = new();
+    public List<string> Tags { get; set; } = new();
 }

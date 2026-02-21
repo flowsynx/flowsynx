@@ -10,11 +10,11 @@ public class Activity : AuditableEntity<Guid>, IAggregateRoot, ITenantScoped, IU
     public string Name { get; set; } = string.Empty;
     public string Namespace { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public ActivitySpecification Specification { get; set; } = new ActivitySpecification();
-    public Dictionary<string, object> Metadata { get; set; } = new Dictionary<string, object>();
-    public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
-    public Dictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
+    public string? Description { get; set; }  // Short summary
+    public ActivitySpecification Specification { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = new();    // Arbitrary key-value pairs for additional information
+    public Dictionary<string, string> Labels { get; set; } = new();      // Key-value pairs for categorization and filtering
+    public Dictionary<string, string> Annotations { get; set; } = new(); // Key-value pairs for additional metadata
     public string? Owner { get; set; }
     public ActivityStatus Status { get; set; } = ActivityStatus.Active;
     public bool IsShared { get; set; }

@@ -28,23 +28,22 @@ public class JsonProcessingService : IJsonProcessingService
         {
             var activityJson = JsonSerializer.Deserialize<ActivityJson>(json, _jsonOptions);
 
-            // Convert to domain entity
             return new Activity
             {
                 Id = Guid.NewGuid(),
                 Name = activityJson.Metadata.Name,
                 Namespace = activityJson.Metadata.Namespace,
                 Version = activityJson.Metadata.Version,
-                Description = activityJson.Spec.Description,
-                Specification = activityJson.Spec,
-                Metadata = new System.Collections.Generic.Dictionary<string, object>
+                Description = activityJson.Spec.Description,          // short summary
+                Specification = activityJson.Spec,                    // full spec
+                Metadata = new Dictionary<string, object>
                 {
                     ["apiVersion"] = activityJson.ApiVersion,
                     ["kind"] = activityJson.Kind,
                     ["originalJson"] = json
                 },
-                Labels = activityJson.Metadata.Labels ?? new System.Collections.Generic.Dictionary<string, string>(),
-                Annotations = activityJson.Metadata.Annotations ?? new System.Collections.Generic.Dictionary<string, string>(),
+                Labels = activityJson.Metadata.Labels ?? new Dictionary<string, string>(),
+                Annotations = activityJson.Metadata.Annotations ?? new Dictionary<string, string>(),
                 Owner = activityJson.Metadata.Owner,
                 IsShared = activityJson.Metadata.Shared,
                 Status = ActivityStatus.Active
@@ -62,56 +61,57 @@ public class JsonProcessingService : IJsonProcessingService
         {
             var workflowJson = JsonSerializer.Deserialize<WorkflowJson>(json, _jsonOptions);
 
-            // Convert to domain entity
             var workflow = new Workflow
             {
                 Id = Guid.NewGuid(),
                 Name = workflowJson.Metadata.Name,
                 Namespace = workflowJson.Metadata.Namespace,
                 Description = workflowJson.Specification.Description,
-                Specification = workflowJson.Specification,
-                Metadata = new System.Collections.Generic.Dictionary<string, object>
+                Specification = workflowJson.Specification,   // will contain activities – we'll clear them later
+                Metadata = new Dictionary<string, object>
                 {
                     ["apiVersion"] = workflowJson.ApiVersion,
                     ["kind"] = workflowJson.Kind,
                     ["originalJson"] = json
                 },
-                Labels = workflowJson.Metadata.Labels ?? new System.Collections.Generic.Dictionary<string, string>(),
-                Annotations = workflowJson.Metadata.Annotations ?? new System.Collections.Generic.Dictionary<string, string>()
+                Labels = workflowJson.Metadata.Labels ?? new Dictionary<string, string>(),
+                Annotations = workflowJson.Metadata.Annotations ?? new Dictionary<string, string>()
             };
 
-            // Parse activity instances
+            // Map blueprint activities from JSON specification to Workflow.Activities
             if (workflowJson.Specification.Activities != null)
             {
-                int order = 0;
                 foreach (var activityJson in workflowJson.Specification.Activities)
                 {
-                    var activityInstance = new Domain.ActivityInstances.ActivityInstance
+                    var activityInstance = new ActivityInstance
                     {
-                        Id = Guid.NewGuid(),
-                        ActivityId = activityJson.Activity.Name,
-                        Params = activityJson.Params ?? new System.Collections.Generic.Dictionary<string, object>(),
-                        Configuration = new Domain.ActivityInstances.ActivityConfiguration
+                        Id = activityJson.Id ?? Guid.NewGuid().ToString(),   // use provided ID or generate
+                        Activity = new ActivityReference
+                        {
+                            Name = activityJson.Activity.Name,
+                            Version = activityJson.Activity.Version ?? "latest",
+                            Namespace = activityJson.Activity.Namespace ?? "default"
+                        },
+                        Params = activityJson.Params ?? new Dictionary<string, object>(),
+                        Configuration = new ActivityConfiguration
                         {
                             Operation = activityJson.Configuration?.Operation,
                             Mode = activityJson.Configuration?.Mode ?? "default",
                             RunInParallel = activityJson.Configuration?.RunInParallel ?? false,
-                            Priority = activityJson.Configuration?.Priority ?? 1,
-                            //Timeout = activityJson.Configuration?.Timeout,
-                            //Retry = activityJson.Configuration?.Retry
+                            Priority = activityJson.Configuration?.Priority ?? 1
                         },
-                        Metadata = new System.Collections.Generic.Dictionary<string, object>
-                        {
-                            ["id"] = activityJson.Id,
-                            ["dependsOn"] = activityJson.DependsOn,
-                            ["condition"] = activityJson.Condition
-                        },
-                        Order = order++
+                        DependsOn = activityJson.DependsOn ?? new List<string>(),
+                        Condition = activityJson.Condition,
+                        RetryPolicy = activityJson.RetryPolicy,   // assuming JSON has a RetryPolicy object
+                        TimeoutMilliseconds = activityJson.TimeoutMilliseconds
                     };
 
                     workflow.Activities.Add(activityInstance);
                 }
             }
+
+            // Avoid duplication: clear the activities inside Specification if they exist
+            workflow.Specification.Activities?.Clear();
 
             return workflow;
         }
@@ -127,7 +127,6 @@ public class JsonProcessingService : IJsonProcessingService
         {
             var workflowApplicationJson = JsonSerializer.Deserialize<WorkflowApplicationJson>(json, _jsonOptions);
 
-            // Convert to domain entity
             return new WorkflowApplication
             {
                 Id = Guid.NewGuid(),
@@ -135,15 +134,15 @@ public class JsonProcessingService : IJsonProcessingService
                 Namespace = workflowApplicationJson.Metadata.Namespace,
                 Description = workflowApplicationJson.Specification.Description,
                 Specification = workflowApplicationJson.Specification,
-                Metadata = new System.Collections.Generic.Dictionary<string, object>
+                Metadata = new Dictionary<string, object>
                 {
                     ["apiVersion"] = workflowApplicationJson.ApiVersion,
                     ["kind"] = workflowApplicationJson.Kind,
                     ["originalJson"] = json
                 },
-                Labels = workflowApplicationJson.Metadata.Labels ?? new System.Collections.Generic.Dictionary<string, string>(),
-                Annotations = workflowApplicationJson.Metadata.Annotations ?? new System.Collections.Generic.Dictionary<string, string>(),
-                SharedContext = workflowApplicationJson.Specification.Environment?.Variables ?? new System.Collections.Generic.Dictionary<string, object>(),
+                Labels = workflowApplicationJson.Metadata.Labels ?? new Dictionary<string, string>(),
+                Annotations = workflowApplicationJson.Metadata.Annotations ?? new Dictionary<string, string>(),
+                SharedContext = workflowApplicationJson.Specification.Environment?.Variables ?? new Dictionary<string, object>(),
                 Owner = workflowApplicationJson.Metadata.Owner,
                 IsShared = workflowApplicationJson.Metadata.Shared
             };
@@ -190,10 +189,8 @@ public class JsonProcessingService : IJsonProcessingService
 
         try
         {
-            // Parse to check JSON structure
             var jsonElement = JsonSerializer.Deserialize<JsonElement>(json, _jsonOptions);
 
-            // Check if it has required fields
             if (jsonElement.TryGetProperty("kind", out var kindElement))
             {
                 var kind = kindElement.GetString();

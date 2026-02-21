@@ -2,10 +2,9 @@
 
 public class FaultHandling
 {
-    public string ErrorHandling { get; set; } = "propagate";
-    public int MaxRetries { get; set; } = 3;
-    public int RetryDelayMilliseconds { get; set; } = 1000;
-    public Fallback Fallback { get; set; } = new Fallback();
-    public CircuitBreaker CircuitBreaker { get; set; } = new CircuitBreaker();
-    public HealthCheck HealthCheck { get; set; } = new HealthCheck();
+    public ErrorHandlingStrategy ErrorHandling { get; set; } = ErrorHandlingStrategy.Propagate;
+    public RetryPolicy? RetryPolicy { get; set; }
+    public Fallback? Fallback { get; set; }
+    public CircuitBreaker? CircuitBreaker { get; set; }
+    public HealthCheck? HealthCheck { get; set; }
 }
