@@ -21,7 +21,7 @@ public class AssemblyActivityExecutor : BaseActivityExecutor
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var executable = activity.Specification.Executable;
+        var executable = activity.Spec.Executable;
         var assemblyPath = executable.Assembly;
 
         if (string.IsNullOrEmpty(assemblyPath))

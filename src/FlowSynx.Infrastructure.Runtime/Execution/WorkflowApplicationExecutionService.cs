@@ -39,9 +39,9 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     public async Task<ExecutionResponse> ExecuteActivityAsync(
         TenantId tenantId,
         string userId,
-        Guid activityId, 
-        Dictionary<string, object> parameters, 
-        Dictionary<string, object> context, 
+        Guid activityId,
+        Dictionary<string, object> parameters,
+        Dictionary<string, object> context,
         CancellationToken cancellationToken = default)
     {
         var executionId = Guid.NewGuid().ToString();
@@ -71,8 +71,10 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         try
         {
             // Load activity
-            var activity = await _activityRepository.GetByIdAsync(tenantId, userId, activityId, cancellationToken) 
+            var activity = await _activityRepository.GetByIdAsync(tenantId, userId, activityId, cancellationToken)
                 ?? throw new Exception($"Activity not found: {activityId}");
+
+            var execSettings = activity.Specification.ExecutionProfile.ToSettings();
 
             // Create activity instance
             var activityInstance = new Domain.Workflows.ActivityInstance
@@ -87,9 +89,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 Params = parameters ?? new Dictionary<string, object>(),
                 Configuration = new ActivityConfiguration
                 {
-                    Operation = activity.Specification.ExecutionProfile?.DefaultOperation,
-                    Mode = "default"
-                }
+                    Operation = execSettings.Operation,
+                    Mode = execSettings.Mode,
+                    Priority = execSettings.Priority
+                },
+                TimeoutMilliseconds = execSettings.TimeoutMilliseconds,
+                RetryPolicy = execSettings.RetryPolicy
             };
 
             // Get executor
@@ -99,23 +104,29 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             workflowExecution.Progress = 50;
             await _executionRepository.UpdateAsync(workflowExecution, cancellationToken);
 
-            // Execute
-            var result = await executor.ExecuteAsync(
-                new ActivityJson
+            var activityJson = new ActivityJson
+            {
+                Metadata = new ActivityMetadata
                 {
-                    Metadata = new ActivityMetadata
-                    {
-                        Name = activity.Name,
-                        Namespace = activity.Namespace,
-                        Id = activity.Id.ToString(),
-                        Version = activity.Version
-                    },
-                    Specification = activity.Specification
+                    Name = activity.Name,
+                    Namespace = activity.Namespace,
+                    Id = activity.Id.ToString(),
+                    Version = activity.Version
                 },
-                activityInstance,
-                parameters ?? new Dictionary<string, object>(),
-                context ?? new Dictionary<string, object>()
-            );
+                Spec = activity.Specification
+            };
+
+            // Execute (with retry policy + timeout)
+            var safeParameters = parameters ?? new Dictionary<string, object>();
+            var safeContext = context ?? new Dictionary<string, object>();
+
+            var result = await ExecuteWithRetryAsync(
+                operation: () => ExecuteWithTimeoutAsync(
+                    operation: () => executor.ExecuteAsync(activityJson, activityInstance, safeParameters, safeContext),
+                    timeoutMilliseconds: activityInstance.TimeoutMilliseconds,
+                    cancellationToken: cancellationToken),
+                instance: activityInstance,
+                cancellationToken: cancellationToken);
 
             // Update execution record
             workflowExecution.Progress = 100;
@@ -212,15 +223,15 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Reason = "ExecutionError"
                 },
                 Errors = new List<ExecutionError>
+                {
+                    new ExecutionError
                     {
-                        new ExecutionError
-                        {
-                            Code = "EXECUTION_FAILED",
-                            Message = ex.Message,
-                            Source = "activity",
-                            Timestamp = DateTime.UtcNow
-                        }
+                        Code = "EXECUTION_FAILED",
+                        Message = ex.Message,
+                        Source = "activity",
+                        Timestamp = DateTime.UtcNow
                     }
+                }
             };
         }
     }
@@ -228,8 +239,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     public async Task<ExecutionResponse> ExecuteWorkflowAsync(
         TenantId tenantId,
         string userId,
-        Guid workflowId, 
-        Dictionary<string, object> context, 
+        Guid workflowId,
+        Dictionary<string, object> context,
         CancellationToken cancellationToken = default)
     {
         var executionId = Guid.NewGuid().ToString();
@@ -296,7 +307,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         userId,
                         activityByName.Id,
                         activity.Params,
-                        context);
+                        context,
+                        cancellationToken);
 
                     activityResults.Add(new
                     {
@@ -409,15 +421,15 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Reason = "ExecutionError"
                 },
                 Errors = new List<ExecutionError>
+                {
+                    new ExecutionError
                     {
-                        new ExecutionError
-                        {
-                            Code = "EXECUTION_FAILED",
-                            Message = ex.Message,
-                            Source = "workflow",
-                            Timestamp = DateTime.UtcNow
-                        }
+                        Code = "EXECUTION_FAILED",
+                        Message = ex.Message,
+                        Source = "workflow",
+                        Timestamp = DateTime.UtcNow
                     }
+                }
             };
         }
     }
@@ -425,7 +437,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     public async Task<ExecutionResponse> ExecuteWorkflowApplicationAsync(
         TenantId tenantId,
         string userId,
-        Guid workflowApplicationId, 
+        Guid workflowApplicationId,
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default)
     {
@@ -476,7 +488,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
                 try
                 {
-                    var workflowResult = await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context);
+                    var workflowResult = await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context, cancellationToken);
 
                     workflowResults.Add(new
                     {
@@ -590,15 +602,15 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Reason = "ExecutionError"
                 },
                 Errors = new List<ExecutionError>
+                {
+                    new ExecutionError
                     {
-                        new ExecutionError
-                        {
-                            Code = "EXECUTION_FAILED",
-                            Message = ex.Message,
-                            Source = "workflowApplication",
-                            Timestamp = DateTime.UtcNow
-                        }
+                        Code = "EXECUTION_FAILED",
+                        Message = ex.Message,
+                        Source = "workflowApplication",
+                        Timestamp = DateTime.UtcNow
                     }
+                }
             };
         }
     }
@@ -606,7 +618,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     public async Task<ExecutionResponse> ExecuteRequestAsync(
         TenantId tenantId,
         string userId,
-        ExecutionRequest request, 
+        ExecutionRequest request,
         CancellationToken cancellationToken = default)
     {
         try
@@ -639,7 +651,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     if (activity == null)
                         throw new Exception($"Activity not found: {target.Name}");
 
-                    return await ExecuteActivityAsync(tenantId, userId, activity.Id, parameters, context);
+                    return await ExecuteActivityAsync(tenantId, userId, activity.Id, parameters, context, cancellationToken);
 
                 case "workflow":
                     var workflow = await _workflowRepository.GetByNameAsync(
@@ -647,7 +659,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     if (workflow == null)
                         throw new Exception($"Workflow not found: {target.Name}");
 
-                    return await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context);
+                    return await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context, cancellationToken);
 
                 case "workflowApplication":
                     var workflowApplication = await _workflowApplicationRepository.GetByNameAsync(
@@ -655,7 +667,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     if (workflowApplication == null)
                         throw new Exception($"WorkflowApplication not found: {target.Name}");
 
-                    return await ExecuteWorkflowApplicationAsync(tenantId, userId, workflowApplication.Id, context);
+                    return await ExecuteWorkflowApplicationAsync(tenantId, userId, workflowApplication.Id, context, cancellationToken);
 
                 default:
                     throw new Exception($"Unknown target type: {target.Type}");
@@ -669,18 +681,113 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     }
 
     public async Task<WorkflowExecution?> GetWorkflowExecutionAsync(
-        Guid executionId, 
+        Guid executionId,
         CancellationToken cancellationToken = default)
     {
         return await _executionRepository.GetByIdAsync(executionId, cancellationToken);
     }
 
     public async Task<IEnumerable<WorkflowExecution>> GetExecutionHistoryAsync(
-        string targetType, 
-        Guid targetId, 
+        string targetType,
+        Guid targetId,
         CancellationToken cancellationToken = default)
     {
         return (await _executionRepository.GetByTargetAsync(targetType, targetId))
             .ToList();
+    }
+
+    private async Task<object> ExecuteWithTimeoutAsync(
+        Func<Task<object>> operation,
+        int timeoutMilliseconds,
+        CancellationToken cancellationToken)
+    {
+        if (timeoutMilliseconds < 1)
+            return await operation();
+
+        var executionTask = operation();
+        var timeoutTask = Task.Delay(timeoutMilliseconds, cancellationToken);
+
+        var completed = await Task.WhenAny(executionTask, timeoutTask);
+        if (completed == executionTask)
+            return await executionTask;
+
+        // If the delay completed due to cancellation, propagate cancellation (not a timeout).
+        cancellationToken.ThrowIfCancellationRequested();
+
+        throw new TimeoutException($"Activity execution exceeded timeout of {timeoutMilliseconds}ms.");
+    }
+
+    private async Task<object> ExecuteWithRetryAsync(
+        Func<Task<object>> operation,
+        ActivityInstance instance,
+        CancellationToken cancellationToken)
+    {
+        var policy = instance.RetryPolicy;
+
+        var maxAttempts = Math.Max(1, policy.MaxAttempts);
+        var baseDelayMs = Math.Max(0, policy.DelayMilliseconds);
+        var backoffMultiplier = policy.BackoffMultiplier < 1.0f ? 1.0f : policy.BackoffMultiplier;
+        var maxDelayMs = policy.MaxDelayMilliseconds < 0 ? 0 : policy.MaxDelayMilliseconds;
+
+        Exception? lastException = null;
+
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                return await operation();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                lastException = ex;
+
+                var delayMs = CalculateDelayMilliseconds(
+                    retryIndex: attempt - 1,
+                    baseDelayMs: baseDelayMs,
+                    multiplier: backoffMultiplier,
+                    maxDelayMs: maxDelayMs);
+
+                _logger.LogWarning(
+                    ex,
+                    "Activity {ActivityInstanceId} failed on attempt {Attempt}/{MaxAttempts}. Retrying in {DelayMilliseconds}ms.",
+                    instance.Id,
+                    attempt,
+                    maxAttempts,
+                    delayMs);
+
+                if (delayMs > 0)
+                    await Task.Delay(delayMs, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+                throw;
+            }
+        }
+
+        throw lastException ?? new Exception("Activity execution failed after retries.");
+    }
+
+    private static int CalculateDelayMilliseconds(int retryIndex, int baseDelayMs, float multiplier, int maxDelayMs)
+    {
+        if (baseDelayMs <= 0)
+            return 0;
+
+        var factor = Math.Pow(multiplier, retryIndex);
+        var rawDelay = baseDelayMs * factor;
+
+        var delay = rawDelay >= int.MaxValue ? int.MaxValue : (int)Math.Round(rawDelay);
+        delay = Math.Max(0, delay);
+
+        if (maxDelayMs > 0)
+            delay = Math.Min(delay, maxDelayMs);
+
+        return delay;
     }
 }

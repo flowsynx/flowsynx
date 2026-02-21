@@ -16,7 +16,7 @@ public class Activity : AuditableEntity<Guid>, IAggregateRoot, ITenantScoped, IU
     public Dictionary<string, string> Labels { get; set; } = new Dictionary<string, string>();
     public Dictionary<string, string> Annotations { get; set; } = new Dictionary<string, string>();
     public string? Owner { get; set; }
-    public string Status { get; set; } = "active";
+    public ActivityStatus Status { get; set; } = ActivityStatus.Active;
     public bool IsShared { get; set; }
     public Tenant? Tenant { get; set; }
 }

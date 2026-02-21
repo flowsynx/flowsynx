@@ -77,9 +77,16 @@ public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
             .HasColumnType("TEXT")
             .HasConversion(specConverter);
 
+        var statusConverter = new ValueConverter<ActivityStatus, string>(
+            v => v.ToString(),
+            v => (ActivityStatus)Enum.Parse(typeof(ActivityStatus), v, true)
+        );
+
         builder.Property(gb => gb.Status)
+            .HasColumnType("TEXT")
             .HasMaxLength(50)
-            .HasDefaultValue("active");
+            .HasConversion(statusConverter)
+            .HasDefaultValue(ActivityStatus.Active);
 
         builder.Property(gb => gb.Labels)
             .HasColumnType("TEXT")

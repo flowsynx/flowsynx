@@ -35,8 +35,8 @@ public class JsonProcessingService : IJsonProcessingService
                 Name = activityJson.Metadata.Name,
                 Namespace = activityJson.Metadata.Namespace,
                 Version = activityJson.Metadata.Version,
-                Description = activityJson.Specification.Description,
-                Specification = activityJson.Specification,
+                Description = activityJson.Spec.Description,
+                Specification = activityJson.Spec,
                 Metadata = new System.Collections.Generic.Dictionary<string, object>
                 {
                     ["apiVersion"] = activityJson.ApiVersion,
@@ -47,7 +47,7 @@ public class JsonProcessingService : IJsonProcessingService
                 Annotations = activityJson.Metadata.Annotations ?? new System.Collections.Generic.Dictionary<string, string>(),
                 Owner = activityJson.Metadata.Owner,
                 IsShared = activityJson.Metadata.Shared,
-                Status = "active"
+                Status = ActivityStatus.Active
             };
         }
         catch (Exception ex)

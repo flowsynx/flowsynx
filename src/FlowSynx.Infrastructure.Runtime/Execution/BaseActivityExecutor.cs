@@ -46,8 +46,8 @@ public abstract class BaseActivityExecutor : IActivityExecutor
                 metadata = activity.Metadata,
                 spec = new
                 {
-                    description = activity.Specification.Description,
-                    executionProfile = activity.Specification.ExecutionProfile
+                    description = activity.Spec.Description,
+                    executionProfile = activity.Spec.ExecutionProfile
                 }
             }
         };

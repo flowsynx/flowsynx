@@ -27,7 +27,7 @@ public class HttpActivityExecutor : BaseActivityExecutor
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var http = activity.Specification.Executable.Http;
+        var http = activity.Spec.Executable.Http;
         if (http == null)
         {
             throw new Exception("HTTP configuration is missing");

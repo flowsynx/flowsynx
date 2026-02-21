@@ -21,7 +21,7 @@ public class GrpcActivityExecutor : BaseActivityExecutor
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var grpc = activity.Specification.Executable.Grpc;
+        var grpc = activity.Spec.Executable.Grpc;
         if (grpc == null)
         {
             throw new Exception("gRPC configuration is missing");

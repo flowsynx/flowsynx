@@ -3,7 +3,6 @@
 public class ActivitySpecification
 {
     public string Description { get; set; } = string.Empty;
-    public string Blueprint { get; set; } = string.Empty;
     public List<ParameterDefinition> Params { get; set; } = new List<ParameterDefinition>();
     public ExecutionProfile ExecutionProfile { get; set; } = new ExecutionProfile();
     public CompatibilityMatrix Compatibility { get; set; } = new CompatibilityMatrix();

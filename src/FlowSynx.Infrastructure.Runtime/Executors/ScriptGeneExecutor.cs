@@ -40,7 +40,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var executable = activity.Specification.Executable;
+        var executable = activity.Spec.Executable;
         var scriptContext = PrepareContext(activity, instance, parameters, context);
 
         // Apply config from executable

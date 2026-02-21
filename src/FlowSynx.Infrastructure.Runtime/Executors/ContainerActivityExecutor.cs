@@ -21,7 +21,7 @@ public class ContainerActivityExecutor : BaseActivityExecutor
         Dictionary<string, object> parameters,
         Dictionary<string, object> context)
     {
-        var container = activity.Specification.Executable.Container;
+        var container = activity.Spec.Executable.Container;
         if (container == null)
         {
             throw new Exception("Container configuration is missing");
