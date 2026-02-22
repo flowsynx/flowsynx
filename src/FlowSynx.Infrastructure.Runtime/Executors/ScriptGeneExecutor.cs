@@ -34,7 +34,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
                !string.IsNullOrEmpty(executable.Source);
     }
 
-    public override async Task<object> ExecuteAsync(
+    public override async Task<object?> ExecuteAsync(
         ActivityJson activity,
         ActivityInstance instance,
         Dictionary<string, object> parameters,
@@ -54,7 +54,15 @@ public class ScriptActivityExecutor : BaseActivityExecutor
 
         try
         {
-            return executable.Language.ToLower() switch
+            if (executable is null)
+                throw new ActivityExecutionException("Executable is null.");
+
+            if (string.IsNullOrEmpty(executable.Language))
+                throw new NotSupportedException("Script language is null or empty");
+
+            var language = executable.Language?.ToLowerInvariant() ?? throw new NotSupportedException("Language is null");
+
+            return language switch
             {
                 "javascript" => await ExecuteJavaScriptAsync(executable, scriptContext),
                 "python" => await ExecutePythonAsync(executable, scriptContext),

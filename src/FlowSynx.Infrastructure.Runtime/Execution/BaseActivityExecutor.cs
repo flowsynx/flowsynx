@@ -16,7 +16,7 @@ public abstract class BaseActivityExecutor : IActivityExecutor
         _logger = logger;
     }
 
-    public abstract Task<object> ExecuteAsync(
+    public abstract Task<object?> ExecuteAsync(
         ActivityJson activity,
         ActivityInstance instance,
         Dictionary<string, object> parameters,

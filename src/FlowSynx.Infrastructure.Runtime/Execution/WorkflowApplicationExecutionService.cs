@@ -731,8 +731,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             .ToList();
     }
 
-    private async Task<object> ExecuteWithTimeoutAsync(
-        Func<Task<object>> operation,
+    private async Task<object?> ExecuteWithTimeoutAsync(
+        Func<Task<object?>> operation,
         int? timeoutMilliseconds,
         CancellationToken cancellationToken)
     {
@@ -753,7 +753,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     }
 
     private async Task<object> ExecuteWithRetryAsync(
-        Func<Task<object>> operation,
+        Func<Task<object?>> operation,
         ActivityInstance instance,
         CancellationToken cancellationToken)
     {

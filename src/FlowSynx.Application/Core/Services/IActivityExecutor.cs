@@ -5,7 +5,7 @@ namespace FlowSynx.Application.Core.Services;
 
 public interface IActivityExecutor
 {
-    Task<object> ExecuteAsync(
+    Task<object?> ExecuteAsync(
         ActivityJson activity,
         Domain.Workflows.ActivityInstance instance,
         Dictionary<string, object> parameters,
