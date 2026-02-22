@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Models;
+using FlowSynx.BuildingBlocks.Results;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowExecutions;
 
@@ -6,7 +7,7 @@ namespace FlowSynx.Application.Core.Services;
 
 public interface IWorkflowApplicationExecutionService
 {
-    Task<ExecutionResponse> ExecuteActivityAsync(
+    Task<Result<ExecutionResponse>> ExecuteActivityAsync(
         TenantId tenantId,
         string userId,
         Guid activityId, 
@@ -14,21 +15,21 @@ public interface IWorkflowApplicationExecutionService
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
-    Task<ExecutionResponse> ExecuteWorkflowAsync(
+    Task<Result<ExecutionResponse>> ExecuteWorkflowAsync(
         TenantId tenantId,
         string userId,
         Guid workflowId, 
         Dictionary<string, object> context, 
         CancellationToken cancellationToken = default);
 
-    Task<ExecutionResponse> ExecuteWorkflowApplicationAsync(
+    Task<Result<ExecutionResponse>> ExecuteWorkflowApplicationAsync(
         TenantId tenantId,
         string userId,
         Guid workflowApplicationId, 
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
-    Task<ExecutionResponse> ExecuteRequestAsync(
+    Task<Result<ExecutionResponse>> ExecuteRequestAsync(
         TenantId tenantId,
         string userId,
         ExecutionRequest request, 

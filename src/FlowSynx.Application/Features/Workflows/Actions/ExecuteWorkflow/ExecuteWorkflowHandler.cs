@@ -48,7 +48,7 @@ internal class ExecuteWorkflowHandler : IActionHandler<ExecuteWorkflowRequest, R
                 deserializedJson.Context ?? new Dictionary<string, object>(),
                 cancellationToken);
 
-            return await Result<ExecutionResponse>.SuccessAsync(result);
+            return result;
         }
         catch (ValidationException vex)
         {

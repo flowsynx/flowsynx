@@ -2,6 +2,7 @@
 using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Exceptions;
 using FlowSynx.Application.Models;
+using FlowSynx.BuildingBlocks.Results;
 using FlowSynx.Domain.Activities;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowApplications;
@@ -269,7 +270,7 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         return await _workflowApplicationRepository.GetByOwnerAsync(owner, cancellationToken);
     }
 
-    public async Task<ExecutionResponse> ExecuteJsonAsync(
+    public async Task<Result<ExecutionResponse>> ExecuteJsonAsync(
         TenantId tenantId,
         string userId, 
         string json, 
@@ -291,7 +292,7 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
                 else if (kind == "Activity")
                 {
                     var activity = await RegisterActivityAsync(userId, json);
-                    return new ExecutionResponse
+                    var response = new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
                         {
@@ -308,11 +309,13 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
                             Health = "healthy"
                         }
                     };
+
+                    return await Result<ExecutionResponse>.SuccessAsync(response);
                 }
                 else if (kind == "Workflow")
                 {
                     var workflow = await RegisterWorkflowAsync(userId, json);
-                    return new ExecutionResponse
+                    var response = new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
                         {
@@ -329,11 +332,12 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
                             Health = "healthy"
                         }
                     };
+                    return await Result<ExecutionResponse>.SuccessAsync(response);
                 }
                 else if (kind == "WorkflowApplication")
                 {
                     var workflowApplication = await RegisterWorkflowApplicationAsync(userId, json);
-                    return new ExecutionResponse
+                    var response = new ExecutionResponse
                     {
                         Metadata = new ExecutionResponseMetadata
                         {
@@ -350,6 +354,8 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
                             Health = "healthy"
                         }
                     };
+
+                    return await Result<ExecutionResponse>.SuccessAsync(response);
                 }
             }
 

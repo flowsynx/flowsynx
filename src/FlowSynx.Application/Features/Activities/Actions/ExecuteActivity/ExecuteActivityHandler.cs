@@ -48,7 +48,7 @@ internal class ExecuteActivityHandler : IActionHandler<ExecuteActivityRequest, R
                 deserializedJson.Context ?? new Dictionary<string, object>(),
                 cancellationToken);
 
-            return await Result<ExecutionResponse>.SuccessAsync(result);
+            return result;
         }
         catch (ValidationException vex)
         {

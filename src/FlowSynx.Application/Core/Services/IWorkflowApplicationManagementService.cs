@@ -1,4 +1,5 @@
 ﻿using FlowSynx.Application.Models;
+using FlowSynx.BuildingBlocks.Results;
 using FlowSynx.Domain.Activities;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowApplications;
@@ -44,7 +45,7 @@ public interface IWorkflowApplicationManagementService
         string owner, 
         CancellationToken cancellationToken = default);
 
-    Task<ExecutionResponse> ExecuteJsonAsync(
+    Task<Result<ExecutionResponse>> ExecuteJsonAsync(
         TenantId tenantId,
         string userId, 
         string json, 

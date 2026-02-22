@@ -39,7 +39,7 @@ internal class ExecuteHandler : IActionHandler<ExecuteRequest, Result<ExecutionR
                 TenantId.FromString(_currentUserService.TenantId()),
                 _currentUserService.UserId(), jsonString);
 
-            return await Result<ExecutionResponse>.SuccessAsync(result);
+            return result;
         }
         catch (ValidationException vex)
         {

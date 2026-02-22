@@ -1,6 +1,7 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Application.Core.Services;
 using FlowSynx.Application.Models;
+using FlowSynx.BuildingBlocks.Results;
 using FlowSynx.Domain.Activities;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowApplications;
@@ -38,7 +39,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         _logger = logger;
     }
 
-    public async Task<ExecutionResponse> ExecuteActivityAsync(
+    public async Task<Result<ExecutionResponse>> ExecuteActivityAsync(
         TenantId tenantId,
         string userId,
         Guid activityId,
@@ -154,7 +155,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             await _executionRepository.UpdateAsync(workflowExecution, cancellationToken);
 
             // Return response
-            return new ExecutionResponse
+            var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
                 {
@@ -176,6 +177,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     ["result"] = result
                 }
             };
+
+            return await Result<ExecutionResponse>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
@@ -208,7 +211,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             await _executionRepository.UpdateAsync(workflowExecution, cancellationToken);
 
-            return new ExecutionResponse
+            var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
                 {
@@ -237,10 +240,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     }
                 }
             };
+
+            return await Result<ExecutionResponse>.FailAsync(response);
         }
     }
 
-    public async Task<ExecutionResponse> ExecuteWorkflowAsync(
+    public async Task<Result<ExecutionResponse>> ExecuteWorkflowAsync(
         TenantId tenantId,
         string userId,
         Guid workflowId,
@@ -322,8 +327,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     {
                         activityId = activity.Id, // local ID within workflow
                         activityName = activity.Activity.Name,
-                        result = activityResult.Results?.GetValueOrDefault("result"),
-                        status = activityResult.Status.Phase
+                        result = activityResult.Data.Results?.GetValueOrDefault("result"),
+                        status = activityResult.Data.Status.Phase
                     });
 
                     executionRecord.Logs.Add(new WorkflowExecutionLog
@@ -368,7 +373,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
             // Return response
-            return new ExecutionResponse
+            var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
                 {
@@ -390,6 +395,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     ["activityResults"] = activityResults
                 }
             };
+
+            return await Result<ExecutionResponse>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
@@ -411,7 +418,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
-            return new ExecutionResponse
+            var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
                 {
@@ -440,10 +447,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     }
                 }
             };
+
+            return await Result<ExecutionResponse>.FailAsync(response);
         }
     }
 
-    public async Task<ExecutionResponse> ExecuteWorkflowApplicationAsync(
+    public async Task<Result<ExecutionResponse>> ExecuteWorkflowApplicationAsync(
         TenantId tenantId,
         string userId,
         Guid workflowApplicationId,
@@ -530,7 +539,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         workflowId = workflow.Id,
                         workflowName = workflow.Name,
                         result = workflowResult,
-                        status = workflowResult.Status.Phase
+                        status = workflowResult.Data.Status.Phase
                     });
 
                     executionRecord.Logs.Add(new WorkflowExecutionLog
@@ -575,7 +584,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
             // Return response
-            return new ExecutionResponse
+            var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
                 {
@@ -597,6 +606,8 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     ["workflowResults"] = workflowResults
                 }
             };
+
+            return await Result<ExecutionResponse>.SuccessAsync(response);
         }
         catch (Exception ex)
         {
@@ -618,7 +629,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
-            return new ExecutionResponse
+            var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
                 {
@@ -647,10 +658,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     }
                 }
             };
+
+            return await Result<ExecutionResponse>.FailAsync(response);
         }
     }
 
-    public async Task<ExecutionResponse> ExecuteRequestAsync(
+    public async Task<Result<ExecutionResponse>> ExecuteRequestAsync(
         TenantId tenantId,
         string userId,
         ExecutionRequest request,
