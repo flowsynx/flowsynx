@@ -1,8 +1,9 @@
 <div align="center">
-  <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
+  <img src="/img/banner.png" height="360px" alt="FlowSynx Banner" />
   <h2>A Deterministic Orchestrator for Composable Micro-Workflows with Reusable Modules</h2>
   <p><i>Cross-platform, declarative automation engine with composable micro-workflows, 
   versioned pipelines, and a reusable module ecosystem<br />Build, Share, and Scale workflows effortlessly</i></p>
+
 
   [![dotnet][dotnet-budge]][dotnet-url]
   [![Codacy Badge][codacy-badge]][codacy-url]
