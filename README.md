@@ -1,5 +1,6 @@
 <div align="center">
   <img src="/img/banner.png" height="360px" alt="FlowSynx Banner" />
+  <hr />
 
   [![dotnet][dotnet-budge]][dotnet-url]
   [![Codacy Badge][codacy-badge]][codacy-url]
@@ -31,7 +32,7 @@ Help grow the community by sharing FlowSynx with your network:
 Or copy and share this snippet:
 
 ```text
-⭐ Check out FlowSynx — an open-source automation fabric for orchestrating anything, anywhere:
+⭐ Check out FlowSynx — A deterministic orchestrator for composable micro-workflows with reusable modules:
 https://github.com/flowsynx/flowsynx
 ```
 
