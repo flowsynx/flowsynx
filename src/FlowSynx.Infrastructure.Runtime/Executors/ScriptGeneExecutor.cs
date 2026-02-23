@@ -54,9 +54,6 @@ public class ScriptActivityExecutor : BaseActivityExecutor
 
         try
         {
-            if (executable is null)
-                throw new ActivityExecutionException("Executable is null.");
-
             if (string.IsNullOrEmpty(executable.Language))
                 throw new NotSupportedException("Script language is null or empty");
 
