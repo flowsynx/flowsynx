@@ -1,9 +1,8 @@
 <div align="center">
   <img src="/img/flowsynx_logo.png" height="120px" alt="FlowSynx Logo" />
-  <h2>A Deterministic Orchestration Platform for Audit-Ready Automation</h2>
-  <p><i>A declarative, JSON-defined workflow engine delivering reproducible execution, 
-  versioned control, and full traceability. Built for high-trust systems where compliance, 
-  governance, and predictability are non-negotiable.</i></p>
+  <h2>A Deterministic Orchestrator for Composable Micro-Workflows with Reusable Modules</h2>
+  <p><i>Cross-platform, declarative automation engine with composable micro-workflows, 
+  versioned pipelines, and a reusable module ecosystem<br />Build, Share, and Scale workflows effortlessly</i></p>
 
   [![dotnet][dotnet-budge]][dotnet-url]
   [![Codacy Badge][codacy-badge]][codacy-url]
@@ -18,24 +17,10 @@
   > Your support helps others discover the project and drives continued innovation.
 </div>
 
-FlowSynx is a **Deterministic Orchestration Platform** built for reproducible, 
-version-controlled, and audit-ready workflow execution across any environment. 
-Designed for high-trust and regulated systems, it ensures that the same inputs, 
-under the same definitions and versions, always produce the same results.
-
-Workflows are defined declaratively in **JSON**, and executed through a secure, 
-plugin-driven architecture with strict version control. This enables predictable 
-automation across **on-premises**, **cloud**, and **hybrid** infrastructures — 
-without sacrificing governance or traceability.
-
-From compliance-critical business processes and secure DevOps pipelines to 
-AI-assisted decision workflows and enterprise data operations, FlowSynx provides 
-full visibility into every execution step. Built-in auditing, RBAC, secret 
-management integration, and configurable error handling ensure automation remains 
-controlled, transparent, and defensible.
-
-FlowSynx transforms automation from a flexible convenience into a 
-**provable, deterministic infrastructure layer** for mission-critical systems.
+FlowSynx is a deterministic orchestrator for composable micro-workflows, enabling reproducible, 
+version-controlled, and audit-ready automation across any environment. With reusable modules 
+and a marketplace-ready design, teams can build, share, and scale workflows efficiently without 
+sacrificing governance or traceability.
 
 ![Demo GIF](/img/Demo.gif)
 
