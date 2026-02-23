@@ -1,6 +1,6 @@
 <div align="center">
   <img src="/img/banner.png" height="360px" alt="FlowSynx Banner" />
-  <hr />
+  <h2>A Deterministic Orchestrator for Composable Micro-Workflows with Reusable Modules</h2>
 
   [![dotnet][dotnet-budge]][dotnet-url]
   [![Codacy Badge][codacy-badge]][codacy-url]
