@@ -9,10 +9,6 @@
   [![Build Status][actions-badge]][actions-url]
   [![FOSSA Status][fossa-badge]][fossa-url]
   [![Good First Issues][github-good-first-issue-badge]][github-good-first-issue-url]
-  
-  > [![⭐ Star on GitHub](https://img.shields.io/badge/⭐%20Star%20on%20GitHub-555555?style=flat&logo=github)](https://github.com/flowsynx/flowsynx)  
-  > ✨ **Support FlowSynx by giving it a star!** ✨  
-  > Your support helps others discover the project and drives continued innovation.
 </div>
 
 FlowSynx is a deterministic orchestrator for composable micro-workflows, enabling reproducible, 
@@ -21,20 +17,6 @@ and a marketplace-ready design, teams can build, share, and scale workflows effi
 sacrificing governance or traceability.
 
 ![Demo GIF](/img/Demo.gif)
-
-### 💬 Share FlowSynx
-
-Help grow the community by sharing FlowSynx with your network:
-
-**[Share on X (Twitter)](https://x.com/intent/tweet?text=Check%20out%20this%20awesome%20project%20on%20GitHub!%20⭐%0Ahttps%3A%2F%2Fgithub.com%2Fflowsynx%2Fflowsynx)**  
-**[Share on LinkedIn](https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgithub.com%2Fflowsynx%2Fflowsynx)**
-
-Or copy and share this snippet:
-
-```text
-⭐ Check out FlowSynx — A deterministic orchestrator for composable micro-workflows with reusable modules:
-https://github.com/flowsynx/flowsynx
-```
 
 ## Table of Contents
 
@@ -402,6 +384,11 @@ Thank you for helping us keep the community safe!
 
 FlowSynx is open-source and licensed under the **MIT License**.  
 See [LICENSE](https://github.com/flowsynx/flowsynx/blob/master/LICENSE) for details.
+
+## Support FlowSynx
+[![⭐ Star on GitHub](https://img.shields.io/badge/⭐%20Star%20on%20GitHub-555555?style=flat&logo=github)](https://github.com/flowsynx/flowsynx)  
+✨ **Support FlowSynx by giving it a star!** ✨  
+Your support helps others discover the project and drives continued innovation.
 
 [mit-badge]: https://img.shields.io/github/license/flowsynx/flowsynx?style=flat&label=License&logo=github
 [mit-url]: https://github.com/flowsynx/flowsynx/blob/master/LICENSE
