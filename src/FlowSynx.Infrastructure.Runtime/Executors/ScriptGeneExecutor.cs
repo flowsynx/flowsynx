@@ -18,14 +18,12 @@ namespace FlowSynx.Infrastructure.Runtime.Executors;
 public class ScriptActivityExecutor : BaseActivityExecutor
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    //private readonly IServiceProvider _serviceProvider;
 
     public ScriptActivityExecutor(
         ILogger<ScriptActivityExecutor> logger,
         IHttpClientFactory httpClientFactory) : base(logger)
     {
         _httpClientFactory = httpClientFactory;
-        //_serviceProvider = serviceProvider;
     }
 
     public override bool CanExecute(ExecutableComponent executable)

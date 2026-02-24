@@ -9,11 +9,11 @@ namespace FlowSynx.Infrastructure.Runtime.Executors;
 
 public class HttpActivityExecutor : BaseActivityExecutor
 {
-    private readonly System.Net.Http.HttpClient _httpClient;
+    private readonly HttpClient _httpClient;
 
     public HttpActivityExecutor(ILogger<HttpActivityExecutor> logger) : base(logger)
     {
-        _httpClient = new System.Net.Http.HttpClient();
+        _httpClient = new HttpClient();
     }
 
     public override bool CanExecute(ExecutableComponent executable)
@@ -41,7 +41,7 @@ public class HttpActivityExecutor : BaseActivityExecutor
 
         try
         {
-            var request = new System.Net.Http.HttpRequestMessage(
+            var request = new HttpRequestMessage(
                 GetHttpMethod(http.Method),
                 url);
 
@@ -58,7 +58,7 @@ public class HttpActivityExecutor : BaseActivityExecutor
             if (parameters != null && parameters.Count > 0)
             {
                 var json = JsonSerializer.Serialize(parameters);
-                request.Content = new System.Net.Http.StringContent(
+                request.Content = new StringContent(
                     json,
                     System.Text.Encoding.UTF8,
                     "application/json");
@@ -88,16 +88,13 @@ public class HttpActivityExecutor : BaseActivityExecutor
         }
     }
 
-    private System.Net.Http.HttpMethod GetHttpMethod(string method)
+    private HttpMethod GetHttpMethod(string method) => method?.ToUpperInvariant() switch
     {
-        return method?.ToUpper() switch
-        {
-            "GET" => System.Net.Http.HttpMethod.Get,
-            "POST" => System.Net.Http.HttpMethod.Post,
-            "PUT" => System.Net.Http.HttpMethod.Put,
-            "DELETE" => System.Net.Http.HttpMethod.Delete,
-            "PATCH" => System.Net.Http.HttpMethod.Patch,
-            _ => System.Net.Http.HttpMethod.Post
-        };
-    }
+        "GET" => HttpMethod.Get,
+        "POST" => HttpMethod.Post,
+        "PUT" => HttpMethod.Put,
+        "DELETE" => HttpMethod.Delete,
+        "PATCH" => HttpMethod.Patch,
+        _ => HttpMethod.Post
+    };
 }
