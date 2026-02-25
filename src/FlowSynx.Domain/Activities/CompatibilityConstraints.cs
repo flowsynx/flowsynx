@@ -32,8 +32,6 @@ public class GpuConstraint
 public class StorageConstraint
 {
     public int? MinFreeSpaceGb { get; set; }
-    public StorageType? Type { get; set; }
-    public int? MinReadSpeedMbps { get; set; }
 }
 
 public class ParallelismConstraint

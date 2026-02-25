@@ -166,26 +166,6 @@ public sealed class ActivityCompatibilityService : IActivityCompatibilityService
                 if (actual is null) issues.Add($"Requires free storage >= {constraints.Storage.MinFreeSpaceGb} GB, but RuntimeEnvironment.SystemInfo.Storage.FreeSpaceInGb is missing.");
                 else if (actual < constraints.Storage.MinFreeSpaceGb) issues.Add($"Requires free storage >= {constraints.Storage.MinFreeSpaceGb} GB, actual: {actual} GB.");
             }
-
-            if (constraints.Storage.MinReadSpeedMbps is not null)
-            {
-                var actual = sys.Storage?.ReadSpeedInMbps;
-                if (actual is null) issues.Add($"Requires storage read speed >= {constraints.Storage.MinReadSpeedMbps} Mbps, but RuntimeEnvironment.SystemInfo.Storage.ReadSpeedInMbps is missing.");
-                else if (actual < constraints.Storage.MinReadSpeedMbps) issues.Add($"Requires storage read speed >= {constraints.Storage.MinReadSpeedMbps} Mbps, actual: {actual} Mbps.");
-            }
-
-            if (constraints.Storage.Type is not null)
-            {
-                var actualType = sys.Storage?.Type;
-                if (string.IsNullOrWhiteSpace(actualType))
-                {
-                    issues.Add($"Requires storage type '{constraints.Storage.Type}', but RuntimeEnvironment.SystemInfo.Storage.Type is missing.");
-                }
-                else if (!Enum.TryParse<StorageType>(actualType.Trim(), ignoreCase: true, out var parsed) || parsed != constraints.Storage.Type)
-                {
-                    issues.Add($"Requires storage type '{constraints.Storage.Type}', actual: '{actualType}'.");
-                }
-            }
         }
 
         // Parallelism

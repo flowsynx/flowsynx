@@ -39,8 +39,6 @@ public class GpuInfo
 public class StorageInfo
 {
     public int? FreeSpaceInGb { get; set; }
-    public string? Type { get; set; }
-    public int? ReadSpeedInMbps { get; set; }
 }
 
 public class ParallelismInfo
