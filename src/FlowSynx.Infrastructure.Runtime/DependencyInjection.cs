@@ -10,6 +10,8 @@ public static class DependencyInjection
     {
         services.AddScoped<IJsonProcessingService, JsonProcessingService>();
         services.AddScoped<IActivityExecutorFactory, ActivityExecutorFactory>();
+        services.AddScoped<IActivityCompatibilityService, ActivityCompatibilityService>();
+        services.AddSingleton<IRuntimeEnvironmentProvider, RuntimeEnvironmentProvider>();
         services.AddScoped<IWorkflowApplicationExecutionService, WorkflowApplicationExecutionService>();
         services.AddScoped<IWorkflowApplicationManagementService, WorkflowApplicationManagementService>();
         return services;

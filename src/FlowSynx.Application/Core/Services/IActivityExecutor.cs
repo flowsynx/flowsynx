@@ -1,5 +1,6 @@
 ﻿using FlowSynx.Application.Models;
 using FlowSynx.Domain.Activities;
+using FlowSynx.Domain.Workflows;
 
 namespace FlowSynx.Application.Core.Services;
 
@@ -7,7 +8,7 @@ public interface IActivityExecutor
 {
     Task<object?> ExecuteAsync(
         ActivityJson activity,
-        Domain.Workflows.ActivityInstance instance,
+        ActivityInstance instance,
         Dictionary<string, object> parameters,
         Dictionary<string, object> context);
 

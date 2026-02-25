@@ -18,6 +18,8 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
     private readonly IWorkflowApplicationRepository _workflowApplicationRepository;
     private readonly IJsonProcessingService _jsonService;
     private readonly IWorkflowApplicationExecutionService _executionService;
+    private readonly IActivityCompatibilityService _activityCompatibilityService;
+    private readonly IRuntimeEnvironmentProvider _runtimeEnvironmentProvider;
     private readonly ILogger<WorkflowApplicationManagementService> _logger;
 
     public WorkflowApplicationManagementService(
@@ -26,6 +28,8 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         IWorkflowApplicationRepository workflowApplicationRepository,
         IJsonProcessingService jsonService,
         IWorkflowApplicationExecutionService executionService,
+        IActivityCompatibilityService activityCompatibilityService,
+        IRuntimeEnvironmentProvider runtimeEnvironmentProvider,
         ILogger<WorkflowApplicationManagementService> logger)
     {
         _activityRepository = activityRepository;
@@ -33,6 +37,8 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         _workflowApplicationRepository = workflowApplicationRepository;
         _jsonService = jsonService;
         _executionService = executionService;
+        _activityCompatibilityService = activityCompatibilityService;
+        _runtimeEnvironmentProvider = runtimeEnvironmentProvider;
         _logger = logger;
     }
 
@@ -52,6 +58,23 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
 
             // Parse JSON
             var activity = await _jsonService.ParseActivityAsync(json);
+
+            var env = _runtimeEnvironmentProvider.GetCurrent();
+            var issues = new List<string>();
+            var isCompatible = _activityCompatibilityService.IsCompatible(activity, env, out issues);
+            if (isCompatible)
+            {
+                _logger.LogInformation("Activity is compatible with current system: {Name} v{Version}",
+                    activity.Name, activity.Version);
+
+            }
+            else
+            {
+                _logger.LogWarning("Activity is NOT compatible with current system: {Name} v{Version}. Issues: {Issues}",
+                    activity.Name, activity.Version, string.Join("; ", issues));
+
+                throw new Exceptions.ValidationException(string.Format("Activity is NOT compatible with current system: {0} v{1}. Issues: {2}", activity.Name, activity.Version, string.Join("; ", issues)), validation.Errors);
+            }
 
             // Check if already exists
             var existing = await _activityRepository.GetByNameAndVersionAsync(
