@@ -241,11 +241,11 @@ public sealed class RuntimeEnvironmentProvider : IRuntimeEnvironmentProvider
     {
         try
         {
-            using var searcher =
-                new System.Management.ManagementObjectSearcher(
-                    "SELECT MaxClockSpeed FROM Win32_Processor");
+            using var searcher = new System.Management.ManagementObjectSearcher("SELECT MaxClockSpeed FROM Win32_Processor");
+            using var results = searcher.Get();
+            var item = results.Cast<System.Management.ManagementObject>().FirstOrDefault();
 
-            foreach (var item in searcher.Get())
+            if (item?["MaxClockSpeed"] != null)
             {
                 var mhz = Convert.ToDouble(item["MaxClockSpeed"]);
                 return mhz / 1000.0;
