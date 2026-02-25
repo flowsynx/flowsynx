@@ -8,6 +8,7 @@ using FlowSynx.Domain.WorkflowApplications;
 using FlowSynx.Domain.WorkflowExecutions;
 using FlowSynx.Domain.Workflows;
 using Microsoft.Extensions.Logging;
+using System.CodeDom.Compiler;
 
 namespace FlowSynx.Infrastructure.Runtime.Execution;
 
@@ -19,6 +20,9 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     private readonly IWorkflowApplicationRepository _workflowApplicationRepository;
     private readonly IJsonProcessingService _jsonService;
     private readonly IActivityExecutorFactory _executorFactory;
+    private readonly IActivityCompatibilityService _activityCompatibilityService;
+    private readonly IRuntimeEnvironmentProvider _runtimeEnvironmentProvider;
+    private readonly ICircuitBreakerManager _circuitBreakerManager;
     private readonly ILogger<WorkflowApplicationExecutionService> _logger;
 
     public WorkflowApplicationExecutionService(
@@ -28,6 +32,9 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         IWorkflowApplicationRepository workflowApplicationRepository,
         IJsonProcessingService jsonService,
         IActivityExecutorFactory executorFactory,
+        IActivityCompatibilityService activityCompatibilityService,
+        IRuntimeEnvironmentProvider runtimeEnvironmentProvider,
+        ICircuitBreakerManager circuitBreakerManager,
         ILogger<WorkflowApplicationExecutionService> logger)
     {
         _executionRepository = executionRepository;
@@ -36,6 +43,9 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         _workflowApplicationRepository = workflowApplicationRepository;
         _jsonService = jsonService;
         _executorFactory = executorFactory;
+        _activityCompatibilityService = activityCompatibilityService;
+        _runtimeEnvironmentProvider = runtimeEnvironmentProvider;
+        _circuitBreakerManager = circuitBreakerManager;
         _logger = logger;
     }
 
@@ -77,6 +87,23 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             var activity = await _activityRepository.GetByIdAsync(tenantId, userId, activityId, cancellationToken)
                 ?? throw new Exception($"Activity not found: {activityId}");
 
+            var env = _runtimeEnvironmentProvider.GetCurrent();
+            var issues = new List<string>();
+            var isCompatible = _activityCompatibilityService.IsCompatible(activity, env, out issues);
+            if (isCompatible)
+            {
+                _logger.LogInformation("Activity is compatible with current system: {Name} v{Version}",
+                    activity.Name, activity.Version);
+
+            }
+            else
+            {
+                _logger.LogWarning("Activity is NOT compatible with current system: {Name} v{Version}. Issues: {Issues}",
+                    activity.Name, activity.Version, string.Join("; ", issues));
+
+                throw new Exceptions.ValidationException(string.Format("Activity is NOT compatible with current system: {0} v{1}. Issues: {2}", activity.Name, activity.Version, string.Join("; ", issues)));
+            }
+
             // Get execution settings from profile (retry policy now in FaultHandling)
             var execSettings = activity.Specification.ExecutionProfile.ToSettings();
 
@@ -98,7 +125,6 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Priority = execSettings.Priority
                 },
                 TimeoutMilliseconds = execSettings.TimeoutMilliseconds,
-                // Retry policy from fault handling
                 RetryPolicy = activity.Specification.FaultHandling?.RetryPolicy
             };
 
@@ -125,13 +151,13 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             var safeParameters = parameters ?? new Dictionary<string, object>();
             var safeContext = context ?? new Dictionary<string, object>();
 
-            var result = await ExecuteWithRetryAsync(
-                operation: () => ExecuteWithTimeoutAsync(
-                    operation: () => executor.ExecuteAsync(activityJson, activityInstance, safeParameters, safeContext),
-                    timeoutMilliseconds: activityInstance.TimeoutMilliseconds,
-                    cancellationToken: cancellationToken),
-                instance: activityInstance,
-                cancellationToken: cancellationToken);
+            var result = await ExecuteWithFaultHandlingAsync(
+                executor,
+                activityJson,
+                activityInstance,
+                safeParameters,
+                safeContext,
+                cancellationToken);
 
             // Update execution record
             workflowExecution.Progress = 100;
@@ -765,77 +791,139 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         throw new TimeoutException($"Activity execution exceeded timeout of {timeoutMilliseconds}ms.");
     }
 
-    private async Task<object> ExecuteWithRetryAsync(
-        Func<Task<object?>> operation,
+    private async Task<object> ExecuteWithFaultHandlingAsync(
+        IActivityExecutor executor,
+        ActivityJson activityJson,
         ActivityInstance instance,
+        Dictionary<string, object> parameters,
+        Dictionary<string, object> context,
         CancellationToken cancellationToken)
     {
-        var policy = instance.RetryPolicy ?? new RetryPolicy(); // fallback if null
-
-        var maxAttempts = Math.Max(1, policy.MaxAttempts);
-        var baseDelayMs = Math.Max(0, policy.DelayMilliseconds);
-        var backoffMultiplier = policy.BackoffMultiplier < 1.0f ? 1.0f : policy.BackoffMultiplier;
-        var maxDelayMs = policy.MaxDelayMilliseconds < 0 ? 0 : policy.MaxDelayMilliseconds;
-
-        Exception? lastException = null;
-
-        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        var faultHandling = activityJson.Spec.FaultHandling;
+        if (faultHandling == null)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            // No fault handling configured – simple execution with timeout
+            return await ExecuteWithTimeoutAsync(
+                () => executor.ExecuteAsync(activityJson, instance, parameters, context),
+                instance.TimeoutMilliseconds,
+                cancellationToken);
+        }
 
-            try
+        if (faultHandling.HealthCheck != null)
+        {
+            var healthy = await PerformHealthCheckAsync(faultHandling.HealthCheck, cancellationToken);
+            if (!healthy)
             {
-                return await operation();
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex) when (attempt < maxAttempts)
-            {
-                lastException = ex;
-
-                var delayMs = CalculateDelayMilliseconds(
-                    retryIndex: attempt - 1,
-                    baseDelayMs: baseDelayMs,
-                    multiplier: backoffMultiplier,
-                    maxDelayMs: maxDelayMs);
-
-                _logger.LogWarning(
-                    ex,
-                    "Activity {ActivityInstanceId} failed on attempt {Attempt}/{MaxAttempts}. Retrying in {DelayMilliseconds}ms.",
-                    instance.Id,
-                    attempt,
-                    maxAttempts,
-                    delayMs);
-
-                if (delayMs > 0)
-                    await Task.Delay(delayMs, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                lastException = ex;
-                throw;
+                _logger.LogWarning("Health check failed for activity {ActivityName}", activityJson.Metadata.Name);
+                if (faultHandling.ErrorHandling == ErrorHandlingStrategy.Fallback && faultHandling.Fallback != null)
+                {
+                    return await ExecuteFallbackAsync(faultHandling.Fallback, cancellationToken);
+                }
+                throw new Exception("Health check failed");
             }
         }
 
-        throw lastException ?? new Exception("Activity execution failed after retries.");
+        CircuitBreakerState circuitBreakerState = null;
+        if (faultHandling.CircuitBreaker != null)
+        {
+            var circuitBreakerId = $"{activityJson.Metadata.Namespace}:{activityJson.Metadata.Name}"; // or use activity ID
+            circuitBreakerState = _circuitBreakerManager.GetOrCreate(circuitBreakerId, faultHandling.CircuitBreaker);
+            if (circuitBreakerState.IsOpen)
+            {
+                _logger.LogWarning("Circuit breaker is OPEN for {ActivityName}, failing fast", activityJson.Metadata.Name);
+                if (faultHandling.ErrorHandling == ErrorHandlingStrategy.Fallback && faultHandling.Fallback != null)
+                {
+                    return await ExecuteFallbackAsync(faultHandling.Fallback, cancellationToken);
+                }
+                throw new Exception("Circuit breaker is open");
+            }
+        }
+
+        var retryPolicy = faultHandling.RetryPolicy;
+        int maxAttempts = retryPolicy?.MaxAttempts ?? 1;
+        int attempt = 0;
+        Exception? lastException = null;
+
+        while (attempt < maxAttempts)
+        {
+            attempt++;
+            try
+            {
+                var result = await ExecuteWithTimeoutAsync(
+                    () => executor.ExecuteAsync(activityJson, instance, parameters, context),
+                    instance.TimeoutMilliseconds,
+                    cancellationToken);
+
+                circuitBreakerState?.RecordSuccess();
+                return result;
+            }
+            catch (Exception ex) when (attempt < maxAttempts && retryPolicy != null)
+            {
+                lastException = ex;
+                _logger.LogWarning(ex, "Execution attempt {Attempt} failed for {ActivityName}", attempt, activityJson.Metadata.Name);
+
+                circuitBreakerState?.RecordFailure();
+
+                if (circuitBreakerState?.IsOpen == true)
+                {
+                    _logger.LogWarning("Circuit breaker opened after attempt {Attempt}", attempt);
+                    break;
+                }
+
+                var delay = CalculateBackoff(
+                    attempt,
+                    TimeSpan.FromMilliseconds(retryPolicy.DelayMilliseconds),
+                    retryPolicy.BackoffMultiplier,
+                    retryPolicy.MaxDelayMilliseconds);
+
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
+
+        if (faultHandling.ErrorHandling == ErrorHandlingStrategy.Fallback && faultHandling.Fallback != null)
+        {
+            _logger.LogInformation("Executing fallback for {ActivityName}", activityJson.Metadata.Name);
+            return await ExecuteFallbackAsync(faultHandling.Fallback, cancellationToken);
+        }
+
+        throw lastException ?? new Exception("Execution failed after all attempts");
     }
 
-    private static int CalculateDelayMilliseconds(int retryIndex, int baseDelayMs, float multiplier, int maxDelayMs)
+    private async Task<bool> PerformHealthCheckAsync(HealthCheck healthCheck, CancellationToken cancellationToken)
     {
-        if (baseDelayMs <= 0)
-            return 0;
+        try
+        {
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromMilliseconds(healthCheck.TimeoutMilliseconds);
+            var response = await httpClient.GetAsync(healthCheck.Endpoint, cancellationToken);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
-        var factor = Math.Pow(multiplier, retryIndex);
-        var rawDelay = baseDelayMs * factor;
+    private async Task<object> ExecuteFallbackAsync(Fallback fallback, CancellationToken cancellationToken)
+    {
+        switch (fallback.Operation?.ToLowerInvariant())
+        {
+            case "return_default":
+                return fallback.DefaultValue;
 
-        var delay = rawDelay >= int.MaxValue ? int.MaxValue : (int)Math.Round(rawDelay);
-        delay = Math.Max(0, delay);
+            case "call_activity":
+                var activityName = fallback.Params?["activityName"]?.ToString();
+                throw new NotImplementedException("Fallback activity call not implemented");
 
-        if (maxDelayMs > 0)
-            delay = Math.Min(delay, maxDelayMs);
+            default:
+                throw new NotSupportedException($"Fallback operation '{fallback.Operation}' not supported");
+        }
+    }
 
-        return delay;
+    private TimeSpan CalculateBackoff(int attempt, TimeSpan initialDelay, float multiplier, int maxDelayMs)
+    {
+        double delayMs = initialDelay.TotalMilliseconds * Math.Pow(multiplier, attempt - 1);
+        delayMs = Math.Min(delayMs, maxDelayMs);
+        return TimeSpan.FromMilliseconds(delayMs);
     }
 }

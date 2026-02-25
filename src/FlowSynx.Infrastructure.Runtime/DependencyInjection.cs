@@ -14,6 +14,7 @@ public static class DependencyInjection
         services.AddSingleton<IRuntimeEnvironmentProvider, RuntimeEnvironmentProvider>();
         services.AddScoped<IWorkflowApplicationExecutionService, WorkflowApplicationExecutionService>();
         services.AddScoped<IWorkflowApplicationManagementService, WorkflowApplicationManagementService>();
+        services.AddSingleton<ICircuitBreakerManager, InMemoryCircuitBreakerManager>();
         return services;
     }
 }
