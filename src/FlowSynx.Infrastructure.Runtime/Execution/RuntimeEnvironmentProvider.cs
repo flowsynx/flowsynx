@@ -184,9 +184,10 @@ public sealed class RuntimeEnvironmentProvider : IRuntimeEnvironmentProvider
         if (string.IsNullOrWhiteSpace(output)) return null;
 
         var lines = output.Split('\n');
+        var timeout = TimeSpan.FromMilliseconds(1000);
 
         var memoryGb = lines
-            .Select(l => Regex.Match(l, @"(\d+)\s*GB"))
+            .Select(l => Regex.Match(l, @"(\d+)\s*GB", RegexOptions.None, timeout))
             .Where(m => m.Success)
             .Select(m => int.Parse(m.Groups[1].Value))
             .Cast<int?>()
