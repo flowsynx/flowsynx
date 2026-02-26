@@ -8,6 +8,4 @@ public class ActivitySpecification
     public CompatibilityMatrix Compatibility { get; set; } = new();
     public FaultHandling FaultHandling { get; set; } = new();
     public ExecutableComponent Executable { get; set; } = new();
-    public List<ValidationRule> ValidationRules { get; set; } = new();
-    public List<string> Tags { get; set; } = new();
 }
