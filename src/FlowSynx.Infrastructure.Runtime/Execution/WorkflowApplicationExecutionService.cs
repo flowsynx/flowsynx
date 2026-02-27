@@ -120,7 +120,6 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 Params = parameters ?? new Dictionary<string, object>(),
                 Configuration = new ActivityConfiguration
                 {
-                    Operation = execSettings.Operation,
                     Mode = execSettings.Mode,
                     Priority = execSettings.Priority
                 },
@@ -823,7 +822,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
             }
         }
 
-        CircuitBreakerState circuitBreakerState = null;
+        CircuitBreakerState? circuitBreakerState = null;
         if (faultHandling.CircuitBreaker != null)
         {
             var circuitBreakerId = $"{activityJson.Metadata.Namespace}:{activityJson.Metadata.Name}"; // or use activity ID

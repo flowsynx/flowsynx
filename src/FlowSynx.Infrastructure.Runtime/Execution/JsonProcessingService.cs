@@ -95,7 +95,6 @@ public class JsonProcessingService : IJsonProcessingService
                         Params = activityJson.Params ?? new Dictionary<string, object>(),
                         Configuration = new ActivityConfiguration
                         {
-                            Operation = activityJson.Configuration?.Operation,
                             Mode = activityJson.Configuration?.Mode ?? "default",
                             RunInParallel = activityJson.Configuration?.RunInParallel ?? false,
                             Priority = activityJson.Configuration?.Priority ?? 1

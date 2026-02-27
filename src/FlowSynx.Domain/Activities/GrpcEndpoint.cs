@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FlowSynx.Domain.Activities;
+﻿namespace FlowSynx.Domain.Activities;
 
 public class GrpcEndpoint
 {
