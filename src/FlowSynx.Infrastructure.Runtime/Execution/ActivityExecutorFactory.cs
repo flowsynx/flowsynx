@@ -18,13 +18,13 @@ public class ActivityExecutorFactory : IActivityExecutorFactory
 
     public IActivityExecutor CreateExecutor(ExecutableComponent executableComponent)
     {
-        return executableComponent.Type.ToLowerInvariant() switch
+        return executableComponent.Type switch
         {
-            "script" => new ScriptActivityExecutor(_loggerFactory.CreateLogger<ScriptActivityExecutor>(), _httpClientFactory),
-            "assembly" => new AssemblyActivityExecutor(_loggerFactory.CreateLogger<AssemblyActivityExecutor>()),
-            "http" => new HttpActivityExecutor(_loggerFactory.CreateLogger<HttpActivityExecutor>()),
-            "container" => new ContainerActivityExecutor(_loggerFactory.CreateLogger<ContainerActivityExecutor>()),
-            "grpc" => new GrpcActivityExecutor(_loggerFactory.CreateLogger<GrpcActivityExecutor>()),
+            ExecutableComponentType.Script => new ScriptActivityExecutor(_loggerFactory.CreateLogger<ScriptActivityExecutor>(), _httpClientFactory),
+            ExecutableComponentType.Assembly => new AssemblyActivityExecutor(_loggerFactory.CreateLogger<AssemblyActivityExecutor>()),
+            ExecutableComponentType.Http => new HttpActivityExecutor(_loggerFactory.CreateLogger<HttpActivityExecutor>()),
+            ExecutableComponentType.Container => new ContainerActivityExecutor(_loggerFactory.CreateLogger<ContainerActivityExecutor>()),
+            ExecutableComponentType.Grpc => new GrpcActivityExecutor(_loggerFactory.CreateLogger<GrpcActivityExecutor>()),
             _ => throw new NotSupportedException($"Executor type '{executableComponent.Type}' is not supported")
         };
     }

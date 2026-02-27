@@ -12,7 +12,7 @@ public class AssemblyActivityExecutor : BaseActivityExecutor
 
     public override bool CanExecute(ExecutableComponent executable)
     {
-        return executable.Type == "assembly";
+        return executable.Type == ExecutableComponentType.Assembly;
     }
 
     public override async Task<object> ExecuteAsync(

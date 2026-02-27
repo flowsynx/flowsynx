@@ -20,6 +20,9 @@ public class JsonProcessingService : IJsonProcessingService
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip
         };
+
+        _jsonOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        _jsonOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     }
 
     public async Task<Activity> ParseActivityAsync(string json)

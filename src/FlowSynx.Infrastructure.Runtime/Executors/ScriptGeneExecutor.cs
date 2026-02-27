@@ -28,7 +28,7 @@ public class ScriptActivityExecutor : BaseActivityExecutor
 
     public override bool CanExecute(ExecutableComponent executable)
     {
-        return executable.Type == "script" &&
+        return executable.Type == ExecutableComponentType.Script &&
                !string.IsNullOrEmpty(executable.Source);
     }
 
@@ -52,17 +52,12 @@ public class ScriptActivityExecutor : BaseActivityExecutor
 
         try
         {
-            if (string.IsNullOrEmpty(executable.Language))
-                throw new NotSupportedException("Script language is null or empty");
-
-            var language = executable.Language?.ToLowerInvariant() ?? throw new NotSupportedException("Language is null");
-
-            return language switch
+            return executable.Language switch
             {
-                "javascript" => await ExecuteJavaScriptAsync(executable, scriptContext),
-                "python" => await ExecutePythonAsync(executable, scriptContext),
-                "csharp" => await ExecuteCSharpAsync(executable, scriptContext),
-                "powershell" => await ExecutePowerShellAsync(executable, scriptContext),
+                ExecutableComponentLanguage.JavaScript => await ExecuteJavaScriptAsync(executable, scriptContext),
+                ExecutableComponentLanguage.Python => await ExecutePythonAsync(executable, scriptContext),
+                ExecutableComponentLanguage.CSharp => await ExecuteCSharpAsync(executable, scriptContext),
+                ExecutableComponentLanguage.PowerShell => await ExecutePowerShellAsync(executable, scriptContext),
                 _ => throw new NotSupportedException($"Script language '{executable.Language}' is not supported")
             };
         }

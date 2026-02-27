@@ -197,6 +197,14 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Progress = 100,
                     Health = "healthy"
                 },
+                Logs = workflowExecution.Logs.Select(log => new ExecutionLog
+                {
+                    Level = log.Level,
+                    Message = log.Message,
+                    Source = log.Source,
+                    Timestamp = log.Timestamp,
+                    Data = log.Data
+                }).ToList(),
                 Results = new Dictionary<string, object>
                 {
                     ["result"] = result

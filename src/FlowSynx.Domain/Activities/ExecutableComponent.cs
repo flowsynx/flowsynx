@@ -2,8 +2,8 @@
 
 public class ExecutableComponent
 {
-    public string Type { get; set; } = "script"; // "assembly", "script", "container", "http", "grpc"
-    public string Language { get; set; } = "javascript"; // "javascript", "python", "csharp", "powershell"
+    public ExecutableComponentType Type { get; set; } = ExecutableComponentType.Script;
+    public ExecutableComponentLanguage Language { get; set; } = ExecutableComponentLanguage.JavaScript;
     public string Source { get; set; } = string.Empty;
     public string EntryPoint { get; set; } = string.Empty;
     public string Assembly { get; set; } = string.Empty;

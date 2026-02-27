@@ -12,7 +12,7 @@ public class ContainerActivityExecutor : BaseActivityExecutor
 
     public override bool CanExecute(ExecutableComponent executable)
     {
-        return executable.Type == "container";
+        return executable.Type == ExecutableComponentType.Container;
     }
 
     public override async Task<object> ExecuteAsync(

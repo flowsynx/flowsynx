@@ -18,7 +18,7 @@ public class HttpActivityExecutor : BaseActivityExecutor
 
     public override bool CanExecute(ExecutableComponent executable)
     {
-        return executable.Type == "http";
+        return executable.Type == ExecutableComponentType.Http;
     }
 
     public override async Task<object> ExecuteAsync(
@@ -88,13 +88,15 @@ public class HttpActivityExecutor : BaseActivityExecutor
         }
     }
 
-    private HttpMethod GetHttpMethod(string method) => method?.ToUpperInvariant() switch
+    private HttpMethod GetHttpMethod(HttpEndpointMethod method) => method switch
     {
-        "GET" => HttpMethod.Get,
-        "POST" => HttpMethod.Post,
-        "PUT" => HttpMethod.Put,
-        "DELETE" => HttpMethod.Delete,
-        "PATCH" => HttpMethod.Patch,
+        HttpEndpointMethod.GET => HttpMethod.Get,
+        HttpEndpointMethod.POST => HttpMethod.Post,
+        HttpEndpointMethod.PUT => HttpMethod.Put,
+        HttpEndpointMethod.DELETE => HttpMethod.Delete,
+        HttpEndpointMethod.PATCH => HttpMethod.Patch,
+        HttpEndpointMethod.HEAD => HttpMethod.Head,
+        HttpEndpointMethod.OPTIONS => HttpMethod.Options,
         _ => HttpMethod.Post
     };
 }

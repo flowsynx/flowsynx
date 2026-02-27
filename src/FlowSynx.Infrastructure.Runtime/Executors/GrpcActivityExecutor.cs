@@ -12,7 +12,7 @@ public class GrpcActivityExecutor : BaseActivityExecutor
 
     public override bool CanExecute(ExecutableComponent executable)
     {
-        return executable.Type == "grpc";
+        return executable.Type == ExecutableComponentType.Grpc;
     }
 
     public override async Task<object> ExecuteAsync(
