@@ -2,9 +2,9 @@
 
 public class ExecutionCondition
 {
-    public string When { get; set; } = "always"; // "always", "onSuccess", "onFailure", "custom"
+    public ExecutionConditionWhen When { get; set; } = ExecutionConditionWhen.Always;
     public string Field { get; set; } = string.Empty;
-    public string Operator { get; set; } = "equals";
+    public ExecutionConditionOperator Operator { get; set; } = ExecutionConditionOperator.Equals;
     public object? Value { get; set; }
-    public string Action { get; set; } = "skip"; // "skip", "execute", "fail"
+    public ExecutionConditionAction Action { get; set; } = ExecutionConditionAction.Skip;
 }
