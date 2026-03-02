@@ -2,7 +2,7 @@
 
 public class ConditionEvaluator
 {
-    public bool Evaluate(string condition, object context)
+    public static bool Evaluate(string condition, object context)
     {
         // Very simple evaluator - in reality, use Roslyn or a proper expression engine
         if (string.IsNullOrWhiteSpace(condition))
@@ -26,7 +26,7 @@ public class ConditionEvaluator
         return false;
     }
 
-    private bool CheckExists(string path, object context)
+    private static bool CheckExists(string path, object context)
     {
         // Simple existence check
         try

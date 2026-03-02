@@ -10,22 +10,22 @@ public interface IWorkflowApplicationExecutionService
     Task<Result<ExecutionResponse>> ExecuteActivityAsync(
         TenantId tenantId,
         string userId,
-        Guid activityId, 
-        Dictionary<string, object> parameters, 
+        Guid activityId,
+        Dictionary<string, object> parameters,
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
     Task<Result<ExecutionResponse>> ExecuteWorkflowAsync(
         TenantId tenantId,
         string userId,
-        Guid workflowId, 
-        Dictionary<string, object> context, 
+        Guid workflowId,
+        Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
     Task<Result<ExecutionResponse>> ExecuteWorkflowApplicationAsync(
         TenantId tenantId,
         string userId,
-        Guid workflowApplicationId, 
+        Guid workflowApplicationId,
         Dictionary<string, object> context,
         CancellationToken cancellationToken = default);
 
@@ -36,11 +36,11 @@ public interface IWorkflowApplicationExecutionService
         CancellationToken cancellationToken = default);
 
     Task<WorkflowExecution?> GetWorkflowExecutionAsync(
-        Guid executionId, 
+        Guid executionId,
         CancellationToken cancellationToken = default);
 
     Task<IEnumerable<WorkflowExecution>> GetExecutionHistoryAsync(
-        string targetType, 
+        string targetType,
         Guid targetId,
         CancellationToken cancellationToken = default);
 }

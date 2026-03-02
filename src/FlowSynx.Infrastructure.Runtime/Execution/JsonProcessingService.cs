@@ -29,7 +29,8 @@ public class JsonProcessingService : IJsonProcessingService
     {
         try
         {
-            var activityJson = JsonSerializer.Deserialize<ActivityJson>(json, _jsonOptions);
+            var activityJson = JsonSerializer.Deserialize<ActivityJson>(json, _jsonOptions)
+                ?? throw new Exception("Deserialized ActivityJson is null");
 
             return new Activity
             {
@@ -45,8 +46,8 @@ public class JsonProcessingService : IJsonProcessingService
                     ["kind"] = activityJson.Kind,
                     ["originalJson"] = json
                 },
-                Labels = activityJson.Metadata.Labels ?? new Dictionary<string, string>(),
-                Annotations = activityJson.Metadata.Annotations ?? new Dictionary<string, string>(),
+                Labels = activityJson.Metadata.Labels ?? new(),
+                Annotations = activityJson.Metadata.Annotations ?? new(),
                 Owner = activityJson.Metadata.Owner,
                 IsShared = activityJson.Metadata.Shared,
                 Status = ActivityStatus.Active
@@ -62,7 +63,8 @@ public class JsonProcessingService : IJsonProcessingService
     {
         try
         {
-            var workflowJson = JsonSerializer.Deserialize<WorkflowJson>(json, _jsonOptions);
+            var workflowJson = JsonSerializer.Deserialize<WorkflowJson>(json, _jsonOptions)
+                ?? throw new Exception("Deserialized WorkflowJson is null");
 
             var workflow = new Workflow
             {
@@ -77,8 +79,8 @@ public class JsonProcessingService : IJsonProcessingService
                     ["kind"] = workflowJson.Kind,
                     ["originalJson"] = json
                 },
-                Labels = workflowJson.Metadata.Labels ?? new Dictionary<string, string>(),
-                Annotations = workflowJson.Metadata.Annotations ?? new Dictionary<string, string>()
+                Labels = workflowJson.Metadata.Labels ?? new(),
+                Annotations = workflowJson.Metadata.Annotations ?? new()
             };
 
             // Map blueprint activities from JSON specification to Workflow.Activities
@@ -112,7 +114,7 @@ public class JsonProcessingService : IJsonProcessingService
                 }
             }
 
-            // Avoid duplication: clear the activities inside Specification if they exist
+            // Clear activities inside specification to avoid duplication (they are now in workflow.Activities)
             workflow.Specification.Activities?.Clear();
 
             return workflow;
@@ -127,26 +129,27 @@ public class JsonProcessingService : IJsonProcessingService
     {
         try
         {
-            var workflowApplicationJson = JsonSerializer.Deserialize<WorkflowApplicationJson>(json, _jsonOptions);
+            var appJson = JsonSerializer.Deserialize<WorkflowApplicationJson>(json, _jsonOptions)
+                           ?? throw new Exception("Deserialized WorkflowApplicationJson is null");
 
             return new WorkflowApplication
             {
                 Id = Guid.NewGuid(),
-                Name = workflowApplicationJson.Metadata.Name,
-                Namespace = workflowApplicationJson.Metadata.Namespace,
-                Description = workflowApplicationJson.Specification.Description,
-                Specification = workflowApplicationJson.Specification,
+                Name = appJson.Metadata.Name,
+                Namespace = appJson.Metadata.Namespace,
+                Description = appJson.Specification.Description,
+                Specification = appJson.Specification,
                 Metadata = new Dictionary<string, object>
                 {
-                    ["apiVersion"] = workflowApplicationJson.ApiVersion,
-                    ["kind"] = workflowApplicationJson.Kind,
+                    ["apiVersion"] = appJson.ApiVersion,
+                    ["kind"] = appJson.Kind,
                     ["originalJson"] = json
                 },
-                Labels = workflowApplicationJson.Metadata.Labels ?? new Dictionary<string, string>(),
-                Annotations = workflowApplicationJson.Metadata.Annotations ?? new Dictionary<string, string>(),
-                SharedContext = workflowApplicationJson.Specification.Environment?.Variables ?? new Dictionary<string, object>(),
-                Owner = workflowApplicationJson.Metadata.Owner,
-                IsShared = workflowApplicationJson.Metadata.Shared
+                Labels = appJson.Metadata.Labels ?? new(),
+                Annotations = appJson.Metadata.Annotations ?? new(),
+                SharedContext = appJson.Specification.Environment?.Variables ?? new(),
+                Owner = appJson.Metadata.Owner,
+                IsShared = appJson.Metadata.Shared
             };
         }
         catch (Exception ex)
@@ -159,7 +162,8 @@ public class JsonProcessingService : IJsonProcessingService
     {
         try
         {
-            return JsonSerializer.Deserialize<ExecutionRequest>(json, _jsonOptions);
+            return JsonSerializer.Deserialize<ExecutionRequest>(json, _jsonOptions)
+                ?? throw new Exception("Deserialized ExecutionRequest is null");
         }
         catch (Exception ex)
         {
@@ -167,10 +171,7 @@ public class JsonProcessingService : IJsonProcessingService
         }
     }
 
-    public string SerializeToJson<T>(T obj)
-    {
-        return JsonSerializer.Serialize(obj, _jsonOptions);
-    }
+    public string SerializeToJson<T>(T obj) => JsonSerializer.Serialize(obj, _jsonOptions);
 
     public async Task<ValidationResponse> ValidateJsonAsync(string json, string expectedKind)
     {

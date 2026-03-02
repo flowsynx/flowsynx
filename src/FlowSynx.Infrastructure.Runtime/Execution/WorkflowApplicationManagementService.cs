@@ -1,13 +1,14 @@
 ﻿using FlowSynx.Application.Core.Persistence;
 using FlowSynx.Application.Core.Services;
-using FlowSynx.Application.Exceptions;
 using FlowSynx.Application.Models;
 using FlowSynx.BuildingBlocks.Results;
 using FlowSynx.Domain.Activities;
 using FlowSynx.Domain.Tenants;
 using FlowSynx.Domain.WorkflowApplications;
 using FlowSynx.Domain.Workflows;
+using FlowSynx.Infrastructure.Runtime.Exceptions;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace FlowSynx.Infrastructure.Runtime.Execution;
 
@@ -129,6 +130,7 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
 
             // Parse JSON
             var workflow = await _jsonService.ParseWorkflowAsync(json);
+            ValidateWorkflowSpecification(workflow.Specification, workflow.Activities);
 
             // Check if already exists
             var existing = await _workflowRepository.GetByNameAsync(
@@ -226,12 +228,11 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
     {
         try
         {
-            var jsonElement = System.Text.Json.JsonDocument.Parse(json).RootElement;
-
-            if (jsonElement.TryGetProperty("kind", out var kindElement))
+            using var doc = JsonDocument.Parse(json);
+            if (doc.RootElement.TryGetProperty("kind", out var kindElement))
             {
                 var kind = kindElement.GetString();
-                return await _jsonService.ValidateJsonAsync(json, kind);
+                return await _jsonService.ValidateJsonAsync(json, kind!);
             }
 
             return new ValidationResponse
@@ -269,29 +270,16 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
     }
 
     public async Task<IEnumerable<Activity>> SearchActivitiesAsync(
-        TenantId tenantId,
-        string userId, 
-        string searchTerm, 
-        CancellationToken cancellationToken = default)
-    {
-        return await _activityRepository.SearchAsync(tenantId, userId, searchTerm, cancellationToken);
-    }
+        TenantId tenantId, string userId, string searchTerm, CancellationToken cancellationToken = default) 
+        => await _activityRepository.SearchAsync(tenantId, userId, searchTerm, cancellationToken);
 
     public async Task<IEnumerable<Workflow>> GetWorkflowsByApplicationIdAsync(
-        string userId, 
-        Guid workflowApplicationId, 
-        CancellationToken cancellationToken = default)
-    {
-        return await _workflowRepository.GetByWorkflowApplicationIdAsync(workflowApplicationId, cancellationToken);
-    }
+        string userId, Guid workflowApplicationId, CancellationToken cancellationToken = default) 
+        => await _workflowRepository.GetByWorkflowApplicationIdAsync(workflowApplicationId, cancellationToken);
 
     public async Task<IEnumerable<WorkflowApplication>> GetWorkflowApplicationsByOwnerAsync(
-        string userId,
-        string owner, 
-        CancellationToken cancellationToken = default)
-    {
-        return await _workflowApplicationRepository.GetByOwnerAsync(owner, cancellationToken);
-    }
+        string userId, string owner, CancellationToken cancellationToken = default) 
+        => await _workflowApplicationRepository.GetByOwnerAsync(owner, cancellationToken);
 
     public async Task<Result<ExecutionResponse>> ExecuteJsonAsync(
         TenantId tenantId,
@@ -301,9 +289,9 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
     {
         try
         {
-            var jsonElement = System.Text.Json.JsonDocument.Parse(json).RootElement;
+            using var doc = JsonDocument.Parse(json);
 
-            if (jsonElement.TryGetProperty("kind", out var kindElement))
+            if (doc.RootElement.TryGetProperty("kind", out var kindElement))
             {
                 var kind = kindElement.GetString();
 
@@ -396,12 +384,8 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
         Guid executionId, 
         CancellationToken cancellationToken = default)
     {
-        var executionRecord = await _executionService.GetWorkflowExecutionAsync(executionId, cancellationToken);
-
-        if (executionRecord == null)
-        {
-            throw new NotFoundException($"Execution record not found: {executionId}");
-        }
+        var executionRecord = await _executionService.GetWorkflowExecutionAsync(executionId, cancellationToken) 
+            ?? throw new Application.Exceptions.NotFoundException($"Execution record not found: {executionId}");
 
         return new ExecutionResponse
         {
@@ -449,5 +433,35 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
                 CreatedAt = artifact.CreatedAt
             }).ToList() ?? new List<Application.Models.ExecutionArtifact>()
         };
+    }
+
+    private void ValidateWorkflowSpecification(WorkflowSpecification spec, ICollection<ActivityInstance> activities)
+    {
+        var activityIds = activities.Select(a => a.Id).ToHashSet();
+        foreach (var act in activities)
+        {
+            foreach (var depId in act.DependsOn)
+                if (!activityIds.Contains(depId))
+                    throw new ValidationException($"Activity '{act.Id}' depends on unknown activity '{depId}'");
+        }
+
+        if (spec.Context?.FaultHandling?.RetryPolicy != null)
+        {
+            var rp = spec.Context.FaultHandling.RetryPolicy;
+            if (rp.MaxAttempts < 1)
+                throw new ValidationException("RetryPolicy.MaxAttempts must be >= 1");
+            if (rp.DelayMilliseconds < 0)
+                throw new ValidationException("RetryPolicy.DelayMilliseconds must be >= 0");
+        }
+
+        if (spec.Output?.Variables != null)
+        {
+            foreach (var mapping in spec.Output.Variables)
+            {
+                var parts = mapping.Source?.Split('.');
+                if (parts == null || parts.Length < 1 || !activityIds.Contains(parts[0]))
+                    throw new ValidationException($"Output mapping '{mapping.Name}' references unknown activity '{parts?[0]}'");
+            }
+        }
     }
 }

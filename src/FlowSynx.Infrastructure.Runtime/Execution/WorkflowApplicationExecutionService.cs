@@ -8,7 +8,7 @@ using FlowSynx.Domain.WorkflowApplications;
 using FlowSynx.Domain.WorkflowExecutions;
 using FlowSynx.Domain.Workflows;
 using Microsoft.Extensions.Logging;
-using System.CodeDom.Compiler;
+using System.Text.Json;
 
 namespace FlowSynx.Infrastructure.Runtime.Execution;
 
@@ -244,36 +244,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             await _executionRepository.UpdateAsync(workflowExecution, cancellationToken);
 
-            var response = new ExecutionResponse
-            {
-                Metadata = new ExecutionResponseMetadata
-                {
-                    Id = workflowExecution.Id.ToString(),
-                    ExecutionId = executionId,
-                    StartedAt = startedAt,
-                    CompletedAt = workflowExecution.CompletedAt,
-                    DurationMilliseconds = workflowExecution.DurationMilliseconds
-                },
-                Status = new ExecutionStatus
-                {
-                    Phase = "failed",
-                    Message = ex.Message,
-                    Progress = 100,
-                    Health = "unhealthy",
-                    Reason = "ExecutionError"
-                },
-                Errors = new List<ExecutionError>
-                {
-                    new ExecutionError
-                    {
-                        Code = "EXECUTION_FAILED",
-                        Message = ex.Message,
-                        Source = "activity",
-                        Timestamp = DateTime.UtcNow
-                    }
-                }
-            };
-
+            var response = ErrorResponse(executionId, startedAt, workflowExecution, ex);
             return await Result<ExecutionResponse>.FailAsync(response);
         }
     }
@@ -311,101 +282,83 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         try
         {
             // Load workflow with activities
-            var workflow = await _workflowRepository.GetByIdAsync(tenantId, userId, workflowId, cancellationToken);
-            if (workflow == null)
+            var workflow = await _workflowRepository.GetByIdAsync(tenantId, userId, workflowId, cancellationToken)
+                ?? throw new Exception($"Workflow not found: {workflowId}");
+
+            // Merge workflow-level variables into context
+            var mergedContext = MergeWorkflowContext(workflow.Specification.Context, context);
+
+            var activityResults = new Dictionary<string, object>();
+            var sortedActivities = TopologicalSort(workflow.Activities.ToDictionary(a => a.Id, a => a.DependsOn ?? new()));
+
+            int index = 0;
+            foreach (var actId in sortedActivities)
             {
-                throw new Exception($"Workflow not found: {workflowId}");
-            }
-
-            var results = new Dictionary<string, object>();
-            var activityResults = new List<object>();
-
-            // Execute activities in the order they appear in the list (ignoring DependsOn for simplicity)
-            var activities = workflow.Activities.ToList();
-            int totalActivities = activities.Count;
-            for (int i = 0; i < totalActivities; i++)
-            {
-                var activity = activities[i];
-
-                // Update progress
-                executionRecord.Progress = (int)((i * 100) / totalActivities);
+                var act = workflow.Activities.First(a => a.Id == actId);
+                executionRecord.Progress = (int)((index++ * 100) / sortedActivities.Count);
                 await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
+
+                // Condition check
+                if (!string.IsNullOrEmpty(act.Condition))
+                {
+                    var condContext = new { Variables = mergedContext, Results = activityResults };
+                    if (!ConditionEvaluator.Evaluate(act.Condition, condContext))
+                    {
+                        _logger.LogInformation("Skipping activity {ActivityId} due to condition", act.Id);
+                        continue;
+                    }
+                }
 
                 try
                 {
-                    // Load the actual activity entity using the reference in the blueprint instance
                     var activityEntity = await _activityRepository.GetByNameAndVersionAsync(
-                        activity.Activity.Name,
-                        activity.Activity.Version ?? "latest",
-                        cancellationToken);
+                        act.Activity.Name, act.Activity.Version ?? "latest", cancellationToken)
+                        ?? throw new Exception($"Activity not found: {act.Activity.Name} (v{act.Activity.Version})");
 
-                    if (activityEntity == null)
+                    var activityParams = MergeParameters(act.Params, activityResults, mergedContext);
+                    var activityResponse = await ExecuteActivityAsync(
+                        tenantId, userId, activityEntity.Id, activityParams, mergedContext, cancellationToken);
+
+                    object? result = null;
+                    if (activityResponse.Data.Results?.TryGetValue("result", out var tempResult) == true)
                     {
-                        throw new Exception($"Activity not found: {activity.Activity.Name} (v{activity.Activity.Version})");
+                        result = tempResult;
+                        activityResults[act.Id] = result;
                     }
-
-                    // Merge workflow context with any activity-specific parameters
-                    var activityParams = activity.Params ?? new Dictionary<string, object>();
-
-                    // Execute activity
-                    var activityResult = await ExecuteActivityAsync(
-                        tenantId,
-                        userId,
-                        activityEntity.Id,
-                        activityParams,
-                        context,
-                        cancellationToken);
-
-                    activityResults.Add(new
+                    else
                     {
-                        activityId = activity.Id, // local ID within workflow
-                        activityName = activity.Activity.Name,
-                        result = activityResult.Data.Results?.GetValueOrDefault("result"),
-                        status = activityResult.Data.Status.Phase
-                    });
+                        activityResults[act.Id] = null;
+                    }
 
                     executionRecord.Logs.Add(new WorkflowExecutionLog
                     {
                         Level = "info",
-                        Message = $"Activity '{activity.Activity.Name}' executed successfully",
-                        Source = activity.Activity.Name,
-                        Timestamp = DateTime.UtcNow
+                        Message = $"Activity '{act.Activity.Name}' executed",
+                        Source = act.Activity.Name,
+                        Timestamp = DateTime.UtcNow,
+                        Data = new Dictionary<string, object> { 
+                            ["result"] = result ?? (object)"null"
+                        }
                     });
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (workflow.Specification.Context?.FaultHandling?.ErrorHandling == ErrorHandlingStrategy.Ignore)
                 {
-                    executionRecord.Logs.Add(new WorkflowExecutionLog
-                    {
-                        Level = "error",
-                        Message = $"Activity '{activity.Activity.Name}' failed: {ex.Message}",
-                        Source = activity.Activity.Name,
-                        Timestamp = DateTime.UtcNow
-                    });
-
-                    // Check if we should continue based on workflow error handling
-                    var errorHandling = workflow.Specification.Context?.FaultHandling;
-                    if (errorHandling?.ErrorHandling == ErrorHandlingStrategy.Propagate)
-                    {
-                        throw;
-                    }
-                    // else continue with other activities
+                    _logger.LogWarning(ex, "Activity {ActivityId} failed but workflow continues", act.Id);
+                    activityResults[act.Id] = new { error = ex.Message };
+                    continue;
                 }
             }
 
-            // Update execution record
+            var finalOutput = ProcessWorkflowOutput(workflow.Specification.Output, activityResults, mergedContext);
+
             executionRecord.Progress = 100;
             executionRecord.Status = "completed";
             executionRecord.CompletedAt = DateTime.UtcNow;
             executionRecord.DurationMilliseconds = (long)((executionRecord.CompletedAt - startedAt)?.TotalMilliseconds ?? 0);
-            executionRecord.Response = new Dictionary<string, object>
-            {
-                ["activityResults"] = activityResults,
-                ["success"] = true
-            };
+            executionRecord.Response = finalOutput;
 
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
-            // Return response
             var response = new ExecutionResponse
             {
                 Metadata = new ExecutionResponseMetadata
@@ -423,10 +376,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                     Progress = 100,
                     Health = "healthy"
                 },
-                Results = new Dictionary<string, object>
-                {
-                    ["activityResults"] = activityResults
-                }
+                Results = finalOutput
             };
 
             return await Result<ExecutionResponse>.SuccessAsync(response);
@@ -451,36 +401,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
-            var response = new ExecutionResponse
-            {
-                Metadata = new ExecutionResponseMetadata
-                {
-                    Id = executionRecord.Id.ToString(),
-                    ExecutionId = executionId,
-                    StartedAt = startedAt,
-                    CompletedAt = executionRecord.CompletedAt,
-                    DurationMilliseconds = executionRecord.DurationMilliseconds
-                },
-                Status = new ExecutionStatus
-                {
-                    Phase = "failed",
-                    Message = ex.Message,
-                    Progress = executionRecord.Progress,
-                    Health = "unhealthy",
-                    Reason = "ExecutionError"
-                },
-                Errors = new List<ExecutionError>
-                {
-                    new ExecutionError
-                    {
-                        Code = "EXECUTION_FAILED",
-                        Message = ex.Message,
-                        Source = "workflow",
-                        Timestamp = DateTime.UtcNow
-                    }
-                }
-            };
-
+            var response = ErrorResponse(executionId, startedAt, executionRecord, ex);
             return await Result<ExecutionResponse>.FailAsync(response);
         }
     }
@@ -517,38 +438,26 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
         try
         {
-            // Load workflow application
-            var workflowApplication = await _workflowApplicationRepository.GetByIdAsync(tenantId, userId, workflowApplicationId, cancellationToken);
-            if (workflowApplication == null)
-            {
-                throw new Exception($"Workflow application not found: {workflowApplicationId}");
-            }
+            var app = await _workflowApplicationRepository.GetByIdAsync(tenantId, userId, workflowApplicationId, cancellationToken) 
+                ?? throw new Exception($"Workflow application not found: {workflowApplicationId}");
 
             var workflowResults = new List<object>();
 
             // Get workflow references from the specification (not from a direct collection)
-            var workflowRefs = workflowApplication.Specification.Workflows ?? new List<WorkflowReference>();
-            int totalWorkflows = workflowRefs.Count;
-            for (int i = 0; i < totalWorkflows; i++)
+            var workflowRefs = app.Specification.Workflows ?? new List<WorkflowReference>();
+            for (int i = 0; i < workflowRefs.Count; i++)
             {
                 var wfRef = workflowRefs[i];
 
                 // Update progress
-                executionRecord.Progress = (int)((i * 100) / totalWorkflows);
+                executionRecord.Progress = (int)((i * 100) / workflowRefs.Count);
                 await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
                 try
                 {
                     // Load the actual workflow entity using the reference
-                    var workflow = await _workflowRepository.GetByNameAsync(
-                        wfRef.Name,
-                        wfRef.Namespace ?? "default",
-                        cancellationToken);
-
-                    if (workflow == null)
-                    {
-                        throw new Exception($"Workflow not found: {wfRef.Name} (namespace: {wfRef.Namespace})");
-                    }
+                    var workflow = await _workflowRepository.GetByNameAsync(wfRef.Name, wfRef.Namespace ?? "default", cancellationToken) 
+                        ?? throw new Exception($"Workflow not found: {wfRef.Name} (namespace: {wfRef.Namespace})");
 
                     // Merge application context with any workflow-specific parameters from the reference
                     var mergedContext = new Dictionary<string, object>(context);
@@ -583,23 +492,10 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         Timestamp = DateTime.UtcNow
                     });
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (app.Specification.Execution?.Mode == "continue-on-error")
                 {
-                    executionRecord.Logs.Add(new WorkflowExecutionLog
-                    {
-                        Level = "error",
-                        Message = $"Workflow '{wfRef.Name}' failed: {ex.Message}",
-                        Source = wfRef.Name,
-                        Timestamp = DateTime.UtcNow
-                    });
-
-                    // Check workflow application execution strategy
-                    var executionStrategy = workflowApplication.Specification.Execution?.Mode;
-                    if (executionStrategy == "stop-on-error")
-                    {
-                        throw;
-                    }
-                    // else continue with other workflows
+                    _logger.LogWarning(ex, "Workflow '{WorkflowName}' failed but application continues", wfRef.Name);
+                    continue;
                 }
             }
 
@@ -662,36 +558,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
 
             await _executionRepository.UpdateAsync(executionRecord, cancellationToken);
 
-            var response = new ExecutionResponse
-            {
-                Metadata = new ExecutionResponseMetadata
-                {
-                    Id = executionRecord.Id.ToString(),
-                    ExecutionId = executionId,
-                    StartedAt = startedAt,
-                    CompletedAt = executionRecord.CompletedAt,
-                    DurationMilliseconds = executionRecord.DurationMilliseconds
-                },
-                Status = new ExecutionStatus
-                {
-                    Phase = "failed",
-                    Message = ex.Message,
-                    Progress = executionRecord.Progress,
-                    Health = "unhealthy",
-                    Reason = "ExecutionError"
-                },
-                Errors = new List<ExecutionError>
-                {
-                    new ExecutionError
-                    {
-                        Code = "EXECUTION_FAILED",
-                        Message = ex.Message,
-                        Source = "workflowApplication",
-                        Timestamp = DateTime.UtcNow
-                    }
-                }
-            };
-
+            var response = ErrorResponse(executionId, startedAt, executionRecord, ex);
             return await Result<ExecutionResponse>.FailAsync(response);
         }
     }
@@ -724,29 +591,26 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 }
             }
 
-            switch (target.Type.ToLower())
+            switch (target.Type.ToLowerInvariant())
             {
                 case "activity":
                     var activity = await _activityRepository.GetByNameAndVersionAsync(
-                        target.Name, target.Version ?? "latest", cancellationToken);
-                    if (activity == null)
-                        throw new Exception($"Activity not found: {target.Name}");
+                        target.Name, target.Version ?? "latest", cancellationToken) 
+                        ?? throw new Exception($"Activity not found: {target.Name}");
 
                     return await ExecuteActivityAsync(tenantId, userId, activity.Id, parameters, context, cancellationToken);
 
                 case "workflow":
                     var workflow = await _workflowRepository.GetByNameAsync(
-                        target.Name, target.Namespace ?? "default", cancellationToken);
-                    if (workflow == null)
-                        throw new Exception($"Workflow not found: {target.Name}");
+                        target.Name, target.Namespace ?? "default", cancellationToken) 
+                        ?? throw new Exception($"Workflow not found: {target.Name}");
 
                     return await ExecuteWorkflowAsync(tenantId, userId, workflow.Id, context, cancellationToken);
 
-                case "workflowApplication":
+                case "workflowapplication":
                     var workflowApplication = await _workflowApplicationRepository.GetByNameAsync(
-                        target.Name, target.Namespace ?? "default", cancellationToken);
-                    if (workflowApplication == null)
-                        throw new Exception($"WorkflowApplication not found: {target.Name}");
+                        target.Name, target.Namespace ?? "default", cancellationToken) 
+                        ?? throw new Exception($"WorkflowApplication not found: {target.Name}");
 
                     return await ExecuteWorkflowApplicationAsync(tenantId, userId, workflowApplication.Id, context, cancellationToken);
 
@@ -762,20 +626,12 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
     }
 
     public async Task<WorkflowExecution?> GetWorkflowExecutionAsync(
-        Guid executionId,
-        CancellationToken cancellationToken = default)
-    {
-        return await _executionRepository.GetByIdAsync(executionId, cancellationToken);
-    }
+        Guid executionId, CancellationToken cancellationToken = default)
+        => await _executionRepository.GetByIdAsync(executionId, cancellationToken);
 
     public async Task<IEnumerable<WorkflowExecution>> GetExecutionHistoryAsync(
-        string targetType,
-        Guid targetId,
-        CancellationToken cancellationToken = default)
-    {
-        return (await _executionRepository.GetByTargetAsync(targetType, targetId))
-            .ToList();
-    }
+        string targetType, Guid targetId, CancellationToken cancellationToken = default)
+        => (await _executionRepository.GetByTargetAsync(targetType, targetId)).ToList();
 
     private async Task<object?> ExecuteWithTimeoutAsync(
         Func<Task<object?>> operation,
@@ -932,5 +788,157 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         double delayMs = initialDelay.TotalMilliseconds * Math.Pow(multiplier, attempt - 1);
         delayMs = Math.Min(delayMs, maxDelayMs);
         return TimeSpan.FromMilliseconds(delayMs);
+    }
+
+    private Dictionary<string, object> MergeWorkflowContext(
+        Domain.Workflows.ExecutionContext wfContext, 
+        Dictionary<string, object> incoming)
+    {
+        var merged = new Dictionary<string, object>(incoming ?? new());
+        if (wfContext?.Variables != null)
+            foreach (var kvp in wfContext.Variables)
+                merged.TryAdd(kvp.Key, kvp.Value);
+        return merged;
+    }
+
+    private Dictionary<string, object> MergeParameters(
+        Dictionary<string, object> activityParams,
+        Dictionary<string, object> activityResults,
+        Dictionary<string, object> workflowVariables)
+    {
+        var merged = new Dictionary<string, object>(workflowVariables);
+        if (activityParams != null)
+            foreach (var kvp in activityParams)
+                merged[kvp.Key] = kvp.Value;
+        merged["__results"] = activityResults;
+        return merged;
+    }
+
+    private List<string> TopologicalSort(Dictionary<string, List<string>> graph)
+    {
+        var inDegree = graph.ToDictionary(kv => kv.Key, kv => 0);
+        foreach (var deps in graph.Values)
+            foreach (var dep in deps)
+                if (inDegree.ContainsKey(dep))
+                    inDegree[dep]++;
+
+        var queue = new Queue<string>(inDegree.Where(kv => kv.Value == 0).Select(kv => kv.Key));
+        var sorted = new List<string>();
+
+
+        while (queue.Count > 0)
+        {
+            var node = queue.Dequeue();
+            sorted.Add(node);
+            foreach (var dep in graph[node])
+            {
+                inDegree[dep]--;
+                if (inDegree[dep] == 0)
+                    queue.Enqueue(dep);
+            }
+        }
+
+        if (sorted.Count != graph.Count)
+            throw new InvalidOperationException("Cycle detected in workflow dependencies");
+        return sorted;
+    }
+
+    private Dictionary<string, object> ProcessWorkflowOutput(
+    WorkflowOutput output,
+    Dictionary<string, object> activityResults,
+    Dictionary<string, object> context)
+    {
+        var result = new Dictionary<string, object>();
+        if (output.Variables != null)
+        {
+            foreach (var mapping in output.Variables)
+            {
+                var value = ResolveMapping(mapping.Source, activityResults, context);
+                if (!string.IsNullOrEmpty(mapping.Transform))
+                    value = ApplyTransform(value, mapping.Transform);
+                result[mapping.Name] = value;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(output.Path))
+        {
+            var json = JsonSerializer.Serialize(result);
+            File.WriteAllText(output.Path, json);
+        }
+
+        return result;
+    }
+
+    private object? ResolveMapping(string source, Dictionary<string, object> activityResults, Dictionary<string, object> context)
+    {
+        var parts = source.Split('.');
+        if (parts.Length == 0) return null;
+
+        if (parts[0] == "context")
+        {
+            object current = context;
+            for (int i = 1; i < parts.Length; i++)
+            {
+                if (current is Dictionary<string, object> dict && dict.TryGetValue(parts[i], out var val))
+                    current = val;
+                else
+                    return null;
+            }
+            return current;
+        }
+        else
+        {
+            if (!activityResults.TryGetValue(parts[0], out var current))
+                return null;
+            for (int i = 1; i < parts.Length; i++)
+            {
+                if (current is Dictionary<string, object> dict && dict.TryGetValue(parts[i], out var val))
+                    current = val;
+                else if (current is JsonElement elem && elem.TryGetProperty(parts[i], out var prop))
+                    current = prop;
+                else
+                    return null;
+            }
+            return current;
+        }
+    }
+
+    private object? ApplyTransform(object? value, string transform)
+    {
+        // Placeholder: real implementation would use JSONPath, jq, etc.
+        return value;
+    }
+
+    private ExecutionResponse ErrorResponse(string executionId, DateTime startedAt, WorkflowExecution exec, Exception ex)
+    {
+        return new ExecutionResponse
+        {
+            Metadata = new ExecutionResponseMetadata
+            {
+                Id = exec.Id.ToString(),
+                ExecutionId = executionId,
+                StartedAt = startedAt,
+                CompletedAt = exec.CompletedAt,
+                DurationMilliseconds = exec.DurationMilliseconds
+            },
+            Status = new ExecutionStatus
+            {
+                Phase = "failed",
+                Message = ex.Message,
+                Progress = exec.Progress,
+                Health = "unhealthy",
+                Reason = exec.ErrorCode ?? "ExecutionError"
+            },
+            Errors = new List<ExecutionError>
+            {
+                new ExecutionError
+                {
+                    Code = exec.ErrorCode ?? "EXECUTION_FAILED",
+                    Message = ex.Message,
+                    Source = exec.TargetType,
+                    Timestamp = exec.CompletedAt ?? DateTime.UtcNow
+                }
+            }
+        };
     }
 }
