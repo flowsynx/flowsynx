@@ -341,7 +341,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         }
                     });
                 }
-                catch (Exception ex) when (workflow.Specification.Context?.FaultHandling?.ErrorHandling == ErrorHandlingStrategy.Ignore)
+                catch (Exception ex) when (workflow.Specification.Context?.FaultHandling?.ErrorHandling == ErrorHandlingStrategy.Continue)
                 {
                     _logger.LogWarning(ex, "Activity {ActivityId} failed but workflow continues", act.Id);
                     activityResults[act.Id] = new { error = ex.Message };
@@ -492,7 +492,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         Timestamp = DateTime.UtcNow
                     });
                 }
-                catch (Exception ex) when (app.Specification.Execution?.Mode == "continue-on-error")
+                catch (Exception ex) when (app.Specification.Execution?.ErrorHandling == ErrorHandlingStrategy.Continue)
                 {
                     _logger.LogWarning(ex, "Workflow '{WorkflowName}' failed but application continues", wfRef.Name);
                     continue;

@@ -3,7 +3,7 @@
 public enum ErrorHandlingStrategy
 {
     Propagate,
-    Ignore,
+    Continue,
     Retry,
     Fallback
 }

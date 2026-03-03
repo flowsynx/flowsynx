@@ -2,7 +2,7 @@
 
 public enum ExecutionMode
 {
-    Sequential,
-    Parallel,
-    Dependency
+    ContinueOnError = 0,
+    StopOnError = 1,
+
 }
