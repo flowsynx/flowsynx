@@ -71,8 +71,8 @@ public class JsonProcessingService : IJsonProcessingService
                 Id = Guid.NewGuid(),
                 Name = workflowJson.Metadata.Name,
                 Namespace = workflowJson.Metadata.Namespace,
-                Description = workflowJson.Specification.Description,
-                Specification = workflowJson.Specification,   // will contain activities – we'll clear them later
+                Description = workflowJson.Spec.Description,
+                Specification = workflowJson.Spec,   // will contain activities – we'll clear them later
                 Metadata = new Dictionary<string, object>
                 {
                     ["apiVersion"] = workflowJson.ApiVersion,
@@ -84,9 +84,9 @@ public class JsonProcessingService : IJsonProcessingService
             };
 
             // Map blueprint activities from JSON specification to Workflow.Activities
-            if (workflowJson.Specification.Activities != null)
+            if (workflowJson.Spec.Activities != null)
             {
-                foreach (var activityJson in workflowJson.Specification.Activities)
+                foreach (var activityJson in workflowJson.Spec.Activities)
                 {
                     var activityInstance = new ActivityInstance
                     {
