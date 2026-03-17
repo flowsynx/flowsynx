@@ -286,7 +286,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                 ?? throw new Exception($"Workflow not found: {workflowId}");
 
             // Merge workflow-level variables into context
-            var mergedContext = MergeWorkflowContext(workflow.Specification.Context, context);
+            var mergedContext = MergeWorkflowVariables(workflow.Specification.Variables, context);
 
             var activityResults = new Dictionary<string, object>();
             var sortedActivities = TopologicalSort(workflow.Activities.ToDictionary(a => a.Id, a => a.DependsOn ?? new()));
@@ -341,7 +341,7 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
                         }
                     });
                 }
-                catch (Exception ex) when (workflow.Specification.Context?.FaultHandling?.ErrorHandling == ErrorHandlingStrategy.Continue)
+                catch (Exception ex) when (workflow.Specification.FaultHandling?.ErrorHandling == ErrorHandlingStrategy.Continue)
                 {
                     _logger.LogWarning(ex, "Activity {ActivityId} failed but workflow continues", act.Id);
                     activityResults[act.Id] = new { error = ex.Message };
@@ -790,13 +790,13 @@ public class WorkflowApplicationExecutionService : IWorkflowApplicationExecution
         return TimeSpan.FromMilliseconds(delayMs);
     }
 
-    private Dictionary<string, object> MergeWorkflowContext(
-        Domain.Workflows.ExecutionContext wfContext, 
+    private Dictionary<string, object> MergeWorkflowVariables(
+        Dictionary<string, object> variables, 
         Dictionary<string, object> incoming)
     {
         var merged = new Dictionary<string, object>(incoming ?? new());
-        if (wfContext?.Variables != null)
-            foreach (var kvp in wfContext.Variables)
+        if (variables != null)
+            foreach (var kvp in variables)
                 merged.TryAdd(kvp.Key, kvp.Value);
         return merged;
     }

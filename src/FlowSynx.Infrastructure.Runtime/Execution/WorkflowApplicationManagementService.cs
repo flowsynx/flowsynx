@@ -445,9 +445,9 @@ public class WorkflowApplicationManagementService : IWorkflowApplicationManageme
                     throw new ValidationException($"Activity '{act.Id}' depends on unknown activity '{depId}'");
         }
 
-        if (spec.Context?.FaultHandling?.RetryPolicy != null)
+        if (spec?.FaultHandling?.RetryPolicy != null)
         {
-            var rp = spec.Context.FaultHandling.RetryPolicy;
+            var rp = spec.FaultHandling.RetryPolicy;
             if (rp.MaxAttempts < 1)
                 throw new ValidationException("RetryPolicy.MaxAttempts must be >= 1");
             if (rp.DelayMilliseconds < 0)
